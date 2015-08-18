@@ -5,38 +5,16 @@ using System.Linq;
 
 namespace CSharp
 {
-  abstract declaration NamespaceMember
+  abstract declaration NamespaceMember : BindableAst
   {
-    in Parent  : NamespaceSymbol;
-  stage 1:
-    in Scope : Scope;
-    //ContainingScope = Parent.Scope;
-  }
-
-  map syntax TopDeclarations.NamespaceMemberDeclaration -> NamespaceMember
-  {
-    | Namespace ->
-      DeclaredNamespace
-      {
-        NamespaceName.Name          -> Name;
-        NamespaceName.Path(ImplicitNamespaceTag{}) -> Path;
-        ExternAliasDirectives       -> ExternAlias;
-        UsingDirectives             -> UsingDirectives;
-        NamespaceMemberDeclarations -> Members;
-      }
-
-    | Type -> TypeDeclaration
-  }
-
-  ast ImplicitNamespaceTag
-  {
-  }
-
-  map syntax CsIdentifiers.Name(_tag : ImplicitNamespaceTag) -> ImplicitNamespace
-  {
-    ImplicitNamespace
+    symbol
     {
-      Name = this.GetAst();
+      in Parent : NamespaceSymbol;
     }
+
+    in Parent  : NamespaceSymbol;
+
+    Symbol.Parent   = Parent;
+    ContainingScope = Parent.MemberScope;
   }
 }

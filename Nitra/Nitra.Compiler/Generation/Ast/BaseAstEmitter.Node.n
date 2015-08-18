@@ -10,12 +10,13 @@ using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
+using System.Linq;
 using SCG = System.Collections.Generic;
 
 namespace Nitra.Compiler
 {
   [Record]
-  internal variant DependentAstPropertyRef
+  internal variant DependentPropertyRef
   {
     | Reflected
     | Compiling
@@ -23,11 +24,11 @@ namespace Nitra.Compiler
         public Bit    : BitField;
       }
 
-    public Symbol : DependentAstPropertySymbol;
+    public Symbol : DependentPropertySymbol;
     public Index  : int;
   }
 
-  internal abstract partial class AstEmitter
+  internal abstract partial class BaseAstEmitter
   {
     private enum NodeState : byte
     {
@@ -38,13 +39,13 @@ namespace Nitra.Compiler
 
     private variant Node
     {
-      | AssignProp    { Expr : TExpr.Assign; Debug : TExpr; Prop : TExpr.PropertyMember; new PropertyRef : DependentAstPropertyRef; }
-      | UseProp       { Expr : TExpr.PropertyMember;                                     new PropertyRef : DependentAstPropertyRef; }
-      | DeclaredProp  { Prop : IProperty; }
+      | AssignProp    { Expr : TExpr.Assign; Debug : TExpr; Prop : TExpr.PropertyMember; new PropertyRef : DependentPropertyRef; }
+      | UseProp       { Expr : TExpr.PropertyMember;                                     new PropertyRef : DependentPropertyRef; }
+      | DeclaredProp  { Symbol : PropertySymbol; Prop : IProperty; }
 
       public Order : int       { get { _order } }
       public State : NodeState { get { _state } }
-      public PropertyRef : DependentAstPropertyRef
+      public PropertyRef : DependentPropertyRef
       {
         get
         {
@@ -60,7 +61,7 @@ namespace Nitra.Compiler
       mutable _state : NodeState;
       mutable _order : int = -1;
 
-      public DependendOn : SCG.List[Node] = SCG.List();
+      public DependendOn : SCG.HashSet[Node] = SCG.HashSet();
 
       public Obj : TExpr
       {
@@ -87,41 +88,45 @@ namespace Nitra.Compiler
           }
         }
       }
+
+#pragma warning disable 10003
+
+      public static Visualize(nodes : Seq[Node], typeName : string) : void
+      {
+        _ = Sort(nodes);
       
-      //public static Visualize(nodes : Seq[Node], typeName : string) : void
-      //{
-      //  _ = Sort(nodes);
+        def name(node : Node) { node._order }
+        def label(node : Node) { X.DotEscape(node.ToString()) }
+      
+        def edges = SCG.List();
+      
+        foreach (node in nodes.OrderBy(n => n.Order))
+          foreach (to in node.DependendOn.OrderBy(n => n.Order))
+            edges.Add($<#$(name(node)) -> $(name(to))#>);
         
-      //  def name(node : Node) { node._order }
-      //  def label(node : Node) { DotEscape(node.ToString()) }
-        
-      //  def edges = List();
-        
-      //  foreach (node in nodes)
-      //    foreach (to in node.DependendOn)
-      //      edges.Add($<#$(name(node)) -> $(name(to))#>);
-          
-      //  def color(node : Node)
-      //  {
-      //    | AssignProp   => "blue"
-      //    | UseProp      => "black"
-      //    | DeclaredProp => "red"
-      //  }
-      //  def content = $<#
-      //    digraph RecoveryParser
-      //    {
-      //      rankdir=LR;
-      //      compound=true;
-      //      label="The properties dependency graph for $typeName";
+        def color(node : Node)
+        {
+          | AssignProp   => "blue"
+          | UseProp      => "black"
+          | DeclaredProp => "red"
+        }
+        def content = $<#
+          digraph RecoveryParser
+          {
+            rankdir=LR;
+            compound=true;
+            label="The properties dependency graph for $typeName";
 
-      //      ..$(nodes; "\r\n          "; n => $<#$(name(n)) [label="$(label(n))" color=$(color(n)) shape=box]#>)
+            ..$(nodes; "\r\n            "; n => $<#$(name(n)) [label="$(label(n))" color=$(color(n)) shape=box]#>)
 
-      //      ..$(edges; "\r\n          ")
-      //    }
-      //  #>;
+            ..$(edges; "\r\n            ")
+          }
+        #>;
 
-      //  VisualizeDot(content);
-      //}
+        X.ExecuteDot(content);
+      }
+
+#pragma warning restore 10003
 
       public static Sort(graphNodes : Seq[Node]) : bool
       {

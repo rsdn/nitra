@@ -24,13 +24,12 @@ namespace Nitra.Runtime.Binding
 
     protected this()
     {
-      Id            = Interlocked.Increment(ref _next);
+      Id = Interlocked.Increment(ref _next);
     }
 
     public          Id               : int                { get; }
     public abstract Name             : string             { get; }
     public abstract IsNameValid      : bool               { get; }
-    public abstract Declarations     : list[Declaration]  { get; }
     public virtual  FullName         : string             { get { Name } }
     public virtual  Kind             : string             { get { "something" } }
     public virtual  SpanClass        : string             { get { "Default" } }
@@ -38,13 +37,18 @@ namespace Nitra.Runtime.Binding
     public virtual  ResolutionResult : ISymbol            { get { this } }
     public virtual  Scope            : Scope              { get { EmptyScope.Instance } }
 
-    public virtual IsMergeKeyEquals(candidate : Declaration) : bool
+    public virtual GetDeclarationsUntyped() : Seq[Declaration] implements ISymbol2.get_Declarations
+    {
+      []
+    }
+
+    public virtual CanMerge(candidate : Declaration) : bool
     {
       _ = candidate;
       false
     }
 
-    public virtual MergeCondition(candidate : Declaration) : bool
+    public virtual IsSameIdentity(candidate : Declaration) : bool
     {
       _ = candidate;
       true
@@ -69,20 +73,20 @@ namespace Nitra.Runtime.Binding
 
     public override ToString() : string { Name + " (" + Kind + ")" }
 
-    public EvalProperties(context : DependentPropertyEvalContext) : void
+    public virtual EvalProperties(context : DependentPropertyEvalContext) : void
     {
       _ = context;
     }
 
-    public IsPropertyEvaluated(index : int) : bool
+    public virtual IsPropertyEvaluated(index : int) : bool
     {
       _ = index;
       false
     }
 
-    public ResetProperties() : void {}
+    public virtual ResetProperties() : void {}
 
-    public IsAllPropertiesEvaluated : bool { get { false } }
+    public virtual IsAllPropertiesEvaluated : bool { get { false } }
 
     #region Equality
     

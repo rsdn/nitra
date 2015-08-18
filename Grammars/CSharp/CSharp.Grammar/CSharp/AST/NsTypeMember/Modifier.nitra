@@ -1,7 +1,7 @@
 ﻿
 namespace CSharp
 {
-  asts Modifier
+  abstract ast Modifier
   {
     inout Flags : Modifiers;
 
@@ -20,29 +20,5 @@ namespace CSharp
     | Extern    { FlagsOut = FlagsIn | Modifiers.Extern   ; }
     | Unsafe    { FlagsOut = FlagsIn | Modifiers.Unsafe   ; }
     | Async     { FlagsOut = FlagsIn | Modifiers.Async    ; }
-  }
-
-  map syntax TopDeclarations.Modifiers -> Modifier*
-  {
-    Modifiers
-  }
-
-  map syntax TopDeclarations.Modifier -> Modifier
-  {
-    | New       {}
-    | Public    {}
-    | Protected {}
-    | Internal  {}
-    | Private   {}
-    | Virtual   {}
-    | Volatile  {}
-    | Static    {}
-    | Readonly  {}
-    | Sealed    {}
-    | Override  {}
-    | Abstract  {}
-    | Extern    {}
-    | Unsafe    {}
-    | AsyncMod -> Async {}
   }
 }

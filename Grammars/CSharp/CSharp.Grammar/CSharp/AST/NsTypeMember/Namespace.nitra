@@ -5,29 +5,46 @@ namespace CSharp
 {
   abstract declaration Namespace : NamespaceMember
   {
-    symbol
+    sealed symbol
     {
-  //  out MemberScope : TableScope = TableScope();
-  //  override Scope = MemberScope;
+      out MemberScope : TableScope = TableScope(ToString());
     }
   }
 
   declaration ImplicitNamespace : Namespace
   {
-    inout ParentScope : TableScope;
+    inout ParentPipe : NamespaceSymbol;
 
-    ContainingScope = ParentScopeIn;
-    ParentScopeOut  = Symbol.MemberScope;
+    Parent                          = ParentPipeIn;
+    Symbol.Parent                   = Parent;
+    ContainingScope                 = ParentPipeIn.MemberScope;
+    ParentPipeOut                   = Symbol;
   }
 
-  declaration DeclaredNamespace : Namespace
+  abstract ast NamespaceBody : BindableAst
   {
-    Members.Parent          = Symbol;
-    Members.ContainingScope = Symbol.MemberScope;
+  stage 1:
+    out EnteredScope : Scope;
 
-    Path            : ImplicitNamespace*;
+    ExternAlias.ScopeIn             = Scope;
+    UsingDirectives.OpeningIn       = [];
+    UsingDirectives.CurrentScope    = ExternAlias.ScopeOut;
+    Members.Scope                   = MakeMembersScope(EnteredScope, UsingDirectives.OpeningOut, UsingDirectives.ContainingScope);
+    UsingDirectives.ContainingScope = TableScope("aliases");
+
     ExternAlias     : ExternAliasDirective*;
     UsingDirectives : UsingDirective*;
     Members         : NamespaceMember*;
+  }
+
+  declaration ExplicitNamespace : Namespace, NamespaceBody
+  {
+    EnteredScope                    = MakeEnteredScope(Scope, Parent, Symbol);
+    Path.ParentPipeIn               = Parent;
+    ContainingScope                 = Path.ParentPipeOut.MemberScope;
+    Members.Parent                  = Symbol;
+    Symbol.Parent                   = Parent;
+
+    Path            : ImplicitNamespace*;
   }
 }

@@ -115,9 +115,9 @@ namespace Nitra.Compiler
     }
 
     [Memoize]
-    public GetSymbolClass(symbol : AstSymbol) : FixedType
+    public GetSymbolClass(symbol : SymbolSymbol) : FixedType
     {
-      BindFixedType(symbol.SymbolClassFullName)
+      BindFixedType(symbol.Node.FullNameParts)
     }
 
     public GetAstType(astType : AstType) : PExpr
@@ -149,21 +149,21 @@ namespace Nitra.Compiler
     }
 
     [Memoize]
-    internal LookupAstPropertySymbol(prop : IProperty) : DependentAstPropertyRef
+    internal LookupDependentPropertySymbol(prop : IProperty) : ValueOption[DependentPropertySymbol * int]
     {
       foreach (x in prop.GetModifiers().GetCustomAttributes())
       {
-        | <[ Nitra.Internal.DependentPropertyAttribute($(fullName : string), $(index : int)) ]> =>
-          def result = Root.BindMany.[DependentAstPropertySymbol](fullName.SplitToList('.'));
+        | <[ Nitra.Internal.DependentPropertyAttribute($(fullName : string), $(index : int), $_isOut) ]> =>
+          def result = Root.BindMany.[DependentPropertySymbol](fullName.SplitToList('.'));
           return match (result)
           {
-            | [one] => DependentAstPropertyRef.Reflected(one, index)
-            | _     => null
+            | [one] => VSome(one, index)
+            | _     => VNone()
           }
 
         | _ => ()
       }
-      null
+      VNone()
     }
 
     internal GetParseTreeType(ruleType : ChemicalRuleType) : FixedType

@@ -18,16 +18,18 @@ namespace Nitra.Runtime.Binding
 {
   public class TableScope : Scope
   {
-    public this()
+    public this(owner : string)
     {
+      _owner = owner;
       _nameTable = Hashtable();
     }
 
+    private _owner : string;
     private _nameTable : Hashtable[int, ISymbol];
 
     public Symbols : Hashtable[int, ISymbol].ValueCollection { get { _nameTable.Values } }
 
-    public Define[TSymbol](declaration : Declaration) : TSymbol
+    public Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext) : TSymbol
       where TSymbol : ISymbol
     {
       def     name             = declaration.Name;
@@ -42,7 +44,7 @@ namespace Nitra.Runtime.Binding
           ambiguousSymbols = HashSet(ambiguousSymbol.Ambiguous);
           foreach (symbol is TSymbol in ambiguousSymbol.Ambiguous)
           {
-            when (symbol.IsMergeKeyEquals(declaration) && symbol.MergeCondition(declaration))
+            when (symbol.CanMerge(declaration))
               candidateSymbols.Add(symbol);
           }
 
@@ -50,7 +52,7 @@ namespace Nitra.Runtime.Binding
           ambiguousSymbols = HashSet();
           _ = ambiguousSymbols.Add(symbol);
 
-          when (symbol.IsMergeKeyEquals(declaration) && symbol.MergeCondition(declaration))
+          when (symbol.CanMerge(declaration))
             candidateSymbols.Add(symbol);
 
         | symbol =>
@@ -71,7 +73,7 @@ namespace Nitra.Runtime.Binding
       else when (ambiguousSymbols.Add(concreteSymbol))
       {
         // фильтруем без учета конкретного типа
-        def realAmbiguousSymbols = ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsMergeKeyEquals(declaration));
+        def realAmbiguousSymbols = ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsSameIdentity(declaration));
         when (realAmbiguousSymbols.Length > 0)
         {
           def cm = AstContext.CompilerMessages;
@@ -84,6 +86,8 @@ namespace Nitra.Runtime.Binding
       }
 
       (concreteSymbol :> DeclaredSymbol).AddDeclaration(declaration);
+      when (candidateSymbols.Count == 0)
+        concreteSymbol.EvalProperties(context); // initialize symbol default values
 
       assert(!name.IsSymbolEvaluated);
       name.Symbol = concreteSymbol;
@@ -129,7 +133,7 @@ namespace Nitra.Runtime.Binding
 
     public override ToString() : string
     {
-      $<#[..$(_nameTable.Keys; ", "; StringIndex.GetText)]#>
+      $<#$_owner[..$(_nameTable.Keys; ", "; StringIndex.GetText)]#>
     }
   }
 }

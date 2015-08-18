@@ -135,20 +135,8 @@ namespace Nitra.Visualizer
           {
             if (declaration.IsMissing)
               return;
-            var isEvalPropName = "Is" + prop.Name + "Evaluated";
-            var isEvalProp = t.GetProperty(isEvalPropName);
-            if (isEvalProp == null || (bool) isEvalProp.GetValue(declaration, null))
-            {
-              var value = prop.GetValue(declaration, null);
-              tvi.Items.Add(ObjectToItem(prop, value));
-            }
-            else
-            {
-              var tviNotEval = ObjectToItem(prop, "<not evaluated>");
-              tviNotEval.Foreground = Brushes.Red;
-              tviNotEval.FontWeight = FontWeights.Bold;
-              tvi.Items.Add(tviNotEval);
-            }
+
+            ReadValue(tvi, declaration, t, prop);
           }
           catch (Exception e)
           {
@@ -180,8 +168,7 @@ namespace Nitra.Visualizer
             continue;
           try
           {
-            var value = prop.GetValue(obj, null);
-            tvi.Items.Add(ObjectToItem(prop, value));
+            ReadValue(tvi, obj, t, prop);
           }
           catch (Exception e)
           {
@@ -191,8 +178,27 @@ namespace Nitra.Visualizer
       }
     }
 
+    private void ReadValue(TreeViewItem tvi, object obj, Type t, PropertyInfo prop)
+    {
+      var isEvalPropName = "Is" + prop.Name + "Evaluated";
+      var isEvalProp = t.GetProperty(isEvalPropName);
+      if (isEvalProp == null || (bool)isEvalProp.GetValue(obj, null))
+      {
+        var value = prop.GetValue(obj, null);
+        tvi.Items.Add(ObjectToItem(prop, value));
+      }
+      else
+      {
+        var tviNotEval = ObjectToItem(prop, "<not evaluated>");
+        tviNotEval.Foreground = Brushes.Red;
+        tviNotEval.FontWeight = FontWeights.Bold;
+        tvi.Items.Add(tviNotEval);
+      }
+    }
+
     private static bool IsIgnoredProperty(PropertyInfo prop)
     {
+      var name = prop.Name;
       switch (prop.Name)
       {
         case "HasValue":
@@ -203,8 +209,12 @@ namespace Nitra.Visualizer
         case "Span":
         case "IsAmbiguous":
           return true;
+        default:
+          if (name.StartsWith("Is", StringComparison.Ordinal) && name.EndsWith("Evaluated", StringComparison.Ordinal) && !name.Equals("IsAllPropertiesEvaluated", StringComparison.Ordinal))
+            return true;
+
+          return false;
       }
-      return false;
     }
 
     private void UpdateDeclarations()
@@ -234,13 +244,25 @@ namespace Nitra.Visualizer
     {
       if (obj == null)
         obj = "<null>";
-      var isDependent = prop != null && prop.IsDefined(typeof(DependentPropertyAttribute), false);
-      var color = isDependent ? "green" : "SlateBlue";
-      return @"
-<Span xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>
-" + (prop == null ? null : ("<Bold><Span Foreground = '" + color + "'>" + Utils.Escape(prop.Name) + "</Span></Bold>: "))
-             + Utils.Escape(obj.ToString()) + @"
-</Span>";
+      var header = "";
+      var tooltip = "";
+      if (prop != null)
+      {
+        var color = "SlateBlue";
+        var prefix = "";
+        
+        var attr = (DependentPropertyAttribute)prop.GetCustomAttributes(typeof(DependentPropertyAttribute), false).FirstOrDefault();
+        if (attr != null)
+        {
+          color = "green";
+          prefix = attr.IsOut
+            ? "<Span Foreground='blue'>out</Span> "
+            : "<Span Foreground='blue'>in</Span> ";
+          tooltip = "ToolTip='" + Utils.Escape(attr.FullName) + "'";
+        }
+        header = prefix + "<Bold><Span Foreground='" + color + "'>" + Utils.Escape(prop.Name) + "</Span></Bold>: ";
+      }
+      return "<Span xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' " + tooltip + ">" + header + Utils.Escape(obj.ToString()) + "</Span>";
     }
 
     private static string RenderXamlForlist(string name, IAstList<IAst> items)
@@ -298,17 +320,18 @@ namespace Nitra.Visualizer
 
     private void TrySelectTextForSymbol(Symbol2 symbol, TreeViewItem tvi)
     {
-      if (symbol != null && !symbol.Declarations.IsEmpty)
+      if (symbol != null)
       {
-        if (symbol.Declarations.Length == 1)
-          SelectText(symbol.Declarations.Head);
-        else
+        var declarations = symbol.GetDeclarationsUntyped().ToList();
+        if (declarations.Count == 1)
+          SelectText(declarations[0]);
+        else if (declarations.Count > 1)
         {
           if (!tvi.IsExpanded)
             tvi.IsExpanded = true;
           foreach (TreeViewItem subItem in tvi.Items)
           {
-            var decls = subItem.Tag as Nemerle.Core.list<Declaration>;
+            var decls = subItem.Tag as IEnumerable<Declaration>;
             if (decls != null)
             {
               subItem.IsExpanded = true;

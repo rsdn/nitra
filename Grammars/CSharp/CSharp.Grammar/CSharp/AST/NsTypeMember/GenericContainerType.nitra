@@ -1,0 +1,38 @@
+﻿using CSharp.Utils;
+using Nemerle.Collections;
+
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Runtime.Binding;
+using Nitra.Internal;
+
+using System.Linq;
+using SCG = System.Collections.Generic;
+
+namespace CSharp
+{
+  // class, struct or interface
+  abstract declaration GenericContainerType : GenericType
+  {
+    symbol
+    {
+      out MemberScope : TableScope = TableScope(this.ToString());
+      out IsPartial   : bool       = SymbolUtils.IsPartial(this);
+    }
+
+    TypeBase.Scope = TypeParameterConstraints.Scope;
+
+    Members.Parent = Symbol;
+
+    TypeBase                 : QualifiedReference*;
+    Members                  : TypeMember*;
+    IsPartial                : bool;
+  }
+
+  declaration TopClass        : GenericContainerType, NamespaceMember { }
+  declaration NestedClass     : GenericContainerType, TypeMember      { }
+  declaration TopStruct       : GenericContainerType, NamespaceMember { }
+  declaration NestedStruct    : GenericContainerType, TypeMember      { }
+  declaration TopInterface    : GenericContainerType, NamespaceMember { }
+  declaration NestedInterface : GenericContainerType, TypeMember      { }
+}

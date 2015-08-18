@@ -1,0 +1,34 @@
+﻿using CSharp.Utils;
+using Nemerle.Collections;
+
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Runtime.Binding;
+using Nitra.Internal;
+
+using System.Linq;
+using SCG = System.Collections.Generic;
+
+namespace CSharp
+{
+  // delegate, class, struct or interface
+  abstract declaration GenericType : Type
+  {
+    symbol
+    {
+      out TypeParametersCount : int = GetTypeParametersCount(this.Declarations);
+      out TypeParameters      : SCG.IList[TypeParameterSymbol] = CreateTypeParameters(TypeParametersCount);
+    }
+
+    // Local scope. Type parameters can have different names. We should use alias to reflect it.
+    out TypeParameterAliasesScope : TableScope = TableScope("type parameters");
+
+    TypeParameterAliases.TypeParameterSymbols  = Symbol.TypeParameters;
+    TypeParameterAliases.IndexIn               = 0;
+    TypeParameterAliases.ContainingScope       = TypeParameterAliasesScope;
+    TypeParameterConstraints.Scope             = HidingScope(TypeParameterAliasesScope, Scope);
+
+    TypeParameterAliases     : TypeParameterAlias*;
+    TypeParameterConstraints : TypeParameterConstraintsClause*;
+  }
+}

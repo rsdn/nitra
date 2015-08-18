@@ -14,11 +14,12 @@ namespace CSharp
   {
     symbol
     {
-      //out ReplacementSymbol : Symbol2 = NamespaceOrTypeName.Symbol;
+      in ReplacementSymbol : ISymbol2;
       //check ReplacementSymbol is NamespaceSymbol on fail NamespaceOrTypeName, "Using directive can open only namespace."
     }
     OpeningOut = OpeningIn;
     NamespaceOrTypeName.Scope = CurrentScope;
+    Symbol.ReplacementSymbol = NamespaceOrTypeName.Symbol;
 
 
     NamespaceOrTypeName : QualifiedReference;
@@ -30,19 +31,5 @@ namespace CSharp
     OpeningOut = NamespaceOrTypeName.Symbol.Scope :: OpeningIn;
 
     NamespaceOrTypeName : QualifiedReference;
-  }
-
-  map syntax TopDeclarations.UsingDirective -> UsingDirective
-  {
-    | Alias -> UsingAliasDirective
-      {
-        Name          -> Name;
-        QualifiedName -> NamespaceOrTypeName;
-      }
-
-    | Open -> UsingOpenDirective
-      {
-        QualifiedName -> NamespaceOrTypeName;
-      }
   }
 }

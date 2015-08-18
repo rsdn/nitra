@@ -85,5 +85,17 @@ namespace CSharp
         result
       }
     }
+
+    public GetTypeParametersCount(declarations : Seq[GenericType]) : int
+    {
+      declarations.First().TypeParameterAliases.Count
+    }
+
+    public GetTypeParameter(alias : TypeParameterAlias, typeParameterSymbols : IList[TypeParameterSymbol], IndexIn : int) : TypeParameterSymbol
+    {
+      def typeParameterSymbol = typeParameterSymbols[IndexIn];
+      typeParameterSymbol.AddAliasSymbol(alias);
+      typeParameterSymbol
+    }
   }
 }

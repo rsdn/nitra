@@ -34,5 +34,19 @@ namespace Nitra.Compiler
     {
       <[ unchecked(this.$(_fieldName : usesite) = this.$(_fieldName : usesite) %& $(~_mask : int)) ]>
     }
+
+    public static CheckAll(bits : Seq[BitField]) : PExpr
+    {
+      mutable acc : PExpr;
+      foreach (g in bits.GroupBy(bit => bit._fieldName))
+      {
+        mutable mask;
+        foreach (bit in g)
+          mask |= bit._mask;
+
+        PExprUtils.CombineAnd(ref acc, <[ unchecked(this.$(g.Key : usesite) & $(mask : int) == $(mask : int)) ]>);
+      }
+      acc ?? <[ false ]>
+    }
   }
 }

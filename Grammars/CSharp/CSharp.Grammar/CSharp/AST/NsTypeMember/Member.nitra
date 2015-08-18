@@ -3,7 +3,7 @@ using Nitra.Runtime.Binding;
 
 namespace CSharp
 {
-  declarations Member : TypeMember
+  abstract declaration Member : TypeMember
   {
     | Constructor
       {
@@ -21,7 +21,7 @@ namespace CSharp
     | Method
       {
         InterfaceType            : QualifiedReference?;
-        TypeParameters           : TypeParameter*;
+        TypeParameters           : TypeParameterAlias*;
         TypeParameterConstraints : TypeParameterConstraintsClause*;
         IsPartial                : bool;
         Parameters               : FormalParameter*;
@@ -87,7 +87,7 @@ namespace CSharp
     Attributes : Attribute*;
   }
 
-  asts ConstructorInitializer
+  abstract ast ConstructorInitializer
   {
     // TODO: Map arguments
     | This
@@ -129,7 +129,7 @@ namespace CSharp
     Modifier   : ParameterModifier;
   }
 
-  declarations PropertyAccessor
+  abstract declaration PropertyAccessor
   {
     Attributes : Attribute*;
     Modifiers  : Modifier*;
@@ -138,98 +138,11 @@ namespace CSharp
     | Set
   }
 
-  declarations EventAccessor
+  abstract declaration EventAccessor
   {
     Attributes : Attribute*;
     // TODO: Map body
     | Add
     | Remove
-  }
-
-  map syntax TopDeclarations.ConstructorInitializer -> ConstructorInitializer
-  {
-    | This {}
-    | Base {}
-  }
-
-  map syntax TopDeclarations.FormalParameter -> FormalParameter
-  {
-    Name       -> Name;
-    AnyType    -> Type;
-    Attributes -> Attributes;
-    Modifier =
-      if (this.ParameterModifierOpt.HasValue)
-      {
-        def result =
-          match (this.GetText(this.ParameterModifierOpt.Value))
-          {
-            | "ref"    => ParameterModifier.Ref
-            | "out"    => ParameterModifier.Out
-            | "this"   => ParameterModifier.This
-            | "params" => ParameterModifier.Params
-            | _        => assert2(false, "Unknown parameter modifier value"); ParameterModifier.None
-          };
-        ParsedValue(this.ParameterModifierOpt.Value, result)
-      }
-      else
-        ParsedValue(this.ParameterModifierOpt.Span, ParameterModifier.None);
-  }
-
-  map syntax TopDeclarations.FormalParameters -> FormalParameter*
-  {
-    FormalParameters.Item1
-  }
-
-  map syntax Statements.ConstantDeclarator(header : ConstantHeader) -> Member.Constant
-  {
-    Name -> Name;
-    header -> Header;
-  }
-
-  map syntax TopDeclarations.FixedSizeBufferDeclarator(header : FixedSizeBufferHeader) -> Member.FixedSizeBuffer
-  {
-    Name   -> Name;
-    header -> Header;
-  }
-
-  map syntax TopDeclarations.GetAccessorDeclaration -> PropertyAccessor.Get
-  {
-    Name = Name(this.File, this.KwGet, "#Get");
-    Attributes -> Attributes;
-    Modifiers  -> Modifiers;
-  }
-
-  map syntax TopDeclarations.SetAccessorDeclaration -> PropertyAccessor.Set
-  {
-    Name = Name(this.File, this.KwSet, "#Set");
-    Attributes -> Attributes;
-    Modifiers  -> Modifiers;
-  }
-
-  map syntax TopDeclarations.AccessorDeclarations -> PropertyAccessor*
-  {
-    | GetSet(g, Some(s)) -> [g, s]
-    | GetSet(g, None)    -> [g]
-    | SetGet(s, Some(g)) -> [s, g]
-    | SetGet(s, None)    -> [s]
-    | None               -> []
-  }
-
-  map syntax TopDeclarations.AddAccessorDeclaration -> EventAccessor.Add
-  {
-    Name = Name(this.File, this.KwAdd, "#Add");
-    Attributes -> Attributes;
-  }
-
-  map syntax TopDeclarations.RemoveAccessorDeclaration -> EventAccessor.Remove
-  {
-    Name = Name(this.File, this.KwRemove, "#Remove");
-    Attributes -> Attributes;
-  }
-
-  map syntax TopDeclarations.EventAccessorDeclarations -> EventAccessor*
-  {
-    | AddRemove(a, r) -> [a, r]
-    | RemoveAdd(r, a) -> [r, a]
   }
 }

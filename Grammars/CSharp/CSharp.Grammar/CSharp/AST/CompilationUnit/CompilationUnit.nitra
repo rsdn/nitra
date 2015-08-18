@@ -1,34 +1,16 @@
-﻿using Nitra.Runtime.Binding;
+﻿using CSharp.Utils;
+using Nitra.Runtime.Binding;
 
 namespace CSharp
 {
-  ast CompilationUnit
+  ast CompilationUnit : NamespaceBody
   {
   stage 0:
     in RootNamespace : NamespaceSymbol;
 
-    Members.Parent                  = RootNamespace;
-  stage 1:
-    in RootScope : Scope;
+    Members.Parent = RootNamespace;
+    EnteredScope   = Scope;
 
-    ExternAlias.ScopeIn             = RootScope;
-    UsingDirectives.CurrentScope    = ExternAlias.ScopeOut;
-    UsingDirectives.ContainingScope = TableScope();
-    UsingDirectives.OpeningIn       = [];
-    Members.Scope                   = Utils.MakeMembersScope(RootScope, UsingDirectives.OpeningOut, UsingDirectives.ContainingScope);
-    Members.ContainingScope         = RootNamespace.MemberScope;
-
-    ExternAlias     : ExternAliasDirective*;
-    UsingDirectives : UsingDirective*;
     Attributes      : Attribute*;
-    Members         : NamespaceMember*;
-  }
-
-  map syntax Main.CompilationUnit -> CompilationUnit
-  {
-    ExternAliasDirectives       -> ExternAlias;
-    UsingDirectives             -> UsingDirectives;
-    GlobalAttributes            -> Attributes;
-    NamespaceMemberDeclarations -> Members;
   }
 }
