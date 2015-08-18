@@ -301,16 +301,17 @@ namespace Nitra.Compiler
         def codeRecoveryMode      = <[ { ..$statementsRecoveryMode } ]>;
         def emptyCodeRecoveryMode = <[ { ..$statementsEmptyRecoveryMode } ]>;
 
-        def ambiguousSequenceCode = match (sequence.SrcRule.Type)
-        {
-          | Void         => PExpr.Error("Cannot create ambiguous VOID parse tree")
-          | Chars        => PExpr.Error("Cannot create ambiguous NSPAN parse tree")
-          | Ref(symbol is ExtensibleRuleSymbol) => <[ $(Environment.GetParseTreeType(symbol) : typed).AmbiguousOrMissingNode(Nitra.Internal.ParseTreeFactory.CastArray(ambiguities), Nitra.ParseTreeAmbiguityType.Recovery) ]>
-          | Ref(symbol)  => <[ $(Environment.GetParseTreeType(symbol) : typed).AmbiguousOrMissingNode(Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
-          | List(ty)     => <[ Nitra.AmbiguousListParseTree.[$(Environment.GetParseTreeType(ty) : typed)](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
-          | Option(ty)   => <[ Nitra.AmbiguousOptionParseTree.[$(Environment.GetParseTreeType(ty) : typed)](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
-          | Tuple(types) => <[ Nitra.AmbiguousSequenceParseTree.[..$(types.Map(t => <[ $(Environment.GetParseTreeType(t) : typed) ]>))](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
-        };
+        def ambiguousSequenceCode = 
+          match (sequence.SrcRule.Type)
+          {
+            | Void         => PExpr.Error("Cannot create ambiguous VOID parse tree")
+            | Chars        => PExpr.Error("Cannot create ambiguous NSPAN parse tree")
+            | Ref(symbol is ExtensibleRuleSymbol, []) => <[ $(Environment.GetParseTreeType(symbol) : typed).AmbiguousOrMissingNode(Nitra.Internal.ParseTreeFactory.CastArray(ambiguities), Nitra.ParseTreeAmbiguityType.Recovery) ]>
+            | Ref(symbol, [])  => <[ $(Environment.GetParseTreeType(symbol) : typed).AmbiguousOrMissingNode(Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
+            | List(ty)     => <[ Nitra.AmbiguousListParseTree.[$(Environment.GetParseTreeType(ty) : typed)](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
+            | Option(ty)   => <[ Nitra.AmbiguousOptionParseTree.[$(Environment.GetParseTreeType(ty) : typed)](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
+            | Tuple(types) => <[ Nitra.AmbiguousSequenceParseTree.[..$(types.Map(t => <[ $(Environment.GetParseTreeType(t) : typed) ]>))](Nitra.Internal.ParseTreeFactory.CastArray(ambiguities)) ]>
+          };
 
         compilationResult = SequenceCompilationResult(sequence, id, isNonVoid, isSpan, codeStandardMode, codeRecoveryMode, emptyCodeRecoveryMode, ambiguousSequenceCode);
         _sequenceCompilationResults[sequence] = compilationResult;
@@ -596,8 +597,8 @@ namespace Nitra.Compiler
 
     public static IsSubruleAcceptedForParseTree(subrule : SubruleCompileInfo) : bool
     {
-      | SimpleCall(symbol)        when symbol.Type is RuleType.Void
-      | ExtensibleCall(symbol, _) when symbol.Type is RuleType.Void
+      | SimpleCall(symbol, _args)          when symbol.Type is RuleType.Void
+      | ExtensibleCall(symbol, _args, _bp) when symbol.Type is RuleType.Void
       | Empty
       | Marker => false
       | _ => !(subrule.SrcRule.Type is RuleType.Void)

@@ -37,8 +37,8 @@ namespace Nitra.Typing
 
       def lookupPrefixCall(rules : list[Rule]) : option[Rule.Call] * list[Rule]
       {
-        | Call(callee, _)           :: tail when isMarker(callee)   => lookupPrefixCall(tail)
-        | Call(callee, _) as prefix :: tail when callee == baseRule => (Some(prefix), tail)
+        | Call(callee, _, _)           :: tail when isMarker(callee)   => lookupPrefixCall(tail)
+        | Call(callee, _, _) as prefix :: tail when callee == baseRule => (Some(prefix), tail)
         | Sequence(seqRules)        :: tail =>
           match (lookupPrefixCall(seqRules))
           {
@@ -110,6 +110,7 @@ namespace Nitra.Typing
     }
     public override SyntaxMappings   : list[SyntaxMappingSymbol]      { get { _syntaxMappings } }
     public override Rule             : Rule.Sequence                  { get { _node.TypedRule } }
+    public override Parameters       : list[RuleParameterSymbol]      { get { if (BaseRule is SymbolRef.Some(s)) s.Parameters else [] } }
     public override LastLocation     : option[Location]
     {
       [Memoize]  get

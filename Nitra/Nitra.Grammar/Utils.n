@@ -426,7 +426,7 @@ namespace Nitra
         | RepeatWithSeparator(min, max, rule, sep) => FSMBuilder.RepeatWithSeparator(min, max, convert(rule), convert(sep))
         | Invert(rule)                             => FSMTransform.Invert(convert(rule))
         | Subtract(rule1, rule2)                   => FSMTransform.Sub(convert(rule1), convert(rule2))
-        | Call(RuleRef.Some(symbol) as ruleRef) =>
+        | Call(RuleRef.Some(symbol is RegularRuleSymbol) as ruleRef) =>
           if (visitedRules.Add(symbol))
           {
             def result = convert(symbol.Rule);
@@ -438,6 +438,10 @@ namespace Nitra
             compilerMessages.Error(ruleRef, "Cyclic rule call found.");
             FSM()
           }
+
+        | Call(RuleRef.Some as ruleRef) =>
+          compilerMessages.Error(ruleRef, "ICE: Invalid symbol type.");
+          FSM()
 
         | Call(RuleRef.None) =>
           // binding error already reported
@@ -655,7 +659,7 @@ namespace Nitra
       {
         | Rule.Not :: tail
         | Rule.And :: tail => isSkipAnyPattern(tail)
-        | Rule.Call(RuleRef.Some(anyRule is RegularRuleSymbol), _) as call :: [] when RegularRuleExtensions.IsAnyDfa(anyRule.Fsm) && call.BindingPower.IsZero =>
+        | Rule.Call(RuleRef.Some(anyRule is RegularRuleSymbol), _, _) as call :: [] when RegularRuleExtensions.IsAnyDfa(anyRule.Fsm) && call.BindingPower.IsZero =>
           true
 
         | Rule.Sequence(rules) :: []   => isSkipAnyPattern(rules)
