@@ -1421,9 +1421,9 @@ syntax module NitraSyntax
   {
     regex Kind = "regex" | "syntax" | "token";
 
-    [Cached] GetSymbol() : RuleParameterSymbol
+    [Cached] GetSymbol(index : int) : RuleParameterSymbol
     {
-      ParsedRuleParameterSymbol(this)
+      ParsedRuleParameterSymbol(this, index)
     }
   }
 
@@ -1432,8 +1432,8 @@ syntax module NitraSyntax
     GetSymbols() : List[RuleParameterSymbol]
     {
       def result = List();
-      foreach (ruleParameter in Parameters.Item1)
-        result.Add(ruleParameter.GetSymbol());
+      foreach (ruleParameter in Parameters.Item1 with i)
+        result.Add(ruleParameter.GetSymbol(i));
       result
     }
   }
