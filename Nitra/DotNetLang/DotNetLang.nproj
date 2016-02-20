@@ -18,7 +18,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DotNet</RootNamespace>
     <AssemblyName>DotNetLang</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\..\Common</CommonFilesPath>
     <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
@@ -239,6 +239,5 @@
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
   <Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage2' ">
     <CallTarget Targets="NugetPack" />
-    <CallTarget Targets="ReSharperDeploy" />
   </Target>
 </Project>
