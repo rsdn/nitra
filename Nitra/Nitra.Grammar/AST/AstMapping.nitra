@@ -120,17 +120,17 @@ namespace Nitra.Ast
     | ForegroundColor { Color = ParsedValue(Color.Span, Color.Value(Nitra.Declarations.AstContext.CompilerMessages)); }
   }
 
-  map syntax NitraSyntax.LanguageMember -> LanguageMember
+  map syntax NitraSyntax.LanguageMember -> LanguageMember*
   {
-    | Style -> Style // "style" sm Name sm StyleBody
+    | Style -> [Style // "style" sm Name sm StyleBody
       {
         Name -> Name;
         StyleBody.Properties -> Properties;
-      }
+      }]
 
     | SpanClass -> StyleReference(Name) // "span" sm "class" sm Name sm MatchTokensOpt=("regex" sm RegexExpression sm)? StyleReference
     | SyntaxModule ->
-      match (this)
+      [match (this)
       {
         // "syntax" sm "module" sm Module=QualifiedReference RuleOpt=(sm "start" sm "rule" sm QualifiedReference)? ";"
         | (_, _, m, Some((_, _, r)), _) -> StartSyntaxModuleReference
@@ -144,21 +144,23 @@ namespace Nitra.Ast
           {
             m -> Module;
           }
-      }
+      }]
 
-    | FileExtension -> FileExtension { Extension = ParsedValue(Ext, GetText(Ext)); }
-    | Company       -> Company       { Name = ParsedValue(Name, GetText(Name)); }
-    | Description   -> Description   { Text = ParsedValue(Text, GetText(Text)); }
-    | Authors       -> Authors       { Text = ParsedValue(Text, GetText(Text)); }
-    | Copyright     -> Copyright     { Text = ParsedValue(Text, GetText(Text)); }
-    | LicenseUrl    -> LicenseUrl    { Text = ParsedValue(Text, GetText(Text)); }
-    | RequireLicenseAcceptance -> RequireLicenseAcceptance { }
+    | FileExtension -> [FileExtension { Extension = ParsedValue(Ext, GetText(Ext)); }]
+    | Company       -> [Company       { Name = ParsedValue(Name, GetText(Name)); }]
+    | Description   -> [Description   { Text = ParsedValue(Text, GetText(Text)); }]
+    | Authors       -> [Authors       { Text = ParsedValue(Text, GetText(Text)); }]
+    | Copyright     -> [Copyright     { Text = ParsedValue(Text, GetText(Text)); }]
+    | LicenseUrl    -> [LicenseUrl    { Text = ParsedValue(Text, GetText(Text)); }]
+    | RequireLicenseAcceptance -> [RequireLicenseAcceptance { }]
   }
 
-  map syntax NitraSyntax.LanguageMember.SpanClass.StyleReference(name : Name) -> SpanClass
+  map syntax NitraSyntax.LanguageMember.SpanClass.StyleReference(name : Name) -> LanguageMember*
   {
-    | Reference -> StyledSpanClass { name -> Name; QualifiedReference -> StyleReference; } //= "=" sm QualifiedReference ";"
-    | StyleBody -> InlineSpanClass { name -> Name; StyleBody.Properties -> Properties; } 
+    | Reference -> [SpanClass { name -> Name; QualifiedReference -> StyleReference; }] //= "=" sm QualifiedReference ";"
+    | StyleBody ->
+      [Style     { name -> Name; StyleBody.Properties -> Properties; },
+       SpanClass { name -> Name; QualifiedReference.Simple { Name = Nitra.Declarations.Reference(name.Location, name.Id); } -> StyleReference; }]
   }
 
   map syntax NitraSyntax.SyntaxModuleMember -> Nitra.Ast.SyntaxModuleMember

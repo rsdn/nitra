@@ -12,6 +12,7 @@ namespace Nitra.Ast
     inout ExtensionSet    : FileExtensionCollector;
   stage 1:
     inout SyntaxModuleSet : SyntaxModuleCollector;
+    in DeclaringLanguage : LanguageSymbol;
   }
 
   declaration Style : LanguageMember
@@ -22,6 +23,8 @@ namespace Nitra.Ast
       SpanClass = NitraLang.StyleSpanClass;
 
       in ForegroundColor : Color;
+    stage 1:
+      in DeclaringLanguage : LanguageSymbol;
     }
 
     Properties : StyleProperty*;
@@ -32,38 +35,27 @@ namespace Nitra.Ast
     }
 
     Symbol.ForegroundColor = ForegroundColor.Color.ValueOrDefault;
+    Symbol.DeclaringLanguage = DeclaringLanguage;
   }
 
-  abstract declaration SpanClass : LanguageMember
+  declaration SpanClass : LanguageMember
   {
-    sealed symbol
+    symbol
     {
       Kind      = "span class";
       SpanClass = NitraLang.SpanClassSpanClass;
-      //FullName = this.Parent.FullName + "." + this.Name;
-      in ForegroundColor : Color;
-    }
-  }
 
-  declaration InlineSpanClass : SpanClass
-  {
-    Properties : StyleProperty*;
-
-    decompose Properties
-    {
-      ForegroundColor : StyleProperty.ForegroundColor;
+    stage 1:
+      in DeclaringLanguage : LanguageSymbol;
+      in Style             : StyleSymbol;
     }
 
-    Symbol.ForegroundColor = ForegroundColor.Color.ValueOrDefault;
-  }
-
-  declaration StyledSpanClass : SpanClass
-  {
   stage 1:
-    out Ref : Ref[StyleSymbol] = StyleReference.Ref.Resolve();
+    out StyleRef : Ref[StyleSymbol] = StyleReference.Ref.Resolve();
 
     StyleReference.Scope = Scope;
-    Symbol.ForegroundColor = Ref.Symbol.ForegroundColor;
+    Symbol.DeclaringLanguage = DeclaringLanguage;
+    Symbol.Style             = StyleRef.Symbol;
 
     StyleReference : QualifiedReference;
   }

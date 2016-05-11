@@ -28,6 +28,7 @@ namespace Nitra.Ast
     Members.Scope             = Scope.HideWith(Symbol.MemberTable);
     Members.ExtensionSetIn    = FileExtensionCollector();
     Members.SyntaxModuleSetIn = SyntaxModuleCollector();
+    Members.DeclaringLanguage = Symbol;
 
     Symbol.Company                  = if (Company.HasValue)     Company.Value.Name.ValueOrDefault     else "";
     Symbol.Authors                  = if (Authors.HasValue)     Authors.Value.Text.ValueOrDefault     else "";
