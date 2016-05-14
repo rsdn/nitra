@@ -118,6 +118,10 @@ namespace Nitra.Compiler
       Manager.CoreEnv.EnterIntoNamespace(symbol.Node.Parent.FullNameParts);
     }
 
+    public NamespaceOfSymbol(symbol : DotNet.NamespaceMemberDeclarationSymbol) : GlobalEnv
+    {
+    }
+
     [Memoize]
     public GetParseTreeType(symbol : RuleSymbol) : FixedType
     {
@@ -139,7 +143,14 @@ namespace Nitra.Compiler
     {
       BindFixedType(symbol.Node.FullNameParts)
     }
-    
+
+    [Memoize]
+    public GetLanguageType(symbol : Nitra.Ast.LanguageSymbol) : FixedType
+    {
+      def env = NamespaceOfSymbol(symbol);
+      env.BindFixedType(<[ $(Util.MakeLanguageName(symbol) : usesite) ]>);
+    }
+
     [Memoize]
     public GetLanguageType(symbol : LanguageSymbol) : FixedType
     {
@@ -240,7 +251,14 @@ namespace Nitra.Compiler
       <[ $(GetLanguageType(spanClass.DeclaringLanguage) : typed).$(Util.MakeSpanClassName(spanClass) : usesite) ]>
     }
 
-    public MakeStyleRef(style : StyleSymbol) : PExpr
+    public MakeSpanClassRef(spanClass : Nitra.Ast.SpanClassSymbol) : PExpr
+    {
+      assert2(spanClass != null);
+
+      <[ $(GetLanguageType(spanClass.DeclaringLanguage) : typed).$(Util.MakeSpanClassName(spanClass) : usesite) ]>
+    }
+
+    public MakeStyleRef(style : Nitra.Ast.StyleSymbol) : PExpr
     {
       assert2(style != null);
 

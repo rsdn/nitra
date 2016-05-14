@@ -54,12 +54,17 @@ namespace Nitra
       language.Name
     }
 
-    public MakeSpanClassName(spanClass : SpanClassSymbol) : string
+    public MakeLanguageName(language : Nitra.Ast.LanguageSymbol) : string
+    {
+      language.Name
+    }
+
+    public MakeSpanClassName(spanClass : Nitra.Ast.SpanClassSymbol) : string
     {
       spanClass.Name + "SpanClass"
     }
 
-    public MakeStyleName(style : StyleSymbol) : string
+    public MakeStyleName(style : Nitra.Ast.StyleSymbol) : string
     {
       style.Name + "Style"
     }

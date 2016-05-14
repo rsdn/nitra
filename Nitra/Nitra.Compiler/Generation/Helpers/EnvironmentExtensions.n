@@ -36,11 +36,19 @@ namespace Nitra.Compiler
       PExprUtils.FromQualifiedIdentifier(path);
     }
 
+    public GetRuleDescriptorRef(this symbol : Nitra.Ast.RuleSymbol) : PExpr
+    {
+    }
+
     public GetGrammarDescriptorRef(this symbol : SyntaxModuleSymbol) : PExpr
     {
       def grammarTypeName = PExprUtils.FromQualifiedIdentifier(symbol.Node.FullNameParts);
       def grammarType     = ManagerClass.Instance.CoreEnv.BindFixedType(grammarTypeName);
       <[ $(grammarType : typed).StaticDescriptor ]>;
+    }
+
+    public GetGrammarDescriptorRef(this symbol : Nitra.Ast.SyntaxModuleSymbol) : PExpr
+    {
     }
 
     public GetParserClassRef(this symbol : RuleSymbol) : PExpr
