@@ -4,13 +4,13 @@ using System.Collections.Immutable;
 
 namespace Nitra.Ast
 {
-  declaration Language : NamespaceMemberDeclaration, Container
+  declaration Language : NamespaceMemberDeclaration, SupportsInheritanceType
   {
     symbol
     {
       Kind      = "language";
       SpanClass = NitraLang.LanguageSpanClass;
-      Scope     = MemberTable;
+      Scope     = BaseTypeSet.ParentFullScope.HideWith(MemberTable);
 
       in Company                  : string;
       in Authors                  : string;
@@ -20,9 +20,10 @@ namespace Nitra.Ast
       in RequireLicenseAcceptance : bool;
       in FileExtensions           : ImmutableArray[string];
       in SyntaxModules            : ImmutableArray[SyntaxModuleSymbol];
+      in StartRule                : ValueOption[SyntaxRuleSymbol];
     }
 
-    Parent.Scope = Scope;
+    TypeBase.Scope = Scope;
 
     Members.ContainingTable   = Symbol.MemberTable;
     Members.Scope             = Scope.HideWith(Symbol.MemberTable);
@@ -38,8 +39,8 @@ namespace Nitra.Ast
     Symbol.RequireLicenseAcceptance = RequireLicenseAcceptance.HasValue;
     Symbol.FileExtensions           = Members.ExtensionSetOut.ToImmutable();
     Symbol.SyntaxModules            = Members.SyntaxModuleSetOut.ToImmutable();
+    Symbol.StartRule                = AstUtils.UnwrapResolved(StartSyntaxModuleReference.RuleRef);
 
-    Parent  : QualifiedReference?;
     Members : LanguageMember*;
 
     decompose Members

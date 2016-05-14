@@ -62,7 +62,7 @@ namespace Nitra.Ast
     | Language -> Nitra.Ast.Language   // Name ParentOpt Members
       {
         Name -> Name;
-        ParentOpt -> Parent;
+        match (ParentOpt) { Some(value) -> [value] | None -> [] } -> TypeBase;
         Members -> Members;
       }
 
