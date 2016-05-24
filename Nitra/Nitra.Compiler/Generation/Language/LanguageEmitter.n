@@ -73,45 +73,47 @@ namespace Nitra.Compiler
 
       foreach (overloads in Symbol.MemberTable.Symbols)
       {
-        foreach (symbol in overloads)
+        foreach (style is Nitra.Ast.StyleSymbol in overloads)
         {
-          | Nitra.Ast.StyleSymbol as style =>
-            Util.locate(style.NLocation(),
-            {
-              def backingFieldName = Util.tmpname(style.Name);
-              _tb.Define(<[ decl:
-                private static $(backingFieldName : usesite) : Nitra.Style = Nitra.Style(
-                  _instance,
-                  $(style.Name : string),
-                  $(style.FullName : string),
-                  $(style.ForegroundColor.ToArgb() : int));
-              ]>);
-              _tb.Define(<[ decl:
-                public static $(Util.MakeStyleName(style) : usesite) : Nitra.Style { get { $(backingFieldName : usesite) } }
-              ]>);
+          Util.locate(style.NLocation(),
+          {
+            def backingFieldName = Util.tmpname(style.Name);
+            _tb.Define(<[ decl:
+              private static $(backingFieldName : usesite) : Nitra.Style = Nitra.Style(
+                _instance,
+                $(style.Name : string),
+                $(style.FullName : string),
+                $(style.ForegroundColor.ToArgb() : int));
+            ]>);
+            _tb.Define(<[ decl:
+              public static $(Util.MakeStyleName(style) : usesite) : Nitra.Style { get { $(backingFieldName : usesite) } }
+            ]>);
 
-              localStyles.Add(style, backingFieldName); 
-            });
+            localStyles.Add(style, backingFieldName); 
+          });
+        }
+      }
 
-          | Nitra.Ast.SpanClassSymbol as spanClass =>
-            Util.locate(spanClass.NLocation(),
-            {
-              def backingFieldName = Util.tmpname(spanClass.Name);
-              _tb.Define(<[ decl:
-                private static $(backingFieldName : usesite) : Nitra.SpanClass = Nitra.SpanClass(
-                  _instance,
-                  $(spanClass.Name : string),
-                  $(spanClass.FullName : string),
-                  $(makeStyleExpr(spanClass.Style)));
-              ]>);
-              _tb.Define(<[ decl:
-                public static $(Util.MakeSpanClassName(spanClass) : usesite) : Nitra.SpanClass { get { $(backingFieldName : usesite) } }
-              ]>);
+      foreach (overloads in Symbol.MemberTable.Symbols)
+      {
+        foreach (spanClass is Nitra.Ast.SpanClassSymbol in overloads)
+        {
+          Util.locate(spanClass.NLocation(),
+          {
+            def backingFieldName = Util.tmpname(spanClass.Name);
+            _tb.Define(<[ decl:
+              private static $(backingFieldName : usesite) : Nitra.SpanClass = Nitra.SpanClass(
+                _instance,
+                $(spanClass.Name : string),
+                $(spanClass.FullName : string),
+                $(makeStyleExpr(spanClass.Style)));
+            ]>);
+            _tb.Define(<[ decl:
+              public static $(Util.MakeSpanClassName(spanClass) : usesite) : Nitra.SpanClass { get { $(backingFieldName : usesite) } }
+            ]>);
 
-              localSpanClasses.Add(backingFieldName);
-            });
-
-          | _ => ()
+            localSpanClasses.Add(backingFieldName);
+          });
         }
       }
 
@@ -147,8 +149,11 @@ namespace Nitra.Compiler
         _tb.Define(<[ decl: ..$(MakeMods()) GetDeclaredGrammars()    : array[Nitra.GrammarDescriptor] { array[..$(Symbol.SyntaxModules.MapToList(_.GetGrammarDescriptorRef()))] } ]>);
 
         def startRuleExpr =
-          if (Symbol.StartRule is VSome(startRule))
-            startRule.GetRuleDescriptorRef()
+          if (Symbol.IsStartRuleEvaluated) // TODO: fix typing
+            if (Symbol.StartRule is VSome(startRule))
+              startRule.GetRuleDescriptorRef()
+            else
+              <[ null ]>
           else
             <[ null ]>;
 

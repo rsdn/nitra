@@ -38,6 +38,9 @@ namespace Nitra.Compiler
 
     public GetRuleDescriptorRef(this symbol : Nitra.Ast.RuleSymbol) : PExpr
     {
+      def moduleSymbol = GetDeclaringSyntaxModule(symbol);
+      def path         = Util.GetFullName(moduleSymbol, [symbol.DecorateRuleDescriptorName()]);
+      PExprUtils.FromQualifiedIdentifier(path);
     }
 
     public GetGrammarDescriptorRef(this symbol : SyntaxModuleSymbol) : PExpr
@@ -49,6 +52,9 @@ namespace Nitra.Compiler
 
     public GetGrammarDescriptorRef(this symbol : Nitra.Ast.SyntaxModuleSymbol) : PExpr
     {
+      def grammarTypeName = PExprUtils.FromQualifiedIdentifier(Util.GetFullName(symbol, []));
+      def grammarType     = ManagerClass.Instance.CoreEnv.BindFixedType(grammarTypeName);
+      <[ $(grammarType : typed).StaticDescriptor ]>;
     }
 
     public GetParserClassRef(this symbol : RuleSymbol) : PExpr
@@ -56,6 +62,13 @@ namespace Nitra.Compiler
       def moduleSymbol = symbol.DeclaringModule;
       def path = moduleSymbol.Node.FullNameParts + [AssemblyConstants.GrammarImplName, symbol.DecorateRuleClassName()];
       PExprUtils.FromQualifiedIdentifier(path);
+    }
+
+    private GetDeclaringSyntaxModule(symbol : Nitra.Declarations.DeclarationSymbol) : Nitra.Ast.SyntaxModuleSymbol
+    {
+      | ruleMember   is Nitra.Ast.RuleBodyMemberDeclarationSymbol     => GetDeclaringSyntaxModule(ruleMember.Parent)
+      | moduleMember is Nitra.Ast.SyntaxModuleMemberDeclarationSymbol => moduleMember.Parent
+      | _ => assert(false, $"Can not determine declaring syntax module from symbol '$symbol'")
     }
   }
 }

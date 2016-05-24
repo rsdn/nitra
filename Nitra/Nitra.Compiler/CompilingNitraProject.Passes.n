@@ -84,6 +84,7 @@ namespace Nitra.Compiler
 
     private exportableSymbolData   : SCG.Queue[ExportableSymbolData] = SCG.Queue();
     private chemicalSymbolData     : SCG.Queue[ChemicalSymbolData]   = SCG.Queue();
+    private symbolsToEmit          : SCG.HashSet[Nitra.Declarations.DeclarationSymbol] = SCG.HashSet();
     private languageEmitters       : SCG.List[LanguageEmitter]       = SCG.List();
     private syntaxModuleEmitters   : SCG.List[SyntaxModuleEmitter]   = SCG.List();
     private astEmitters            : SCG.List[AstEmitter]            = SCG.List();
@@ -202,13 +203,33 @@ namespace Nitra.Compiler
       def serializationEmitterV1 = SerializationMacrosImpl.GetCompiler(Manager, SymbolSerializationVersion.V1);
       def serializationEmitterV2 = SerializationMacrosImpl.GetCompiler(Manager, SymbolSerializationVersion.V2);
 
-      _ = MakeEmitters(languageEmitters, fun (languageSymbol, _, makeLanguageEmitter)
+      def table = SCG.Dictionary();
+      def createEmitter(symbol : Nitra.Declarations.DeclarationSymbol) : object
       {
-        when (languageSymbol.Parent is SymbolRef.Some(parent))
-          makeLanguageEmitter(parent);
+        mutable existingEmitter;
+        if (table.TryGetValue(symbol, out existingEmitter))
+          existingEmitter
+        else
+        {
+          def newEmitter : object =
+            match (symbol)
+            {
+              | language is Nitra.Ast.LanguageSymbol =>
+                foreach (parent when symbolsToEmit.Contains(parent) in language.BaseTypeSet.ParentTypes)
+                  _ = createEmitter(parent);
 
-        LanguageEmitter(environment, languageSymbol);
-      });
+                AddAndReturn(languageEmitters, LanguageEmitter(environment, language));
+
+              | _ => assert(false, $"Cannot emit symbol of type '$(symbol.GetType())'.")
+            };
+
+          table.Add(symbol, newEmitter);
+          newEmitter;
+        }
+      }
+
+      foreach (symbol in symbolsToEmit)
+        _ = createEmitter(symbol);
 
       _ = MakeEmitters(syntaxModuleEmitters, (syntaxModule, _, _) => SyntaxModuleEmitter(environment, syntaxModule));
 
@@ -251,6 +272,12 @@ namespace Nitra.Compiler
         def data = chemicalSymbolData.Dequeue();
         chemicalSymbolEmitters.Add(ChemicalSymbolEmitter(environment, data.TypeBuilder, data.ChemicalSymbolType));
       }
+    }
+
+    private static AddAndReturn[T](buffer : SCG.List[T], value : T) : T
+    {
+      buffer.Add(value);
+      value
     }
 
     private MakeEmitters[TSymbol, TEmitter](buffer : SCG.List[TEmitter], makeEmitter : TSymbol * SCG.Dictionary[TSymbol, TEmitter] * (TSymbol -> void) -> TEmitter) : SCG.Dictionary[TSymbol, TEmitter]

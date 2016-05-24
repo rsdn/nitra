@@ -120,6 +120,7 @@ namespace Nitra.Compiler
 
     public NamespaceOfSymbol(symbol : DotNet.NamespaceMemberDeclarationSymbol) : GlobalEnv
     {
+      Manager.CoreEnv.EnterIntoNamespace(Util.GetFullName(symbol.DeclaredIn, []));
     }
 
     [Memoize]
@@ -147,8 +148,8 @@ namespace Nitra.Compiler
     [Memoize]
     public GetLanguageType(symbol : Nitra.Ast.LanguageSymbol) : FixedType
     {
-      def env = NamespaceOfSymbol(symbol);
-      env.BindFixedType(<[ $(Util.MakeLanguageName(symbol) : usesite) ]>);
+      def fullName = Util.GetFullName(symbol.DeclaredIn, [Util.MakeLanguageName(symbol)]);
+      BindFixedType(fullName);
     }
 
     [Memoize]

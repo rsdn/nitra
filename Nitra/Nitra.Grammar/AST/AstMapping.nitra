@@ -159,7 +159,7 @@ namespace Nitra.Ast
   {
     | Reference -> [SpanClass { name -> Name; QualifiedReference -> StyleReference; }] //= "=" sm QualifiedReference ";"
     | StyleBody ->
-      [Style     { name -> Name; StyleBody.Properties -> Properties; },
+      [Style     { Name = Name(name.Location, name.Id); StyleBody.Properties -> Properties; },
        SpanClass { name -> Name; QualifiedReference.Simple { Name = Nitra.Declarations.Reference(name.Location, name.Id); } -> StyleReference; }]
   }
 

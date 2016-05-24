@@ -59,6 +59,11 @@ namespace Nitra
       language.Name
     }
 
+    public MakeSpanClassName(spanClass : SpanClassSymbol) : string
+    {
+      spanClass.Name + "SpanClass"
+    }
+
     public MakeSpanClassName(spanClass : Nitra.Ast.SpanClassSymbol) : string
     {
       spanClass.Name + "SpanClass"
@@ -75,6 +80,14 @@ namespace Nitra
       def decl   = <[ decl: private static $(name : global) = $(value) ]>;
       _ = tb.Define(decl);
       name
+    }
+
+    public static GetFullName(symbol : DotNet.NamespaceMemberDeclarationSymbol, tail : list[string]) : list[string]
+    {
+      if (symbol.DeclaredIn : object == null)
+        tail
+      else
+        GetFullName(symbol.DeclaredIn, symbol.Name :: tail)
     }
   }
 }

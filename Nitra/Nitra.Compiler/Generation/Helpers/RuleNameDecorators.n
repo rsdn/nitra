@@ -32,6 +32,29 @@ namespace Nitra.Compiler
       | _                    => assert(false)
     }
 
+    public DecorateRuleDescriptorName(this ruleSymbol : Nitra.Ast.RuleSymbol) : string
+    {
+      | Nitra.Ast.ExtensibleRuleSymbol => $"..$(GetSyntaxModuleRelativeName(ruleSymbol); \"_\")"
+      | Nitra.Ast.ExtensionRuleSymbol  => $"..$(GetSyntaxModuleRelativeName(ruleSymbol); \"_\")"
+      | Nitra.Ast.SimpleRuleSymbol     => $"..$(GetSyntaxModuleRelativeName(ruleSymbol); \"_\")"
+      | Nitra.Ast.RegexRuleSymbol      => $"..$(GetSyntaxModuleRelativeName(ruleSymbol); \"_\")"
+      | _                    => assert(false)
+    }
+
+    private GetSyntaxModuleRelativeName(symbol : Nitra.Declarations.DeclarationSymbol) : list[string]
+    {
+      def loop(symbol, path)
+      {
+        match (symbol)
+        {
+          | ruleMember   is Nitra.Ast.RuleBodyMemberDeclarationSymbol     => loop(ruleMember.Parent, ruleMember.Name :: path)
+          | moduleMember is Nitra.Ast.SyntaxModuleMemberDeclarationSymbol => moduleMember.Name :: path
+          | _ => assert(false, $"Can not determine declaring syntax module from symbol '$symbol'")
+        }
+      }
+      loop(symbol, [])
+    }
+
     public DecorateRuleName(this ruleSymbol : RuleSymbol) : string
     {
       $<#_#_..$(ruleSymbol.ModuleRelativeName; "_")_#>

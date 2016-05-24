@@ -52,6 +52,7 @@ namespace Nitra.Compiler
       _sourceFiles.Clear();
       exportableSymbolData.Clear();
       chemicalSymbolData.Clear();
+      symbolsToEmit.Clear();
       languageEmitters.Clear();
       syntaxModuleEmitters.Clear();
       astEmitters.Clear();
@@ -123,11 +124,7 @@ namespace Nitra.Compiler
 
     public override EmitSymbol(symbol : DeclarationSymbol, _context : DependentPropertyEvalContext) : void
     {
-      match (symbol)
-      {
-        | language is Nitra.Ast.LanguageSymbol => ()
-        | _ => assert(false, $"Cannot emit symbol of type '$(symbol.GetType())'.")
-      }
+      _ = symbolsToEmit.Add(symbol);
     }
   }
 }
