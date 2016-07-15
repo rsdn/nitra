@@ -21,6 +21,8 @@ namespace Nitra.Ast
       in FileExtensions           : ImmutableArray[string];
       in SyntaxModules            : ImmutableArray[SyntaxModuleSymbol];
       in StartRule                : ValueOption[SyntaxRuleSymbol];
+
+      CanMerge = candidate is Language && FirstDeclarationOrDefault is PredefinedDeclaration;
     }
 
     TypeBase.Scope = Scope;
