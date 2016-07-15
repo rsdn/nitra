@@ -1,11 +1,14 @@
 ﻿using Nemerle;
 using Nemerle.Assertions;
 using Nemerle.Collections;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
+
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
 using System;
+
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Console;
@@ -14,18 +17,18 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading;
+
 using IOFile = System.IO.File;
 
 namespace Nitra.ViewModels
 {
-  public class TestVm : BaseVm, IClientHost, IDisposable
+  public class FileVm : BaseVm, IClientHost, IDisposable
   {
     mutable       _client                  : NitraClient;
     public static TypingMsg                : Guid = Guid.NewGuid(); 
     public        Id                       : int { get; private set }
     public        Project                  : ProjectVm { get; private set }
     mutable       _isBatchCodeUpdate       : bool;
-    mutable       _activeFileResponse      : ActiveFileResponse;
                   _batchFileChanges        : List[FileChange] = List();
     public        ParsingMessages          : array[CompilerMessage] { get; set; default array(0); }
     public        SemanticAnalysisMessages : array[CompilerMessage] { get; set; default array(0); }
@@ -82,8 +85,11 @@ namespace Nitra.ViewModels
     public Deactivate() : void
     {
       Save();
+      when (_client == null)
+        return;
+
       _client.Send(ClientMessage.FileDeactivated(Id));
-      _client = null;
+      Dispose();
     }
     
     public Save() : void
@@ -93,11 +99,6 @@ namespace Nitra.ViewModels
         File.WriteAllText(FullPath, Code, Encoding.UTF8);
         IsDirty = false;
       }
-    }
-    
-    OnServerMessage(message: ServerMessage) : void
-    {
-      WriteLine($"$message received.")
     }
     
     public StartBatchCodeUpdate() : void
@@ -179,7 +180,7 @@ namespace Nitra.ViewModels
         tests[index].IsSelected = true;
     }
 
-    public override GetAllTests() : Seq[TestVm] { [this] }
+    public override GetAllTests() : Seq[FileVm] { [this] }
         
     public override ToString(): string { Name }
     

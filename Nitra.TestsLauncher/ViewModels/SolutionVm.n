@@ -19,8 +19,8 @@ namespace Nitra.ViewModels
   public class SolutionVm : FolderVm[ProjectVm], IClientHost, IDisposable
   {
     mutable         _client        : NitraClient;
-    mutable         _nextProjectId : int;
-    mutable         _nextTestId    : int;
+    //mutable         _nextProjectId : int;
+    //mutable         _nextTestId    : int;
     public override Hint           : string
     {
       get { if (IsSingleFileTest) Children[0].Children[0].Hint else "Multifile Solution" }
@@ -45,7 +45,7 @@ namespace Nitra.ViewModels
         Children.Add(ProjectVm(Suite, this, dir, stringManager[dir]));
     }
     
-    public GetFile(fileId : int) : TestVm
+    public GetFile(fileId : int) : FileVm
     {
       // TODO: use Haschtable
       foreach (test when test.Id == fileId in GetAllTests())
@@ -87,19 +87,19 @@ namespace Nitra.ViewModels
       _client = null;
     }
     
-    public override GetAllTests() : Seq[TestVm]
+    public override GetAllTests() : Seq[FileVm]
     {
       foreach (p in Children)
         foreach (t in p.Children)
           yield t;
     }
     
-   public Dispose() : void
+    public Dispose() : void
     {
       foreach (project in Children)
         project.Dispose();
       Children.Clear();
-      _client = null
+      _client = null;
     }
   }
 }

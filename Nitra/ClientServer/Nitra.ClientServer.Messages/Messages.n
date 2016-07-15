@@ -56,6 +56,11 @@ namespace Nitra.ClientServer.Messages
     | FileChangedBatch         { id : int; version : int; changes : ImmutableArray[FileChange]; }
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { id : int; version : int; pos : int; }
+    | FindSymbolReferences     { fileId : int; fileVersion : int; pos : int; }
+    | FindSymbolDefinitions    { fileId : int; fileVersion : int; pos : int; }
+    | ParseTreeReflection      { enable : bool; }
+    | GetObjectContent         { fileId : int; fileVersion : int; objectId : int; }
+    | AttachDebugger           { }
     | Shutdown                 { }
     
     public override ToString() : string
@@ -85,6 +90,11 @@ namespace Nitra.ClientServer.Messages
         | FileChangedBatch         (id, version, changes)          => $<#FileChangedBatch        ($id, $version, $changes)#>
         | PrettyPrint              (state)                         => $<#PrettyPrint             ($state)#>
         | CompleteWord             (id, version, pos)              => $<#CompleteWord            ($id, $version, $pos)#>
+        | FindSymbolReferences     (fileId, fileVersion, pos)      => $<#FindSymbolReferences    ($fileId, $fileVersion, $pos)#>
+        | FindSymbolDefinitions    (fileId, fileVersion, pos)      => $<#FindSymbolDefinitions   ($fileId, $fileVersion, $pos)#>
+        | ParseTreeReflection      (enable)                        => $<#ParseTreeReflection     (enable=$enable)#>
+        | GetObjectContent         (fileId, fileVersion, objectId) => $<#GetObjectContent        ($fileId, $fileVersion, $objectId)#>
+        | AttachDebugger                                           =>  <#AttachDebugger          ()#>
         | Shutdown                                                 =>  <#Shutdown                ()#>
 
       }
@@ -94,13 +104,26 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant ServerMessage
   {
-    | CompleteWord { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
-    
-    public override ToString() : string 
+    | CompleteWord          { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
+    | FindSymbolDefinitions { referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
+    | FindSymbolReferences  { referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
+    | ParseTreeReflection   { root : ImmutableArray[ParseTreeReflectionStruct]; }
+    | ObjectContent         { content : ContentDescriptor; }
+
+    public override ToString() : string
     {
       $<#$(this.GetType().Name)()#>
     }
   }
+  
+  [NitraMessage, StructuralEquality]
+  public struct SymbolRreferences
+  {
+    public SymbolId    : int;
+    public Definitions : ImmutableArray[SymbolLocation];
+    public References  : ImmutableArray[FileEntries]
+  }
+  
   
   public enum PrettyPrintState
   {
@@ -115,6 +138,16 @@ namespace Nitra.ClientServer.Messages
     public StartPos : int;
     public EndPos   : int;
     public Length   : int { get { EndPos - StartPos }}
+    
+    public IsEmpty : bool
+    {
+      get { StartPos == EndPos }
+    }
+    
+    public IntersectsWith(pos : int)              : bool { pos <= EndPos && pos >= StartPos }
+    public IntersectsWith(start : int, end : int) : bool { start <= EndPos && end >= StartPos }
+    public IntersectsWith(other : NSpan)          : bool { IntersectsWith(other.StartPos, other.EndPos) }
+    public IntersectsWith(other : Location)       : bool { IntersectsWith(other.Span) }
     
     public override ToString() : string { StartPos + ", " + EndPos }
     
@@ -155,6 +188,20 @@ namespace Nitra.ClientServer.Messages
     }
   }
 
+  [NitraMessage]
+  public struct FileEntries
+  {
+    public File  : FileIdentity;
+    public Spans : ImmutableArray[NSpan];
+  }
+  
+  [NitraMessage]
+  public struct SymbolLocation
+  {
+    public SymbolId : int;
+    public Location : Location;
+  }
+  
   [NitraMessage, StructuralEquality]
   public struct Location : IComparable[Location]
   {
@@ -265,7 +312,9 @@ namespace Nitra.ClientServer.Messages
     | ParsingMessages             { messages       : array[CompilerMessage]; }
     | MappingMessages             { messages       : array[CompilerMessage]; }
     | SemanticAnalysisMessages    { messages       : array[CompilerMessage]; }
+    | SemanticAnalysisDone
     | PrettyPrintCreated          { type : PrettyPrintState; text : string; }
+    | ReflectionStructCreated     { root : ParseTreeReflectionStruct; }
     
     public override ToString() : string 
     {
@@ -276,18 +325,36 @@ namespace Nitra.ClientServer.Messages
   public enum ReflectionKind
   {
     | Normal
+    | Recovered
     | Ambiguous
     | Deleted
   }
+  
+  [NitraMessage]
+  public class ReflectionInfo
+  {
+    public ShortName           : string;
+    public FullName            : string;
+    public IsMarker            : bool;
+    public CanParseEmptyString : bool;
+  }
 
   [NitraMessage]
-  public class ReflectionStruct
+  public class ParseTreeReflectionStruct
   {
-    //public Info        : INitraReflection                     { get; }
-    public Description : string { get; }
-    public Kind : ReflectionKind { get; }
-    public Span : NSpan { get; }
-    public Children : ImmutableArray[ReflectionStruct] { get; }
+    public info        : ReflectionInfo;
+    public description : string;
+    public kind        : ReflectionKind;
+    public span        : NSpan;
+    public children    : ImmutableArray[ParseTreeReflectionStruct];
+
+    public Info        : ReflectionInfo                   { get { info        } }
+    public Description : string                           { get { description } }
+    public Kind        : ReflectionKind                   { get { kind        } }
+    public Span        : NSpan                            { get { span        } }
+    public Children    : ImmutableArray[ParseTreeReflectionStruct] { get { children    } }
+    
+    public override ToString() : string{ Description + " Count=" + Children.Length  }
   }
   
   [NitraMessage]
@@ -301,5 +368,211 @@ namespace Nitra.ClientServer.Messages
   public class LibReference
   {
     public Name: string;
+  }
+  
+  public enum PropertyKind
+  {
+    | Simple
+    | DependentIn
+    | DependentOut
+    | DependentInOut
+    | Ast
+  }
+
+  [NitraMessage]
+  public variant ContentDescriptor
+  {
+    | Fail      { msg : string; }
+    | Members   { members : array[PropertyDescriptor]; }
+    | Items     { items   : array[ObjectDescriptor]; }
+    | AstItems  { members : array[PropertyDescriptor]; items   : array[ObjectDescriptor]; }
+  }
+
+  [NitraMessage]
+  public variant ObjectDescriptor
+  {
+    | Unknown       { str : string; }
+    | Null          { }
+    | NotEvaluated  { }
+    | Ast           { span : NSpan; id : int; str : string;                      typeName : string; typeFullName : string; mutable members : array[PropertyDescriptor]; }
+    | Symbol        {               id : int; name : string;  fullName : string; typeName : string; typeFullName : string; mutable members : array[PropertyDescriptor]; }
+    | Object        {               id : int; str : string;                      typeName : string; typeFullName : string; mutable members : array[PropertyDescriptor]; }
+    | AstList       { span : NSpan; id : int; mutable items   : array[ObjectDescriptor]; mutable members : array[PropertyDescriptor]; count : int; }
+    | Seq           {               id : int; mutable items   : array[ObjectDescriptor]; count : int; }
+    | String        { value : string; }
+    | Int16         { value : System.Int16  ; }
+    | Int32         { value : System.Int32  ; }
+    | Int64         { value : System.Int64  ; }
+    | Char          { value : System.Char   ; }
+    | SByte         { value : System.SByte  ; }
+    | UInt16        { value : System.UInt16 ; }
+    | UInt32        { value : System.UInt32 ; }
+    | UInt64        { value : System.UInt64 ; }
+    | Byte          { value : System.Byte   ; }
+    | Single        { value : System.Single ; }
+    | Double        { value : System.Double ; }
+    | Boolean       { value : System.Boolean; }
+    | Parsed        { span : NSpan; value : ObjectDescriptor; }
+    
+    public IsObject   : bool { get { match (this) { | Ast | Symbol | Object => true | _ => false } } }
+    public IsSeq      : bool { get { match (this) { | AstList | Seq => true | _ => false } } }
+    public Properties : array[PropertyDescriptor]
+    {
+      get
+      {
+        match (this)
+        {
+          | Ast     as x => x.members
+          | Symbol  as x => x.members
+          | Object  as x => x.members
+          | AstList as x => x.members
+          | _      => null
+        }
+      }
+    }
+    public Items : array[ObjectDescriptor]
+    {
+      get
+      {
+        match (this)
+        {
+          | AstList as x => x.items
+          | Seq     as x => x.items
+          | _      => null
+        }
+      }
+    }
+    public Count : int
+    {
+      get
+      {
+        match (this)
+        {
+          | AstList as x => x.count
+          | Seq     as x => x.count
+          | _            => 0
+        }
+      }
+    }
+    public Id : int
+    {
+      get
+      {
+        match (this)
+        {
+          | Ast           as x => x.id
+          | Symbol        as x => x.id
+          | Object        as x => x.id
+          | AstList       as x => x.id
+          | Seq           as x => x.id         
+          | _                  => -1
+        }
+      }
+    }
+    public Span : NSpan
+    {
+      get
+      {
+        match (this)
+        {
+          | Ast           as x => x.span
+          | AstList       as x => x.span
+          | Parsed        as x => x.span
+          | _                  => NSpan()
+        }
+      }
+    }
+    public Value : object
+    {
+      get
+      {
+        match (this)
+        {
+          | Parsed        as x => "ParserValue(" + x.value + ")"
+          | Ast           as x when x.Id == 0 => "<Root>"
+          | Ast           as x => x.typeName + " \"" + x.str + "\""
+          | Symbol        as x => x.name
+          | Object        as x => x.str
+          | AstList       as x => "Count=" + x.Count
+          | Seq           as x => "Count=" + x.Count
+          | String        as x => "\"" + x.value + "\""
+          | Int16         as x => x.value.ToString()
+          | Int32         as x => x.value.ToString()
+          | Int64         as x => x.value.ToString()
+          | Char          as x => x.value.ToString()
+          | SByte         as x => x.value.ToString()
+          | UInt16        as x => x.value.ToString()
+          | UInt32        as x => x.value.ToString()
+          | UInt64        as x => x.value.ToString()
+          | Byte          as x => x.value.ToString()
+          | Single        as x => x.value.ToString()
+          | Double        as x => x.value.ToString()
+          | Boolean       as x => x.value.ToString()
+          | Unknown       as x => "Unknown<" + x.str + ">"
+          | Null         => "<null>"
+          | NotEvaluated => "<not evaluated>"
+          | _            => null
+        }
+      }
+    }
+    public SetContent(content : ContentDescriptor) : void
+    {
+      | Members(members) =>
+        match (this)
+        {
+          | Ast    as x => x.members = members;
+          | Symbol as x => x.members = members;
+          | Object as x => x.members = members;
+          | _           => assert(false);
+        }
+
+      | Items(items)     =>
+        match (this)
+        {
+          | AstList as x => x.items = items;
+          | Seq     as x => x.items = items;
+          | _            => assert(false);
+        }
+        
+      | AstItems(members, items) =>
+        match (this)
+        {
+          | AstList as x => x.members = members; x.items = items;
+          | _            => assert(false);
+        }
+
+      | Fail => ()
+   }
+    public override ToString() : string
+    {
+      match (Value)
+      {
+        | null => "<null>"
+        | x => x.ToString()
+      }
+    }
+ }
+
+  [NitraMessage]
+  public class PropertyDescriptor
+  {
+    public Kind   : PropertyKind;
+    public Name   : string;
+    public Object : ObjectDescriptor;
+
+    public override ToString() : string
+    {
+      def prefix =
+        match (Kind)
+        {
+          | PropertyKind.DependentIn    => "in "
+          | PropertyKind.DependentOut   => "out "
+          | PropertyKind.DependentInOut => "inout "
+          | PropertyKind.Ast            => "ast "
+          | PropertyKind.Simple         => null
+        };
+
+      prefix + Name + " " + Object
+    }
   }
 }

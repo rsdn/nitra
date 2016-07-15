@@ -13,7 +13,6 @@ using Nemerle.Diff;
 using Nitra.ClientServer.Client;
 using Nitra.ViewModels;
 using Nitra.Visualizer.Controls;
-using Nitra.Visualizer.Properties;
 
 using System;
 using System.Collections.Generic;
@@ -21,14 +20,19 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-
+using Nitra.Visualizer.ViewModels;
+using Nitra.Visualizer.Views;
+using ReactiveUI;
 using Clipboard = System.Windows.Clipboard;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 using Control = System.Windows.Controls.Control;
@@ -38,107 +42,119 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MenuItem = System.Windows.Controls.MenuItem;
 using MessageBox = System.Windows.MessageBox;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
-using Timer = System.Timers.Timer;
 using ToolTip = System.Windows.Controls.ToolTip;
 
 namespace Nitra.Visualizer
 {
   using ClientServer.Messages;
   using Interop;
-  using System.Collections.Immutable;
   using System.Windows.Documents;
   using System.Windows.Interop;
 
-  public partial class MainWindow
+  public partial class MainWindow : IViewFor<MainWindowViewModel>
   {
+    const string ErrorMarkerTag = "Error";
+
     bool _initializing = true;
     bool _doTreeOperation;
     bool _doChangeCaretPos;
-    readonly Timer _nodeForCaretTimer;
+    //readonly Timer _nodeForCaretTimer;
     readonly TextMarkerService _textMarkerService;
     readonly NitraFoldingStrategy _foldingStrategy;
     readonly FoldingManager _foldingManager;
     readonly ToolTip _textBox1Tooltip;
-    bool _needUpdateReflection;
-    bool _needUpdateHtmlPrettyPrint;
-    bool _needUpdateTextPrettyPrint;
     //ParseTree _parseTree;
-    readonly Settings _settings;
-    WorkspaceVm _workspace;
-    SuiteVm _currentSuite;
-    ProjectVm _currentProject;
-    private SolutionVm _currentSolution;
-    TestVm _currentTest;
     readonly PependentPropertyGrid _propertyGrid;
     //readonly MatchBracketsWalker _matchBracketsWalker = new MatchBracketsWalker();
     readonly List<ITextMarker> _matchedBracketsMarkers = new List<ITextMarker>();
     readonly Action<AsyncServerMessage> _responseDispatcher;
+    readonly Timer _fillAstTimer;
     //List<MatchBracketsWalker.MatchBrackets> _matchedBrackets;
-    const string ErrorMarkerTag = "Error";
 
     public MainWindow()
     {
-      _settings = Settings.Default;
+      ViewModel = new MainWindowViewModel();
+      var events = this.Events();
+
+      Splat.Locator.CurrentMutable.Register(() => new PopupItemView(), typeof(IViewFor<PopupItemViewModel>));
 
       ToolTipService.ShowDurationProperty.OverrideMetadata(
         typeof(DependencyObject),
         new FrameworkPropertyMetadata(Int32.MaxValue));
 
+      _fillAstTimer = new Timer { AutoReset = false, Enabled = false, Interval = 300 };
+      _fillAstTimer.Elapsed += _fillAstTimer_Elapsed;
+
       InitializeComponent();
 
-      _responseDispatcher = msg => _text.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action<AsyncServerMessage>(Response), msg);
+      var editorViewModel = ViewModel.Editor;
+      _textEditor.ViewModel = editorViewModel;
 
-      _mainRow.Height  = new GridLength(_settings.TabControlHeight);
+      _responseDispatcher = msg => _textEditor.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action<AsyncServerMessage>(Response), msg);
 
-
+      _mainRow.Height  = new GridLength(ViewModel.Settings.TabControlHeight);
+      
       _configComboBox.ItemsSource = new[] {"Debug", "Release"};
-      var config = _settings.Config;
+      var config = ViewModel.Settings.Config;
       _configComboBox.SelectedItem = config == "Release" ? "Release" : "Debug";
 
-      _tabControl.SelectedIndex = _settings.ActiveTabIndex;
+      _tabControl.SelectedIndex = ViewModel.Settings.ActiveTabIndex;
       _foldingStrategy          = new NitraFoldingStrategy();
-      _textBox1Tooltip          = new ToolTip { PlacementTarget = _text };
-      _nodeForCaretTimer        = new Timer {AutoReset = false, Enabled = false, Interval = 500};
-      _nodeForCaretTimer.Elapsed += _nodeForCaretTimer_Elapsed;
+      _textBox1Tooltip          = new ToolTip { PlacementTarget = _textEditor };
+      //_nodeForCaretTimer        = new Timer {AutoReset = false, Enabled = false, Interval = 500};
+      //_nodeForCaretTimer.Elapsed += _nodeForCaretTimer_Elapsed;
 
-      _text.TextArea.Caret.PositionChanged += Caret_PositionChanged;
+      editorViewModel.WhenAnyValue(vm => vm.CaretOffset)
+                     .Throttle(TimeSpan.FromMilliseconds(200), RxApp.MainThreadScheduler)
+                     .Subscribe(_ => ShowNodeForCaret());
 
-      _foldingManager    = FoldingManager.Install(_text.TextArea);
-      _textMarkerService = new TextMarkerService(_text.Document);
+      this.OneWayBind(ViewModel, vm => vm.Editor.CaretOffset, v => v._pos.Text, pos => pos.ToString(CultureInfo.InvariantCulture));
+      this.OneWayBind(ViewModel, vm => vm.StatusText, v => v._status.Text);
 
-      _text.TextArea.TextView.BackgroundRenderers.Add(_textMarkerService);
-      _text.TextArea.TextView.LineTransformers.Add(_textMarkerService);
-      _text.Options.ConvertTabsToSpaces = true;
-      _text.Options.EnableRectangularSelection = true;
-      _text.Options.IndentationSize = 2;
+      events.KeyDown
+            .Where(a => a.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.None)
+            .InvokeCommand(ViewModel.FindSymbolDefinitions);
+
+      events.KeyDown
+            .Where(a => a.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift)
+            .InvokeCommand(ViewModel.FindSymbolReferences);
+
+      _foldingManager = FoldingManager.Install(_textEditor.TextArea);
+      _textMarkerService = new TextMarkerService(_textEditor.Document);
+
+      _textEditor.TextArea.TextView.BackgroundRenderers.Add(_textMarkerService);
+      _textEditor.TextArea.TextView.LineTransformers.Add(_textMarkerService);
+      _textEditor.Options.ConvertTabsToSpaces = true;
+      _textEditor.Options.EnableRectangularSelection = true;
+      _textEditor.Options.IndentationSize = 2;
       _testsTreeView.SelectedValuePath = "FullPath";
       _propertyGrid = new PependentPropertyGrid();
       _windowsFormsHost.Child = _propertyGrid;
 
-      if (string.IsNullOrWhiteSpace(_settings.CurrentWorkspace))
-        _workspace = null;
+      if (string.IsNullOrWhiteSpace(ViewModel.Settings.CurrentWorkspace))
+        ViewModel.Workspace = null;
       else
         LoadTests();
 
-      _text.Document.Changed += Document_Changed;
-      _text.Document.UpdateStarted += DocumentOnUpdateStarted;
-      _text.Document.UpdateFinished += DocumentOnUpdateFinished;
+      _textEditor.Document.Changed += Document_Changed;
+      _textEditor.Document.UpdateStarted += DocumentOnUpdateStarted;
+      _textEditor.Document.UpdateFinished += DocumentOnUpdateFinished;
     }
 
     private void DocumentOnUpdateFinished(object sender, EventArgs eventArgs)
     {
-      if (_currentTest == null || _initializing)
+      if (ViewModel.CurrentFile == null || _initializing)
         return;
 
-      _currentTest.StartBatchCodeUpdate();
+      ViewModel.CurrentFile.StartBatchCodeUpdate();
     }
 
     private void DocumentOnUpdateStarted(object sender, EventArgs eventArgs)
     {
-      if (_currentTest == null || _initializing)
+      if (ViewModel.CurrentFile == null || _initializing)
         return;
 
-      _currentTest.FinishBatchCodeUpdate();
+      ViewModel.CurrentFile.FinishBatchCodeUpdate();
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -147,35 +163,35 @@ namespace Nitra.Visualizer
 
       if ((Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0)
         return;
-      if (_workspace != null)
-        SelectTest(_settings.SelectedTestNode);
+      if (ViewModel.Workspace != null)
+        SelectTest(ViewModel.Settings.SelectedTestNode);
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
       base.OnSourceInitialized(e);
-      this.SetPlacement(_settings.MainWindowPlacement);
+      this.SetPlacement(ViewModel.Settings.MainWindowPlacement);
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
       _initializing = true;
 
-      _settings.MainWindowPlacement = this.GetPlacement();
-      _settings.Config = (string)_configComboBox.SelectedValue;
-      _settings.TabControlHeight = _mainRow.Height.Value;
-      _settings.LastTextInput = _text.Text;
-      _settings.ActiveTabIndex = _tabControl.SelectedIndex;
-      _settings.Save();
+      ViewModel.Settings.MainWindowPlacement = this.GetPlacement();
+      ViewModel.Settings.Config = (string)_configComboBox.SelectedValue;
+      ViewModel.Settings.TabControlHeight = _mainRow.Height.Value;
+      ViewModel.Settings.LastTextInput = _textEditor.Text;
+      ViewModel.Settings.ActiveTabIndex = _tabControl.SelectedIndex;
+      ViewModel.Settings.Save();
       
-      _currentSuite    = null;
-      _currentSolution = null;
-      _currentProject  = null;
-      _currentTest     = null;
+      ViewModel.CurrentSuite    = null;
+      ViewModel.CurrentSolution = null;
+      ViewModel.CurrentProject  = null;
+      ViewModel.CurrentFile     = null;
 
-      if (_workspace != null)
+      if (ViewModel.Workspace != null)
       {
-        foreach (var testSuite in _workspace.TestSuites)
+        foreach (var testSuite in ViewModel.Workspace.TestSuites)
           testSuite.Dispose();
       }
     }
@@ -196,19 +212,19 @@ namespace Nitra.Visualizer
 
     private void SaveSelectedTestAndTestSuite()
     {
-      if (_currentTest != null)
-        _settings.SelectedTestNode = _currentTest.FullPath;
-      else if (_currentProject != null)
-        _settings.SelectedTestNode = _currentProject.FullPath;
-      else if (_currentSolution != null)
-        _settings.SelectedTestNode = _currentSolution.FullPath;
-      else if (_currentSuite != null)
-        _settings.SelectedTestNode = _currentSuite.FullPath;
+      if (ViewModel.CurrentFile != null)
+        ViewModel.Settings.SelectedTestNode = ViewModel.CurrentFile.FullPath;
+      else if (ViewModel.CurrentProject != null)
+        ViewModel.Settings.SelectedTestNode = ViewModel.CurrentProject.FullPath;
+      else if (ViewModel.CurrentSolution != null)
+        ViewModel.Settings.SelectedTestNode = ViewModel.CurrentSolution.FullPath;
+      else if (ViewModel.CurrentSuite != null)
+        ViewModel.Settings.SelectedTestNode = ViewModel.CurrentSuite.FullPath;
 
-      _settings.Save();
+      ViewModel.Settings.Save();
 
-      if (_workspace != null && _workspace.IsDirty)
-        _workspace.Save();
+      if (ViewModel.Workspace != null && ViewModel.Workspace.IsDirty)
+        ViewModel.Workspace.Save();
     }
 
     private void LoadTests()
@@ -216,60 +232,22 @@ namespace Nitra.Visualizer
       var selected = _testsTreeView.SelectedItem as BaseVm;
       var selectedPath = selected == null ? null : selected.FullPath;
 
-      if (!File.Exists(_settings.CurrentWorkspace ?? ""))
+      if (!File.Exists(ViewModel.Settings.CurrentWorkspace ?? ""))
       {
-        MessageBox.Show(this, "Workspace '" + _settings.CurrentWorkspace + "' not exists!");
+        MessageBox.Show(this, "Workspace '" + ViewModel.Settings.CurrentWorkspace + "' not exists!");
         return;
       }
 
-      _workspace = new WorkspaceVm(_settings.CurrentWorkspace, selectedPath, _settings.Config);
-      this.Title = _workspace.Name + " - " + Constants.AppName;
-      _testsTreeView.ItemsSource = _workspace.TestSuites;
+      ViewModel.Workspace = new WorkspaceVm(ViewModel.Settings.CurrentWorkspace, selectedPath, ViewModel.Settings.Config);
+      this.Title = ViewModel.Workspace.Name + " - " + Constants.AppName;
+      _testsTreeView.ItemsSource = ViewModel.Workspace.TestSuites;
     }
 
     private void textBox1_GotFocus(object sender, RoutedEventArgs e)
     {
       ShowNodeForCaret();
     }
-
-    void Caret_PositionChanged(object sender, EventArgs e)
-    {
-      var caretPos = _text.CaretOffset;
-      _pos.Text = caretPos.ToString(CultureInfo.InvariantCulture);
-      TryHighlightBraces(caretPos);
-
-      _nodeForCaretTimer.Stop();
-      _nodeForCaretTimer.Start();
-    }
-
-    private void TryHighlightBraces(int caretPos)
-    {
-      //if (_matchedBracketsMarkers.Count > 0)
-      //{
-      //  foreach (var marker in _matchedBracketsMarkers)
-      //    _textMarkerService.Remove(marker);
-      //  _matchedBracketsMarkers.Clear();
-      //}
-
-      //var context = new MatchBracketsWalker.Context(caretPos);
-      //_matchBracketsWalker.Walk(_parseResult, context);
-      //_matchedBrackets = context.Brackets;
-
-      //if (context.Brackets != null)
-      //{
-      //  foreach (var bracket in context.Brackets)
-      //  {
-      //    var marker1 = _textMarkerService.Create(bracket.OpenBracket.StartPos, bracket.OpenBracket.Length);
-      //    marker1.BackgroundColor = Colors.LightGray;
-      //    _matchedBracketsMarkers.Add(marker1);
-
-      //    var marker2 = _textMarkerService.Create(bracket.CloseBracket.StartPos, bracket.CloseBracket.Length);
-      //    marker2.BackgroundColor = Colors.LightGray;
-      //    _matchedBracketsMarkers.Add(marker2);
-      //  }
-      //}
-    }
-
+    
     private void ShowNodeForCaret()
     {
       if (_doTreeOperation)
@@ -278,9 +256,9 @@ namespace Nitra.Visualizer
       _doChangeCaretPos = true;
       try
       {
-        if      (object.ReferenceEquals(_tabControl.SelectedItem, _declarationsTabItem))
+        if (IsAstReflectionTabItemActive())
           ShowAstNodeForCaret();
-        else if (object.ReferenceEquals(_tabControl.SelectedItem, _reflectionTabItem))
+        else if (IsReflectionTabItemActive())
           ShowParseTreeNodeForCaret();
       }
       finally
@@ -289,120 +267,133 @@ namespace Nitra.Visualizer
       }
     }
 
-    private void ShowAstNodeForCaret()
+    private void ShowAstNodeForCaret(bool enforce = false)
     {
-      if (_declarationsTreeView.IsKeyboardFocusWithin)
+      if (!enforce && _astTreeView.IsKeyboardFocusWithin)
         return;
 
-      if (_declarationsTreeView.Items.Count < 1)
+      if (_astTreeView.Items.Count < 1)
         return;
 
-      Debug.Assert(_declarationsTreeView.Items.Count == 1);
+      Debug.Assert(_astTreeView.Items.Count == 1);
 
-      var result = FindNode((TreeViewItem)_declarationsTreeView.Items[0], _text.CaretOffset);
-      if (result == null)
+      var root = (AstNodeViewModel)_astTreeView.Items[0];
+      var file = ViewModel.CurrentFile;
+      var context = root.Context;
+      if (context.FileId != file.Id || context.FileVersion != file.Version)
         return;
 
-      result.IsSelected = true;
-      result.BringIntoView();
+      var ast = FindAstNode(root, _textEditor.CaretOffset);
+
+      if (ast != null)
+        ast.IsSelected = true;
     }
 
-    private TreeViewItem FindNode(TreeViewItem item, int pos, List<NSpan> checkedSpans = null)
+    private AstNodeViewModel FindAstNode(AstNodeViewModel ast, int pos, List<NSpan> checkedSpans = null)
     {
-      //checkedSpans = checkedSpans ?? new List<NSpan>();
-      //var ast = item.Tag as IAst;
+      var span = ast.Span;
 
-      //if (ast == null)
-      //  return null;
+      if (!span.IntersectsWith(pos))
+        return null;
 
-      //// check for circular dependency
-      //for (var i = 0; i < checkedSpans.Count; i++) { 
-      //  // if current span was previously checked
-      //  if (ast.Span == checkedSpans[i]) {
-      //    // and it's not a topmost span
-      //    for (var k = i; k < checkedSpans.Count; k++)
-      //      if (ast.Span != checkedSpans[k])
-      //        // Stop FindNode recursion
-      //        return item;
-      //    break;
-      //  }
-      //}
+      if (span == default(NSpan))
+        return null;
+
+      checkedSpans = checkedSpans ?? new List<NSpan>();
+
+      // check for circular dependency
+      for (var i = 0; i < checkedSpans.Count; i++)
+      {
+        // if current span was previously checked
+        if (span == checkedSpans[i])
+        {
+          // and it's not a topmost span
+          for (var k = i; k < checkedSpans.Count; k++)
+            if (span != checkedSpans[k])
+              // Stop FindNode recursion
+              return null;
+          break;
+        }
+      }
+
+      if (span != default(NSpan))
+        checkedSpans.Add(span);
+
+      ast.LoadItems();
+
+      var items = ast.Items;
+
+      if (items != null)
+        foreach (AstNodeViewModel subItem in items)
+        {
+          var result = FindAstNode(subItem, pos, checkedSpans);
+          if (result != null)
+          {
+            ast.IsExpanded = true;
+            return result;
+          }
+        }
+
+      return ast;
+    }
+
+    private void ShowParseTreeNodeForCaret(bool enforce = false)
+    {
+      if (_reflectionTreeView.ItemsSource == null)
+        return;
+
+      if (!enforce && _reflectionTreeView.IsKeyboardFocusWithin)
+        return;
+
+
+      var node = FindParseTreeNode((ParseTreeReflectionStruct[])_reflectionTreeView.ItemsSource, _textEditor.CaretOffset);
       
-      //checkedSpans.Add(ast.Span);
-
-      //if (ast.Span.IntersectsWith(pos))
-      //{
-      //  item.IsExpanded = true;
-      //  foreach (TreeViewItem subItem in item.Items)
-      //  {
-      //    var result = FindNode(subItem, pos, checkedSpans);
-      //    if (result != null)
-      //      return result;
-      //  }
-
-      //  return item;
-      //}
-
-      return null;
+      if (node != null)
+      {
+        var selected = _reflectionTreeView.SelectedItem as ParseTreeReflectionStruct;
+      
+        if (node == selected)
+          return;
+      
+        _reflectionTreeView.SelectedItem = node;
+        _reflectionTreeView.BringIntoView(node);
+      }
     }
 
-    private void ShowParseTreeNodeForCaret()
+    private ParseTreeReflectionStruct FindParseTreeNode(IEnumerable<ParseTreeReflectionStruct> items, int p)
     {
-      //if (_reflectionTreeView.ItemsSource == null)
-      //  return;
-      //
-      //if (_reflectionTreeView.IsKeyboardFocusWithin)
-      //  return;
-      //
-      //
-      //var node = FindNode((ReflectionStruct[])_reflectionTreeView.ItemsSource, _text.CaretOffset);
-      //
-      //if (node != null)
-      //{
-      //  var selected = _reflectionTreeView.SelectedItem as ReflectionStruct;
-      //
-      //  if (node == selected)
-      //    return;
-      //
-      //  _reflectionTreeView.SelectedItem = node;
-      //  _reflectionTreeView.BringIntoView(node);
-      //}
-    }
-
-    private ReflectionStruct FindNode(IEnumerable<ReflectionStruct> items, int p)
-    {
-      //foreach (ReflectionStruct node in items)
-      //{
-      //  if (node.Span.StartPos <= p && p < node.Span.EndPos) // IntersectsWith(p) includes EndPos
-      //  {
-      //    if (node.Children.Length == 0)
-      //      return node;
-      //
-      //    _reflectionTreeView.Expand(node);
-      //
-      //    return FindNode(node.Children, p);
-      //  }
-      //}
+      foreach (ParseTreeReflectionStruct node in items)
+      {
+        if (node.Span.StartPos <= p && p < node.Span.EndPos) // IntersectsWith(p) includes EndPos
+        {
+          if (node.Children.Length == 0)
+            return node;
+      
+          _reflectionTreeView.Expand(node);
+      
+          return FindParseTreeNode(node.Children, p);
+        }
+      }
 
       return null;
     }
 
     private void TryReportError()
     {
-      if (_currentTest == null)
+      if (ViewModel.CurrentFile == null)
         return;
 
       var cmpilerMessages = new List<CompilerMessage>();
-      cmpilerMessages.AddRange(_currentTest.ParsingMessages);
-      cmpilerMessages.AddRange(_currentTest.SemanticAnalysisMessages);
+      cmpilerMessages.AddRange(ViewModel.CurrentFile.ParsingMessages);
+      cmpilerMessages.AddRange(ViewModel.CurrentFile.SemanticAnalysisMessages);
       cmpilerMessages.Sort();
 
       ClearMarkers();
 
       var errorNodes      = _errorsTreeView.Items;
-      var currentFileId   = _currentTest.Id;
-      var fullName        = _currentTest.FullPath;
-      var doc             = _text.Document;
+      var currentFileId   = ViewModel.CurrentFile.Id;
+      var fullName        = ViewModel.CurrentFile.FullPath;
+      var doc             = _textEditor.Document;
 
       errorNodes.Clear();
 
@@ -412,9 +403,15 @@ namespace Nitra.Visualizer
         var location = message.Location;
         var file     = location.File;
         var span     = location.Span;
-        if (currentFileId == file.FileId)
+        if (currentFileId == file.FileId) 
         {
-          var marker = _textMarkerService.Create(span.StartPos, span.Length);
+          if (span.StartPos >= doc.TextLength)
+            continue;
+
+          var spanLength = (span.StartPos + span.Length) <= doc.TextLength 
+                           ? span.Length
+                           : doc.TextLength - span.StartPos;
+          var marker = _textMarkerService.Create(span.StartPos, spanLength);
           marker.Tag         = ErrorMarkerTag;
           marker.MarkerType  = TextMarkerType.SquigglyUnderline;
           marker.MarkerColor = Colors.Red;
@@ -452,56 +449,16 @@ namespace Nitra.Visualizer
       if (!node.IsSelected)
         return;
       var error = (CompilerMessage)node.Tag;
-      SelectText(error.Location);
+
+      ViewModel.Editor.SelectText(error.Location);
+
       e.Handled = true;
-      _text.Focus();
+      _textEditor.Focus();
     }
 
-    private void SelectText(Location location)
+    private bool IsAstReflectionTabItemActive()
     {
-      if (_currentSolution == null)
-        return;
-
-      var fileIdent = location.File;
-      var span      = location.Span;
-      var file = _currentSolution.GetFile(fileIdent.FileId);
-
-      if (file == null)
-        return;
-
-      if (file.Version != fileIdent.FileVersion)
-        return;
-
-      file.IsSelected = true;
-
-      _text.CaretOffset = span.StartPos;
-      _text.Select(span.StartPos, span.Length);
-      _text.ScrollTo(_text.TextArea.Caret.Line, _text.TextArea.Caret.Column);
-    }
-
-    void ShowInfo()
-    {
-      _needUpdateReflection      = true;
-      _needUpdateHtmlPrettyPrint = true;
-      _needUpdateTextPrettyPrint = true;
-      //_parseTree                 = null;
-
-      UpdateInfo();
-    }
-
-    void UpdateInfo()
-    {
-      try
-      {
-        if (_needUpdateReflection           && ReferenceEquals(_tabControl.SelectedItem, _reflectionTabItem))
-          UpdateReflection();
-        
-        UpdateDeclarations();
-      }
-      catch(Exception e)
-      {
-        Debug.Write(e);
-      }
+      return ReferenceEquals(_tabControl.SelectedItem, _astReflectionTabItem);
     }
 
     private bool IsHtmlPrettyPrintTabActive()
@@ -509,20 +466,14 @@ namespace Nitra.Visualizer
       return ReferenceEquals(_tabControl.SelectedItem, _htmlPrettyPrintTabItem);
     }
 
+    private bool IsReflectionTabItemActive()
+    {
+      return ReferenceEquals(_tabControl.SelectedItem, _reflectionTabItem);
+    }
+
     private bool IsPrettyPrintTabActive()
     {
       return ReferenceEquals(_tabControl.SelectedItem, _textPrettyPrintTabItem);
-    }
-
-    private void UpdateReflection()
-    {
-      _needUpdateReflection = false;
-
-      //if (_parseResult == null)
-      //  return;
-
-      //var root = _parseResult.Reflect();
-      //_reflectionTreeView.ItemsSource = new[] { root };
     }
 
     private void textBox1_TextChanged(object sender, EventArgs e)
@@ -536,7 +487,7 @@ namespace Nitra.Visualizer
 
     private void textBox1_LostFocus(object sender, RoutedEventArgs e)
     {
-      _text.TextArea.Caret.Show();
+      _textEditor.TextArea.Caret.Show();
     }
 
     private void MenuItem_Click(object sender, RoutedEventArgs e)
@@ -563,12 +514,12 @@ namespace Nitra.Visualizer
     void ClearAll()
     {
       ClearMarkers();
-      _declarationsTreeView.Items.Clear();
+      _astTreeView.ItemsSource = new AstNodeViewModel[0];
       _matchedBracketsMarkers.Clear();
       _recoveryTreeView.Items.Clear();
       _errorsTreeView.Items.Clear();
       ClearHighlighting();
-      //_reflectionTreeView.ItemsSource = null;
+      _reflectionTreeView.ItemsSource = null;
     }
 
     void ClearMarkers()
@@ -578,10 +529,10 @@ namespace Nitra.Visualizer
 
     private void textBox1_MouseHover(object sender, MouseEventArgs e)
     {
-      var pos = _text.TextArea.TextView.GetPositionFloor(e.GetPosition(_text.TextArea.TextView) + _text.TextArea.TextView.ScrollOffset);
+      var pos = _textEditor.TextArea.TextView.GetPositionFloor(e.GetPosition(_textEditor.TextArea.TextView) + _textEditor.TextArea.TextView.ScrollOffset);
       if (pos.HasValue)
       {
-        var offset = _text.Document.GetOffset(new TextLocation(pos.Value.Line, pos.Value.Column));
+        var offset = _textEditor.Document.GetOffset(new TextLocation(pos.Value.Line, pos.Value.Column));
         var markersAtOffset = _textMarkerService.GetMarkersAtOffset(offset);
         var markerWithToolTip = markersAtOffset.FirstOrDefault(marker => marker.ToolTip != null);
         if (markerWithToolTip != null)
@@ -599,13 +550,18 @@ namespace Nitra.Visualizer
 
     void _tabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-      if (_currentSuite == null)
+      if (ViewModel.CurrentSuite == null)
         return;
-      UpdatePrettyPrintStatus(_currentSuite.Client);
+      ClearAstHighlighting();
       Reparse();
+      var client = ViewModel.CurrentSuite.Client;
+      UpdateTrees(client);
+    }
 
-      UpdateInfo();
-      ShowNodeForCaret();
+    void UpdateTrees(NitraClient client)
+    {
+      UpdatePrettyPrintStatus(client);
+      UpdateParseTreeReflection(client);
     }
 
     void UpdatePrettyPrintStatus(NitraClient client)
@@ -616,6 +572,11 @@ namespace Nitra.Visualizer
         client.Send(new ClientMessage.PrettyPrint(PrettyPrintState.Html));
       else
         client.Send(new ClientMessage.PrettyPrint(PrettyPrintState.Disabled));
+    }
+
+    void UpdateParseTreeReflection(NitraClient client)
+    {
+      client.Send(new ClientMessage.ParseTreeReflection(IsReflectionTabItemActive()));
     }
 
     void _copyButton_Click(object sender, RoutedEventArgs e)
@@ -634,19 +595,19 @@ namespace Nitra.Visualizer
 
     void CopyReflectionNodeText(object sender, ExecutedRoutedEventArgs e)
     {
-      //var value = _reflectionTreeView.SelectedItem as ReflectionStruct;
-      //
-      //if (value != null)
-      //{
-      //  var result = value.Description;
-      //  Clipboard.SetData(DataFormats.Text, result);
-      //  Clipboard.SetData(DataFormats.UnicodeText, result);
-      //}
+      var value = _reflectionTreeView.SelectedItem as ParseTreeReflectionStruct;
+      
+      if (value != null)
+      {
+        var result = value.Description;
+        Clipboard.SetData(DataFormats.Text, result);
+        Clipboard.SetData(DataFormats.UnicodeText, result);
+      }
     }
 
     bool CheckTestFolder()
     {
-      if (File.Exists(_settings.CurrentWorkspace ?? ""))
+      if (File.Exists(ViewModel.Settings.CurrentWorkspace ?? ""))
         return true;
 
       return false;
@@ -663,21 +624,21 @@ namespace Nitra.Visualizer
 
     void CommandBinding_CanAddTest(object sender, CanExecuteRoutedEventArgs e)
     {
-      e.CanExecute = _currentSuite != null;
+      e.CanExecute = ViewModel.CurrentSuite != null;
       e.Handled = true;
     }
 
     void AddTest()
     {
-      if (_currentSuite == null)
+      if (ViewModel.CurrentSuite == null)
       {
         MessageBox.Show(this, "Select a test suite first.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         return;
       }
 
-      var testSuitePath = _currentSuite.FullPath;
-      var selectedProject = _currentProject == null ? null : _currentProject.Name;
-      var dialog = new AddTest(_currentNode, _text.Text, _prettyPrintTextBox.Text) { Owner = this };
+      var testSuitePath = ViewModel.CurrentSuite.FullPath;
+      var selectedProject = ViewModel.CurrentProject == null ? null : ViewModel.CurrentProject.Name;
+      var dialog = new AddTest(_currentNode, _textEditor.Text, _prettyPrintTextBox.Text) { Owner = this };
 
       if (dialog.ShowDialog() ?? false)
       {
@@ -688,10 +649,10 @@ namespace Nitra.Visualizer
 
     void SelectTest(string fullPath)
     {
-      if (_workspace == null)
+      if (ViewModel.Workspace == null)
         return;
 
-      foreach (var suite in _workspace.TestSuites)
+      foreach (var suite in ViewModel.Workspace.TestSuites)
       {
         if (suite.FullPath == fullPath)
         {
@@ -729,7 +690,7 @@ namespace Nitra.Visualizer
 
     void OnRunTests(object sender, ExecutedRoutedEventArgs e)
     {
-      if (_workspace != null)
+      if (ViewModel.Workspace != null)
         RunTests();
       else
         MessageBox.Show(this, "Can't run tests. No test worcspace open.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -737,10 +698,10 @@ namespace Nitra.Visualizer
 
     void RunTests()
     {
-      if (_workspace == null)
+      if (ViewModel.Workspace == null)
         return;
 
-      foreach (var suite in _workspace.TestSuites)
+      foreach (var suite in ViewModel.Workspace.TestSuites)
       {
         foreach (var test in suite.GetAllTests())
           RunTest(test);
@@ -749,13 +710,13 @@ namespace Nitra.Visualizer
       }
     }
 
-    void RunTest(TestVm test)
+    void RunTest(FileVm test)
     {
       test.Run(); // GetRecoveryAlgorithm());
       ShowDiff(test);
     }
 
-    void ShowDiff(TestVm test)
+    void ShowDiff(FileVm test)
     {
       _para.Inlines.Clear();
 
@@ -867,24 +828,24 @@ namespace Nitra.Visualizer
 
     private void EditTestSuite(bool create)
     {
-      if (_workspace == null)
+      if (ViewModel.Workspace == null)
         return;
-      var currentTestSuite = _currentSuite;
-      var dialog = new TestSuiteDialog(create, currentTestSuite, _settings) { Owner = this };
+      var currentTestSuite = ViewModel.CurrentSuite;
+      var dialog = new TestSuiteDialog(create, currentTestSuite, ViewModel.Settings) { Owner = this };
       if (dialog.ShowDialog() ?? false)
       {
         if (currentTestSuite != null)
-          _workspace.TestSuites.Remove(currentTestSuite);
-        var testSuite = new SuiteVm(_workspace, dialog.TestSuiteName, _settings.Config);
+          ViewModel.Workspace.TestSuites.Remove(currentTestSuite);
+        var testSuite = new SuiteVm(ViewModel.Workspace, dialog.TestSuiteName, ViewModel.Settings.Config);
         testSuite.IsSelected = true;
-        _workspace.Save();
+        ViewModel.Workspace.Save();
       }
     }
 
 
     private void OnRemoveTest(object sender, ExecutedRoutedEventArgs e)
     {
-      var test = _testsTreeView.SelectedItem as TestVm;
+      var test = _testsTreeView.SelectedItem as FileVm;
       if (test == null)
         return;
       if (MessageBox.Show(this, "Do you want to delete the '" + test.Name + "' test?", "Visualizer!", MessageBoxButton.YesNo,
@@ -898,7 +859,7 @@ namespace Nitra.Visualizer
     {
       if (_testsTreeView == null)
         return;
-      e.CanExecute = _testsTreeView.SelectedItem is TestVm;
+      e.CanExecute = _testsTreeView.SelectedItem is FileVm;
       e.Handled = true;
     }
 
@@ -911,46 +872,46 @@ namespace Nitra.Visualizer
       SaveSelectedTestAndTestSuite();
     }
 
-      private void ProcessSelectTestTreeNode(RoutedPropertyChangedEventArgs<object> e)
+    private void ProcessSelectTestTreeNode(RoutedPropertyChangedEventArgs<object> e)
+    {
+      _currentNode = e.NewValue as BaseVm;
+
+      var suite = e.NewValue as SuiteVm;
+      if (suite != null)
       {
-        _currentNode = e.NewValue as BaseVm;
-
-        var suite = e.NewValue as SuiteVm;
-        if (suite != null)
-        {
-          ChangeCurrentTest(suite, null, null, null);
-          _para.Inlines.Clear();
-          return;
-        }
-
-        var solution = e.NewValue as SolutionVm;
-        if (solution != null)
-        {
-          ChangeCurrentTest(solution.Suite, solution, null, null);
-          return;
-        }
-
-        var project = e.NewValue as ProjectVm;
-        if (project != null)
-        {
-          ChangeCurrentTest(project.Suite, project.Solution, project, null);
-          return;
-        }
-
-        var test = e.NewValue as TestVm;
-        if (test != null)
-        {
-          ChangeCurrentTest(test.Suite, test.Project.Solution, test.Project, test);
-          ShowDiff(test);
-          return;
-        }
+        ChangeCurrentTest(suite, null, null, null);
+        _para.Inlines.Clear();
+        return;
       }
 
-    private void ChangeCurrentTest(SuiteVm newTestSuite, SolutionVm newSolution, ProjectVm newProject, TestVm newTest)
+      var solution = e.NewValue as SolutionVm;
+      if (solution != null)
+      {
+        ChangeCurrentTest(solution.Suite, solution, null, null);
+        return;
+      }
+
+      var project = e.NewValue as ProjectVm;
+      if (project != null)
+      {
+        ChangeCurrentTest(project.Suite, project.Solution, project, null);
+        return;
+      }
+
+      var test = e.NewValue as FileVm;
+      if (test != null)
+      {
+        ChangeCurrentTest(test.Suite, test.Project.Solution, test.Project, test);
+        ShowDiff(test);
+        return;
+      }
+    }
+
+    private void ChangeCurrentTest(SuiteVm newTestSuite, SolutionVm newSolution, ProjectVm newProject, FileVm newTest)
     {
       Trace.Assert(newTestSuite != null);
 
-      if (newTestSuite != _currentSuite)
+      if (newTestSuite != ViewModel.CurrentSuite)
         ResetHighlightingStyles();
 
       ClearAll();
@@ -967,48 +928,57 @@ namespace Nitra.Visualizer
       _initializing = true;
       try
       {
-        _text.Text = code;
+        _textEditor.Text = code;
       }
       finally
       {
         _initializing = false;
       }
-      _text.IsReadOnly = !isTestAvalable;
-      _text.Background = isTestAvalable ? SystemColors.WindowBrush : SystemColors.ControlBrush;
+      _textEditor.IsReadOnly = !isTestAvalable;
+      _textEditor.Background = isTestAvalable ? SystemColors.WindowBrush : SystemColors.ControlBrush;
 
       var client = newTestSuite.Client;
       var responseMap = client.ResponseMap;
       responseMap.Clear();
       responseMap[-1] = _responseDispatcher;
 
-      if (_currentSuite == null)
-        UpdatePrettyPrintStatus(client); // first time
+      if (ViewModel.CurrentSuite == null)
+        UpdateTrees(client); // first time
 
 
-      UpdateVm(_currentSuite,    newTestSuite);
+      UpdateVm(ViewModel.CurrentSuite,    newTestSuite);
       var timer = Stopwatch.StartNew();
-      DeactivateVm(_currentTest,     newTest,     client);
-      DeactivateVm(_currentProject,  newProject,  client);
-      DeactivateVm(_currentSolution, newSolution, client);
+      DeactivateVm(ViewModel.CurrentFile,     newTest,     client);
+      DeactivateVm(ViewModel.CurrentProject,  newProject,  client);
+      DeactivateVm(ViewModel.CurrentSolution, newSolution, client);
 
-      ActivateVm  (_currentSolution, newSolution, client);
-      ActivateVm  (_currentProject,  newProject,  client);
-      ActivateVm  (_currentTest,     newTest,     client);
+      ActivateVm  (ViewModel.CurrentSolution, newSolution, client);
+      ActivateVm  (ViewModel.CurrentProject,  newProject,  client);
+      ActivateVm  (ViewModel.CurrentFile,     newTest,     client);
       this.Title = timer.Elapsed.ToString();
 
-      _currentSuite    = newTestSuite;
-      _currentSolution = newSolution;
-      _currentProject  = newProject;
+      ViewModel.CurrentSuite    = newTestSuite;
+      ViewModel.CurrentSolution = newSolution;
+      ViewModel.CurrentProject  = newProject;
 
-      if (_currentTest != newTest)
+      if (ViewModel.CurrentFile != newTest)
       {
-        _currentTest     = newTest;
+        ViewModel.CurrentFile     = newTest;
         if (newTest != null)
         {
           responseMap[newTest.Id] = _responseDispatcher;
+          FillTrees(client);
         }
         TryReportError();
       }
+    }
+
+    private void FillTrees(NitraClient client)
+    {
+      if (IsAstReflectionTabItemActive())
+        FillAst();
+      else
+        UpdateTrees(client);
     }
 
     void Response(AsyncServerMessage msg)
@@ -1020,29 +990,36 @@ namespace Nitra.Visualizer
       AsyncServerMessage.ParsingMessages parsingMessages = null;
       AsyncServerMessage.SemanticAnalysisMessages typingMessages = null;
       AsyncServerMessage.PrettyPrintCreated prettyPrintCreated;
+      AsyncServerMessage.ReflectionStructCreated reflectionStructCreated;
 
       if ((parsingMessages = msg as AsyncServerMessage.ParsingMessages) != null)
       {
-        TestVm file = _currentSolution.GetFile(msg.FileId);
+        FileVm file = ViewModel.CurrentSolution.GetFile(msg.FileId);
         file.ParsingMessages = parsingMessages.messages;
       }
       else if ((typingMessages = msg as AsyncServerMessage.SemanticAnalysisMessages) != null)
       {
-        TestVm file = _currentSolution.GetFile(msg.FileId);
+        FileVm file = ViewModel.CurrentSolution.GetFile(msg.FileId);
         file.SemanticAnalysisMessages = typingMessages.messages;
       }
       else if ((languageInfo = msg as AsyncServerMessage.LanguageLoaded) != null)
-      {
         UpdateHighlightingStyles(languageInfo);
+      else if (msg is AsyncServerMessage.SemanticAnalysisDone)
+      {
+        if (IsAstReflectionTabItemActive())
+        {
+          _fillAstTimer.Stop();
+          _fillAstTimer.Start();
+        }
       }
 
-      if (_currentTest == null || msg.FileId >= 0 && msg.FileId != _currentTest.Id || msg.Version >= 0 && msg.Version != _currentTest.Version)
+      if (ViewModel.CurrentFile == null || msg.FileId >= 0 && msg.FileId != ViewModel.CurrentFile.Id || msg.Version >= 0 && msg.Version != ViewModel.CurrentFile.Version)
         return;
 
       if ((outlining = msg as AsyncServerMessage.OutliningCreated) != null)
       {
         _foldingStrategy.Outlining = outlining.outlining;
-        _foldingStrategy.UpdateFoldings(_foldingManager, _text.Document);
+        _foldingStrategy.UpdateFoldings(_foldingManager, _textEditor.Document);
       }
       else if ((keywordHighlighting = msg as AsyncServerMessage.KeywordsHighlightingCreated) != null)
       {
@@ -1064,10 +1041,37 @@ namespace Nitra.Visualizer
             break;
         }
       }
+      else if ((reflectionStructCreated = msg as AsyncServerMessage.ReflectionStructCreated) != null)
+      {
+        _reflectionTreeView.ItemsSource = new[] { reflectionStructCreated.root };
+        ShowParseTreeNodeForCaret(enforce: true);
+      }
       else if (parsingMessages != null || typingMessages != null)
       {
         TryReportError();
       }
+    }
+
+    void _fillAstTimer_Elapsed(object sender, ElapsedEventArgs e)
+    {
+      Dispatcher.Invoke(new Action(FillAst));
+    }
+
+    private void FillAst()
+    {
+      var file = ViewModel.CurrentFile;
+      if (file == null)
+        return;
+      const int Root = 0;
+      var version = file.Version;
+      var client  = ViewModel.CurrentSuite.Client;
+      var span    = new NSpan(0, _textEditor.Document.TextLength);
+      var root    = new ObjectDescriptor.Ast(span, Root, "<File>", "<File>", "<File>", null);
+      var context = new AstNodeViewModel.AstContext(client, file.Id, version);
+      var rootVm  = new ItemAstNodeViewModel(context, root, -1);
+      rootVm.IsExpanded = true;
+      _astTreeView.ItemsSource = new[] { rootVm };
+      ShowAstNodeForCaret(enforce: true);
     }
 
     void Document_Changed(object sender, DocumentChangeEventArgs e)
@@ -1075,11 +1079,11 @@ namespace Nitra.Visualizer
       if (_initializing)
         return;
 
-      var version = _currentTest.Version;
+      var version = ViewModel.CurrentFile.Version;
       version++;
 
       Debug.Assert(e.OffsetChangeMap != null);
-      _currentTest.OnTextChanged(version, e.InsertedText, e.InsertionLength, e.Offset, e.RemovalLength, _text.Text);
+      ViewModel.CurrentFile.OnTextChanged(version, e.InsertedText, e.InsertionLength, e.Offset, e.RemovalLength, _textEditor.Text);
     }
 
     void UpdateVm(SuiteVm oldVm, SuiteVm newVm)
@@ -1114,19 +1118,19 @@ namespace Nitra.Visualizer
 
     void OnRemoveTestSuite(object sender, ExecutedRoutedEventArgs e)
     {
-      if (_workspace == null || _currentSuite == null)
+      if (ViewModel.Workspace == null || ViewModel.CurrentSuite == null)
         return;
 
-      if (MessageBox.Show(this, "Do you want to delete the '" + _currentSuite.Name + "' test suite?\r\nAll test will be deleted!", "Visualizer!", MessageBoxButton.YesNo,
+      if (MessageBox.Show(this, "Do you want to delete the '" + ViewModel.CurrentSuite.Name + "' test suite?\r\nAll test will be deleted!", "Visualizer!", MessageBoxButton.YesNo,
         MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
         return;
 
-      _currentSuite.Remove();
+      ViewModel.CurrentSuite.Remove();
     }
 
     void CommandBinding_CanRemoveTestSuite(object sender, CanExecuteRoutedEventArgs e)
     {
-      e.CanExecute = _currentSuite != null;
+      e.CanExecute = ViewModel.CurrentSuite != null;
       e.Handled = true;
     }
 
@@ -1138,7 +1142,7 @@ namespace Nitra.Visualizer
     void RunTest()
     {
       {
-        var test = _testsTreeView.SelectedItem as TestVm;
+        var test = _testsTreeView.SelectedItem as FileVm;
         if (test != null)
         {
           RunTest(test);
@@ -1158,8 +1162,8 @@ namespace Nitra.Visualizer
         return;
       }
 
-      if (_workspace != null)
-        foreach (var test in _workspace.GetAllTests())
+      if (ViewModel.Workspace != null)
+        foreach (var test in ViewModel.Workspace.GetAllTests())
           RunTest(test);
     }
 
@@ -1168,7 +1172,7 @@ namespace Nitra.Visualizer
       if (_testsTreeView == null)
         return;
 
-      if (_testsTreeView.SelectedItem is TestVm)
+      if (_testsTreeView.SelectedItem is FileVm)
       {
         e.CanExecute = true;
         e.Handled = true;
@@ -1192,18 +1196,18 @@ namespace Nitra.Visualizer
         return;
 
       var config = (string)_configComboBox.SelectedItem;
-      _settings.Config = config;
+      ViewModel.Settings.Config = config;
       LoadTests();
     }
 
     void OnUpdateTest(object sender, ExecutedRoutedEventArgs e)
     {
-      var test = _testsTreeView.SelectedItem as TestVm;
+      var test = _testsTreeView.SelectedItem as FileVm;
       if (test != null)
       {
         try
         {
-          test.Update(_text.Text, _prettyPrintTextBox.Text);
+          test.Update(_textEditor.Text, _prettyPrintTextBox.Text);
           test.Suite.TestStateChanged();
         }
         catch (Exception ex)
@@ -1222,10 +1226,10 @@ namespace Nitra.Visualizer
 
     void Reparse()
     {
-      if (_currentSuite == null || _currentTest == null)
+      if (ViewModel.CurrentSuite == null || ViewModel.CurrentFile == null)
         return;
 
-      _currentSuite.Client.Send(new ClientMessage.FileReparse(_currentTest.Id));
+      ViewModel.CurrentSuite.Client.Send(new ClientMessage.FileReparse(ViewModel.CurrentFile.Id));
     }
 
 
@@ -1234,21 +1238,21 @@ namespace Nitra.Visualizer
       if (_doChangeCaretPos)
         return;
 
-      var node = e.NewValue as ReflectionStruct;
+      var node = e.NewValue as ParseTreeReflectionStruct;
 
       if (node == null)
         return;
 
-      if (_text.IsKeyboardFocusWithin)
+      if (_textEditor.IsKeyboardFocusWithin)
         return;
 
       _doTreeOperation = true;
       try
       {
-        _text.TextArea.Caret.Offset = node.Span.StartPos;
-        _text.ScrollTo(_text.TextArea.Caret.Line, _text.TextArea.Caret.Column);
-        _text.TextArea.AllowCaretOutsideSelection();
-        _text.Select(node.Span.StartPos, node.Span.Length);
+        _textEditor.TextArea.Caret.Offset = node.Span.StartPos;
+        _textEditor.ScrollTo(_textEditor.TextArea.Caret.Line, _textEditor.TextArea.Caret.Column);
+        _textEditor.TextArea.AllowCaretOutsideSelection();
+        _textEditor.Select(node.Span.StartPos, node.Span.Length);
       }
       finally
       {
@@ -1258,15 +1262,15 @@ namespace Nitra.Visualizer
 
     private void OnShowGrammar(object sender, ExecutedRoutedEventArgs e)
     {
-      if (_currentSuite == null)
+      if (ViewModel.CurrentSuite == null)
         return;
 
-      _currentSuite.ShowGrammar();
+      ViewModel.CurrentSuite.ShowGrammar();
     }
 
     private void CommandBinding_CanShowGrammar(object sender, CanExecuteRoutedEventArgs e)
     {
-      e.CanExecute = _currentSuite != null;
+      e.CanExecute = ViewModel.CurrentSuite != null;
       e.Handled = true;
     }
 
@@ -1281,13 +1285,13 @@ namespace Nitra.Visualizer
           control.FontSize++;
         else if (e.Key == Key.Subtract && Keyboard.Modifiers == ModifierKeys.Control)
           control.FontSize--;
-
+        
         if (Keyboard.Modifiers != ModifierKeys.Control)
           return;
 
         if (Keyboard.IsKeyDown(Key.Space))
         {
-          ShowCompletionWindow(_text.CaretOffset);
+          ShowCompletionWindow(_textEditor.CaretOffset);
           e.Handled = true;
         }
         else if (e.Key == Key.Oem6) // Oem6 - '}'
@@ -1297,22 +1301,37 @@ namespace Nitra.Visualizer
 
     private void ShowCompletionWindow(int pos)
     {
-      if (_currentSuite == null || _currentTest == null)
+      if (ViewModel.CurrentSuite == null || ViewModel.CurrentFile == null)
         return;
 
-      var client = _currentSuite.Client;
+      var client = ViewModel.CurrentSuite.Client;
 
-      client.Send(new ClientMessage.CompleteWord(_currentTest.Id, _currentTest.Version, pos));
+      client.Send(new ClientMessage.CompleteWord(ViewModel.CurrentFile.Id, ViewModel.CurrentFile.Version, pos));
       var result = client.Receive<ServerMessage.CompleteWord>();
       var replacementSpan = result.replacementSpan;
 
-      _completionWindow = new CompletionWindow(_text.TextArea);
+      _completionWindow = new CompletionWindow(_textEditor.TextArea);
       IList<ICompletionData> data = _completionWindow.CompletionList.CompletionData;
 
       CompletionElem.Literal lit;
       CompletionElem.Symbol  s;
 
-      foreach (var completionData in result.completionList)
+      Func<CompletionElem, string> completionKeySelector = el => {
+        if ((lit = el as CompletionElem.Literal) != null) return lit.text;
+        if ((s = el as CompletionElem.Symbol) != null) return s.name;
+        return "";
+      };
+
+      var completionList = result.completionList
+                                 .Where(c => {
+                                   var key = completionKeySelector(c);
+                                   return !key.StartsWith("?") &&
+                                          !key.StartsWith("<");
+                                 })
+                                 .Distinct(completionKeySelector)
+                                 .OrderBy(completionKeySelector);
+
+      foreach (var completionData in completionList)
       {
         if ((lit = completionData as CompletionElem.Literal) != null)
         {
@@ -1330,7 +1349,7 @@ namespace Nitra.Visualizer
 
     private void TryMatchBraces()
     {
-      //var pos = _text.CaretOffset;
+      //var pos = _textEditor.CaretOffset;
       //foreach (var bracket in _matchedBrackets)
       //{
       //  if (TryMatchBrace(bracket.OpenBracket, pos, bracket.CloseBracket.EndPos))
@@ -1346,8 +1365,8 @@ namespace Nitra.Visualizer
       //if (!brace.IntersectsWith(pos))
       //  return false;
 
-      //_text.CaretOffset = gotoPos;
-      //_text.ScrollTo(_text.TextArea.Caret.Line, _text.TextArea.Caret.Column);
+      //_textEditor.CaretOffset = gotoPos;
+      //_textEditor.ScrollTo(_textEditor.TextArea.Caret.Line, _textEditor.TextArea.Caret.Column);
       //return true;
     }
 
@@ -1400,9 +1419,9 @@ namespace Nitra.Visualizer
 
     private void OpenWorkspace(string workspaceFilePath)
     {
-      _settings.CurrentWorkspace = workspaceFilePath;
-      _workspace = new WorkspaceVm(workspaceFilePath, null, _settings.Config);
-      _testsTreeView.ItemsSource = _workspace.TestSuites;
+      ViewModel.Settings.CurrentWorkspace = workspaceFilePath;
+      ViewModel.Workspace = new WorkspaceVm(workspaceFilePath, null, ViewModel.Settings.Config);
+      _testsTreeView.ItemsSource = ViewModel.Workspace.TestSuites;
       RecentFileList.InsertFile(workspaceFilePath);
     }
 
@@ -1428,7 +1447,7 @@ namespace Nitra.Visualizer
 
     private void OnAddExistsTestSuite(object sender, ExecutedRoutedEventArgs e)
     {
-      var unattachedTestSuites = _workspace.GetUnattachedTestSuites();
+      var unattachedTestSuites = ViewModel.Workspace.GetUnattachedTestSuites();
       var menu = new ContextMenu();
       foreach (var name in unattachedTestSuites)
       {
@@ -1452,14 +1471,14 @@ namespace Nitra.Visualizer
     void item_Click(object sender, RoutedEventArgs e)
     {
       var name = (string)((MenuItem)e.Source).Header;
-      var testSuite = new SuiteVm(_workspace, name, _settings.Config);
+      var testSuite = new SuiteVm(ViewModel.Workspace, name, ViewModel.Settings.Config);
       testSuite.IsSelected = true;
-      _workspace.Save();
+      ViewModel.Workspace.Save();
     }
 
     private void CommandBinding_CanOnAddTestSuite(object sender, CanExecuteRoutedEventArgs e)
     {
-      e.CanExecute = _workspace != null;
+      e.CanExecute = ViewModel.Workspace != null;
       e.Handled = true;
     }
 
@@ -1471,7 +1490,7 @@ namespace Nitra.Visualizer
     private void CommandBinding_CanOnEditTestSuite(object sender, CanExecuteRoutedEventArgs e)
     {
       e.Handled = true;
-      e.CanExecute = _currentSuite != null;
+      e.CanExecute = ViewModel.CurrentSuite != null;
     }
 
     private void RecentFileList_OnMenuClick(object sender, RecentFileList.MenuClickEventArgs e)
@@ -1515,7 +1534,7 @@ namespace Nitra.Visualizer
 
     private void AddFile_MenuItem_OnClick(object sender, RoutedEventArgs e)
     {
-      var test = _testsTreeView.SelectedItem as TestVm;
+      var test = _testsTreeView.SelectedItem as FileVm;
 
       if (test != null)
       {
@@ -1535,7 +1554,7 @@ namespace Nitra.Visualizer
         if (File.Exists(test.Gold))
           File.Move(test.Gold, Path.ChangeExtension(firstFilePath, ".gold"));
         var stringManager = prj.Suite.Workspace.StringManager;
-        prj.Children.Add(new TestVm(test.Suite, prj, firstFilePath, stringManager[firstFilePath]));
+        prj.Children.Add(new FileVm(test.Suite, prj, firstFilePath, stringManager[firstFilePath]));
         AddNewFileToMultitest(prj).IsSelected = true;
         return;
       }
@@ -1546,22 +1565,22 @@ namespace Nitra.Visualizer
         AddNewFileToMultitest(project).IsSelected = true;
     }
 
-    private static TestVm AddNewFileToMultitest(ProjectVm project)
+    private static FileVm AddNewFileToMultitest(ProjectVm project)
     {
       var name = MakeTestFileName(project);
       var path = Path.Combine(project.FullPath, name + ".test");
       File.WriteAllText(path, Environment.NewLine, Encoding.UTF8);
       var stringManager = project.Suite.Workspace.StringManager;
-      var newTest = new TestVm(project.Suite, project, path, stringManager[path]);
+      var newTest = new FileVm(project.Suite, project, path, stringManager[path]);
       project.Children.Add(newTest);
       return newTest;
     }
 
     private void CopyReflectionText(object sender, RoutedEventArgs e)
     {
-      //var reflectionStruct = _reflectionTreeView.SelectedItem as ReflectionStruct;
-      //if (reflectionStruct != null)
-      //  CopyTreeNodeToClipboard(reflectionStruct.Description);
+      var reflectionStruct = _reflectionTreeView.SelectedItem as ParseTreeReflectionStruct;
+      if (reflectionStruct != null)
+        CopyTreeNodeToClipboard(reflectionStruct.Description);
     }
 
     private void DeleteFile_MenuItem_OnClick(object sender, RoutedEventArgs e)
@@ -1569,9 +1588,17 @@ namespace Nitra.Visualizer
       Delete();
     }
 
+    private void OnAttachDebuggerClick(object sender, RoutedEventArgs e)
+    {
+      var currentSuite = ViewModel.CurrentSuite;
+      if (currentSuite != null) {
+        currentSuite.Client.Send(ClientMessage.AttachDebugger._N_constant_object);
+      }
+    }
+
     private void Delete()
     {
-      var test = _testsTreeView.SelectedItem as TestVm;
+      var test = _testsTreeView.SelectedItem as FileVm;
 
       if (test != null)
       {
@@ -1617,5 +1644,13 @@ namespace Nitra.Visualizer
         return Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
       }
     }
+
+    object IViewFor.ViewModel
+    {
+      get { return ViewModel; }
+      set { ViewModel = (MainWindowViewModel) value; }
+    }
+
+    public MainWindowViewModel ViewModel { get; set; }
   }
 }

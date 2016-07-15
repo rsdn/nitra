@@ -246,7 +246,7 @@ namespace Nitra.Visualizer
       _doChangeCaretPos = true;
       try
       {
-        if      (object.ReferenceEquals(_tabControl.SelectedItem, _declarationsTabItem))
+        if      (object.ReferenceEquals(_tabControl.SelectedItem, _astReflectionTabItem))
           ShowAstNodeForCaret();
         else if (object.ReferenceEquals(_tabControl.SelectedItem, _reflectionTabItem))
           ShowParseTreeNodeForCaret();
@@ -442,7 +442,7 @@ namespace Nitra.Visualizer
             errorNode.MouseDoubleClick += errorNode_MouseDoubleClick;
             errorNodes.Add(errorNode);
             _status.Text = msg;
-            _text.TextArea.Caret.Offset = _parseResult.MaxFailPos;
+            //_text.TextArea.Caret.Offset = _parseResult.MaxFailPos;
           }
           else
             _status.Text = "Grammar is ambiguous! Main parser is fail! This leads to reduction performance.";

@@ -1,22 +1,82 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Rendering;
-using ICSharpCode.AvalonEdit.Highlighting;
-using ICSharpCode.AvalonEdit.Document;
+using System.Reactive.Linq;
 using System.Windows.Media;
-using ICSharpCode.AvalonEdit.Search;
+using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Document;
+using ICSharpCode.AvalonEdit.Highlighting;
+using ICSharpCode.AvalonEdit.Rendering;
+using Nitra.ClientServer.Messages;
+using Nitra.Visualizer.Infrastructure;
+using Nitra.Visualizer.ViewModels;
+using ReactiveUI;
 
-namespace Nitra.Visualizer
+namespace Nitra.Visualizer.Views
 {
-  public class NitraTextEditor : TextEditor
+  public class NitraTextEditor : TextEditor, IViewFor<NitraTextEditorViewModel>
   {
+    private IntelliSensePopup _popup;
+
     public NitraTextEditor()
     {
       SyntaxHighlighting = new StubHighlightingDefinition();
       TextArea.DefaultInputHandler.NestedInputHandlers.Add(new NitraSearchInputHandler(TextArea));
+      
+      this.WhenActivated(disposables => {
+        _popup = new IntelliSensePopup(ViewModel.IntelliSensePopup);
+
+        AddVisualChild(_popup);
+        
+        this.OneWayBind(ViewModel, vm => vm.IntelliSensePopup, v => v._popup.ViewModel)
+            .AddTo(disposables);
+
+        this.WhenAnyValue(vm => vm.ViewModel.Selection)
+            .Subscribe(span => {
+              if (span.HasValue)
+                Select(span.Value.StartPos, span.Value.Length);
+            })
+            .AddTo(disposables);
+
+        this.WhenAnyValue(vm => vm.ViewModel.ScrollPosition)
+            .Where(pos => pos != null)
+            .Subscribe(scrollPos => ScrollTo(scrollPos.Line, scrollPos.Column))
+            .AddTo(disposables);
+
+        ViewModel.WhenAnyValue(vm => vm.IntelliSensePopup.IsVisible)
+                 .Where(popupVisible => popupVisible)
+                 .Do(_ => UpdatePopupOffset())
+                 .Subscribe(visible => _popup.List.Focus())
+                 .AddTo(disposables);
+
+        ViewModel.WhenAnyValue(vm => vm.IntelliSensePopup.IsVisible)
+                 .Where(popupVisible => !popupVisible)
+                 .Subscribe(visible => TextArea.Focus())
+                 .AddTo(disposables);
+
+        TextArea.SelectionChanged += (sender, args) => {
+          var selection = TextArea.Selection;
+          var span = selection.Segments.FirstOrDefault();
+          
+          if (span != null)
+            ViewModel.Selection = new NSpan(span.StartOffset, span.EndOffset);
+          else
+            ViewModel.Selection = null;
+        };
+
+        TextArea.Caret.PositionChanged += (sender, args) => {
+          ViewModel.CaretOffset = CaretOffset;
+          ViewModel.CaretLine = TextArea.Caret.Line;
+          ViewModel.CaretColumn = TextArea.Caret.Column;
+        };
+      });
+    }
+
+    private void UpdatePopupOffset()
+    {
+      var pos = TextArea.TextView.GetVisualPosition(TextArea.Caret.Position, VisualYPosition.LineBottom);
+      _popup.HorizontalOffset = pos.X;
+      _popup.VerticalOffset = pos.Y - (ActualHeight + VerticalOffset);
     }
 
     public event EventHandler<HighlightLineEventArgs> HighlightLine;
@@ -108,6 +168,14 @@ namespace Nitra.Visualizer
         get { throw new NotImplementedException(); }
       }
     }
+
+    object IViewFor.ViewModel
+    {
+        get { return ViewModel; }
+        set { ViewModel = (NitraTextEditorViewModel) value; }
+    }
+
+    public NitraTextEditorViewModel ViewModel { get; set; }
   }
 
   public sealed class HighlightLineEventArgs : EventArgs

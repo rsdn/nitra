@@ -24,6 +24,7 @@ namespace Nitra.ViewModels
 
     protected this(suite : SuiteVm, fullPath : string)
     {
+      this();
       Suite = suite;
       FullPath = fullPath;
       _isExpanded = true;
@@ -92,6 +93,6 @@ namespace Nitra.ViewModels
         h(this, PropertyChangedEventArgs(propertyName));
     }
     
-    public abstract GetAllTests() : Seq[TestVm];
+    public abstract GetAllTests() : Seq[FileVm];
   }
 }

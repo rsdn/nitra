@@ -19,7 +19,7 @@ module Program
 {
   Main(args : array[string]) : void
   {
-     assert2(false, "Start debugger");
+    //assert2(false, "Start debugger");
     
     when (args.Length != 1)
     {
@@ -71,7 +71,7 @@ module Program
             }
             catch
             {
-              | _ is EndOfStreamException when !requestPipe.IsConnected => ServerUtils.Log("Session has been terminated."); return;
+              | _ is EndOfStreamException when !requestPipe.IsConnected => ServerUtils.Log("Session has been terminated."); Environment.Exit(1);
               | e                                                       => ServerUtils.LogException(e);
             }
           }

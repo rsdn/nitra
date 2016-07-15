@@ -7,25 +7,25 @@ using System.Windows.Media;
 
 namespace Nitra.Visualizer
 {
-  public class ReflectionStructColorConverter : IValueConverter
+  public class ParseTreeReflectionStructColorConverter : IValueConverter
   {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-      var node = (ReflectionStruct)value;
+      var node = (ParseTreeReflectionStruct)value;
 
-      //if (node.Info.IsMarker)
-        //return Brushes.DarkGray;
+      if (node.Info.IsMarker)
+        return Brushes.DarkGray;
 
       if (node.Kind == ReflectionKind.Deleted)
         return Brushes.Red;
 
-      //if (node.Span.IsEmpty)
-      //{
-        //if (node.Info.CanParseEmptyString)
-          //return Brushes.Teal;
+      if (node.Span.IsEmpty)
+      {
+        if (node.Info.CanParseEmptyString)
+          return Brushes.Teal;
 
-        //return Brushes.Red;
-      //}
+        return Brushes.Red;
+      }
 
       if (node.Kind == ReflectionKind.Ambiguous)
         return Brushes.DarkOrange;

@@ -6,7 +6,9 @@ using Nemerle.Text;
 using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
+using Nitra.ClientServer.Server.ServerUtils;
 using Nitra.Declarations;
+using Nitra.Internal;
 using Nitra.PrettyPrint;
 
 using System;
@@ -16,10 +18,12 @@ using System.Collections.Immutable;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 
-using NSP = Nitra.ProjectSystem;
+using NSP  = Nitra.ProjectSystem;
+using SC   = System.Collections;
 using Span = Nitra.ClientServer.Messages.NSpan;
 
 namespace Nitra.ClientServer.Server.ProjectSystem
@@ -42,6 +46,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _parseResult            : IParseResult;
     mutable _ast                    : IAst;
     mutable _parseTree              : ParseTree;
+    mutable _objToIdMap             : ConcurrentDictionary[object, int];
+    mutable _idToObjMap             : ConcurrentDictionary[int, object];
     
     public this(id : int, fullPath : string, version : int, parent : Project)
     {
@@ -72,8 +78,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       
       parent.AddFile(this);
     }
-    
-    public Log(msg : string) : void { ServerUtils.Log(msg) }
     
     public override Ast : IAst { get { _ast } }
     public override Language : Language { get; }
@@ -165,8 +169,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       _ = GetSource();
       Version = version;
-      foreach(change in changes)
-        ApplyChange(change);
+      for (mutable i = 0; i < changes.Length; i++)
+        ApplyChange(changes[i]);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
       _parseQueue.Add(GetReParseMessage());
     }
@@ -195,7 +199,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         //_astMessages = NSP.CompilerMessageList();
         _parseTree   = null;
       }
-      
+        
       def cancellationTokenSource = CancellationTokenSource();
       def cancellationToken       = cancellationTokenSource.Token;
       def source                  = GetSource();
@@ -212,7 +216,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       _parseResult = parseResult;
       _parseTree   = parseResult.CreateParseTree(); 
-      ParserMessage.CreateAst(this.Id, parseResult)
+      ParserMessage.CreateAst(this.Id, parseResult, IsActive)
     }
     
     public AstCreated(ast : IAst, parseTree : ParseTree) : void
@@ -240,9 +244,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         CreateVisualInfo(parseResult);
         
       TryPrettyPrint();
+      TryCreateParseTreeReflection();
         
       when (Parent.IsSemanticAvailable)
         Parent.ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Id, Version, Ast));
+    }
+    
+    TryCreateParseTreeReflection() : void
+    {
+      def router           = Parent.Router;
+      when (router.IsParseTreeReflectionEnable && _parseResult != null)
+        Parent.ParseQueue.Add(ParserMessage.CreateParseTreeReflection(this.Id, this.Version, _parseResult));
     }
     
     TryPrettyPrint() : void
@@ -251,8 +263,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def prettyPrintState = router.PrettyPrintState;
       when (router.PrettyPrintState != PrettyPrintState.Disabled && _parseTree != null)
         Parent.ParseQueue.Add(ParserMessage.CreatePrettyPrint(Id, Version, prettyPrintState, _parseTree));
-    }
-    
+    }    
     public Deactivate() : void
     {
       Log("Deactivate "+ Id);
@@ -288,7 +299,360 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       router.SendResponse(ServerMessage.CompleteWord(ServerUtils.ConvertNSpan(replacementSpan), builder.ToImmutable()));
       Log("CompleteWord " + Id + " fotish.");
     }
+    
+    public FindSymbolDefinitions(fileVersion : int, pos : int) : void
+    {
+      def ast = _ast;
+      
+      when (ast == null || ast.Location.Source.Version != fileVersion)
+      {
+        // maybe better return special message?
+        assert2(false);
+        Parent.Router.SendResponse(ServerMessage.FindSymbolDefinitions(NSpan(), ImmutableArray.Empty));
+        return;
+      }
+        
+      def action(cancellationToken : CancellationToken, _asts : ImmutableArray[IAst]) : void
+      { // execute when Parent.IsSemanticAvailable 
+        def router             = this.Parent.Router;
+        def pos                = pos;
+        def ast                = ast;
+        def (refSpan, symbols) = GetSymbols(cancellationToken, pos, ast);
+        
+        def biulder = ImmutableArray.CreateBuilder();
+        foreach (symbol in symbols)
+          foreach (decl in symbol.GetDeclarationsUntyped())
+            biulder.Add(SymbolLocation(symbol.Id, ServerUtils.ConvertLocation(decl.Name.Location)));
+      
+        def names = biulder.ToImmutableArray();
+        router.SendResponse(ServerMessage.FindSymbolDefinitions(refSpan, names));
+      }
+      
+      Parent.AddSemanticAction(action);
+    }
+    
+    public FindSymbolReferences(fileVersion : int, pos : int) : void
+    {
+      def ast = _ast;
+      
+      when (ast == null || ast.Location.Source.Version != fileVersion)
+      {
+        // maybe better return special message?
+        assert2(false);
+        Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(NSpan(), ImmutableArray.Empty));
+        return;
+      }
+        
+      def action(cancellationToken : CancellationToken, asts : ImmutableArray[IAst]) : void
+      { // execute when Parent.IsSemanticAvailable 
+        def router             = this.Parent.Router;
+        def pos                = pos;
+        def ast                = ast;
+        def (refSpan, symbols) = GetSymbols(cancellationToken, pos, ast);
+        def defsBiulder        = ImmutableArray.CreateBuilder();
+        def symbolsBiulder     = ImmutableArray.CreateBuilder(symbols.Length);
+        def refsBiulder        = ImmutableArray.CreateBuilder();
+        def spansBiulder       = ImmutableArray.CreateBuilder();
+
+        foreach (symbol in symbols)
+        {
+          def decls = symbol.GetDeclarationsUntyped();
+          assert2(defsBiulder.Count == 0);
+          defsBiulder.Capacity = decls.Count();
+          
+          foreach (decl in decls)
+            defsBiulder.Add(SymbolLocation(symbol.Id, ServerUtils.ConvertLocation(decl.Name.Location)));
+            
+          def visitor = CollectSymbolRefsAstVisitor(cancellationToken, symbol);
+          
+          for (mutable i = 0; i < asts.Length; i++)
+          {
+            def curAst = asts[i];
+            visitor.FoundSymbols.Clear();
+            curAst.Accept(visitor);
+            def source       = curAst.Source;
+            def fileIdentity = FileIdentity(source.File.Id, source.Version);
+            
+            
+            assert2(spansBiulder.Count == 0);
+            spansBiulder.Capacity = visitor.FoundSymbols.Count;
+
+            foreach (r in visitor.FoundSymbols)
+              spansBiulder.Add(ServerUtils.ConvertNSpan(r.Location.Span));
+
+            refsBiulder.Add(FileEntries(fileIdentity, spansBiulder.MoveToImmutable()));
+          }
+
+          symbolsBiulder.Add(SymbolRreferences(symbol.Id, defsBiulder.MoveToImmutable(), refsBiulder.ToImmutable()));
+        }
+          
+        router.SendResponse(ServerMessage.FindSymbolReferences(refSpan, symbolsBiulder.MoveToImmutable()));
+      }
+      
+      Parent.AddSemanticAction(action);
+    }
   
+    static GetSymbols(cancellationToken : CancellationToken, pos : int, ast : IAst) : Span * array[DeclarationSymbol]
+    {
+      def visitor = CollectSymbolsAndRefsInSpanAstVisitor(cancellationToken, NSpan(pos));
+      ast.Accept(visitor);
+      
+      def symbols = HashSet();
+      mutable refSpan : Span;
+      
+      unless (cancellationToken.IsCancellationRequested)
+        foreach (name when name.IsSymbolEvaluated in visitor.Names)
+        {
+          when (refSpan == default(Span))
+            refSpan = ServerUtils.ConvertNSpan(name.Span);
+
+          _ = symbols.Add(name.Symbol);
+        }
+        
+      unless (cancellationToken.IsCancellationRequested)
+        foreach (r when r.IsSymbolEvaluated in visitor.Refs)
+        {
+          when (refSpan == default(Span))
+            refSpan = ServerUtils.ConvertNSpan(r.Location.Span);
+
+          _ = symbols.Add(r.Symbol);
+        }
+        
+      (refSpan, symbols.ToArray())
+    }
+    
+    public static GetText(obj : IAst) : string
+    {
+      def maxLen = 200;
+      def loc    = obj.Location;
+      def span   = loc.Span;
+      def text   = loc.Source.OriginalText;
+      def index  = text.IndexOfAny(array['\r', '\n'], span.StartPos, span.Length);
+      def len    = if (index > 0) index - span.StartPos else Math.Min(maxLen, span.Length);
+      if (len == span.Length)
+        text.Substring(span.StartPos, len)
+      else
+        text.Substring(span.StartPos, len) + "..."
+    }
+
+    public static GetText(obj : object) : string
+    {
+      def str    = obj.ToString();
+      def index  = str.IndexOfAny(array['\r', '\n']);
+      def maxLen = 200;
+      def len    = if (index > 0 && index < maxLen) index else maxLen;
+      if (str.Length > len)
+        str.Substring(0, len) + "..."
+      else
+        str
+    }
+    
+    public GetObjectContent(fileVersion : int, objectId : int) : void
+    {
+      def ast = _ast;
+      
+      when (ast == null || ast.Location.Source.Version != fileVersion)
+      {
+        Parent.Router.SendResponse(ServerMessage.ObjectContent(ContentDescriptor.Fail("AST not created yet.")));
+        return;
+      }
+      
+      def action(cancellationToken : CancellationToken, _asts : ImmutableArray[IAst]) : void
+      {
+        try
+        {
+          def objectId   = objectId;
+          when (objectId == 0)
+          lock (this)
+          {
+            if (_objToIdMap == null)
+            {
+              _objToIdMap  = ConcurrentDictionary();
+              _idToObjMap  = ConcurrentDictionary();
+            }
+            else
+            {
+              _objToIdMap.Clear();
+              _idToObjMap.Clear();
+            }
+          
+            _objToIdMap[ast] = 0;
+            _idToObjMap[0]   = ast;
+          }
+
+          def objToIdMap = _objToIdMap;
+          def idToObjMap = _idToObjMap;
+        
+          assert2(objToIdMap != null);
+          assert2(idToObjMap != null);
+        
+          when (cancellationToken.IsCancellationRequested)
+          {
+            Parent.Router.SendResponse(ServerMessage.ObjectContent(ContentDescriptor.Fail("Operation canceled.")));
+            return;
+          }
+        
+          def astType = typeof(IAst);
+          def isContentProperty(prop : PropertyInfo) : bool
+          {
+            def name = prop.Name;
+            match (name)
+            {
+              | "HasValue" => true
+              | "Id" | "IsMissing" | "File" | "Span" | "IsAmbiguous" => false
+              | _ => !(name.StartsWith("Is", StringComparison.Ordinal) && name.EndsWith("Evaluated", StringComparison.Ordinal))
+                && !name.Equals("IsAllPropertiesEvaluated", StringComparison.Ordinal) && prop.GetIndexParameters().Length == 0
+            }
+          }
+          def findObject() : object
+          {
+            def ast = ast;
+            mutable obj;
+            obj = if (objectId == 0) ast
+                  else if (idToObjMap.TryGetValue(objectId, out obj)) obj
+                  else null;
+                  
+            when (ast?.Location.Source.Version != fileVersion)
+              obj = null;
+
+            obj
+          }
+          def obj = findObject();
+          def readMembers(obj : object) : array[PropertyDescriptor]
+          {
+            def t = obj.GetType();
+            def members = t.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                           .Where(isContentProperty)
+                           .Select(readValue(obj, t, _))
+                           .Concat(
+                            t.GetFields(BindingFlags.Instance | BindingFlags.Public)
+                             .Select(readFieldValue(obj, t, _)))
+                           .OrderBy(x => x.Name)
+                           .ToArray();
+            members
+          }
+          and loadObjectContent(obj : object) : ContentDescriptor
+          {
+            match (obj)
+            {
+              | obj is IAstList[IAst] => ContentDescriptor.AstItems(readMembers(obj), obj.MapToArray(toObjectDescriptor))
+              | obj is IAst           => ContentDescriptor.Members(readMembers(obj))
+              | obj is SC.IEnumerable => ContentDescriptor.Items(obj.Cast.[object]().MapToArray(toObjectDescriptor))
+              | _ => ContentDescriptor.Members(readMembers(obj))
+            }
+          }
+          and toObjectDescriptor(obj : object) : ObjectDescriptor
+          {
+            def count(seq : SC.IEnumerable) : int
+            {
+              | x is SC.ICollection => x.Count
+              | _ => 
+                mutable i;
+                foreach (_ in seq)
+                  i++;
+                i
+            }
+            def getId(obj : object) : int
+            {
+              assert2(obj != null);
+            
+              mutable id;
+              unless (objToIdMap.TryGetValue(obj, out id))
+              {
+                id = objToIdMap.Count;
+                objToIdMap[obj] = id;
+                idToObjMap[id]  = obj;
+              }
+          
+              id
+            }
+          
+            match (obj)
+            {
+              | null                    => ObjectDescriptor.Null()
+              | obj is DeclarationSymbol => def t = obj.GetType();  ObjectDescriptor.Symbol(getId(obj), obj.Name, obj.FullName, t.Name, t.FullName, null)
+              | obj is IAstList[IAst]   => ObjectDescriptor.AstList(ConvertNSpan(obj.Span), getId(obj), null, null, obj.Count)
+              | obj is IAst           => def t = obj.GetType(); ObjectDescriptor.Ast(ConvertNSpan(obj.Span), getId(obj), GetText(obj), t.Name, t.FullName, null)
+              | obj is string         =>
+                mutable i = 0;
+                for (mutable nlCount = 0; nlCount < 5 && i < obj.Length && i < 400; )
+                {
+                  def index = obj.IndexOf('\n', i);
+                  if (index >= 0)
+                  {
+                    i = index + 1;
+                    nlCount++;
+                  }
+                  else
+                    i++;
+                }
+              
+                ObjectDescriptor.String(if (obj.Length == i) obj else (obj.Substring(0, i) + "..."))
+              
+              | obj is SC.IEnumerable => ObjectDescriptor.Seq(getId(obj), null, count(obj))
+              | obj is System.Int16   => ObjectDescriptor.Int16  (obj)
+              | obj is System.Int32   => ObjectDescriptor.Int32  (obj)
+              | obj is System.Int64   => ObjectDescriptor.Int64  (obj)
+              | obj is System.Char    => ObjectDescriptor.Char   (obj)
+              | obj is System.SByte   => ObjectDescriptor.SByte  (obj)
+              | obj is System.UInt16  => ObjectDescriptor.UInt16 (obj)
+              | obj is System.UInt32  => ObjectDescriptor.UInt32 (obj)
+              | obj is System.UInt64  => ObjectDescriptor.UInt64 (obj)
+              | obj is System.Byte    => ObjectDescriptor.Byte   (obj)
+              | obj is System.Single  => ObjectDescriptor.Single (obj)
+              | obj is System.Double  => ObjectDescriptor.Double (obj)
+              | obj is System.Boolean => ObjectDescriptor.Boolean(obj)
+              | obj is IParsedValue   => ObjectDescriptor.Parsed(ConvertNSpan(obj.Span), toObjectDescriptor(obj.Value))
+              | _                     => def t = obj.GetType(); ObjectDescriptor.Object(getId(obj), GetText(obj), t.Name, t.FullName, null)
+            }
+          }
+          and readFieldValue(obj : object, t : System.Type, field : FieldInfo) : PropertyDescriptor
+          {
+            def name      = field.Name;
+            def objDesc   = toObjectDescriptor(field.GetValue(obj));
+
+            PropertyDescriptor(PropertyKind.Simple, name, objDesc)
+          }
+          and readValue(obj : object, t : System.Type, prop : PropertyInfo) : PropertyDescriptor
+          {
+            def name           = prop.Name;
+            def propType       = prop.PropertyType;
+            def attr           = prop.GetCustomAttributes(typeof(PropertyAttribute), false).FirstOrDefault() :> PropertyAttribute;
+            //def isDependent    = attr?.IsDependent;
+            def isOut          = attr?.IsOut;
+            def isIn           = attr?.IsIn;
+            def isEvalPropName = "Is" + name + "Evaluated";
+            def isEvalProp     = t.GetProperty(isEvalPropName);
+            def kind =
+              match (isIn, isOut)
+              {
+                | (true,  false) => PropertyKind.DependentIn
+                | (true,   true) => PropertyKind.DependentInOut
+                | (false,  true) => PropertyKind.DependentOut
+                | (false, false) when astType.IsAssignableFrom(propType) => PropertyKind.Ast
+                | (false, false) => PropertyKind.Simple
+              };
+            def objDesc =
+              if (isEvalProp == null || isEvalProp.GetValue(obj, null) :> bool)
+                toObjectDescriptor(prop.GetValue(obj, null))
+              else
+                ObjectDescriptor.NotEvaluated();
+
+            PropertyDescriptor(kind, name, objDesc)
+          }
+        
+          def content = loadObjectContent(obj);
+          Parent.Router.SendResponse(ServerMessage.ObjectContent(content));
+        }
+        catch
+        {
+          | e => Parent.Router.SendResponse(ServerMessage.ObjectContent(ContentDescriptor.Fail(e.ToString())));
+        }
+      }
+      
+      Parent.AddSemanticAction(action);
+    }
+
     public override ToString() : string { $"$Name($(Parent.Name) project)" }
   
     public override HasAst                : bool               { get { _ast != null } }
@@ -296,5 +660,5 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public override GetParseTree()        : Nitra.ParseTree    { _parseTree }
     
     public override DeepResetProperties() : void               { throw System.NotImplementedException() }
- }
+  }
 }
