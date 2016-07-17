@@ -59,14 +59,15 @@ namespace DotNet
           manager.BeforeSaveAssembly += writeMetadataCallback;
 
         //def rootScope = CreateNemerleSymbols(cancellationToken, manager, rootNamespace, context);
-        def rootScope : Scope = rootNamespace.MemberTable;
+        def rootScope = rootNamespace.MemberTable;
         rootNamespace.EvalProperties(context);
 
         // ensure static symbols are created
         _ = WellKnownSymbols.GetSymbolsToEvaluate();
 
         LoadNitraMetadata(cancellationToken, project, manager, rootNamespace);
-        (context, rootNamespace, rootScope, manager)
+        CreatePredefinedSymbols(rootScope, context);
+        (context, rootNamespace, rootScope : Scope, manager)
       }
       finally
       {
@@ -185,6 +186,36 @@ namespace DotNet
           return;
 
         visitAssembly(assemblyId);
+      }
+    }
+
+    private static CreatePredefinedSymbols(rootScope : TableScope, context : DependentPropertyEvalContext) : void
+    {
+      def nitraNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](rootScope, Location.Default, "Nitra", context, () => NamespaceSymbol());
+
+      _ = GetOrCreatePredefinedSymbol.[LanguageSymbol](nitraNs.MemberTable, Location.Default, "Language", context,
+        fun()
+        {
+          def symbol = LanguageSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+    }
+
+    private static GetOrCreatePredefinedSymbol[TSymbol](scope : TableScope, loc : Nitra.Location, name : string, context : DependentPropertyEvalContext, symbolFactory : Func[DeclarationSymbol]) : TSymbol
+      where TSymbol : DeclarationSymbol
+    {
+      def result = scope.Bind.[TSymbol](Reference(loc, name));
+      if (result.IsSymbolEvaluated)
+      {
+        result.Symbol
+      }
+      else
+      {
+        def decl   = PredefinedDeclaration(Name(loc, name), symbolFactory);
+        def symbol = decl.DefineSymbol(scope) :> TSymbol;
+        symbol.EvalProperties(context);
+        symbol
       }
     }
 

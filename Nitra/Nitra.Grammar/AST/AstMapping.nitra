@@ -62,7 +62,16 @@ namespace Nitra.Ast
     | Language -> Nitra.Ast.Language   // Name ParentOpt Members
       {
         Name -> Name;
-        match (ParentOpt) { Some(value) -> [value] | None -> [] } -> TypeBase;
+        match (ParentOpt)
+        {
+          | Some(value) -> [value]
+          | None ->
+            [QualifiedReference.Qualified
+            {
+              QualifiedReference.Simple { Name = Reference(ParentOpt.Location, "Nitra"); } -> Qualifier;
+              Name = Reference(ParentOpt.Location, "Language");
+            }]
+        } -> TypeBase;
         Members -> Members;
       }
 
