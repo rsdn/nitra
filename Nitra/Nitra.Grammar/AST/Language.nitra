@@ -41,7 +41,7 @@ namespace Nitra.Ast
     Symbol.RequireLicenseAcceptance = RequireLicenseAcceptance.HasValue;
     Symbol.FileExtensions           = Members.ExtensionSetOut.ToImmutable();
     Symbol.SyntaxModules            = Members.SyntaxModuleSetOut.ToImmutable();
-    Symbol.StartRule                = AstUtils.UnwrapResolved(StartSyntaxModuleReference.RuleRef);
+    Symbol.StartRule                = StartSyntaxModuleReference.RuleSymbol;
 
     Members : LanguageMember*;
 

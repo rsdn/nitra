@@ -404,16 +404,5 @@ namespace Nitra
           Ref.Ambiguous(loc.Location, functionTypes, ResolutionSource.Unknown())
       }
     }
-
-    public UnwrapResolved[TSymbol](x : ValueOption[Ref[TSymbol]]) : ValueOption[TSymbol]
-      where TSymbol : DeclarationSymbol
-    {
-      | VNone => VNone()
-      | VSome(r) =>
-        if (r.IsSymbolEvaluated)
-          VSome(r.Symbol)
-        else
-          VNone()
-    }
   } // module
 } // namespace

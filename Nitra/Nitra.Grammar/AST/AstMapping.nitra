@@ -139,20 +139,10 @@ namespace Nitra.Ast
 
     | SpanClass -> StyleReference(Name) // "span" sm "class" sm Name sm MatchTokensOpt=("regex" sm RegexExpression sm)? StyleReference
     | SyntaxModule ->
-      [match (this)
+      [match (RuleOpt)
       {
-        // "syntax" sm "module" sm Module=QualifiedReference RuleOpt=(sm "start" sm "rule" sm QualifiedReference)? ";"
-        | (_, _, m, Some((_, _, r)), _) -> StartSyntaxModuleReference
-          {
-            m -> Module;
-            r -> Rule;
-          }
-
-        // "syntax" sm "module" sm Module=QualifiedReference RuleOpt=(sm "start" sm "rule" sm QualifiedReference)? ";"
-        | (_, _, m, None, _) -> AdditionSyntaxModuleReference
-          {
-            m -> Module;
-          }
+        | Some((_, _, r)) -> StartSyntaxModuleReference    { Module -> Module; r -> Rule; }
+        | None            -> AdditionSyntaxModuleReference { Module -> Module; }
       }]
 
     | FileExtension -> [FileExtension { Extension = ParsedValue(Ext, GetText(Ext)); }]

@@ -77,6 +77,7 @@ namespace Nitra.Ast
   {
   stage 1:
     out RuleRef : Ref[SyntaxRuleSymbol] = Rule.Ref.Resolve();
+    out RuleSymbol : SyntaxRuleSymbol = RuleRef.Symbol;
 
     Rule.Scope = ModuleRef.Scope;
 

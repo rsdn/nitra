@@ -1,6 +1,6 @@
 ﻿//TODO: remove suffix 'Lang': plain name 'DotNet' conflicts with top namespace Nitra and breaks binding
 
-language DotNetLang : Nitra.Language
+language DotNetLang
 {
   span class Namespace        { ForegroundColor=Chocolate;      }
   span class Constant         { ForegroundColor=Goldenrod;      }

@@ -149,11 +149,8 @@ namespace Nitra.Compiler
         _tb.Define(<[ decl: ..$(MakeMods()) GetDeclaredGrammars()    : array[Nitra.GrammarDescriptor] { array[..$(Symbol.SyntaxModules.MapToList(_.GetGrammarDescriptorRef()))] } ]>);
 
         def startRuleExpr =
-          if (Symbol.IsStartRuleEvaluated) // TODO: fix typing
-            if (Symbol.StartRule is VSome(startRule))
-              startRule.GetRuleDescriptorRef()
-            else
-              <[ null ]>
+          if (Symbol.StartRule is VSome(startRule))
+            startRule.GetRuleDescriptorRef()
           else
             <[ null ]>;
 
