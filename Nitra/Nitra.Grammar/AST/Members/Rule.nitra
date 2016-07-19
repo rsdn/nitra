@@ -80,7 +80,7 @@ namespace Nitra.Ast
     }
   }
 
-  abstract declaration ExtensibleRule : Rule
+  abstract declaration ExtensibleRule : SyntaxRule
   {
   }
 }

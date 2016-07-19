@@ -253,12 +253,14 @@ namespace Nitra.Ast
   {
     Name -> Name;
     RuleBody -> Members;
+    [] -> Fields;
   }
 
   map syntax NitraSyntax.ExtensibleRule(_ : NestedTag) -> NestedExtensibleRule
   {
     Name -> Name;
     RuleBody -> Members;
+    [] -> Fields;
   }
 
   map syntax NitraSyntax.RuleBody -> RuleBodyMember*
