@@ -280,7 +280,7 @@ namespace Nitra.Visualizer
       var root = (AstNodeViewModel)_astTreeView.Items[0];
       var file = ViewModel.CurrentFile;
       var context = root.Context;
-      if (context.FileId != file.Id || context.FileVersion != file.Version)
+      if (file == null || context.FileId != file.Id || context.FileVersion != file.Version)
         return;
 
       var ast = FindAstNode(root, _textEditor.CaretOffset);
@@ -991,6 +991,9 @@ namespace Nitra.Visualizer
       AsyncServerMessage.SemanticAnalysisMessages typingMessages = null;
       AsyncServerMessage.PrettyPrintCreated prettyPrintCreated;
       AsyncServerMessage.ReflectionStructCreated reflectionStructCreated;
+      AsyncServerMessage.RefreshReferencesFailed refreshReferencesFailed;
+      AsyncServerMessage.RefreshProjectFailed refreshProjectFailed;
+      AsyncServerMessage.Exception exception;
 
       if ((parsingMessages = msg as AsyncServerMessage.ParsingMessages) != null)
       {
@@ -1012,6 +1015,17 @@ namespace Nitra.Visualizer
           _fillAstTimer.Start();
         }
       }
+      else if ((refreshReferencesFailed = msg as AsyncServerMessage.RefreshReferencesFailed) != null)
+      {
+        ViewModel.CurrentProject = null;
+        ViewModel.CurrentFile = null;
+        MessageBox.Show(this, "Project loading is failed in call RefreshReferences().\r\nException: "
+          + refreshReferencesFailed.exception);
+      }
+      else if ((refreshProjectFailed = msg as AsyncServerMessage.RefreshProjectFailed) != null)
+        MessageBox.Show(this, "Project loading is failed in call RefreshProject().\r\nException: " + refreshProjectFailed.exception);
+      else if ((exception = msg as AsyncServerMessage.Exception) != null)
+        MessageBox.Show(this, "Exception occurred on the server: " + refreshProjectFailed.exception);
 
       if (ViewModel.CurrentFile == null || msg.FileId >= 0 && msg.FileId != ViewModel.CurrentFile.Id || msg.Version >= 0 && msg.Version != ViewModel.CurrentFile.Version)
         return;
