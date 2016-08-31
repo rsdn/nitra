@@ -26,11 +26,14 @@ namespace Nitra.Ast
         NamespaceBody.NamespaceMembers -> Members;
       }
 
-    | Ast -> Nitra.Ast.TopAst          // Header Name AstInheritanceOpt Body
+    | Ast ->  // Header Name AstInheritanceOpt Body
+      let header : AstHeader = Header in
+      Nitra.Ast.TopAst
       {
         Name -> Name;
+        header -> Header;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        Body.Members -> Members;
+        Body.Members(header) -> Members;
       }
 
     | MapSyntax -> TopMapSyntax // "map" "syntax" RuleName=QualifiedReference ParametersOpt=MapSyntaxParameters? "->" AstName=NitraType /*AstType*/ MapSyntaxBody
@@ -122,6 +125,28 @@ namespace Nitra.Ast
       | ((first :: other, _)) -> fold (item in other; acc = Simple { first() -> Name; }; acc = Qualified { item() -> Name; Qualifier = acc;  })
       | (([],             _)) -> Simple { Name = Reference.AmbiguousOrMissing(Location); }
     }
+  }
+
+  map syntax NitraSyntax.NamespaceMember.Ast.Header -> AstHeader
+  {
+    | Ast
+      {
+        IsDeclaration = ParsedValue(KwAst, false);
+        AstModifiers -> Modifiers;
+      }
+
+    | Declaration
+      {
+        IsDeclaration = ParsedValue(KwDeclaration, true);
+        AstModifiers -> Modifiers;
+      }
+  }
+
+  map syntax NitraSyntax.AstModifier -> AstModifier
+  {
+    | Abstract {}
+    | Optional {}
+    | Multiple {}
   }
 
   map syntax NitraSyntax.StyleProperty -> StyleProperty
@@ -461,7 +486,7 @@ namespace Nitra.Ast
       }
   }
 
-  map syntax NitraSyntax.AstMember -> AM.AstMember
+  map syntax NitraSyntax.AstMember(parentHeader : AstHeader) -> AM.AstMember
   {
     | StructuralProperty       -> AM.StructuralProperty { Name -> Name; NitraType /*AstType*/ -> TypeName; }
     | DependentProperty        -> this.DependentProperty
@@ -470,11 +495,14 @@ namespace Nitra.Ast
     | DependentAddStatement    -> this.DependentAddStatement
     | Decompose                -> AM.Decompose {}
     | StageScope               -> this.StageScope
-    | ChildAst                 -> AM.NestedAst
+    | ChildAst                 ->
+      let header : AstHeader = AstHeader { IsDeclaration = parentHeader.IsDeclaration; [] -> Modifiers; } in
+      AM.NestedAst
       {
         Name -> Name;
+        header -> Header;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        match(Body) { Some(value) -> value.Members | None() -> [] } -> Members;
+        match(Body) { Some(value) -> value.Members(header) | None() -> [] } -> Members;
       }
   }
 

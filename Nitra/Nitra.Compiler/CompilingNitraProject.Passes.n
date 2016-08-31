@@ -221,6 +221,12 @@ namespace Nitra.Compiler
       def table = SCG.Dictionary();
       def createEmitter(symbol : Nitra.Declarations.DeclarationSymbol) : object
       {
+        def createEmittersForParentTypes(symbol : DotNet.SupportsInheritanceTypeSymbol)
+        {
+          foreach (parent when (symbolsToEmit.Contains(parent)) in symbol.BaseTypeSet.ParentTypes)
+            _ = createEmitter(parent);
+        }
+
         mutable existingEmitter;
         if (table.TryGetValue(symbol, out existingEmitter))
           existingEmitter
@@ -230,10 +236,16 @@ namespace Nitra.Compiler
             match (symbol)
             {
               | language is Nitra.Ast.LanguageSymbol =>
-                foreach (parent when symbolsToEmit.Contains(parent) in language.BaseTypeSet.ParentTypes)
-                  _ = createEmitter(parent);
-
+                createEmittersForParentTypes(language);
                 AddAndReturn(languageEmitters, LanguageEmitter(environment, language));
+
+              | ast is Nitra.Ast.TopAstSymbol =>
+                createEmittersForParentTypes(ast);
+                assert(false, "Not implemented yet")
+
+              | ast is Nitra.Ast.AstMembers.ChildAstSymbol =>
+                createEmittersForParentTypes(ast);
+                assert(false, "Not implemented yet")
 
               | _ => assert(false, $"Cannot emit symbol of type '$(symbol.GetType())'.")
             };

@@ -202,6 +202,25 @@ namespace DotNet
           symbol.BaseTypeSet = BaseTypeReferenceSet(null);
           symbol
         });
+
+      def declarationsNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](nitraNs.MemberTable, Location.Default, "Declarations", context, () => NamespaceSymbol());
+
+      def scopedAstSymbol = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "ScopedAst", context,
+        fun()
+        {
+          def symbol = TopAstSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+
+      _ = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "Declaration", context,
+        fun()
+        {
+          def symbol = TopAstSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol.BaseTypeSet.AddParent(scopedAstSymbol);
+          symbol
+        });
     }
 
     private static GetOrCreatePredefinedSymbol[TSymbol](scope : TableScope, loc : Nitra.Location, name : string, context : DependentPropertyEvalContext, symbolFactory : Func[DeclarationSymbol]) : TSymbol
