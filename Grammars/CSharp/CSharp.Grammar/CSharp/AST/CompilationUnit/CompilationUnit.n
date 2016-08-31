@@ -20,6 +20,8 @@ using System.Linq;
 using System.Threading;
 using ND = Nitra.Declarations;
 
+[assembly: ProjectSupport("Nitra C#", typeof(CSharp.CompilationUnit))]
+
 namespace CSharp
 {
   public partial class CompilationUnit : AstBase, IProjectSupport, NamespaceBody

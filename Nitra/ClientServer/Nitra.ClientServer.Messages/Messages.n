@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace Nitra.ClientServer.Messages
 {
@@ -34,10 +35,10 @@ namespace Nitra.ClientServer.Messages
   public variant ClientMessage : RouterMessage
   {
     | CheckVersion             { assemblyVersionGuid : string; }
-    | SolutionStartLoading     { fullPath : string; }
-    | SolutionLoaded           { fullPath : string; }
-    | SolutionUnloaded         { }
-    | ProjectStartLoading      { id : int; fullPath : string; Languages : ImmutableArray[LanguageInfo]; }
+    | SolutionStartLoading     { id : int; fullPath : string; }
+    | SolutionLoaded           { id : int; }
+    | SolutionUnloaded         { id : int; }
+    | ProjectStartLoading      { id : int; fullPath : string; config : Config; }
     | ProjectLoaded            { id : int; }
     | ProjectUnloaded          { id : int; }
     | ProjectRename            { oldId : int; newId : int; newPath : string; }
@@ -59,8 +60,12 @@ namespace Nitra.ClientServer.Messages
     | FindSymbolReferences     { fileId : int; fileVersion : int; pos : int; }
     | FindSymbolDefinitions    { fileId : int; fileVersion : int; pos : int; }
     | ParseTreeReflection      { enable : bool; }
-    | GetObjectContent         { fileId : int; fileVersion : int; objectId : int; }
+    | GetObjectContent         { solutionId : int; fileId : int; fileVersion : int; objectId : int; }
     | AttachDebugger           { }
+    | GetLibsMetadata          { libs : ImmutableArray[string]; }
+    | GetLibsSyntaxModules     { libs : ImmutableArray[string]; }
+    | GetLibsProjectSupports   { libs : ImmutableArray[string]; }
+    | GetFileExtensions        { projectId : int; languageNames : ImmutableArray[string]; }
     | Shutdown                 { }
     
     public override ToString() : string
@@ -68,9 +73,9 @@ namespace Nitra.ClientServer.Messages
       match (this)
       {
         | CheckVersion             (assemblyVersionGuid)           => $<#CheckVersion            ($assemblyVersionGuid)#>
-        | SolutionStartLoading     (fullPath)                      => $<#SolutionStartLoading    ($fullPath)#>
-        | SolutionLoaded           (fullPath)                      => $<#SolutionLoaded          ($fullPath)#>
-        | SolutionUnloaded                                         =>  <#SolutionUnloaded        ()#>
+        | SolutionStartLoading     (id, fullPath)                  => $<#SolutionStartLoading    ($id, $fullPath)#>
+        | SolutionLoaded           (id)                            => $<#SolutionLoaded          ($id)#>
+        | SolutionUnloaded         (id)                            => $<#SolutionUnloaded        ($id)#>
         | ProjectStartLoading      (id, fullPath, languages)       => $<#ProjectStartLoading     ($id, $fullPath, $languages)#>
         | ProjectLoaded            (id)                            => $<#ProjectLoaded           ($id)#>
         | ProjectUnloaded          (id)                            => $<#ProjectUnloaded         ($id)#>
@@ -93,8 +98,12 @@ namespace Nitra.ClientServer.Messages
         | FindSymbolReferences     (fileId, fileVersion, pos)      => $<#FindSymbolReferences    ($fileId, $fileVersion, $pos)#>
         | FindSymbolDefinitions    (fileId, fileVersion, pos)      => $<#FindSymbolDefinitions   ($fileId, $fileVersion, $pos)#>
         | ParseTreeReflection      (enable)                        => $<#ParseTreeReflection     (enable=$enable)#>
-        | GetObjectContent         (fileId, fileVersion, objectId) => $<#GetObjectContent        ($fileId, $fileVersion, $objectId)#>
+        | GetObjectContent         (solutionId, id, v, objectId)   => $<#GetObjectContent        (solutionId=$solutionId, FileId=$id, Version=$v, ObjectId=$objectId)#>
         | AttachDebugger                                           =>  <#AttachDebugger          ()#>
+        | GetLibsMetadata          (libs)                          => $<# GetLanguageInfos(..$libs) #> 
+        | GetLibsSyntaxModules     (libs)                          => $<# GetLibsSyntaxModules(..$libs) #> 
+        | GetLibsProjectSupports   (libs)                          => $<# GetLibsProjectSupports(..$libs) #> 
+        | GetFileExtensions        (projectId, languageNames)      => $<# GetFileExtensions($projectId, ..$languageNames) #> 
         | Shutdown                                                 =>  <#Shutdown                ()#>
       }
     }
@@ -103,16 +112,41 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant ServerMessage
   {
-    | CompleteWord          { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
-    | FindSymbolDefinitions { referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
-    | FindSymbolReferences  { referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
-    | ParseTreeReflection   { root : ImmutableArray[ParseTreeReflectionStruct]; }
-    | ObjectContent         { content : ContentDescriptor; }
+    | CompleteWord          { solutionId : int; replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
+    | FindSymbolDefinitions { solutionId : int; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
+    | FindSymbolReferences  { solutionId : int; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
+    | ParseTreeReflection   { solutionId : int; root : ImmutableArray[ParseTreeReflectionStruct]; }
+    | ObjectContent         { solutionId : int; content : ContentDescriptor; }
+    | LibsMetadata          { solutionId : int; metadatas : ImmutableArray[LibMetadata]; }
+    | LibsSyntaxModules     { solutionId : int; modules   : ImmutableArray[SyntaxModules]; }
+    | LibsProjectSupports   { solutionId : int; libs      : ImmutableArray[ProjectSupports]; }
+    | FileExtensions        { solutionId : int; fileExtensions : ImmutableArray[string]; }
 
     public override ToString() : string
     {
       $<#$(this.GetType().Name)()#>
     }
+  }
+
+  [NitraMessage]
+  public class ProjectSupports
+  {
+    public ProjectSupports : ImmutableArray[ProjectSupport];
+    
+    public override ToString() : string { ProjectSupports.ToString(", ") }
+  }
+
+  [NitraMessage]
+  public class SyntaxModules
+  {
+    public Modules : ImmutableArray[string];
+  }
+
+  [NitraMessage]
+  public class LibMetadata
+  {
+    public ProjectSupprts : ImmutableArray[string];
+    public Languages      : ImmutableArray[LanguageInfo];
   }
   
   [NitraMessage, StructuralEquality]
@@ -250,10 +284,61 @@ namespace Nitra.ClientServer.Messages
   }
 
   [NitraMessage]
+  public sealed class ProjectSupport
+  {
+    public this()
+    {
+      Caption      = "";
+      TypeFullName = "";
+      Path         = "";
+    }
+    
+    /// Caption from ProjectSupportAttributr of the type which implement IProjectSupport
+    [XmlAttribute] public mutable Caption      : string;
+    /// Fully qualified name of the type which implement IProjectSupport
+    [XmlAttribute] public mutable TypeFullName : string;
+    /// Path of assembly where defined the type which implement IProjectSupport
+    [XmlAttribute] public mutable Path         : string;
+    
+    public IsNotSpecified : bool { get { string.IsNullOrEmpty(TypeFullName) || string.IsNullOrEmpty(Caption) } }
+    
+    public override ToString() : string { if (IsNotSpecified) "<not specified>" else Caption }
+  }
+  
+
+  [NitraMessage]
+  public sealed class Config
+  {
+    public this() { }
+    
+    public static InitNew() : Config
+    {
+      def x = Config();
+      x.ProjectSupport = ProjectSupport();
+      x.Languages = array(0);
+      x.Libs      = array(0);
+      x
+    }
+    
+    /// Descriptions of class which implements IProjectSupport
+                   public mutable ProjectSupport      : ProjectSupport;
+    /// Language descriptions
+    [XmlArray(ElementName="Languages", IsNullable=false)]
+    [XmlArrayItem("Language")]
+                   public mutable Languages           : array[LanguageInfo];
+    /// Library references
+    [XmlArray(ElementName="Libs", IsNullable=false)]
+    [XmlArrayItem("Lib")]
+                   public mutable Libs                : array[string];
+  }
+
+  [NitraMessage]
   public struct DynamicExtensionInfo
   {
-    public Name : string;
-    public Path : string;
+    /// Fully qualified name of syntax modules which contains lanuage extensions
+    [XmlAttribute] public mutable Name : string;
+    /// Path of assembly where defined lanuage extensions
+    [XmlAttribute] public mutable Path : string;
     
     public override ToString() : string { "DynamicExtension: " + Name }
   }
@@ -261,10 +346,14 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public struct LanguageInfo
   {
-    public Name              : string;
-    public Path              : string;
-    public FileExtensions    : ImmutableArray[string];
-    public DynamicExtensions : ImmutableArray[DynamicExtensionInfo];
+    /// Fully qualified name of the lanuage
+    [XmlAttribute] public mutable Name : string;
+    /// Path of assembly where defined the type where defined lanuage
+    [XmlAttribute] public mutable Path : string;
+    /// List of dynamically loaded extensions of the lanuage
+    [XmlArray(ElementName="DynamicExtensions", IsNullable=false)]
+    [XmlArrayItem("Extension")]
+                   public mutable DynamicExtensions : array[DynamicExtensionInfo];
     
     public override ToString() : string { "Language: " + Name }
   }
@@ -275,6 +364,11 @@ namespace Nitra.ClientServer.Messages
     public FullName        : string;
     public Id              : int;
     public ForegroundColor : int;
+
+    public override ToString() : string
+    {
+      "SpanClass=" + FullName + " Id=" + Id
+    }
   }
   
   [NitraMessage]
@@ -300,8 +394,9 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant AsyncServerMessage
   {
-    public FileId  : int;
-    public Version : int;
+    public FileId      : int;
+    public Version     : int;
+    public SolutionlId : int;
     
     | LanguageLoaded              { spanClassInfos : ImmutableArray[SpanClassInfo]; }
     | OutliningCreated            { outlining      : ImmutableArray[OutliningInfo]; }

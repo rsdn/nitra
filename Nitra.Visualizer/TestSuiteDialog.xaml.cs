@@ -1,117 +1,38 @@
 ﻿using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
-
-using Nitra.Visualizer.Properties;
 using Nitra.ViewModels;
-
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Threading;
-using Nitra.Visualizer.Serialization;
+using Nitra.Visualizer.ViewModels;
+using ReactiveUI;
 
 namespace Nitra.Visualizer
 {
-  internal partial class TestSuiteDialog
+  internal partial class TestSuiteDialog : IViewFor<TestSuiteCreateOrEditViewModel>
   {
-    const string _assembiesToolTip   = "Enter paths to assemblies (one assembly per line)";
-
-    private readonly TestSuiteCreateOrEditModel _model;
-    private readonly DispatcherTimer _assembliesChangedTimer;
-    private readonly DispatcherTimer _libsChangedTimer;
     private readonly SuiteVm _baseSuite;
 
-    public TestSuiteDialog(bool isCreate, SuiteVm baseSuite, Settings settings)
+    public TestSuiteDialog(SuiteVm baseSuite, TestSuiteCreateOrEditViewModel testSuiteCreateOrEditViewModel)
     {
       _baseSuite = baseSuite;
-      _assembliesChangedTimer          = new DispatcherTimer();
-      _assembliesChangedTimer.Interval = TimeSpan.FromSeconds(1.3);
-      _assembliesChangedTimer.Tick    += _assembliesEdit_timer_Tick;
 
-      _libsChangedTimer          = new DispatcherTimer();
-      _libsChangedTimer.Interval = TimeSpan.FromSeconds(1.3);
-      _libsChangedTimer.Tick    += _libsEdit_timer_Tick;
+      DataContext = ViewModel = testSuiteCreateOrEditViewModel;
 
-      DataContext = _model = new TestSuiteCreateOrEditModel(settings, isCreate);
+      this.OneWayBind(ViewModel, vm => vm.Languages, v => v.Languages.ItemsSource);
+      this.OneWayBind(ViewModel, vm => vm.ProjectSupports, v => v.ProjectSupports.ItemsSource);
+      this.OneWayBind(ViewModel, vm => vm.ParserLibs, v => v.ParserLibs.ItemsSource);
+      this.OneWayBind(ViewModel, vm => vm.DynamicExtensions, v => v._dynamicExtensions.ItemsSource);
+      this.OneWayBind(ViewModel, vm => vm.References, v => v.References.ItemsSource);
 
       InitializeComponent();
-
-      if (baseSuite != null)
-      {
-        _model.RootFolder           = baseSuite.Workspace.RootFolder;
-        _model.SuiteName            = baseSuite.Name;
-        Trace.Assert(false, "Not implemented");
-        // TODO: Make convertion
-        //_model.NormalizedAssemblies = baseSuite.Language.DynamicExtensions;
-        //_model.NormalizedLibs       = baseSuite.Language.Libs;
-
-        //if (baseSuite.Language != Nitra.Language.Instance)
-        //  _model.SelectedLanguage = baseSuite.Language;
-      }
-
-      _assemblies.Text = _model.NormalizedAssembliesText;
-      _assemblies.TextChanged += _assemblies_TextChanged;
-
-      _libs.Text = _model.NormalizedLibsText;
-      _libs.TextChanged += _libs_TextChanged;
     }
-
-    private void _libs_TextChanged(object sender, TextChangedEventArgs e)
-    {
-      _libsChangedTimer.Stop();
-      _libsChangedTimer.Start();
-    }
-
-    private void _libsEdit_timer_Tick(object sender, EventArgs e)
-    {
-      _libsChangedTimer.Stop();
-      _model.Libs = _libs.Text;
-    }
-
+    
     public string TestSuiteName
     {
-      get { return _model.SuiteName; }
-    }
-
-    private void _assemblies_TextChanged(object sender, TextChangedEventArgs e)
-    {
-      _assembliesChangedTimer.Stop();
-      _assembliesChangedTimer.Start();
-    }
-
-    void _assembliesEdit_timer_Tick(object sender, EventArgs e)
-    {
-      _assembliesChangedTimer.Stop();
-      _model.Assemblies = _assemblies.Text;
-    }
-
-    private void _assemblies_LostFocus(object sender, RoutedEventArgs e)
-    {
-      _assembliesChangedTimer.Stop();
-      _model.Assemblies = _assemblies.Text;
-      _assemblies.Text = _model.NormalizedAssembliesText;
-    }
-
-    private void _assemblies_KeyUp(object sender, KeyEventArgs e)
-    {
-      if (e.Key == Key.F5)
-      {
-        _model.Assemblies = _assemblies.Text;
-        _assemblies.Text = _model.NormalizedAssembliesText;
-      }
-    }
-
-    private void _libs_KeyUp(object sender, KeyEventArgs e)
-    {
-      if (e.Key == Key.F5)
-      {
-        _model.Libs = _libs.Text;
-        _libs.Text = _model.NormalizedLibsText;
-      }
+      get { return ViewModel.SuiteName; }
     }
 
     private void _okButton_Click(object sender, RoutedEventArgs e)
@@ -124,11 +45,10 @@ namespace Nitra.Visualizer
         _testSuiteName.Focus();
         return;
       }
+      
+      var path = ViewModel.SuitPath;
 
-      var root = Path.GetFullPath(_model.RootFolder);
-      var path = _model.SuitPath;
-
-      if (Directory.Exists(path) && _model.IsCreate)
+      if (Directory.Exists(path) && ViewModel.IsCreate)
       {
         MessageBox.Show(this, "The test suite '" + testSuiteName + "' already exists.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
         _testSuiteName.Focus();
@@ -142,39 +62,31 @@ namespace Nitra.Visualizer
         return;
       }
 
-      var assemblies = _model.NormalizedAssemblies;
+      var assemblies = ViewModel.ParserLibs;
 
-      if (assemblies.Length == 0)
+      if (assemblies.Count == 0)
       {
         MessageBox.Show(this, "No one valid library in library list.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-        _assemblies.Focus();
         return;
       }
 
-      var selectedLanguage = _model.SelectedLanguage;
+      var selectedLanguage = ViewModel.SelectedLanguage;
 
       if (selectedLanguage == null)
       {
         MessageBox.Show(this, "Langauge is not selected.", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
-        _languageComboBox.Focus();
+        Languages.Focus();
         return;
       }
 
       try
       {
         Directory.CreateDirectory(path);
-        if (_baseSuite != null && _baseSuite.Name != testSuiteName && Directory.Exists(_baseSuite.FullPath))
+        if (_baseSuite != null && !string.IsNullOrEmpty(_baseSuite.Name) && _baseSuite.Name != testSuiteName && Directory.Exists(_baseSuite.FullPath))
         {
           FileSystem.CopyDirectory(_baseSuite.FullPath, path, UIOption.AllDialogs);
           Directory.Delete(_baseSuite.FullPath, recursive: true);
         }
-
-        //var dynamicExtensions = _model.DynamicExtensions.Where(x => x.IsEnabled && x.IsChecked).Select(x => x.Descriptor);
-        //var lang = new Language();
-        //lang.Name = selectedLanguage;
-        //var xml               = Utils.MakeXml(root, selectedLanguage, dynamicExtensions, _model.NormalizedLibs);
-        //var configPath        = Path.Combine(path, SuiteVm.ConfigFileName);
-        //File.WriteAllText(configPath, xml);
       }
       catch (Exception ex)
       {
@@ -191,23 +103,59 @@ namespace Nitra.Visualizer
       var dialog = new OpenFileDialog
       {
         DefaultExt = ".dll",
-        InitialDirectory = _model.SuitPath,
+        InitialDirectory = ViewModel.SuitPath,
         Filter = "Parser library (.dll)|*.dll|Parser application (.exe)|*.exe",
-        Title = "Load parser"
+        Title = "Choose language library",
+        Multiselect = true
+      };
+
+      if (dialog.ShowDialog(this) ?? false) {
+          ViewModel.ParserLibs.AddRange(dialog.FileNames.Select(fname => new ParserLibViewModel(fname)));
+      }
+    }
+
+    private void _addReferenceNameButton_Click(object sender, RoutedEventArgs e)
+    {
+      var dialog = new ChooseAssemblyName();
+      dialog.Owner = this;
+      if (dialog.ShowDialog() ?? false)
+      {
+        ViewModel.References.Add(dialog.AssemblyName.ToString());
+      }
+    }
+
+    private void _addReferencesButton_Click(object sender, RoutedEventArgs e)
+    {
+      var dialog = new OpenFileDialog
+      {
+        DefaultExt = ".dll",
+        InitialDirectory = ViewModel.SuitPath,
+        Filter = "Parser library (.dll)|*.dll|Parser application (.exe)|*.exe",
+        Title = "Choose a project reference library",
+        Multiselect = true
       };
 
       if (dialog.ShowDialog(this) ?? false)
       {
-        _assemblies.Text += Environment.NewLine + dialog.FileName;
-        _assemblies.Focus();
+        ViewModel.References.AddRange(dialog.FileNames);
       }
     }
 
-    private void _libs_LostFocus(object sender, RoutedEventArgs e)
+    object IViewFor.ViewModel
     {
-      _libsChangedTimer.Stop();
-      _model.Libs = _libs.Text;
-      _libs.Text = _model.NormalizedLibsText;
+      get { return ViewModel; }
+      set { ViewModel = (TestSuiteCreateOrEditViewModel) value; }
+    }
+
+    public TestSuiteCreateOrEditViewModel ViewModel { get; set; }
+
+    private void RemoveParserLib(object sender, RoutedEventArgs e)
+    {
+      var button = (Button) sender;
+      var selectedParserLib = button.DataContext as ParserLibViewModel;
+
+      if (selectedParserLib != null)
+        ViewModel.ParserLibs.Remove(selectedParserLib);
     }
   }
 }

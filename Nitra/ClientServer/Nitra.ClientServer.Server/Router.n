@@ -6,12 +6,14 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ProjectSystem;
+using Nitra.Declarations;
 
 using System;
 using System.Threading;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Linq;
 
 using IO = System.IO;
@@ -27,7 +29,7 @@ namespace Nitra.ClientServer.Server
     mutable _cts                        : CancellationTokenSource = CancellationTokenSource();
             _asyncResponseWriter        : IO.BinaryWriter;
             _responseWriter             : IO.BinaryWriter;
-    public  SpanClassesManager          : SpanClassesManager = SpanClassesManager();
+    public  SpanClassesManager          : SpanClassesManager;
     mutable _stopped                    : bool;
     mutable _solution                   : Solution;
     mutable _projectLoadingCts          : CancellationTokenSource;
@@ -42,8 +44,11 @@ namespace Nitra.ClientServer.Server
       _mainThread.Start();
       def cores       = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
       ServerUtils.Log("Cores: " + cores);
+      this.SpanClassesManager = SpanClassesManager(this);
       _parseWorkers = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
     }
+    
+    public SolutionId : int { get { if (_solution == null) -1 else _solution.Id } }
     
     public ProjectLoadCancellationToken : CancellationToken
     {
@@ -147,6 +152,84 @@ namespace Nitra.ClientServer.Server
     {
       unless (_stopped)
         _mainQueue.Add(msg)
+    }
+    
+    GetLibsMetadata(libs : ImmutableArray[string]) : void 
+    {
+      def metadataBuilder = ImmutableArray.CreateBuilder(libs.Length);
+      
+      foreach (path in libs)
+      {
+        def assembly = ServerUtils.LoadAssembly(path);
+        def langs = Language.GetLanguages(assembly);
+        def langsBuilder = ImmutableArray.CreateBuilder(langs.Length);
+        foreach (lang in langs)
+        {
+          def langInfo = LanguageInfo(lang.Name, path, array(0));
+          langsBuilder.Add(langInfo);
+        }
+        def metadata = LibMetadata(ImmutableArray.Create("<not supported yet>"), langsBuilder.MoveToImmutable());
+        metadataBuilder.Add(metadata);
+      }
+
+      SendResponse(ServerMessage.LibsMetadata(SolutionId, metadataBuilder.MoveToImmutable()));
+    }
+
+    GetLibsSyntaxModules(libs : ImmutableArray[string]) : void 
+    {
+      def libsBuilder = ImmutableArray.CreateBuilder(libs.Length);
+      
+      foreach (path in libs)
+      {
+        def assembly = ServerUtils.LoadAssembly(path);
+        def descriptors = GrammarDescriptor.GetDescriptors(assembly);
+        def syntaxModulesBuilder = ImmutableArray.CreateBuilder(descriptors.Length);
+        foreach (descriptor in descriptors)
+          syntaxModulesBuilder.Add(descriptor.FullName);
+        libsBuilder.Add(SyntaxModules(syntaxModulesBuilder.MoveToImmutable()));
+      }
+      
+      SendResponse(ServerMessage.LibsSyntaxModules(SolutionId, libsBuilder.MoveToImmutable()));
+    }
+
+    GetLibsProjectSupports(libs : ImmutableArray[string]) : void 
+    {
+      def libsBuilder = ImmutableArray.CreateBuilder(libs.Length);
+      
+      foreach (path in libs)
+      {
+        def typeBuilder = ImmutableArray.CreateBuilder(libs.Length);
+        def assembly = ServerUtils.LoadAssembly(path);
+        def attributes = assembly.GetCustomAttributes(typeof(ProjectSystem.ProjectSupportAttribute), false);
+
+        foreach (attr is ProjectSystem.ProjectSupportAttribute in attributes)
+        {
+          def caption = 
+            if (attr == null)
+            {
+              def fullName = attr.Type.FullName;
+              def index = fullName.LastIndexOf(".");
+              if (index < 1)
+                fullName
+              else
+                fullName.Substring(index)
+            }
+            else
+              attr.Caption;
+          typeBuilder.Add(ProjectSupport(caption, attr.Type.FullName, path));
+        }
+          
+        libsBuilder.Add(ProjectSupports(typeBuilder.ToImmutable()));
+      }
+      
+      SendResponse(ServerMessage.LibsProjectSupports(SolutionId, libsBuilder.MoveToImmutable()));
+    }
+    
+    GetFileExtensions(projectId : int, languageNames : ImmutableArray[string]) : void 
+    {
+      def project = _solution[projectId];
+      def fileExtensions = project.GetFileExtensions(languageNames);
+      SendResponse(ServerMessage.FileExtensions(SolutionId, fileExtensions));
     }
   }
 }

@@ -48,6 +48,7 @@ namespace Nitra.Visualizer
 {
   using ClientServer.Messages;
   using Interop;
+  using System.Collections.Immutable;
   using System.Windows.Documents;
   using System.Windows.Interop;
 
@@ -830,15 +831,33 @@ namespace Nitra.Visualizer
     {
       if (ViewModel.Workspace == null)
         return;
-      var currentTestSuite = ViewModel.CurrentSuite;
-      var dialog = new TestSuiteDialog(create, currentTestSuite, ViewModel.Settings) { Owner = this };
-      if (dialog.ShowDialog() ?? false)
-      {
-        if (currentTestSuite != null)
-          ViewModel.Workspace.TestSuites.Remove(currentTestSuite);
-        var testSuite = new SuiteVm(ViewModel.Workspace, dialog.TestSuiteName, ViewModel.Settings.Config);
-        testSuite.IsSelected = true;
-        ViewModel.Workspace.Save();
+      
+      var suite = create 
+                  ? new SuiteVm(ViewModel.Workspace, "", ViewModel.Settings.Config)
+                  : ViewModel.CurrentSuite;
+
+      var viewmodel = new TestSuiteCreateOrEditViewModel(suite.Client) {
+        Title = suite.Name == "" ? "New test suite" : "Edit test suite",
+        RootFolder = suite.Workspace.RootFolder,
+        SuiteName = suite.Name
+      };
+
+      viewmodel.ParserLibs.AddRange(suite.Config.Languages.Select(li => new ParserLibViewModel(li.Path)));
+      
+      var dialog = new TestSuiteDialog(suite, viewmodel) {
+        Owner = this
+      };
+
+      if (dialog.ShowDialog() ?? false) {
+        suite.Config.Languages = viewmodel.Languages.ToArray();
+        suite.Config.Libs = viewmodel.References.ToArray();
+        suite.Config.ProjectSupport = viewmodel.ProjectSupports
+                                               .Where(vm => vm.IsSelected)
+                                               .Select(vm => vm.Source)
+                                               .FirstOrDefault();
+        //ViewModel.Workspace.TestSuites.Remove(suite);
+        suite.IsSelected = true;
+        //ViewModel.Workspace.Save();
       }
     }
 
@@ -995,6 +1014,10 @@ namespace Nitra.Visualizer
       AsyncServerMessage.RefreshProjectFailed refreshProjectFailed;
       AsyncServerMessage.Exception exception;
 
+      var solution = ViewModel.CurrentSolution;
+      if (solution == null || msg.SolutionlId >= 0 && msg.SolutionlId != solution.Id)
+        return; // no solution or message for the old solution
+
       if ((parsingMessages = msg as AsyncServerMessage.ParsingMessages) != null)
       {
         FileVm file = ViewModel.CurrentSolution.GetFile(msg.FileId);
@@ -1076,12 +1099,16 @@ namespace Nitra.Visualizer
       var file = ViewModel.CurrentFile;
       if (file == null)
         return;
+
+      Debug.Assert(ViewModel.CurrentSolution != null);
+      Debug.Assert(ViewModel.CurrentProject  != null);
+
       const int Root = 0;
       var version = file.Version;
       var client  = ViewModel.CurrentSuite.Client;
       var span    = new NSpan(0, _textEditor.Document.TextLength);
       var root    = new ObjectDescriptor.Ast(span, Root, "<File>", "<File>", "<File>", null);
-      var context = new AstNodeViewModel.AstContext(client, file.Id, version);
+      var context = new AstNodeViewModel.AstContext(client, ViewModel.CurrentSolution.Id, ViewModel.CurrentProject.Id, file.Id, version);
       var rootVm  = new ItemAstNodeViewModel(context, root, -1);
       rootVm.IsExpanded = true;
       _astTreeView.ItemsSource = new[] { rootVm };
@@ -1395,7 +1422,14 @@ namespace Nitra.Visualizer
 
     private static void CopyTreeNodeToClipboard(object node)
     {
-      if (node != null)
+      var vm = node as BaseVm;
+      if (vm != null)
+      {
+        var text = vm.FullPath.ToString();
+        Clipboard.SetData(DataFormats.Text, text);
+        Clipboard.SetData(DataFormats.UnicodeText, text);
+      }
+      else if (node != null)
       {
         var text = node.ToString();
         Clipboard.SetData(DataFormats.Text, text);
@@ -1518,10 +1552,23 @@ namespace Nitra.Visualizer
 
     private void EventSetter_OnHandler(object sender, MouseButtonEventArgs e)
     {
-      var tvi = sender as TreeViewItem;
+      // HACK: Select TreeView Node on right click before displaying ContextMenu
+      // (c) http://stackoverflow.com/questions/592373/select-treeview-node-on-right-click-before-displaying-contextmenu
+      TreeViewItem treeViewItem = VisualUpwardSearch(e.OriginalSource as DependencyObject);
 
-      if (tvi != null && e.ChangedButton == MouseButton.Right && e.ButtonState == MouseButtonState.Pressed)
-        tvi.IsSelected = true;
+      if (treeViewItem != null)
+      {
+        treeViewItem.Focus();
+        e.Handled = true;
+      }
+    }
+
+    static TreeViewItem VisualUpwardSearch(DependencyObject source)
+    {
+      while (source != null && !(source is TreeViewItem))
+        source = VisualTreeHelper.GetParent(source);
+
+      return source as TreeViewItem;
     }
 
     private static string MakeTestFileName(ProjectVm project)
@@ -1529,7 +1576,7 @@ namespace Nitra.Visualizer
       var names = new bool['Z' - 'A'];
       foreach (var t in project.Children)
       {
-        var name = t.Name;
+        var name = Path.GetFileNameWithoutExtension(t.Name);
         if (name.Length == 1)
         {
           var ch = name[0];
@@ -1545,48 +1592,21 @@ namespace Nitra.Visualizer
       return Path.GetFileNameWithoutExtension(Path.GetTempFileName());
     }
 
-    private void AddFile_MenuItem_OnClick(object sender, RoutedEventArgs e)
+    private static FileVm AddNewFileToMultitest(string ext, ProjectVm project, string defaultContent)
     {
-      var test = _testsTreeView.SelectedItem as FileVm;
+      NitraClient client = project.Solution.Suite.Client;
 
-      if (test != null)
-      {
-        var dirPath = Path.GetDirectoryName(test.FullPath);
-
-        if (!Directory.Exists(dirPath))
-          Directory.CreateDirectory(dirPath);
-
-        var prj = test.Project;
-        var firstFilePath = Path.Combine(dirPath, MakeTestFileName(prj) + ".test");
-
-        if (File.Exists(test.FullPath))
-          File.Move(test.FullPath, firstFilePath);
-        else
-          File.WriteAllText(firstFilePath, Environment.NewLine, Encoding.UTF8);
-
-        if (File.Exists(test.Gold))
-          File.Move(test.Gold, Path.ChangeExtension(firstFilePath, ".gold"));
-        var stringManager = prj.Suite.Workspace.StringManager;
-        prj.Children.Add(new FileVm(test.Suite, prj, firstFilePath, stringManager[firstFilePath]));
-        AddNewFileToMultitest(prj).IsSelected = true;
-        return;
-      }
-
-      var project = _testsTreeView.SelectedItem as ProjectVm;
-
-      if (project != null)
-        AddNewFileToMultitest(project).IsSelected = true;
-    }
-
-    private static FileVm AddNewFileToMultitest(ProjectVm project)
-    {
       var name = MakeTestFileName(project);
-      var path = Path.Combine(project.FullPath, name + ".test");
-      File.WriteAllText(path, Environment.NewLine, Encoding.UTF8);
-      var stringManager = project.Suite.Workspace.StringManager;
-      var newTest = new FileVm(project.Suite, project, path, stringManager[path]);
-      project.Children.Add(newTest);
-      return newTest;
+
+      if (!Directory.Exists(project.FullPath))
+        Directory.CreateDirectory(project.FullPath);
+
+      var path = Path.Combine(project.FullPath, name + ext);
+      File.WriteAllText(path, defaultContent, Encoding.UTF8);
+      var test = new FileVm(project.Suite, project, path);
+      project.Children.Add(test);
+      client.Send(new ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version));
+      return test;
     }
 
     private void CopyReflectionText(object sender, RoutedEventArgs e)
@@ -1611,32 +1631,39 @@ namespace Nitra.Visualizer
 
     private void Delete()
     {
-      var test = _testsTreeView.SelectedItem as FileVm;
+      NitraClient client = ViewModel.CurrentSuite.Client;
+      if (client == null)
+        return;
 
-      if (test != null)
+      var project = ViewModel.CurrentProject;
+      var file    = ViewModel.CurrentFile;
+
+      if (file != null)
       {
-        if (File.Exists(test.FullPath))
-           File.Delete(test.FullPath);
+        var goldPath = Path.ChangeExtension(file.GoldFullPath, ".gold");
 
-        var goldPath = Path.ChangeExtension(test.Gold, ".gold");
+        if (File.Exists(file.FullPath))
+           File.Delete(file.FullPath);
 
         if (File.Exists(goldPath))
           File.Delete(goldPath);
 
-        var index = test.Project.Children.IndexOf(test);
-        test.Project.Children.Remove(test);
-        if (index < test.Project.Children.Count)
-          test.Project.Children[index].IsSelected = true;
+        var index = file.Project.Children.IndexOf(file);
+        file.Project.Children.Remove(file);
+        if (index < file.Project.Children.Count)
+          file.Project.Children[index].IsSelected = true;
         else if (index > 0)
-          test.Project.Children[index - 1].IsSelected = true;
+          file.Project.Children[index - 1].IsSelected = true;
+
+        client.Send(new ClientMessage.FileUnloaded(file.Id));
 
         return;
       }
 
-      var project = _testsTreeView.SelectedItem as ProjectVm;
-
       if (project != null)
       {
+        client.Send(new ClientMessage.FileUnloaded(project.Id));
+
         if (Directory.Exists(project.FullPath))
           FileSystem.DeleteDirectory(project.FullPath, UIOption.OnlyErrorDialogs, RecycleOption.DeletePermanently);
 
@@ -1647,6 +1674,44 @@ namespace Nitra.Visualizer
           solution.Children[index].IsSelected = true;
         else if (index > 0)
           solution.Children[index - 1].IsSelected = true;
+      }
+    }
+
+    void _testsTreeView_TreeViewItem_KeyDown(object sender, KeyEventArgs e)
+    {
+      var elemtvi = (FrameworkElement)sender;
+      var file = elemtvi.DataContext as FileVm;
+      if (file != null)
+      {
+        if (Keyboard.Modifiers == ModifierKeys.None)
+        {
+          if (e.Key == Key.Enter || e.Key == Key.Up || e.Key == Key.Down)
+          {
+            if (file.IsEditing)
+            {
+              file.IsEditing = false;
+            }
+          }
+          if (e.Key == Key.F2)
+          {
+            if (!file.IsEditing)
+            {
+              file.IsEditing = true;
+              elemtvi.Focus();
+            }
+          }
+        }
+      }
+    }
+
+    void _testsTreeView_FileVm_TextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+      var elem = (FrameworkElement)sender;
+      var file = elem.DataContext as FileVm;
+      if (file != null)
+      {
+        if (file.IsEditing)
+          file.IsEditing = false;
       }
     }
 
@@ -1665,5 +1730,83 @@ namespace Nitra.Visualizer
     }
 
     public MainWindowViewModel ViewModel { get; set; }
+
+    private void ContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+      var menu = ((StackPanel)sender).ContextMenu;
+      var item = (MenuItem)menu.Items[0];
+
+      var project = ViewModel.CurrentProject;
+      if (project == null)
+        return;
+      var exts = GetFileExtensions(project);
+
+      item.Items.Clear();
+      item.Tag = null;
+
+      if (exts.Length == 0)
+        item.IsEnabled = false;
+      else if (exts.Length == 1)
+      {
+        item.Header = "_Add '" + exts[0] + "' file";
+        item.Tag = exts[0];
+      }
+      else
+      {
+        foreach (var ext in exts)
+        {
+          item.Header = "_Add file";
+          var subItem = new MenuItem { Header = ext };
+          subItem.Tag = ext;
+          subItem.Click += AddFile_MenuItem_OnClick;
+          item.Items.Add(subItem);
+        }
+      }
+    }
+
+    private void CloneFile_MenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+      var project = ViewModel.CurrentProject;
+      if (project == null)
+        return;
+
+      var file = ViewModel.CurrentFile;
+
+      if (file != null)
+      {
+        var fullPath       = file.FullPath;
+        var ext            = Path.GetExtension(fullPath);
+        var defaultContent = File.ReadAllText(fullPath, Encoding.UTF8);
+        var newFile        = AddNewFileToMultitest(ext, project, defaultContent);
+
+        if (File.Exists(file.Gold))
+          File.Copy(file.GoldFullPath, newFile.GoldFullPath);
+
+        newFile.IsSelected = true;
+        return;
+      }
+    }
+
+    private void AddFile_MenuItem_OnClick(object sender, RoutedEventArgs e)
+    {
+      var item = (MenuItem)sender;
+      var ext = (string)item.Tag;
+
+      var project = ViewModel.CurrentProject;
+      if (project == null)
+        return;
+
+
+      AddNewFileToMultitest(ext, project, Environment.NewLine).IsSelected = true;
+      e.Handled = true;
+    }
+
+    private static ImmutableArray<string> GetFileExtensions(ProjectVm project)
+    {
+      NitraClient client = project.Solution.Suite.Client;
+      client.Send(new ClientMessage.GetFileExtensions(project.Id, ImmutableArray.Create<string>()));
+      var msg = client.Receive<ServerMessage.FileExtensions>();
+      return msg.fileExtensions;
+    }
   }
 }

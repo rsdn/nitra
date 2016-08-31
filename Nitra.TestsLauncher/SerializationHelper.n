@@ -25,15 +25,6 @@ namespace Nitra.Visualizer.Serialization
     [XmlAttribute] public Path: string { get; set }
     public DynamicExtensions: array[DynamicExtension] { get; set }
     public Libs: array[string] { get; set }
-    
-    public ToLanguageInfo(rootPath : string) : Messages.LanguageInfo
-    {
-      Messages.LanguageInfo(
-        Name,
-        Path.GetFullPath(Path.Combine(rootPath, Path)),
-        ImmutableArray.Create(".test"),
-        this.DynamicExtensions.Select(e => e.ToDynamicExtensionInfo(rootPath)).ToImmutableArray())
-    }
   }
 
   public sealed class DynamicExtension
@@ -49,19 +40,36 @@ namespace Nitra.Visualizer.Serialization
   
   public module SerializationHelper
   {
-    _serializer: XmlSerializer = XmlSerializer(typeof(Language));
+    _configXmlSerializer   : XmlSerializer = XmlSerializer(typeof(Messages.Config));
+    _languageXmlSerializer : XmlSerializer = XmlSerializer(typeof(Language));
 
-    public Serialize(language : Language) : string
+    public Serialize(config : Messages.Config) : string
     {
       def writer = StringWriter();
-      _serializer.Serialize(writer, language);
+      _configXmlSerializer.Serialize(writer, config);
       writer.ToString()
     }
 
-    public Deserialize(text: string) : Language
+    public Deserialize(configPath : string) : Messages.Config
     {
+      def text   = File.ReadAllText(configPath);
       def reader = StringReader(text);
-      _serializer.Deserialize(reader) :> Language
+      
+      def result   = 
+        try _configXmlSerializer.Deserialize(reader) :> Messages.Config 
+        catch
+        { | _e is InvalidOperationException =>
+          // Try interpret config as old version. Try to read "Language" type
+          def reader = StringReader(text);
+          def lang = _languageXmlSerializer.Deserialize(reader) :> Language;
+          // Convert it to new format (Messages.Config type)
+          def dynExt = lang.DynamicExtensions?.Select(e => Messages.DynamicExtensionInfo(e.Name, e.Path))?.ToArray();
+          def langInfo = Messages.LanguageInfo(lang.Name, lang.Path, dynExt ?? array(0));
+          def result = Messages.Config(Messages.ProjectSupport("", "", ""), array[langInfo], lang.Libs?.ToArray() ?? array(0));
+          File.WriteAllText(configPath, Serialize(result));
+          Deserialize(configPath)
+        };
+      result
     }
   }
 }
