@@ -43,7 +43,7 @@ namespace Nitra.ClientServer.Server
           | Hint       => Messages.CompilerMessageType.Hint                   
         }
         def t      = convertType(cm.Type);
-        def loc    = ConvertLocation(cm.Location);
+        def loc    = ConvertLocation(cm.Location, withText=false);
         def nested = 
           if (cm.HasNestedMessages)
             ConvertCompilerMessages(source, cm.NestedMessages).NToList()
@@ -57,16 +57,24 @@ namespace Nitra.ClientServer.Server
       result
     }
     
-    public ConvertLocation(loc : Nitra.Location) : Messages.Location
+    public ConvertLocation(loc : Nitra.Location, withText : bool) : Messages.Location
     {
       def source = loc.Source;
-      def file   = source.File :> File;
-      Messages.Location(FileIdentity(file.Id, source.Version), ConvertNSpan(loc.Span))
+      def fileId = if (source.File is File as file) file.FileId else FileId(-1);
+      Messages.Location(FileIdentity(fileId, FileVersion(source.Version)), ConvertToRange(loc, withText && fileId.IsValid))
     }
 
     public ConvertNSpan(span : Nitra.NSpan) : Messages.NSpan
     {
       Messages.NSpan(span.StartPos, span.EndPos)
+    }
+    
+    public ConvertToRange(loc : Nitra.Location, withText : bool) : Messages.Range
+    {
+      def start = loc.StartLineColumn;
+      def end   = loc.EndLineColumn;
+      def text  = if (withText) loc.Source.GetSourceLine(loc.Span.StartPos).GetText() else null;
+      Messages.Range(ConvertNSpan(loc.Span), start.Line, start.Column, end.Line, end.Column, text)
     }
     
     public Padding(str : string, len : int, ch : char = ' ') : string
@@ -112,7 +120,7 @@ namespace Nitra.ClientServer.Server
     
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
     {
-      def msg = AsyncServerMessage.Exception(-1, -1, -1, e.ToString());
+      def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
       lock (asyncResponseWriter)
         msg.Serialize(asyncResponseWriter);
 
@@ -137,6 +145,16 @@ namespace Nitra.ClientServer.Server
       }
     }
     
+    public Log(msg : string, color : ConsoleColor) : void
+    {
+      lock (_sync)
+      {
+        Console.ForegroundColor = color;
+        Console.WriteLine(msg);
+        Console.ResetColor();
+      }
+    }
+    
     public GetCoreCount() : int
     {
       mutable coreCount = 0;
@@ -155,6 +173,14 @@ namespace Nitra.ClientServer.Server
         else
           Assembly.LoadFrom(path);
       assembly
+    }
+  
+    public SendCompilerMessages(parseResult : IParseResult, router : Router, solutionId : SolutionId, fileId : FileId) : void
+    {
+      def compilerMessages = parseResult.CompilerMessages :> Nitra.ProjectSystem.CompilerMessageList;
+      def version          = FileVersion(parseResult.SourceSnapshot.Version);
+      def cm               = ConvertCompilerMessages(CompilerMessageSource.Parsing, compilerMessages);
+      router.SendAsyncResponse(AsyncServerMessage.ParsingMessages(fileId, version, solutionId, cm));
     }
   }
 }

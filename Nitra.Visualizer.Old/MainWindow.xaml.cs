@@ -225,7 +225,7 @@ namespace Nitra.Visualizer
 
       if (context.Brackets != null)
       {
-        foreach (var bracket in context.Brackets)
+        foreach (MatchBracketsWalker.MatchBrackets bracket in context.Brackets)
         {
           var marker1 = _textMarkerService.Create(bracket.OpenBracket.StartPos, bracket.OpenBracket.Length);
           marker1.BackgroundColor = Colors.LightGray;
@@ -445,7 +445,7 @@ namespace Nitra.Visualizer
             //_text.TextArea.Caret.Offset = _parseResult.MaxFailPos;
           }
           else
-            _status.Text = "Grammar is ambiguous! Main parser is fail! This leads to reduction performance.";
+            _status.Text = "OK";
         }
         else
           _status.Text = cmpilerMessages.Count + " error[s]";
@@ -598,7 +598,10 @@ namespace Nitra.Visualizer
         _currentTest.Run(GetRecoveryAlgorithm());
         _performanceTreeView.ItemsSource = new[] { (_currentTest.Statistics ?? _currentTestFolder.Statistics) };
 
-        _astRoot = _currentTest.File.Ast;
+        if (_currentTest.File.HasAst)
+        {
+          _astRoot = _currentTest.File.Ast;
+        }
         _parseResult = _currentTest.File.ParseResult;
         _foldingStrategy.ParseResult = _parseResult;
         _foldingStrategy.UpdateFoldings(_foldingManager, _text.Document);

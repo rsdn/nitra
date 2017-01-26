@@ -35,37 +35,40 @@ namespace Nitra.ClientServer.Messages
   public variant ClientMessage : RouterMessage
   {
     | CheckVersion             { assemblyVersionGuid : string; }
-    | SolutionStartLoading     { id : int; fullPath : string; }
-    | SolutionLoaded           { id : int; }
-    | SolutionUnloaded         { id : int; }
-    | ProjectStartLoading      { id : int; fullPath : string; config : Config; }
-    | ProjectLoaded            { id : int; }
-    | ProjectUnloaded          { id : int; }
-    | ProjectRename            { oldId : int; newId : int; newPath : string; }
-    | ProjectReferenceLoaded   { projectId : int; referencedProjectId : int; }
-    | ProjectReferenceUnloaded { projectId : int; referencedProjectId : int; }
-    | ReferenceLoaded          { projectId : int; name : string; }
-    | ReferenceUnloaded        { projectId : int; name : string; }
-    | FileLoaded               { projectId : int; fullPath : string; id : int; version : int; }
-    | FileReparse              { id : int; }
-    | FileUnloaded             { id : int; }
-    | FileRenamed              { oldId : int; newId : int; newPath : string; }
-    | FileInMemoryLoaded       { projectId : int; id : int; name : string; content : string; }
-    | FileActivated            { id : int; }
-    | FileDeactivated          { id : int; }
-    | FileChanged              { id : int; version : int; change : FileChange; }
-    | FileChangedBatch         { id : int; version : int; changes : ImmutableArray[FileChange]; }
+    | SolutionStartLoading     { id : SolutionId; fullPath : string; }
+    | SolutionLoaded           { id : SolutionId; }
+    | SolutionUnloaded         { id : SolutionId; }
+    | ProjectStartLoading      { id : ProjectId; fullPath : string; config : Config; }
+    | ProjectLoaded            { id : ProjectId; }
+    | ProjectUnloaded          { id : ProjectId; }
+    | ProjectRename            { oldId : ProjectId; newId : ProjectId; newPath : string; }
+    | ProjectReferenceLoaded   { projectId : ProjectId; referencedProjectId : ProjectId; }
+    | ProjectReferenceUnloaded { projectId : ProjectId; referencedProjectId : ProjectId; }
+    | ReferenceLoaded          { projectId : ProjectId; name : string; }
+    | ReferenceUnloaded        { projectId : ProjectId; name : string; }
+    | FileLoaded               { projectId : ProjectId; fullPath : string; id : FileId; version : FileVersion; }
+    | FileReparse              { id : FileId; }
+    | FileUnloaded             { id : FileId; }
+    | FileRenamed              { oldId : FileId; newId : FileId; newPath : string; }
+    | FileInMemoryLoaded       { projectId : ProjectId; id : FileId; name : string; content : string; }
+    | FileActivated            { id : FileId; }
+    | FileDeactivated          { id : FileId; }
+    | FileChanged              { id : FileId; version : FileVersion; change : FileChange; }
+    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; }
     | PrettyPrint              { state : PrettyPrintState; }
-    | CompleteWord             { id : int; version : int; pos : int; }
-    | FindSymbolReferences     { fileId : int; fileVersion : int; pos : int; }
-    | FindSymbolDefinitions    { fileId : int; fileVersion : int; pos : int; }
+    | CompleteWord             { id : int; version : FileVersion; pos : int; }
+    | FindSymbolReferences     { fileId : FileId; fileVersion : FileVersion; pos : int; }
+    | FindSymbolDefinitions    { fileId : FileId; fileVersion : FileVersion; pos : int; }
     | ParseTreeReflection      { enable : bool; }
-    | GetObjectContent         { solutionId : int; fileId : int; fileVersion : int; objectId : int; }
+    | GetObjectContent         { solutionId : SolutionId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
     | AttachDebugger           { }
     | GetLibsMetadata          { libs : ImmutableArray[string]; }
     | GetLibsSyntaxModules     { libs : ImmutableArray[string]; }
     | GetLibsProjectSupports   { libs : ImmutableArray[string]; }
-    | GetFileExtensions        { projectId : int; languageNames : ImmutableArray[string]; }
+    | GetFileExtensions        { projectId : ProjectId; languageNames : ImmutableArray[string]; }
+    | SetCaretPos              { fileId : FileId; fileVersion : FileVersion; pos : int; }
+    | GetHint                  { fileId : FileId; fileVersion : FileVersion; pos : int; }
+    | GetSubHint               { projectId : ProjectId; symbolId : int; }
     | Shutdown                 { }
     
     public override ToString() : string
@@ -104,6 +107,9 @@ namespace Nitra.ClientServer.Messages
         | GetLibsSyntaxModules     (libs)                          => $<# GetLibsSyntaxModules(..$libs) #> 
         | GetLibsProjectSupports   (libs)                          => $<# GetLibsProjectSupports(..$libs) #> 
         | GetFileExtensions        (projectId, languageNames)      => $<# GetFileExtensions($projectId, ..$languageNames) #> 
+        | SetCaretPos              (fileId, fileVersion, pos)      => $<# SetCaretPos($fileId, $fileVersion, $pos) #> 
+        | GetHint                  (fileId, fileVersion, pos)      => $<# GetHint($fileId, $fileVersion, $pos) #> 
+        | GetSubHint               (projectId, symbolId)           => $<# GetSubHint($projectId, $symbolId) #> 
         | Shutdown                                                 =>  <#Shutdown                ()#>
       }
     }
@@ -112,19 +118,51 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant ServerMessage
   {
-    | CompleteWord          { solutionId : int; replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
-    | FindSymbolDefinitions { solutionId : int; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
-    | FindSymbolReferences  { solutionId : int; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
-    | ParseTreeReflection   { solutionId : int; root : ImmutableArray[ParseTreeReflectionStruct]; }
-    | ObjectContent         { solutionId : int; content : ContentDescriptor; }
-    | LibsMetadata          { solutionId : int; metadatas : ImmutableArray[LibMetadata]; }
-    | LibsSyntaxModules     { solutionId : int; modules   : ImmutableArray[SyntaxModules]; }
-    | LibsProjectSupports   { solutionId : int; libs      : ImmutableArray[ProjectSupports]; }
-    | FileExtensions        { solutionId : int; fileExtensions : ImmutableArray[string]; }
+    | CompleteWord          { solutionId : SolutionId; replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
+    | FindSymbolDefinitions { solutionId : SolutionId; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
+    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
+    | ParseTreeReflection   { solutionId : SolutionId; root : ImmutableArray[ParseTreeReflectionStruct]; }
+    | ObjectContent         { solutionId : SolutionId; content : ContentDescriptor; }
+    | LibsMetadata          { solutionId : SolutionId; metadatas : ImmutableArray[LibMetadata]; }
+    | LibsSyntaxModules     { solutionId : SolutionId; modules   : ImmutableArray[SyntaxModules]; }
+    | LibsProjectSupports   { solutionId : SolutionId; libs      : ImmutableArray[ProjectSupports]; }
+    | FileExtensions        { solutionId : SolutionId; fileExtensions : ImmutableArray[string]; }
+    | SubHint               { text : string; }
 
     public override ToString() : string
     {
       $<#$(this.GetType().Name)()#>
+    }
+  }
+
+  [NitraMessage]
+  public variant AsyncServerMessage
+  {
+    public FileId     : FileId;
+    public Version    : FileVersion;
+    public SolutionId : SolutionId;
+    
+    | LanguageLoaded              { spanClassInfos : ImmutableArray[SpanClassInfo]; }
+    | OutliningCreated            { outlining      : ImmutableArray[OutliningInfo]; }
+    | KeywordsHighlightingCreated { spanInfos      : ImmutableArray[SpanInfo]; }
+    | MatchedBrackets             { results        : ImmutableArray[MatchBrackets]; }
+    | SymbolsHighlightingCreated  { spanInfos      : ImmutableArray[SpanInfo]; }
+    | ProjectLoadingMessages      { messages       : array[CompilerMessage]; }
+    | ParsingMessages             { messages       : array[CompilerMessage]; }
+    | MappingMessages             { messages       : array[CompilerMessage]; }
+    | SemanticAnalysisMessages    { messages       : array[CompilerMessage]; }
+    | SemanticAnalysisDone
+    | PrettyPrintCreated          { type : PrettyPrintState; text : string; }
+    | ReflectionStructCreated     { root : ParseTreeReflectionStruct; }
+    | RefreshReferencesFailed     { exception : string; }
+    | RefreshProjectFailed        { exception : string; }
+    | FindSymbolReferences        { referenceSpan : NSpan; symbols : ImmutableArray[SymbolRreferences]; }
+    | Hint                        { text : string; referenceSpan : NSpan; }
+    | Exception                   { exception : string; }
+    
+    public override ToString() : string 
+    {
+      $<#$(this.GetType().Name)($(this.FileId))#>
     }
   }
 
@@ -180,7 +218,8 @@ namespace Nitra.ClientServer.Messages
     public IntersectsWith(pos : int)              : bool { pos <= EndPos && pos >= StartPos }
     public IntersectsWith(start : int, end : int) : bool { start <= EndPos && end >= StartPos }
     public IntersectsWith(other : NSpan)          : bool { IntersectsWith(other.StartPos, other.EndPos) }
-    public IntersectsWith(other : Location)       : bool { IntersectsWith(other.Span) }
+    public IntersectsWith(other : Range)          : bool { IntersectsWith(other.Span) }
+    public IntersectsWith(other : Location)       : bool { IntersectsWith(other.Range) }
     
     public override ToString() : string { StartPos + ", " + EndPos }
     
@@ -197,35 +236,51 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage, StructuralEquality]
   public struct SpanInfo
   {
+    public static Comparer : SpanInfoComparer = SpanInfoComparer();
+
     public Span        : NSpan;
     public SpanClassId : int;
+
+
+    public override ToString() : string
+    {
+      "Span=" + Span + ", SpanClassId=" + SpanClassId
+    }
+    
+    public class SpanInfoComparer : IComparer[SpanInfo]
+    {
+      public Compare(x : SpanInfo, y : SpanInfo) : int
+      {
+        x.Span.StartPos.CompareTo(y.Span.StartPos)
+      }
+    }
   }
   
   [NitraMessage]
   public variant FileChange
   {
-    | Insert  { pos: int; text: string }
-    | Delete  { span: NSpan }
-    | Replace { span: NSpan; text: string }
+    | Insert  { pos : int; text : string }
+    | Delete  { span : NSpan }
+    | Replace { span : NSpan; text : string }
   }
   
   [NitraMessage, StructuralEquality]
   public struct FileIdentity : IComparable[FileIdentity]
   {
-    public FileId      : int;
-    public FileVersion : int;
+    public FileId      : FileId;
+    public FileVersion : FileVersion;
     
     public CompareTo(other : FileIdentity) : int
     {
-      FileId.CompareTo(other.FileId)
+      FileId.Value.CompareTo(other.FileId.Value)
     }
   }
 
   [NitraMessage]
   public struct FileEntries
   {
-    public File  : FileIdentity;
-    public Spans : ImmutableArray[NSpan];
+    public File   : FileIdentity;
+    public Ranges : ImmutableArray[Range];
   }
   
   [NitraMessage]
@@ -236,18 +291,39 @@ namespace Nitra.ClientServer.Messages
   }
   
   [NitraMessage, StructuralEquality]
+  public struct Range : IComparable[Range]
+  {
+    public Span        : NSpan;
+    public StartLine   : int;
+    public StartColumn : int;
+    public EndLine     : int;
+    public EndColumn   : int;
+    public Text        : string;
+    
+    public CompareTo(other : Range) : int { Span.CompareTo(other.Span) }
+    public override ToString() : string { "{" + StartLine + ", " + StartColumn + "}" }
+  }
+  
+  [NitraMessage, StructuralEquality]
   public struct Location : IComparable[Location]
   {
-    public File : FileIdentity;
-    public Span : NSpan;
+    public File  : FileIdentity;
+    public Range : Range;
+    
+    public Span : NSpan { get { this.Range.Span } }
     
     public CompareTo(other : Location) : int
     {
       mutable result = File.CompareTo(other.File);
       if (result == 0)
-        Span.CompareTo(other.Span)
+        Range.CompareTo(other.Range)
       else
         result
+    }
+    
+    public override ToString() : string
+    {
+      "Location(" + this.File.FileId.Value + ", v=" + this.File.FileVersion.Value + ", " + this.Range + ")"
     }
   }
 
@@ -316,20 +392,20 @@ namespace Nitra.ClientServer.Messages
       def x = Config();
       x.ProjectSupport = ProjectSupport();
       x.Languages = array(0);
-      x.Libs      = array(0);
+      x.References      = array(0);
       x
     }
     
     /// Descriptions of class which implements IProjectSupport
-                   public mutable ProjectSupport      : ProjectSupport;
+    public mutable ProjectSupport : ProjectSupport;
     /// Language descriptions
     [XmlArray(ElementName="Languages", IsNullable=false)]
     [XmlArrayItem("Language")]
-                   public mutable Languages           : array[LanguageInfo];
+    public mutable Languages      : array[LanguageInfo];
     /// Library references
-    [XmlArray(ElementName="Libs", IsNullable=false)]
-    [XmlArrayItem("Lib")]
-                   public mutable Libs                : array[string];
+    [XmlArray(ElementName="References", IsNullable=false)]
+    [XmlArrayItem("Reference")]
+    public mutable References     : array[string];
   }
 
   [NitraMessage]
@@ -374,6 +450,8 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public struct OutliningInfo
   {
+    public static Comparer : OutliningInfoComparer = OutliningInfoComparer();
+
     public Span               : NSpan;
     public IsDefaultCollapsed : bool;// TODO: use bit field
     public IsImplementation   : bool;
@@ -382,6 +460,14 @@ namespace Nitra.ClientServer.Messages
     {
       "Outlining({" + Span + (if (IsDefaultCollapsed) "}, Collapsed)" else "})")
     }
+
+    public class OutliningInfoComparer : IComparer[OutliningInfo]
+    {
+      public Compare(x : OutliningInfo, y : OutliningInfo) : int
+      {
+        x.Span.StartPos.CompareTo(y.Span.StartPos)
+      }
+    }
   }
   
   [NitraMessage]
@@ -389,34 +475,6 @@ namespace Nitra.ClientServer.Messages
   {
     | Literal { text : string; }
     | Symbol  { Id : int; name : string; content : string; description : string; iconId : int; }
-  }
-  
-  [NitraMessage]
-  public variant AsyncServerMessage
-  {
-    public FileId      : int;
-    public Version     : int;
-    public SolutionlId : int;
-    
-    | LanguageLoaded              { spanClassInfos : ImmutableArray[SpanClassInfo]; }
-    | OutliningCreated            { outlining      : ImmutableArray[OutliningInfo]; }
-    | KeywordsHighlightingCreated { spanInfos      : ImmutableArray[SpanInfo]; }
-    | SymbolsHighlightingCreated  { spanInfos      : ImmutableArray[SpanInfo]; }
-    | ProjectLoadingMessages      { messages       : array[CompilerMessage]; }
-    | ParsingMessages             { messages       : array[CompilerMessage]; }
-    | MappingMessages             { messages       : array[CompilerMessage]; }
-    | SemanticAnalysisMessages    { messages       : array[CompilerMessage]; }
-    | SemanticAnalysisDone
-    | PrettyPrintCreated          { type : PrettyPrintState; text : string; }
-    | ReflectionStructCreated     { root : ParseTreeReflectionStruct; }
-    | RefreshReferencesFailed     { exception : string; }
-    | RefreshProjectFailed        { exception : string; }
-    | Exception                   { exception : string; }
-    
-    public override ToString() : string 
-    {
-      $<#$(this.GetType().Name)($FileId)#>
-    }
   }
   
   public enum ReflectionKind
@@ -671,5 +729,89 @@ namespace Nitra.ClientServer.Messages
 
       prefix + Name + " " + Object
     }
+  }
+
+  [NitraMessage]
+  [StructuralEquality]
+  public struct MatchBrackets
+  {
+    public Open  : NSpan;
+    public Close : NSpan;
+  }
+  
+  [Record]
+  [StructuralEquality]
+  public struct SolutionId
+  {
+    public static Invalid : SolutionId = SolutionId(-1);
+    
+    public Value : int;
+    
+    public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
+    public static new Deserialize(reader : BinaryReader) : SolutionId { SolutionId(reader.ReadInt32()) }
+    
+    public static @:(x : SolutionId) : int { x.Value }
+    public static @>=(x : SolutionId, y : SolutionId) : bool { x.Value >= y.Value }
+    public static @<=(x : SolutionId, y : SolutionId) : bool { x.Value <= y.Value }
+    
+    public override ToString() : string { "SolutionId(" + Value + ")" }
+  }
+
+  [Record]
+  [StructuralEquality]
+  public struct ProjectId
+  {
+    public static Invalid : ProjectId = ProjectId(-1);
+    
+    public Value : int;
+    
+    public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
+    public static new Deserialize(reader : BinaryReader) : ProjectId { ProjectId(reader.ReadInt32()) }
+    
+    public static @:(x : ProjectId) : int { x.Value }
+    public static @>=(x : ProjectId, y : ProjectId) : bool { x.Value >= y.Value }
+    public static @<=(x : ProjectId, y : ProjectId) : bool { x.Value <= y.Value }
+    
+    public override ToString() : string { "ProjectId(" + Value + ")" }
+  }
+
+
+  [Record]
+  [StructuralEquality]
+  public struct FileId
+  {
+    public static Invalid : FileId = FileId(-1);
+    
+    public Value : int;
+    
+    public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
+    public static new Deserialize(reader : BinaryReader) : FileId { FileId(reader.ReadInt32()) }
+    
+    public IsValid : bool { get { Value >= 0 } }
+    
+    public static @:(x : FileId) : int { x.Value }
+    public static @>=(x : FileId, y : FileId) : bool { x.Value >= y.Value }
+    public static @<=(x : FileId, y : FileId) : bool { x.Value <= y.Value }
+    
+    public override ToString() : string { "FileId(" + Value + ")" }
+  }
+
+
+  [Record]
+  [StructuralEquality]
+  public struct FileVersion
+  {
+    public static Invalid : FileVersion = FileVersion(-1);
+    
+    public Value : int;
+    
+    public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
+    public static new Deserialize(reader : BinaryReader) : FileVersion { FileVersion(reader.ReadInt32()) }
+    
+    public static @:(x : FileVersion) : int { x.Value }
+    public static @>=(x : FileVersion, y : FileVersion) : bool { x.Value >= y.Value }
+    public static @<=(x : FileVersion, y : FileVersion) : bool { x.Value <= y.Value }
+    
+    public override ToString() : string { "FileVersion(" + Value + ")" }
   }
 }

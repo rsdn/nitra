@@ -1,0 +1,172 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ConsoleApplication6
+{
+    class Program
+    {
+        static void Main(string arg98)
+        {
+            if (s("sss"))
+            {
+            }
+        }
+        static void Main2(string rr887)
+        {
+            if (s)
+            {
+            }
+        }
+
+        static test Main3<T>(Stack< args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main4(string[] args)
+        {
+            if (s())
+            {
+            }
+        }
+        static void Main5(string[] args)
+        {
+            if (sdsdsdssdsdsdsd)
+            {
+            }
+        }
+        static void Main6(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main6(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main7(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main8(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main9(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main10(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main11(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main12(string[] args)
+        {
+            if (s)
+            {
+
+
+
+            }
+        }
+        static void Main13(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main14(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main15(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main16(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main17(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main18(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main19(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main20(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main21(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main22(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main23(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main24(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+        static void Main25(string[] args)
+        {
+            if (s)
+            {
+            }
+        }
+    }
+}

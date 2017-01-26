@@ -18,6 +18,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Linq;
 
 using System.Threading;
@@ -71,13 +72,6 @@ namespace Nitra.BackEnd.Cci
       rootNamespace.DeclaredIn  = null;
       rootNamespace.FullName    = "";
       rootNamespace.EvalProperties(context);
-      def makeTypeParameters(symbol : GenericEntitySymbol, cciType : ITypeDefinition) : void
-      {
-        unless (symbol.IsTypeParametersCountEvaluated)
-          symbol.TypeParametersCount = cciType.GenericParameterCount;
-        unless (symbol.IsTypeParametersEvaluated)
-          symbol.TypeParameters = CreateGenericParameters(cciType.GenericParameterCount, cciType.GenericParameters, context);
-      }
       
       def host = CciHost;
 
@@ -88,14 +82,15 @@ namespace Nitra.BackEnd.Cci
           this.CancellationToken.ThrowIfCancellationRequested();
         
           def fullPath = IO.Path.Combine(libPath, filePath);
-          def unit     = host.LoadUnitFrom(fullPath) :> IAssembly;
+          def unit     = host.LoadUnitFrom(fullPath);
           
-          when (unit == null || unit.Equals(Dummy.Module) || unit.Equals(Dummy.Assembly))
+          when (unit == null || unit.Equals(Dummy.Module) || unit.Equals(Dummy.Assembly) || !(unit is IAssembly))
           {
             addError(NoLocation, "The referenced file '" + fullPath + "' is not .Net assembly.");
             continue;
           }
 
+          def asm = unit :> IAssembly;
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
             cciInternedKeyToSymbolMap[type.InternedKey] = typeSymbol;
@@ -104,7 +99,7 @@ namespace Nitra.BackEnd.Cci
               containerSymbol.MemberTable = TypeMemberScope("member", containerSymbol, this);
                 
             when (typeSymbol is GenericTypeSymbol as genericSymbol)
-              makeTypeParameters(genericSymbol, type);
+              MakeTypeParameters(context, genericSymbol, type);
             
             def modifierHost = typeSymbol;
             def flags = ModifierSet(context);
@@ -200,7 +195,7 @@ namespace Nitra.BackEnd.Cci
             }
           }
               
-          foreach (subMember in unit.NamespaceRoot.Members with i)
+          foreach (subMember in asm.NamespaceRoot.Members with i)
           {
             when (i % 10 == 0)
               this.CancellationToken.ThrowIfCancellationRequested();
@@ -214,7 +209,7 @@ namespace Nitra.BackEnd.Cci
             
       this.CancellationToken.ThrowIfCancellationRequested();
       
-      InitSystemTypes(context);
+      InitSystemTypes(context, rootNamespace);
       InitBaseTypeSet(context);
       
       Debug.WriteLine($"Total of LoadExternalSymbols took: $(timer.Elapsed)");
@@ -224,6 +219,14 @@ namespace Nitra.BackEnd.Cci
       rootNamespace
     }
 
+    MakeTypeParameters(context : DependentPropertyEvalContext, symbol : GenericEntitySymbol, cciType : ITypeDefinition) : void
+    {
+      unless (symbol.IsTypeParametersCountEvaluated)
+        symbol.TypeParametersCount = cciType.GenericParameterCount;
+      unless (symbol.IsTypeParametersEvaluated)
+        symbol.TypeParameters = CreateGenericParameters(cciType.GenericParameterCount, cciType.GenericParameters, context);
+    }
+      
     public LoadCustomAttribute(cciCustomAttribute : ICustomAttribute, context : DependentPropertyEvalContext) : CustomAttributeSymbol
     {
       def customAttributeSymbol = CustomAttributeSymbol();
@@ -431,7 +434,7 @@ namespace Nitra.BackEnd.Cci
           tp
           
         | t is IArrayTypeReference =>
-          def args = array[CciTypeToTypeSymbol(t.ElementType, context)];
+          def args = ImmutableArray.Create(CciTypeToTypeSymbol(t.ElementType, context));
           def typeInfo = if (t.IsVector) _singleDimensionArray : ArraySymbol
                           else 
                           {
@@ -447,6 +450,7 @@ namespace Nitra.BackEnd.Cci
           constructedType.TypeInfo = typeInfo;
           constructedType.Args = args;
           constructedType.EvalProperties(context);
+          constructedType.Scope = typeInfo.Scope;
           constructedType
         
         | t is ITypeDefinition =>
@@ -464,7 +468,7 @@ namespace Nitra.BackEnd.Cci
         | t is IGenericTypeInstanceReference =>
           _cciInternedKeyToGenericSymbolMap.GetOrAdd(cciTypeReference.InternedKey, _key => {
             def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
-            def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToArray();
+            def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
             def name = Name(NoLocation, t.GenericType.Name.Value);
             def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, t.ResolvedType).DefineSymbol(null);
             
@@ -489,33 +493,52 @@ namespace Nitra.BackEnd.Cci
       }
     }
     
-    CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : array[TypeParameterSymbol]
+    CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeParameterSymbol]
     {
       if (genericParameterCount == 0)
-        AstUtils.NoTypeParameters
+        ImmutableArray.Empty
       else
       {
-        def result = array(genericParameterCount : int);
+        def result = ImmutableArray.CreateBuilder(genericParameterCount : int);
         foreach (tp in genericParams with i)
         {
           def name  = NRB.Name(NoLocation, tp.Name.Value); // TODO: type.Name.UniqueKey
           def tps   = TypeParameterDeclaration(name, tp).DefineSymbol();
           tps.EvalProperties(context);
-          result[i] = tps;
+          result.Add(tps);
         }
-        result
+        result.MoveToImmutable()
       }
     }
     
-    InitSystemTypes(context : DependentPropertyEvalContext) : void
+    InitSystemTypes(context : DependentPropertyEvalContext, rootNamespace : NamespaceSymbol) : void
     {
-      def singleDimensionArray = SingleDimensionArraySymbol();
-      singleDimensionArray.TypeParametersCount = 0;
+      def textName             = "#Array1";
+      def name                 = Name(NoLocation, textName); // TODO: type.Name.UniqueKey
+      def cciType              = CciHost.PlatformType.SystemArray. ResolvedType;
+      def singleDimensionArray = ExternalTopTypeDeclaration.[SingleDimensionArraySymbol] (name, cciType).DefineSymbol(rootNamespace.MemberTable);
+      def modifiers            = ModifierSet(context);
+      modifiers.Add(Modifiers.Public);
+      singleDimensionArray.DeclaredIn          = rootNamespace;
+      singleDimensionArray.Flags               = modifiers;
+      singleDimensionArray.FullName            = textName;
+      singleDimensionArray.TypeParametersCount = 1;
+      singleDimensionArray.TypeParameters      = ImmutableArray.Create(MakeArrayTypeParameter(context));
+      //singleDimensionArray.BaseTypeSet // TODO: fill with array interfaces
       singleDimensionArray.EvalProperties(context);
       _singleDimensionArray = singleDimensionArray;
+      
       def cciObject = CciHost.PlatformType.SystemObject.ResolvedType;
       _cciObject = cciObject; 
       _ = _cciInternedKeyToSymbolMap.TryGetValue(cciObject.InternedKey, out _objectSymbol);
+    }
+    
+    MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeParameterSymbol
+    {
+      def name  = NRB.Name(NoLocation, "T");
+      def tps   = ArrayTypeParameterDeclaration(name).DefineSymbol();
+      tps.EvalProperties(context);
+      tps
     }
     
     InitBaseTypeSet(context : DependentPropertyEvalContext) : void
@@ -584,6 +607,11 @@ namespace Nitra.BackEnd.Cci
     Type : INestedTypeDefinition { get; }
   }
 
+  interface IArrayDeclaration
+  {
+    Type : IArrayType { get; }
+  }
+
   [Record]
   public class ExternalTopTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol], IExternalTopTypeDeclaration, IExternalTypeDeclaration
     where TSymbol : DeclarationSymbol
@@ -609,6 +637,12 @@ namespace Nitra.BackEnd.Cci
   public class TypeParameterDeclaration : ExternalDeclaration[TypeParameterSymbol]
   {
     public TypeParam : IGenericParameter;
+    public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
+  }
+
+  [Record]
+  public class ArrayTypeParameterDeclaration : ExternalDeclaration[TypeParameterSymbol]
+  {
     public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
   }
 

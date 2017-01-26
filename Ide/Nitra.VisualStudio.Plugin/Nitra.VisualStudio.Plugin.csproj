@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -39,13 +39,21 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
+      <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
+      <Name>Nitra.Runtime</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nitra.LanguageCompiler\Nitra.LanguageCompiler.nproj">
       <Project>{5b187ce9-5655-4d43-bfec-0d77b5c63818}</Project>
       <Name>Nitra.LanguageCompiler</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Nitra.VisualStudio\Nitra.VisualStudio.nproj">
-      <Project>{24f81277-b44d-4f87-8906-44fe08bb958c}</Project>
-      <Name>Nitra.VisualStudio</Name>
+    <ProjectReference Include="..\..\Nitra\Nitra.Grammar\Nitra.Grammar.Stage2.nproj">
+      <Project>{be6dfd78-ed34-4f74-9185-7dd20f52d068}</Project>
+      <Name>Nitra.Grammar.Stage2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NitraCommonIde\NitraCommonIde.csproj">
+      <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
+      <Name>NitraCommonIde</Name>
     </ProjectReference>
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
@@ -53,25 +61,16 @@
       <CopyLocal>True</CopyLocal>
       <Private>True</Private>
     </Reference>
-    <ProjectReference Include="..\..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
-      <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
-      <Name>Nitra.Runtime</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Nitra\Nitra.Compiler\Nitra.Compiler.Stage2.nproj">
-      <Project>{5df68601-f64c-492a-b3bf-a217b15c65b7}</Project>
-      <Name>Nitra.Compiler.Stage2</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Nitra\Nitra.Grammar\Nitra.Grammar.Stage2.nproj">
-      <Project>{be6dfd78-ed34-4f74-9185-7dd20f52d068}</Project>
-      <Name>Nitra.Grammar.Stage2</Name>
-    </ProjectReference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Class1.cs" />
   </ItemGroup>
   <PropertyGroup>
+    <Namespace>Nitra</Namespace>
+    <Assembly>Nitra.Grammar.dll</Assembly>
     <LanguageName>NitraLang</LanguageName>
+    <ProjectSupport>Nitra DotNet</ProjectSupport>
     <VsPackageName>$(LanguageName)VsPackage</VsPackageName>
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
     <VsPackageProjectPath>$(VsPackagePath)\$(VsPackageName).csproj</VsPackageProjectPath>
@@ -79,7 +78,16 @@
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
-    <Exec Command="..\..\..\..\Nitra.LanguageCompiler\$(OutputPath)Nitra.LanguageCompiler.exe /lang:$(LanguageName) /ns:Nitra /out:..\..\..\ .\Nitra.Grammar.dll" WorkingDirectory="$(TargetDir)" />
+    <ItemGroup>
+      <!-- Add links to the necessary assembly in this project. It will be copied to the Templates\XXLanguageFullNameXXVsPackage\Languages -->
+      <Languages Include="$(TargetDir)*.*" Exclude="$(TargetDir)$(TargetName).*;$(TargetDir)Nitra.LanguageCompiler.*" />
+    </ItemGroup>
+    <Message Text="Remove '$(VsPackagePath)'" Importance="high" />
+    <RemoveDir Directories="$(VsPackagePath)" />
+    <Message Text="Copy references: '@(Languages)' -&gt; '$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages'" Importance="high" />
+    <RemoveDir Directories="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
+    <Copy SourceFiles="@(Languages)" DestinationFolder="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
+    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>

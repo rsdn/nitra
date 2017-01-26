@@ -21,11 +21,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
   {
             _projects        : Hashtable[int, Project] = Hashtable();
             _files           : Hashtable[int, File]    = Hashtable();
-    public  Path             : string { get; }
-    public  Id               : int    { get; }
-    public  IsDisposed       : bool   { get; private set; }
+    public  Path             : string     { get; }
+    public  Id               : SolutionId { get; }
+    public  IsDisposed       : bool       { get; private set; }
     
-    public this(id : int, path : string)
+    public this(id : SolutionId, path : string)
     {
       Id   = id;
       Path = path;
@@ -39,13 +39,21 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public GetProject(id : int) : Project
     {
       assert2(!IsDisposed);
-      _projects[id]
+      mutable value;
+      if (_projects.TryGetValue(id, out value))
+        value
+      else
+        throw ArgumentException($"Can't find a project with id=$id.", "id")
     }
 
     public GetFile(id : int) : File
     {
       assert2(!IsDisposed);
-      _files[id]
+      mutable file;
+      if (_files.TryGetValue(id, out file))
+        file
+      else
+        throw ArgumentException($"Can't find file with id=$id.", "id")
     }
     
     internal _N_OnFileAdded(file : File) : void

@@ -18,6 +18,7 @@ namespace Nitra.ViewModels
 {
   public class SolutionVm : FolderVm[ProjectVm], IClientHost, IDisposable
   {
+    public          Id             : SolutionId     { get; protected set; }
     mutable         _client        : NitraClient;
     //mutable         _nextProjectId : int;
     //mutable         _nextTestId    : int;
@@ -26,9 +27,11 @@ namespace Nitra.ViewModels
       get { if (IsSingleFileTest) Children[0].Children[0].Hint else "Multifile Solution" }
     }
 
-    public this(suite: SuiteVm, folder: string)
+    public this(suite : SuiteVm, fullPath : string)
     {
-      base(suite, folder);
+      base(suite, fullPath);
+      when (suite != null)
+        Id = SolutionId(suite.Workspace.StringManager[fullPath]);
       LoadProjects();
       when (IsSingleFileTest)
         IsExpanded = false;
@@ -59,16 +62,16 @@ namespace Nitra.ViewModels
     {
       _client = client;
       def config = this.Suite.GetConfigWithFullPaths();
-      def libs = config.Libs;
+      def references = config.References;
       client.Send(ClientMessage.SolutionStartLoading(Id, FullPath));
       foreach(project in Children)
       {
         def projectId = project.Id;
         client.Send(ClientMessage.ProjectStartLoading(projectId, project.FullPath, config));
         
-        when (libs != null)
-          foreach (lib in libs)
-            client.Send(ClientMessage.ReferenceLoaded(projectId, lib));
+        when (references != null)
+          foreach (reference in references)
+            client.Send(ClientMessage.ReferenceLoaded(projectId, reference));
         
         foreach(test in project.Children)
           client.Send(ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version));

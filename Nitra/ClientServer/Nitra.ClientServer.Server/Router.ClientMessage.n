@@ -33,11 +33,11 @@ namespace Nitra.ClientServer.Server
           ServerUtils.Log($"Incorrect version of messaging assembly: '$(asm.Assembly.Location)'.");
           Environment.Exit(42);
         }
-      | SolutionStartLoading(id, fullPath)              => assert2(_solution == null); _solution = Solution(id, fullPath);
+      | SolutionStartLoading(id, fullPath)              => assert2(_solution == null); SpanClassesManager.Clear(); _solution = Solution(id, fullPath);
       | SolutionLoaded(id)                              => assert2(_solution.Id == id); _solution.Open();
       | SolutionUnloaded(id)                            => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
       | ProjectStartLoading(id, fullPath, config)       => _ = Project(_solution, fullPath, id, config, _parseQueue, this);
-      | ProjectLoaded      (id)                         => _solution[id].Open();
+      | ProjectLoaded      (id)                         => _solution[id].Open(); ServerUtils.Log("ProjectLoaded", ConsoleColor.DarkGray);
       | ProjectUnloaded    (id)                         => _solution.RemoveProject(id);
       | ProjectRename      (oldId, newId, newPath)      => ServerUtils.Log("Not supported yet.");
       | ReferenceLoaded    (projectId, fullPath)        => _solution[projectId].AddLib(fullPath);
@@ -55,7 +55,7 @@ namespace Nitra.ClientServer.Server
       | FileChangedBatch   (id, version, changes)       => _solution.GetFile(id).Change(version, changes);
       | PrettyPrint        (state)                      => PrettyPrintState = state; ServerUtils.Log("PrettyPrint(" + state + ")");
       | CompleteWord       (id, version, pos)           => _solution.GetFile(id).CompleteWord(version, pos);
-      | FindSymbolReferences (fileId, fileVersion, pos) => _solution.GetFile(fileId).FindSymbolReferences(fileVersion, pos);
+      | FindSymbolReferences (fileId, fileVersion, pos) => _solution.GetFile(fileId).FindSymbolReferences(fileVersion, pos, forHighlighting=false);
       | FindSymbolDefinitions(fileId, fileVersion, pos) => _solution.GetFile(fileId).FindSymbolDefinitions(fileVersion, pos);
       | ParseTreeReflection(state)                      => IsParseTreeReflectionEnable = state;
       | GetObjectContent(solutionId, id, ver, parentId) => _solution.GetFile(id).GetObjectContent(solutionId, ver, parentId);
@@ -64,6 +64,9 @@ namespace Nitra.ClientServer.Server
       | GetLibsSyntaxModules(libs)                      => GetLibsSyntaxModules(libs)
       | GetLibsProjectSupports(libs)                    => GetLibsProjectSupports(libs)
       | GetFileExtensions(projectId, languageNames)     => GetFileExtensions(projectId, languageNames)
+      | SetCaretPos(fileId, fileVersion, pos)           => _solution.GetFile(fileId).SetCaretPos(fileVersion, pos);
+      | GetHint(fileId, fileVersion, pos)               => _solution.GetFile(fileId).GetHint(fileVersion, pos);
+      | GetSubHint(projectId, symbolId)                 => _solution[projectId].GetSymbolHint(symbolId);
       | Shutdown                                        =>
         ServerUtils.Log("Shutdown");
         _mainQueue.CompleteAdding();

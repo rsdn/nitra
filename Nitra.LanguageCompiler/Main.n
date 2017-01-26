@@ -29,7 +29,7 @@ namespace Nitra.LanguageCompiler
 {
   module Program
   {
-    public VsPackageTemplatePath : string = TemplatePath(@"Templates\XXLanguageXXVsPackage");
+    public VsPackageTemplatePath : string = TemplatePath(@"Templates\XXLanguageFullNameXXVsPackage");
 
     Main() : void
     {
@@ -185,11 +185,17 @@ namespace Nitra.LanguageCompiler
 
     public DefaultVars(config : CommandPromptReader) : list[string * string]
     {
+      
       def lang = config.Language;
-
+      
       [
         ("XXNamespaceXX",                config.DefaultNamespace),
+        ("XXProjectSupportXX",           config.ProjectSupport),
+        ("XXProjectSupportClassXX",      if (config.ProjectSupportClass == null) "" else config.ProjectSupportClass.FullName),
+        ("XXProjectSupportAssemblyXX",   if (config.ProjectSupportClass == null) "" else Path.GetFileName(config.ProjectSupportClass.Assembly.CodeBase)),
         ("XXLanguageXX",                 lang.Name),
+        ("XXLanguageFullNameXX",         lang.FullName),
+        ("XXLanguageAssemblyXX",         Path.GetFileName(config.LanguageAssembly)),
         ("XXCompanyXX",                  lang.Company),
         ("XXCompanyIdXX",                lang.Company.Replace("   ", "").Replace("  ", "").Replace(" ", "")),
         ("XXDescriptionXX",              lang.Description),
@@ -198,6 +204,7 @@ namespace Nitra.LanguageCompiler
         ("XXLicenseUrlXX",               lang.LicenseUrl?.ToString()),
         ("XXRequireLicenseAcceptanceXX", lang.RequireLicenseAcceptance.ToString().ToLower()),
         ("XXLanguageInstanceXX",         "global::" + lang.GetType().FullName + ".Instance"),
+        ("XXFileExtensionsXX",           $<#..$(config.Language.FileExtensions; ", "; e => "\"" + e + "\"")#>),
         MakeXXFilesXXVar(config),
       ]
     }
@@ -212,62 +219,6 @@ namespace Nitra.LanguageCompiler
       def templateGuids     = ReadGuids(templateGuidsPath);
       def guids             = if (config.NewGuids || !File.Exists(guidsPath)) Hashtable() else ReadGuids(guidsPath);
       mutable replaces = vars;
-      //def newVersion         = typeof(NSpan).Assembly.GetName().Version.ToString();
-      
-      //assert2(false);
-      
-      // 
-      //def prjPath       = Path.Combine(VsPackageTemplatePath, "XXLanguageXXVsPackage.csproj");
-      //def prjContent    = File.ReadAllText(prjPath);
-      //def versionRegex1 = Text.RegularExpressions.Regex(<#\\Nitra.VisualStudio\.(\d+\.\d+\.\d+\.\d+)\\#>);
-      //def result1       = versionRegex1.Match(prjContent);
-      
-      //if (result1.Success)
-      //{
-      //  def oldVersion         = result1.Groups[1].Value;
-      //  replaces ::= (oldVersion, newVersion);
-      //}
-      //else
-      //{
-      //  def configSnapshot = SourceSnapshot("", prjPath);
-      //  def loc = Location(configSnapshot, 0);
-      //  config.CompilerMessages.Error(loc, <#Version for Nitra.VisualStudio in 'XXLanguageXXVsPackage.csproj' not found.#>);
-      //}
-
-      //def pkgConfigPath2 = Path.Combine(VsPackageTemplatePath, "packages.config");
-      //def pkgConfig2     = File.ReadAllText(pkgConfigPath2);
-      //def versionRegex2  = Text.RegularExpressions.Regex(<#.+id="Nitra.Runtime"\s+version="([^"]+)"#>);
-      //def result2        = versionRegex2.Match(pkgConfig2);
-      
-      //if (result2.Success)
-      //{
-      //  def oldVersion         = result2.Groups[1].Value;
-      //  def newVersion         = typeof(NSpan).Assembly.GetName().Version.ToString();
-      //  replaces ::= (oldVersion, newVersion);
-      //}
-      //else
-      //{
-      //  def configSnapshot = SourceSnapshot("", pkgConfigPath2);
-      //  def loc = Location(configSnapshot, 0);
-      //  config.CompilerMessages.Error(loc, <#Version for Nitra.Runtime in 'packages.config' not found.#>);
-      //}
-
-      //def versionRegex3  = Text.RegularExpressions.Regex(<#.+id="Nemerle"\s+version="([^"]+)"#>);
-      //def result3        = versionRegex3.Match(pkgConfig2);
-
-      //if (result3.Success)
-      //{
-      //  def oldVersion         = result3.Groups[1].Value;
-      //  def nemerleVersion     = typeof(option[_]).Assembly.GetName().Version;
-      //  def newVersion         = Version(nemerleVersion.Major, nemerleVersion.Minor, nemerleVersion.Revision, 0).ToString();
-      //  replaces ::= (oldVersion, newVersion);
-      //}
-      //else
-      //{
-      //  def configSnapshot = SourceSnapshot("", pkgConfigPath2);
-      //  def loc = Location(configSnapshot, 0);
-      //  config.CompilerMessages.Error(loc, <#Version for Nemerle in 'packages.config' not found.#>);
-      //}
 
       foreach ((templateConstName, templateGuid) in templateGuids.KeyValuePairs)
       {
@@ -335,11 +286,12 @@ namespace Nitra.LanguageCompiler
       {
         def color = ColorFromArgb(spanClass.Style.ForegroundColor);
         ExpandTemplate(@"Templates\Highlighting\ClassificationDefinition.cs",  $@"$prjName\Highlighting\$(spanClass.Name)ClassificationDefinition.Generated.cs", 
-          [("XXNamespaceXX",     config.DefaultNamespace),
-           ("XXDisplay nameXX",  SpanClass.GetDisplayNameForIde(config.Language, spanClass)),
-           ("XXSpanClassNameXX", SpanClass.GetNameForIde(config.Language, spanClass)),
-           ("Colors.Red",        ColorToString(color, "Colors.")),
-           ("RedColor",          ColorToString(color)),
+          [("XXNamespaceXX",         config.DefaultNamespace),
+           ("XXDisplay nameXX",      SpanClass.GetDisplayNameForIde(config.Language, spanClass)),
+           ("XXSpanClassNameXX",     SpanClass.GetNameForIde(config.Language, spanClass)),
+           ("XXSpanClassFullNameXX", SpanClass.GetFullNameForIde(config.Language, spanClass)),
+           ("Colors.Red",            ColorToString(color, "Colors.")),
+           ("RedColor",              ColorToString(color)),
            ],
           config);
       }
@@ -352,7 +304,7 @@ namespace Nitra.LanguageCompiler
         _ = Directory.CreateDirectory(outputPath);
         assert(true);
       }
-
+ 
       foreach (file in Directory.EnumerateFiles(templateRootPath))
       {
         def fileName = Path.GetFileName(file);
@@ -403,7 +355,7 @@ namespace Nitra.LanguageCompiler
       File.WriteAllText(outputPath2, result, encoding);
 
       def index = result.IndexOf("XX");
-      when (index >= 0)
+      when (index >= 0 && RegularExpressions.Regex(@"XX\w+XX").IsMatch(result))
       {
         def loc = Location(SourceSnapshot(File.ReadAllText(templatePath), templatePath), index, index + 2);
         config.CompilerMessages.Error(loc, "The template contains unreplaced placeholders.");

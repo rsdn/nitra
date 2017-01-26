@@ -17,7 +17,8 @@ using System.Linq;
 using System.Threading;
 using System.Reflection;
 
-using NSP = Nitra.ProjectSystem;
+using NSP    = Nitra.ProjectSystem;
+using NCSSPS = Nitra.ClientServer.Server.ProjectSystem;
 
 namespace Nitra.ClientServer.Server.ProjectSystem
 {
@@ -27,7 +28,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             _libMap                                  : Hashtable[string, int] = Hashtable();
             _libs                                    : List[NSP.LibReference] = List();
     public  Parent                                   : Solution;
-    public  Id                                       : int;
+    public  Id                                       : ProjectId;
     public  Path                                     : string                       { get; }
     public  Name                                     : string                       { get; private set; }
             _config                                  : Config;
@@ -40,9 +41,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             _semanticAnalysisCancellationTokenSource : CancellationTokenSource { get; private set; }
     public  Router                                   : Router { get; }
     mutable _expectsToBuildAst                       : int;
-    public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, int, ImmutableArray[IAst]]] = ConcurrentQueue();
+    public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst]]] = ConcurrentQueue();
+    mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
            
-    internal this(parent : Solution, fullPath : string, id : int, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
+    internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
       ParseQueue    = parseQueue;
       Path          = fullPath;
@@ -60,13 +62,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def ps   = config.ProjectSupport;
         def asm  = ServerUtils.LoadAssembly(ps.Path);
         def type = asm.GetType(ps.TypeFullName);
-        _projectSupport = Activator.CreateInstance(type) :> IProjectSupport;
+        _projectSupport = Activator.CreateInstance(type, true) :> IProjectSupport;
       }
 
       parent.AddProject(this);
       LoadLangs(_config.Languages);
       
-      Log("ProjectStartLoading " + id + ": "+ fullPath);
+      ServerUtils.Log("ProjectStartLoading " + id + ": "+ fullPath, ConsoleColor.DarkGray);
     }
     
     public GetLanguage(ext : string) : Nitra.Language * List[GrammarDescriptor]
@@ -91,7 +93,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         languages.Add(language);
         
         assert2(language.StartRule != null);
-        Log("  Language " + i + ": "+ fullName + " - '" + path + "' " + language.Authors);
+        ServerUtils.Log("  Language " + i + ": "+ fullName + " - '" + path + "' " + language.Authors);
         
         def dynamicExtensions = List();
         def extensions = languageInfo.DynamicExtensions;
@@ -101,20 +103,20 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           def extensionAssembly = ServerUtils.LoadAssembly(dynamicExtension.Path);
           def descriptor = GrammarDescriptor.GetDescriptors(extensionAssembly).FirstOrDefault(g => String.Equals(g.FullName, dynamicExtension.Name, StringComparison.Ordinal));
           if (descriptor == null)
-            Log($"Syntax module '$(dynamicExtension.Name)' not found in assembly '$(extensionAssembly.Location)'.");
+            ServerUtils.Log($"Syntax module '$(dynamicExtension.Name)' not found in assembly '$(extensionAssembly.Location)'.");
           else
           {
             dynamicExtensions.Add(descriptor);
-            Log("    Dynamic extension " + descriptor.FullName + " - '" + dynamicExtension.Path + "'");
+            ServerUtils.Log("    Dynamic extension " + descriptor.FullName + " - '" + dynamicExtension.Path + "'");
           }
         }
 
-        Log("    File extensions:");
+        ServerUtils.Log("    File extensions:");
         foreach (ext in language.FileExtensions)
         {
           _extToLanguages[ext]        = (language, dynamicExtensions);
           _languageMap[language.Name] = language;
-          Log($"      $ext");
+          ServerUtils.Log($"      $ext");
         }
 
         _extToLanguages[".test"] = (language, dynamicExtensions);
@@ -174,7 +176,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     TryStartSemanticAnalysis() : void
     {
-      when (IsAllAstCreated && this._files.Count > 0)
+      when (IsOpened && IsAllAstCreated && this._files.Count > 0)
       {
         CancelSemanticAnalysisCancellation();
         def cancellationTokenSource              = CancellationTokenSource();
@@ -186,7 +188,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         {
           when (this.Data == null)
           {
-            Log("Project support: RefreshReferences");
+            ServerUtils.Log("Project support: RefreshReferences " + this.Name + " ");
             def timer = Stopwatch.StartNew();
             def data =
               try projectSupport.RefreshReferences(Router.ProjectLoadCancellationToken, this)
@@ -195,43 +197,69 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                 | e is OperationCanceledException => ServerUtils.LogCanceled(e); null
                 | e => 
                 ServerUtils.LogException(e);
-                Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(-1, -1, Parent.Id, e.ToString()));
+                Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
                 null
               };
             
             this.Data = data;
             
             Router.ProjectLoadFinish();
-            LogMsgHandled("RefreshReferences", timer, 1000);
+            LogMsgHandled("RefreshReferences " + this.Name + " ", timer, 1000);
             
             when (data == null)
               return;
           }
 
-          Log("Prepare to Semantic Analysis");
+          ServerUtils.Log("Prepare to Semantic Analysis");
 
           def files = NSP.File.GetEvalPropertiesData(_files.Values.Where(_.IsSupported).OrderBy(_.IsActive));
+          _semanticResult = ImmutableArray.Empty;
           foreach (file in files)
             file.Ast.DeepResetProperties();
             
           ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data));
         }
         else
-          Log("Project support not available!");
+          ServerUtils.Log("Project support not available!");
       }
     }
-    
 
-    public SemanticAnalysisFinished() : void
+    public GetSemanticAnalysisMessages(fileId : FileId) : array[CompilerMessage]
+    {
+      def files = _semanticResult;
+      def empty = array(0);
+      
+      when (files.IsDefaultOrEmpty)
+        return empty;
+      
+      for (mutable i = 0; i < files.Length; i++)
+      {
+        def file = files[i];
+        when (fileId != file.FileId)
+          continue;
+        
+        if (file.HasCompilerMessage)
+        {
+          def msgs = file.GetCompilerMessage();
+          def cm   = ServerUtils.ConvertCompilerMessages(CompilerMessageSource.SemanticAnalysis, msgs);
+          return cm;
+        }
+        else
+          return empty;
+      }
+      empty
+    }
+    
+    public SemanticAnalysisFinished(files : ImmutableArray[FileEvalPropertiesData]) : void
     {
       IsSemanticAvailable = true;
-      def files = _files.Values.ToArray();
+      _semanticResult     = files;
+
       def cancellationToken = _semanticAnalysisCancellationTokenSource.Token;
-      
-      foreach (file when file.IsActive && file.IsSupported in files)
-      {
-        ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Id, file.Id, file.Version, file.Ast));
-      }
+
+      foreach (file in files)
+        when (file.Ast?.Location?.Source?.File is NCSSPS.File as file when file.IsActive)
+          ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Id, file.FileId, file.FileVersion, file.Ast));
       
       def semanticActions = SemanticActions;
       mutable action;
@@ -248,7 +276,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (cancellationToken.IsCancellationRequested)
         return;
         
-      Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisDone(-1, -1, Parent.Id));
+      Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisDone(FileId.Invalid, FileVersion.Invalid, Parent.Id));
     }
 
     static GetAsts(files : Seq[File]) : ImmutableArray[IAst]
@@ -259,7 +287,15 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       builder.MoveToImmutable();
     }
     
-    public AddSemanticAction(action : Action[CancellationToken, int, ImmutableArray[IAst]]) : void
+    static GetAsts(files : ImmutableArray[FileEvalPropertiesData]) : ImmutableArray[IAst]
+    {
+      def builder = ImmutableArray.CreateBuilder(files.Count());
+      foreach(file in files)
+        builder.Add(file.Ast);
+      builder.MoveToImmutable();
+    }
+    
+    public AddSemanticAction(action : Action[CancellationToken, SolutionId, ImmutableArray[IAst]]) : void
     {
       if (IsSemanticAvailable)
         ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, _semanticAnalysisCancellationTokenSource.Token, GetAsts(_files.Values)));
@@ -269,7 +305,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     public IsOpened : bool { get; private set }
     
-    public Open() : void { IsOpened = true }
+    public Open() : void
+    {
+      IsOpened = true;
+      TryStartSemanticAnalysis();
+    }
     
     public Item[fileId : int] : File { get { GetFile(fileId) } }
     
@@ -309,7 +349,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       mutable index;
       if (_libMap.TryGetValue(name, out index))
-        Log("Reference '" + name + "' allredy added: " + _libs[index]);
+        ServerUtils.Log("Reference '" + name + "' allredy added: " + _libs[index]);
       else
       {
         def separatorPos = name.IndexOf(':');
@@ -329,7 +369,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           };
             
         _libs.Add(r);
-        Log($"  Lib: $r - '$(r.Path)'");
+        ServerUtils.Log($"  Reference:$Name: '$(r.Path)'", ConsoleColor.Magenta);
       }
     }
     
@@ -339,9 +379,34 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       throw NotImplementedException()
     }
     
+    public GetSymbolHint(symbolId : int) : void
+    {
+      def action(_cancellationToken : CancellationToken, _solutionId : SolutionId, mutable _asts : ImmutableArray[IAst]) : void
+      {
+        def send(text : string) : void
+        {
+          Router.SendResponse(ServerMessage.SubHint(text));
+        }
+        def projectSupport = _projectSupport ?? this.GetProjectSupport();
+        when (projectSupport != null)
+        {
+          def symbolOpt = projectSupport.GetSymbolById(this.Data, symbolId);
+
+          if (symbolOpt is VSome(symbol))
+            send("<hint>" + symbol.MakeHint() + "</hint>");
+          else
+            send("The symbol with symbolId=$symbol not found.");
+            
+          return;
+        }
+
+        send("No Project Support avalable");
+      }
+      AddSemanticAction(action);
+    }
+    
     // implementation
     
-    Log(msg : string) : void { ServerUtils.Log(msg) }
     LogMsgHandled(msg : string, timer : Stopwatch, millisecondToTimeout : int) : void { ServerUtils.LogMsgHandled(msg, timer, millisecondToTimeout); }
     
     // overrides
