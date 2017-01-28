@@ -55,21 +55,20 @@ namespace Nitra.VisualStudio
   {
     /// <summary>VSPackage GUID string.</summary>
     public const string PackageGuidString = "66c3f4cd-1547-458b-a321-83f0c448b4d3";
+    public static SolutionId InvalidSolutionId = new SolutionId(-1);
+
 
     public static NitraCommonVsPackage Instance;
 
     RunningDocTableEvents                       _runningDocTableEventse;
     Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
     List<EnvDTE.Project>                        _projects = new List<EnvDTE.Project>();
-    string                                      _loadingProjectPath;
     List<Server>                                _servers = new List<Server>();
     StringManager                               _stringManager = new StringManager();
-    string                                      _currentSolutionPath;
-    SolutionId                                  _currentSolutionId;
-    ProjectId                                   _loadingProjectId;
     uint                                        _objectManagerCookie;
     Library                                     _library;
     SolutionLoadingSate                         _backgroundLoading;
+    SolutionId                                  _currentSolutionId = InvalidSolutionId;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NitraCommonVsPackage"/> class.
@@ -176,11 +175,30 @@ namespace Nitra.VisualStudio
     {
       _backgroundLoading = SolutionLoadingSate.SynchronousLoading;
 
-      var stringManager = _stringManager;
+      InitServers();
+
+      var solutionPath = e.SolutionFilename;
+      var id = new SolutionId(_stringManager.GetId(solutionPath));
+
+      _currentSolutionId = id;
+
+      foreach (var server in _servers)
+        server.SolutionStartLoading(id, solutionPath);
+
+      Debug.WriteLine($"tr: BeforeOpenSolution(SolutionFilename='{solutionPath}' id={id})");
+    }
+
+    private void InitServers()
+    {
+      if (_servers.Count > 0)
+        return; // allredy initialised
+
       if (NitraCommonPackage.Configs.Count == 0)
       {
         Debug.WriteLine($"Error: Configs is empty!)");
       }
+
+      var stringManager = _stringManager;
 
       foreach (var config in NitraCommonPackage.Configs)
       {
@@ -188,16 +206,7 @@ namespace Nitra.VisualStudio
         _servers.Add(server);
       }
 
-      var solutionPath = e.SolutionFilename;
-      var id           = new SolutionId(stringManager.GetId(solutionPath));
-
-      _currentSolutionPath = solutionPath;
-      _currentSolutionId = id;
-
-      foreach (var server in _servers)
-        server.SolutionStartLoading(id, solutionPath);
-
-      Debug.WriteLine($"tr: BeforeOpenSolution(SolutionFilename='{solutionPath}' id={id})");
+      return;
     }
 
     void BeforeOpenProject(object sender, BeforeOpenProjectEventArgs e)
@@ -246,12 +255,25 @@ namespace Nitra.VisualStudio
 
     void AfterOpenSolution(object sender, OpenSolutionEventArgs e)
     {
+      var isTemporarySolution = _currentSolutionId == InvalidSolutionId;
+      if (isTemporarySolution)
+        _currentSolutionId = new SolutionId(0); // This is temporary solution for <MiscFiles>
+
+      InitServers(); // need in case of open separate files (with no project)
+
       Debug.Assert(_backgroundLoading != SolutionLoadingSate.AsynchronousLoading);
 
       var path = _stringManager.GetPath(_currentSolutionId);
       Debug.WriteLine($"tr: AfterOpenSolution(IsNewSolution='{e.IsNewSolution}', Id='{_currentSolutionId}' Path='{path}')");
 
-      // only currently loaded projects
+      foreach (var server in _servers)
+        if (isTemporarySolution)
+          server.SolutionStartLoading(_currentSolutionId, ""); // init "<MiscFiles>" solution
+
+      foreach (var listener in _listenersMap.Values)
+        listener.StartListening(true);
+
+      // scan only currently loaded projects
       foreach (var project in _projects)
         ScanReferences(project);
 
@@ -267,7 +289,7 @@ namespace Nitra.VisualStudio
     void ScanReferences(EnvDTE.Project project)
     {
       Debug.WriteLine("tr: ScanReferences(started)");
-      Debug.WriteLine($"tr:  Project: Project='{project.Name}' Path={project.UniqueName}");
+      Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
 
       var vsproject = project.Object as VSLangProj.VSProject;
       if (vsproject != null)
@@ -276,28 +298,29 @@ namespace Nitra.VisualStudio
 
         foreach (VSLangProj.Reference reference in vsproject.References)
         {
+          var path = reference.Path;
+
           if (reference.SourceProject == null)
           {
-            if (reference.Path == null)
-            {
+            if (path == null)
               Debug.WriteLine($"tr:    Error: reference.Path=null reference.Name={reference.Name}");
-            }
+
             foreach (var server in _servers)
-              server.ReferenceAdded(projectId, reference.Path);
-            Debug.WriteLine($"tr:    Reference: Name={reference.Name} Path={reference.Path}");
+              server.ReferenceAdded(projectId, path);
+            Debug.WriteLine($"tr:    Reference: Name={reference.Name} Path={path}");
           }
           else
           {
+            var referencedProjectId = GetProjectId(reference.SourceProject);
             foreach (var server in _servers)
-              server.ReferenceAdded(projectId, reference.Path);
-            Debug.WriteLine($"tr:    Project reference: Project={reference.SourceProject.Name} ProjectPath={reference.SourceProject.FullName} DllPath={reference.Path}");
+              server.ProjectReferenceAdded(projectId, referencedProjectId, path);
+            Debug.WriteLine($"tr:    Project reference: ProjectId={referencedProjectId} Project={reference.SourceProject.Name} ProjectPath={reference.SourceProject.FullName} DllPath={reference.Path}");
           }
         }
       }
       else
-      {
         Debug.WriteLine("tr:    Error: project.Object=null");
-      }
+
       Debug.WriteLine("tr: ScanReferences(finished)");
     }
 
@@ -325,19 +348,19 @@ namespace Nitra.VisualStudio
       if (project == null)
         return; // not supported prfoject type
 
-      if (_backgroundLoading != SolutionLoadingSate.AsynchronousLoading)
-        _projects.Add(project);
-
       var projectPath = project.FullName;
       var projectId = new ProjectId(_stringManager.GetId(projectPath));
 
-      _loadingProjectPath = projectPath;
-      _loadingProjectId   = projectId;
+      var isMiscFiles = string.IsNullOrEmpty(projectPath);
+      var isDelayLoading = _backgroundLoading != SolutionLoadingSate.AsynchronousLoading && !isMiscFiles;
+
+      if (isDelayLoading)
+        _projects.Add(project);
 
       foreach (var server in _servers)
         server.ProjectStartLoading(projectId, projectPath);
 
-      Debug.WriteLine($"tr: AfterOpenProject(IsAdded='{e.IsAdded}', FullName='{projectPath}' id={projectId})");
+      Debug.WriteLine($"tr: AfterOpenProject(IsAdded='{e.IsAdded}', FullName='{projectPath}' id={projectId} Name={project.Name} State={_backgroundLoading})");
 
       foreach (var server in _servers)
         server.AddedMscorlibReference(projectId);
@@ -350,16 +373,18 @@ namespace Nitra.VisualStudio
 
       _listenersMap.Add(hierarchy, listener);
 
-      listener.StartListening(true);
-
       // We need apdate all references when a project adding in exist solution
       if (e.IsAdded)
       {
       }
 
-      if (_backgroundLoading == SolutionLoadingSate.AsynchronousLoading)
+      if (!isDelayLoading)
+      {
+        listener.StartListening(true);
+
         foreach (var server in _servers)
           server.ProjectLoaded(GetProjectId(project));
+      }
     }
 
     void ReferenceAdded(object sender, ReferenceEventArgs e)
@@ -422,7 +447,7 @@ namespace Nitra.VisualStudio
 
       string action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
 
-      if (action == "Compile" || action == "Nitra")
+      if (action == "Compile" || action == "Nitra" || action == null)
       {
         object obj;
         var hr2 = e.Hierarchy.GetProperty(e.ItemId, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
@@ -430,8 +455,15 @@ namespace Nitra.VisualStudio
         var projectItem = obj as EnvDTE.ProjectItem;
         if (ErrorHelper.Succeeded(hr2) && projectItem != null)
         {
-          var projectPath = projectItem.ContainingProject.FullName;
-          var projectId = new ProjectId(_stringManager.GetId(projectPath));
+          var project     = projectItem.ContainingProject;
+          var projectPath = project.FullName;
+          var projectId   = new ProjectId(_stringManager.GetId(projectPath));
+
+          if (action == null && project.UniqueName != "<MiscFiles>")
+          {
+            Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}' projectId={projectId})");
+            return;
+          }
 
           foreach (var server in _servers)
             if (server.IsSupportedExtension(ext))
@@ -452,8 +484,9 @@ namespace Nitra.VisualStudio
       var id   = new FileId(_stringManager.GetId(path));
 
       string action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
+      var project = e.Hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
 
-      if (action == "Compile" || action == "Nitra")
+      if (action == "Compile" || action == "Nitra" || (action == null && string.IsNullOrEmpty(project.FileName)))
         foreach (var server in _servers)
           if (server.IsSupportedExtension(ext))
             server.FileUnloaded(id);
@@ -473,7 +506,7 @@ namespace Nitra.VisualStudio
 
     void AfterLoadProjectBatch(object sender, LoadProjectBatchEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}' _loadingProjectId={_loadingProjectId})");
+      Debug.WriteLine($"tr: AfterLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}')");
     }
 
     void AfterLoadProject(object sender, LoadProjectEventArgs e)
@@ -488,8 +521,11 @@ namespace Nitra.VisualStudio
 
     void AfterCloseSolution(object sender, EventArgs e)
     {
+      Debug.Assert(_currentSolutionId != InvalidSolutionId);
       _backgroundLoading = SolutionLoadingSate.NotLoaded;
-      Debug.WriteLine("tr: AfterCloseSolution()");
+      var path = _stringManager.GetPath(_currentSolutionId);
+      Debug.WriteLine($"tr: AfterCloseSolution(Id={_currentSolutionId} Path='{path}')");
+      _currentSolutionId = InvalidSolutionId;
     }
 
     void AfterChangeProjectParent(object sender, Microsoft.VisualStudio.Shell.Events.HierarchyEventArgs e)
