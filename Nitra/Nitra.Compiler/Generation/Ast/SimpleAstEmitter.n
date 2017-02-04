@@ -2,6 +2,7 @@
 using Nitra.Typing;
 
 using Nemerle;
+using Nemerle.Imperative;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -300,7 +301,9 @@ namespace Nitra.Compiler
               body.Add(<[
                 match (item)
                 {
-                  | concreteItem is $(concreteType : typed) => $(bufferName : usesite).Add(concreteItem)
+                  | concreteItem is $(concreteType : typed) =>
+                    $(bufferName : usesite).Add(concreteItem);
+                    continue;
                   | _ => ()
                 }
               ]>);
@@ -329,6 +332,7 @@ namespace Nitra.Compiler
                       {
                         root.Hint($(bufferName : usesite), "Previous definition.")
                       }
+                    continue;
 
                   | _ => ()
                 }
@@ -357,6 +361,7 @@ namespace Nitra.Compiler
                       {
                         root.Hint($(bufferName : usesite), "Previous definition.")
                       }
+                    continue;
 
                   | _ => ()
                 }
