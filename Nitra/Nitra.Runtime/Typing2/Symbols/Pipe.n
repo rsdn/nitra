@@ -1,0 +1,121 @@
+﻿using Nitra.Internal;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.Declarations
+{
+  public variant Pipe[TArgument, TResult]
+  {
+    | Some
+      {
+        private _argument : TArgument;
+
+        [RecordIgnore] private mutable _result : TResult;
+
+        [RecordIgnore] private mutable _isResultEvaluated : bool;
+
+        [DependentProperty("IsArgumentEvaluated")]
+        public override Argument : TArgument
+        {
+          get { _argument }
+          set { _ = value; assert(false, "Property 'Argument' is not assignable"); }
+        }
+
+        public override IsArgumentEvaluated : bool { get {true} }
+
+        [DependentProperty("IsResultEvaluated")]
+        public override Result : TResult
+        {
+          get
+          {
+            assert(_isResultEvaluated, "Property 'Result' is not evaluated");
+            _result
+          }
+          set
+          {
+            assert(!_isResultEvaluated, "Property 'Result' is already evaluated");
+            _result = value;
+            _isResultEvaluated = true;
+          }
+        }
+
+        public override IsResultEvaluated : bool { get { _isResultEvaluated } }
+
+        [DependentProperty("IsResultOptionEvaluated")]
+        public override ResultOption : ValueOption[TResult] { get { VSome(Result) } }
+
+        public override IsResultOptionEvaluated : bool { get { IsResultEvaluated } }
+      }
+
+    | None
+      {
+        [DependentProperty("IsArgumentEvaluated")]
+        public override Argument : TArgument
+        {
+          get { assert(false, "Property 'Argument' is not evaluated"); }
+          set { _ = value; assert(false, "Property 'Argument' is not assignable"); }
+        }
+
+        public override IsArgumentEvaluated : bool { get { false } }
+
+        [DependentProperty("IsResultEvaluated")]
+        public override Result : TResult
+        {
+          get { assert(false, "Property 'Result' is not evaluated"); }
+          set { _ = value; assert(false, "Property 'Result' is not assignable"); }
+        }
+
+        public override IsResultEvaluated : bool { get { false } }
+
+        [DependentProperty("IsResultOptionEvaluated")]
+        public override ResultOption            : ValueOption[TResult] { get { VNone() } }
+        public override IsResultOptionEvaluated : bool                 { get { true } }
+      }
+
+    | Default
+      {
+        private _result : TResult;
+
+        [DependentProperty("IsArgumentEvaluated")]
+        public override Argument : TArgument
+        {
+          get { assert(false, "Property 'Argument' is not evaluated"); }
+          set { _ = value; assert(false, "Property 'Argument' is not assignable"); }
+        }
+
+        public override IsArgumentEvaluated : bool { get { false } }
+
+        [DependentProperty("IsResultEvaluated")]
+        public override Result : TResult
+        {
+          get { _result }
+          set { _ = value; assert(false, "Property 'Result' is not assignable"); }
+        }
+
+        public override IsResultEvaluated : bool { get { true } }
+
+        [DependentProperty("IsResultOptionEvaluated")]
+        public override ResultOption            : ValueOption[TResult] { get { VSome(_result) } }
+        public override IsResultOptionEvaluated : bool                 { get { true } }
+      }
+
+    [DependentProperty("IsArgumentEvaluated")]
+    public abstract Argument            : TArgument { get; set; }
+    public abstract IsArgumentEvaluated : bool      { get; }
+
+    [DependentProperty("IsResultEvaluated")]
+    public abstract Result            : TResult { get; set; }
+    public abstract IsResultEvaluated : bool    { get; }
+
+    [DependentProperty("IsResultOptionEvaluated")]
+    public abstract ResultOption            : ValueOption[TResult] { get; }
+    public abstract IsResultOptionEvaluated : bool                 { get; }
+  }
+}

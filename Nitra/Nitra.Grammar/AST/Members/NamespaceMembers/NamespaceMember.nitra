@@ -12,12 +12,13 @@ namespace Nitra.Ast
     {
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
 
-      //in AssociatedSymbol : ValueOption[SymbolDeclarationSymbol];
+      in AssociatedSymbol : ValueOption[SymbolDeclarationSymbol];
     }
 
     Members.Parent = Symbol;
-    AssociatedSymbol.AssociatedDeclaration = if (Symbol.IsDeclaration) VSome(Symbol) else VNone();
+    AssociatedSymbol.Connection = if (Symbol.IsDeclaration) Pipe.Some(Symbol) else Pipe.None();
     AssociatedSymbol.Scope = Scope;
+    Symbol.AssociatedSymbol = AssociatedSymbol.Connection.ResultOption;
 
     AssociatedSymbol : SymbolDeclaration;
 
@@ -32,10 +33,11 @@ namespace Nitra.Ast
       FullName = AstUtils.MakeNamespaceFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
     }
 
-    in AssociatedDeclaration : ValueOption[TopAstSymbol];
+    in Connection : Pipe[TopAstSymbol, SymbolDeclarationSymbol];
 
-    ContainingTable = AssociatedDeclaration.Value.DeclaredIn.MemberTable;
-    Symbol.AssociatedDeclaration = AssociatedDeclaration.Value;
+    ContainingTable = Connection.Argument.DeclaredIn.MemberTable;
+    Symbol.AssociatedDeclaration = Connection.Argument;
+    Connection.Result = Symbol;
   }
 
   declaration ExplicitSymbolDeclaration : SymbolDeclaration
