@@ -27,6 +27,7 @@ namespace Nitra
     public abstract Arity        : int               { get; }
     public abstract SpanClass    : SpanClass         { get; }
     public virtual  IsReference  : bool              { get { false } }
+    public          IsSplitAtCompletionPosition : bool { get; protected set; }
     public override ToString()   : string
     {
       $"$(Grammar.FullName)::$Name"
