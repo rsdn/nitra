@@ -42,7 +42,16 @@ namespace Nitra.Compiler
     public virtual DefineDescriptor() : void
     {
       assert(DescriptorTb == null);
-      def baseParameters = [<[ parameter: idInGrammar : int ]>, <[ parameter: isTokenRule : bool ]>, <[ parameter: isKeyToken : bool ]>, <[ parameter: isVoid : bool ]>, <[ parameter: operatorInfo : Nitra.OperatorInfo ]>, <[ parameter: arity : int ]>].Concat(BaseParameters);
+      def baseParameters = [
+        <[ parameter: idInGrammar : int ]>,
+        <[ parameter: isTokenRule : bool ]>,
+        <[ parameter: isKeyToken : bool ]>,
+        <[ parameter: isVoid : bool ]>,
+        <[ parameter: operatorInfo : Nitra.OperatorInfo ]>,
+        <[ parameter: arity : int ]>,
+        <[ parameter: isReference : bool ]>,
+        ].Concat(BaseParameters);
+
       DescriptorTb = Owner.GrammarTB.DefineNestedType(<[decl:
         private sealed class $(ClassName : usesite) : $BaseType
         {
@@ -55,6 +64,7 @@ namespace Nitra.Compiler
             this.IsVoid       = isVoid;
             this.OperatorInfo = operatorInfo;
             this.Arity        = arity;
+            this.IsReference = isReference;
           }
 
           public override IdInGrammar  : int                      { get; }
@@ -63,6 +73,7 @@ namespace Nitra.Compiler
           public override IsVoid       : bool                     { get; }
           public override OperatorInfo : Nitra.OperatorInfo       { get; }
           public override Arity        : int                      { get; }
+          public override IsReference  : bool                     { get; }
           public override Grammar      : Nitra.GrammarDescriptor  { get { $(Owner.GrammarTB.GetMemType() : typed).StaticDescriptor } }
         }
       ]>);
@@ -74,6 +85,14 @@ namespace Nitra.Compiler
       {
         def ctor      = <[ $(DescriptorTb.GetMemType() : typed) ]>;
         def fieldName = ruleSymbol.DecorateRuleDescriptorName();
+        def isReference =
+          match ((ruleSymbol : object, this.Owner.Environment.Project.ReferenceSymbolOpt))
+          {
+            | (SyntaxRuleSymbol(SyntaxMappings = mappings), Some(referenceAstSymbol)) =>
+              mappings.Exists(s => (s.Parameters is []) && (s.ReturnType is (AstType.Ast(symbol) when symbol.IsSubtypeOf(referenceAstSymbol))))
+
+            | _ => false
+          };
 
         Owner.GrammarTB.DefineConditional(<[ decl:
           public static $(fieldName : usesite) : $BaseType =
@@ -85,6 +104,7 @@ namespace Nitra.Compiler
                 $(ruleSymbol.Type is RuleType.Void : bool),
                 $(ruleSymbol.Options.OperatorInfo  :> int) :> Nitra.OperatorInfo,
                 $(ruleSymbol.Options.Arity         : int),
+                $(isReference : bool),
                 ..$(BaseArgs(ruleSymbol))
               );
         ]>);

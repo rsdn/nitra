@@ -26,6 +26,7 @@ namespace Nitra
     public          Infix        : bool              { get { this.OperatorInfo %&& OperatorInfo.Infix } }
     public abstract Arity        : int               { get; }
     public abstract SpanClass    : SpanClass         { get; }
+    public virtual  IsReference  : bool              { get { false } }
     public override ToString()   : string
     {
       $"$(Grammar.FullName)::$Name"
