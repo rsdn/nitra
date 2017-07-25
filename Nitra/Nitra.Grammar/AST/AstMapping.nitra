@@ -832,8 +832,6 @@ namespace Nitra.Ast
       | NoParseTree                 {}
       | KeyToken                    {}
       | Keyword                     {}
-      | Reference                   {}
-      | Name                        {}
       | DynamicSyntaxExtender       {}
       | DynamicSyntaxExtentionPoint {}
       | SplitAtCompletionPosition   {}
