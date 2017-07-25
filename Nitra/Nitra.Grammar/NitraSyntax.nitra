@@ -991,6 +991,7 @@ syntax module NitraSyntax : NitraLang
     | Name                        = AttributeName="Name"                        { override Options = inOptions.SetName(this, true); }
     | DynamicSyntaxExtender       = AttributeName="DynamicSyntaxExtender"       { override Options = inOptions.SetDynamicSyntaxExtender(this, true); }
     | DynamicSyntaxExtentionPoint = AttributeName="DynamicSyntaxExtentionPoint" { override Options = inOptions.SetDynamicSyntaxExtentionPoint(this, true); }
+    | SplitAtCompletionPosition   = AttributeName="SplitAtCompletionPosition"   { override Options = inOptions.SplitAtCompletionPosition(this, true); }
     | SpanClass                   = AttributeName="SpanClass" "(" Reference ")"
       {
         override Options
