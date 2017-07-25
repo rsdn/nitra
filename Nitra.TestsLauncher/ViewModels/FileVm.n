@@ -36,6 +36,7 @@ namespace Nitra.ViewModels
     public        Version                  : FileVersion { get; private set; }
     public        IsDirty                  : bool { get; private set; }
     mutable       _code                    : string;
+    mutable       _completeWordPosOpt      : int = -1;
 
     public this(suite: SuiteVm, project : ProjectVm, fullPath : string)
     {
@@ -139,8 +140,11 @@ namespace Nitra.ViewModels
     public FinishBatchCodeUpdate() : void
     {
       _isBatchCodeUpdate = false;
-      _client.Send(ClientMessage.FileChangedBatch(Id, Version, _batchFileChanges.ToImmutableArray()));
-      _batchFileChanges.Clear();
+      when (_batchFileChanges.Count > 0)
+      {
+        _client.Send(ClientMessage.FileChangedBatch(Id, Version, _batchFileChanges.ToImmutableArray()));
+        _batchFileChanges.Clear();
+      }
     }
 
     public OnTextChanged(version : FileVersion, inserted : string, insertionLength : int, offset : int, removalLength : int, newTextOpt : string) : void
@@ -208,6 +212,13 @@ namespace Nitra.ViewModels
       _ = tests.Remove(this);
       when (tests.Count > 0)
         tests[index].IsSelected = true;
+    }
+    
+    public StartCompleteWord(pos : int) : void
+    {
+      def client = _client;
+      Debug.Assert(client != null);
+      client.Send(ClientMessage.CompleteWord(this.Project.Id, this.Id, this.Version, pos));
     }
 
     public override GetAllTests() : Seq[FileVm] { [this] }

@@ -54,8 +54,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _needHint               : bool;
     mutable _caretPosOpt            : int = -1;
     mutable _caretPosVersionOpt     : int = -1;
-    mutable _completeWordPosOpt     : int = -1;
-    mutable _prevSourceOpt          : SourceSnapshot = null;
+    mutable _isCompleteWord         : bool;
     
     public this(id : FileId, fullPath : string, version : FileVersion, parent : Project)
     {
@@ -169,8 +168,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public Change(version : FileVersion, change : FileChange) : void
     {
-      assert2(_completeWordPosOpt < 0 && _prevSourceOpt == null);
-    
+      //assert2(_completeWordPosOpt < 0 && _prevSourceOpt == null);
       ChangeImpl(version, change);
     }
 
@@ -186,8 +184,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     public Change(version : FileVersion, changes : ImmutableArray[FileChange]) : void
     {
-      assert2(_completeWordPosOpt < 0 && _prevSourceOpt == null);
-
       _ = GetSource();
       FileVersion = version;
       for (mutable i = changes.Length - 1; i >= 0; i--)
@@ -250,11 +246,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       
       TryHighlightSymbolReferences();
       
-      def isForCompleteWord = FileVersion.IsForCompleteWord(Version);
-      if (isForCompleteWord && CanCompleteWord())
+      if (_isCompleteWord && CanCompleteWord())
       {
-        assert2(_completeWordPosOpt >= 0);
-        Parent.AstCreated(this, _completeWordPosOpt);
+        assert2(_caretPosOpt >= 0);
+        Parent.AstCreated(this, _caretPosOpt);
       }
       else
         // TODO: make _astMessages local for working threads
@@ -264,7 +259,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     CanCompleteWord() : bool
     {
-      def pos = _completeWordPosOpt;
+      def pos = _caretPosOpt;
       def parseResult = _parseResult;
       
       when (parseResult == null)
@@ -285,9 +280,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     public CreateVisualInfo(parseResult : IParseResult) : void
     {
-      when (FileVersion.IsForCompleteWord(parseResult.SourceSnapshot.File.Version))
-        return;
-      
       def solutionId = Parent.Parent.Id;
       _parseQueue.Add(ParserMessage.CreateKeywordsHighlighting(solutionId, Parent.Id, this.FileId, parseResult));
       _parseQueue.Add(ParserMessage.CreateOutlining(solutionId, Parent.Id, this.FileId, parseResult));
@@ -358,23 +350,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     public CompleteWord(version : FileVersion, pos : int) : void
     {
-      _prevSourceOpt = _snapshot;
-      def change = FileChange.Insert(pos, "\uFFFE");
-      def fileVersion = FileVersion(FileVersion.CompleteWordMask | version);
-      Log($"CompleteWord started in the $fileVersion file in position: $pos");
-      ChangeImpl(fileVersion, change);
-      _completeWordPosOpt = pos;
+      Log($"CompleteWord started in the $version file in position: $pos");
+      _isCompleteWord = true;
     }
     
     public CompleteWordDismiss(version : FileVersion) : void
     {
-      assert2(_prevSourceOpt.Version == version);
-      this.FileVersion = version;
-      _snapshot = _prevSourceOpt;
-      _ = _text.Remove(_completeWordPosOpt, 1);
-      _completeWordPosOpt = -1;
-      _prevSourceOpt = null;
-      TrySendParseMessage();
+      _isCompleteWord = false;
     }
     
     public FindSymbolDefinitions(fileVersion : int, pos : int) : void

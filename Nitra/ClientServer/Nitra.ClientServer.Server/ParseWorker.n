@@ -101,8 +101,7 @@ namespace Nitra.ClientServer.Server
         def parseResult = parseSession.Parse(source);
         _mainQueue.Add(RouterAnswerMessage.FileParsed(projectId, fileId, parseResult));
 
-        unless (FileVersion.IsForCompleteWord(source.File.Version))
-          ServerUtils.SendCompilerMessages(parseResult, _router, solutionId, projectId, fileId);
+        ServerUtils.SendCompilerMessages(parseResult, _router, solutionId, projectId, fileId);
         ServerUtils.LogMsgHandled("ParseFile " + fileId + " Length=" + parseResult.SourceSnapshot.Text.Length, timer, 200);
       
       | CreateAst(solutionId, projectId, fileId, parseResult, isActive) =>
@@ -161,7 +160,7 @@ namespace Nitra.ClientServer.Server
         _router.SendAsyncResponse(AsyncServerMessage.ReflectionStructCreated(fileId, version, solutionId, convertedRoot));
         ServerUtils.LogMsgHandled("ParseTreeReflection " + fileId, timer, 100);
       
-      | SemanticAnalysisStart(solutionId, projectId, cancellationToken, projectSupport, files, data, completeWordPosOpt) =>
+      | SemanticAnalysisStart(solutionId, projectId, cancellationToken, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt) =>
         ServerUtils.Log($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
         def timer = Stopwatch.StartNew();
         try
@@ -172,13 +171,13 @@ namespace Nitra.ClientServer.Server
           | e when completeWordPosOpt < 0 => SendAsyncResponse(AsyncServerMessage.RefreshProjectFailed(FileId.Invalid, FileVersion.Invalid, solutionId, e.ToString()));
         }
         
-        when (completeWordPosOpt >= 0)
+        when (completeWordPosOpt >= 0 && completeWordFileIdOpt.IsValid)
         {
           // word complate
-          foreach (file when FileVersion.IsForCompleteWord(file.FileVersion) in files)
+          foreach (file when file.FileId == completeWordFileIdOpt in files)
           {
             CompleteWord(solutionId, completeWordPosOpt, file);
-            return;
+            break;
           }
         }
         
@@ -336,7 +335,7 @@ namespace Nitra.ClientServer.Server
             }
           }
           
-          def ver = FileVersion(fileData.FileVersion ^ FileVersion.CompleteWordMask);
+          def ver = FileVersion(fileData.FileVersion);
           def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
           SendAsyncResponse(msg);
           break;

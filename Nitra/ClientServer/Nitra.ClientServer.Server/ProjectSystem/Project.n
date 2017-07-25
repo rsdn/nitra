@@ -170,10 +170,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _expectsToBuildAst--;
       assert2(_expectsToBuildAst >= 0);
       
-      TryStartSemanticAnalysis(completeWordPosOpt);
+      TryStartSemanticAnalysis(file, completeWordPosOpt);
     }
 
-    TryStartSemanticAnalysis(completeWordPosOpt : int = -1) : void
+    TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1) : void
     {
       when (IsOpened && IsAllAstCreated && this._files.Count > 0)
       {
@@ -215,8 +215,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _semanticResult = ImmutableArray.Empty;
           foreach (file in files)
             file.Ast.DeepResetProperties();
-            
-          ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordPosOpt));
+          
+          def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
+          ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt));
         }
         else
           ServerUtils.Log("Project support not available!");

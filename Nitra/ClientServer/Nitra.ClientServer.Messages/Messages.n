@@ -818,7 +818,6 @@ namespace Nitra.ClientServer.Messages
   public struct FileVersion
   {
     public static Invalid : FileVersion = FileVersion(-1);
-    public static CompleteWordMask : int = 0x1000000;
     
     public Value : int;
     
@@ -828,9 +827,6 @@ namespace Nitra.ClientServer.Messages
     public static @:(x : FileVersion) : int { x.Value }
     public static @>=(x : FileVersion, y : FileVersion) : bool { x.Value >= y.Value }
     public static @<=(x : FileVersion, y : FileVersion) : bool { x.Value <= y.Value }
-    
-    public static IsForCompleteWord(value : int) : bool { value %&& CompleteWordMask }
-    public static IsForCompleteWord(this fileVersion : FileVersion) : bool { fileVersion.Value %&& CompleteWordMask }
     
     public override ToString() : string { Value.ToString() }
   }
