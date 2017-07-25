@@ -451,7 +451,7 @@ namespace Nitra
         foreach (state in parsingSequence.States)
         {
           | Predicate                  => ()
-          | Simple               (ruleParser)
+          | Simple               (ruleParser, _)
           | Extensible           (ruleParser)
           | DynamicExtensibleItem(ruleParser) =>
             def tokenParser = GetTokenParser(state.SubruleInfo);

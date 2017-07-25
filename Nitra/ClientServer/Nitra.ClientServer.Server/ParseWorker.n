@@ -98,7 +98,18 @@ namespace Nitra.ClientServer.Server
         when (parseSession.CancellationToken.IsCancellationRequested)
           return;
 
+        when (parseSession.CompletionStartPos >= 0)
+        {
+          assert(true);
+        }
+
         def parseResult = parseSession.Parse(source);
+        
+        when (parseSession.CompletionStartPos >= 0)
+        {
+          assert(true);
+        }
+
         _mainQueue.Add(RouterAnswerMessage.FileParsed(projectId, fileId, parseResult));
 
         ServerUtils.SendCompilerMessages(parseResult, _router, solutionId, projectId, fileId);
@@ -113,7 +124,8 @@ namespace Nitra.ClientServer.Server
         def parseTree = parseResult.CreateParseTree();
         def mappingMessages = CompilerMessageList();
         def ast = AstContext.GetAstUntyped(parseTree, mappingMessages);
-        _mainQueue.Add(RouterAnswerMessage.AstCreated(projectId, fileId, parseResult.ParseSession.CancellationToken, ast, parseTree));
+        def completionPos = parseResult.ParseSession.CompletionStartPos;
+        _mainQueue.Add(RouterAnswerMessage.AstCreated(projectId, fileId, parseResult.ParseSession.CancellationToken, ast, parseTree, completionPos));
         
         def version = FileVersion(parseResult.SourceSnapshot.Version);
         def cm      = ConvertCompilerMessages(CompilerMessageSource.Mapping, mappingMessages);

@@ -196,7 +196,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     
     // overrides
     
-    GetReParseMessage() : ParserMessage.ParseFile
+    GetReParseMessage(completePos : int = -1) : ParserMessage.ParseFile
     {
       _parseMessages.Clear();
       _astMessages.Clear();
@@ -224,7 +224,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def parseSession            = ParseSession(language.StartRule, 
                                         language.CompositeGrammar,
                                         cancellationToken = cancellationToken,
-                                        dynamicExtensions = DynamicExtensions);
+                                        dynamicExtensions = DynamicExtensions,
+                                        completionStartPos = completePos);
       CancellationTokenSource = cancellationTokenSource;
 
       ParserMessage.ParseFile(Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
@@ -239,7 +240,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       ParserMessage.CreateAst(Parent.Parent.Id, Parent.Id, this.FileId, parseResult, IsActive)
     }
     
-    public AstCreated(ast : IAst, parseTree : ParseTree) : void
+    public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int) : void
     {
       _parseTree = parseTree; 
       _ast = ast;
@@ -249,7 +250,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (_isCompleteWord && CanCompleteWord())
       {
         assert2(_caretPosOpt >= 0);
-        Parent.AstCreated(this, _caretPosOpt);
+        Parent.AstCreated(this, completionPos);
       }
       else
         // TODO: make _astMessages local for working threads
@@ -352,6 +353,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       Log($"CompleteWord started in the $version file in position: $pos");
       _isCompleteWord = true;
+      TrySendParseMessage(pos);
     }
     
     public CompleteWordDismiss(version : FileVersion) : void
@@ -806,10 +808,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       newFile.TrySendParseMessage();
     }
     
-    public TrySendParseMessage() : void
+    public TrySendParseMessage(completePos : int = -1) : void
     {
       when (this.IsSupported)
-        _parseQueue.Add(this.GetReParseMessage());
+        _parseQueue.Add(this.GetReParseMessage(completePos));
     }
     
     public SetCaretPos(fileVersion : int, pos : int) : void

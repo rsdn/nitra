@@ -24,7 +24,7 @@ namespace Nitra.ClientServer.Server
   [Record]
   public variant ParserMessage : Message
   {
-    | ParseFile                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseSession : ParseSession; source : SourceSnapshot } // CancellationToken in ParseSession
+    | ParseFile                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseSession : ParseSession; source : SourceSnapshot; } // CancellationToken in ParseSession
     | CreateAst                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; isActive : bool; }
     | CreateOutlining            { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; }
     | CreateKeywordsHighlighting { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; }
@@ -52,7 +52,7 @@ namespace Nitra.ClientServer.Server
     public override MsgId : short { get { -1s } }
     
     | FileParsed               { projectId : ProjectId; fileId : FileId; parseResult : IParseResult; } // CancellationToken in ParseResult.ParseSession
-    | AstCreated               { projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; }
+    | AstCreated               { projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; completionPos : int; }
     | SemanticAnalysisFinished { projectId : ProjectId; cancellationToken : CancellationToken; files : ImmutableArray[FileEvalPropertiesData]; }
   }
 }

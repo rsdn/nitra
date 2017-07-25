@@ -89,8 +89,8 @@ namespace Nitra.Internal.Recovery
         | Simple           as state =>
           if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 &&
             {
-              def p = ParseResult.ParseSession.CompletionStartPos;
-              textPos >= p || endPos < p
+              def p = CompletionPos;
+              !(textPos <= p && p < endPos)
             }})
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
@@ -102,7 +102,19 @@ namespace Nitra.Internal.Recovery
           }
           else
           {
-            _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            def p = CompletionPos;
+            if (textPos == p && state.IsReference && state.IsToken)
+            {
+              endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
+              if (endPos < 0 || endPos == textPos)
+                SubruleParsed(textPos, textPos, record, tokenChanges, TokenChanges.None);
+              else
+                _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            }
+            else
+            {
+              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            }
             //skipRecord();
           }
 
@@ -121,8 +133,8 @@ namespace Nitra.Internal.Recovery
 
           if (optimize && { endPos >= 0 && 
             { 
-              def p = ParseResult.ParseSession.CompletionStartPos;
-              textPos >= p || endPos < p
+              def p = CompletionPos;
+              !(textPos <= p && p < endPos)
             }})
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
@@ -141,8 +153,8 @@ namespace Nitra.Internal.Recovery
         | Extensible       as state =>
           if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && 
             { 
-              def p = ParseResult.ParseSession.CompletionStartPos;
-              textPos >= p || endPos < p
+              def p = CompletionPos;
+              !(textPos <= p && p < endPos)
             }})
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
@@ -159,8 +171,24 @@ namespace Nitra.Internal.Recovery
           }
 
         | ExtensionPrefix  as state =>
-          foreach (prefixRule in state.RuleParser.PrefixRules)
-            _ = StartParseSequence(record, textPos, prefixRule.ParsingSequence, tokenChanges);
+          def continueParsing =
+            if (CompletionPos >= 0 && { endPos = state.RuleParser.ParsePrefix(textPos, ParseResult.Text, ParseResult); endPos >= 0 && textPos < CompletionPos && CompletionPos < endPos})
+            {
+              def rawTree = state.RuleParser.BestPrefix(ParseResult.GetPrefix(ParseResult.GetRawTree(textPos, state.RuleParser.PrefixId)), ParseResult);
+              def prefixParser = ParseResult.GetRuleParser(rawTree);
+              if (prefixParser.Descriptor.IsSplitAtCompletionPosition)
+              {
+                SubruleParsed(textPos, CompletionPos, record, tokenChanges, TokenChanges.None);
+                false;
+              }
+              else
+                true;
+            }
+            else
+              true;
+          when (continueParsing)  
+            foreach (prefixRule in state.RuleParser.PrefixRules)
+              _ = StartParseSequence(record, textPos, prefixRule.ParsingSequence, tokenChanges);
           //skipRecord();
 
         | ExtensionPostfix as state =>

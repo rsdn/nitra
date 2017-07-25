@@ -40,14 +40,16 @@ namespace Nitra.Internal.Recovery
     public mutable MaxPos       : int = 0;
     public mutable BestSolution : TokenChanges = TokenChanges.Fail;
     public mutable IsRecordsToProcessCorrupted : bool = false;
+    public CompletionPos : int;
 
     public StartSequence : ParsedSequence { get { this.Sequences[0, this.ParseResult.RuleParser.ParsingSequence] } }
 
     public this(parseResult : IParseResult)
     {
       def parseResultImpl = parseResult :> ParseResult;
-      Records     = array(parseResultImpl.Text.Length + 1);
-      ParseResult = parseResultImpl;
+      Records       = array(parseResultImpl.Text.Length + 1);
+      CompletionPos = parseResultImpl.ParseSession.CompletionStartPos;
+      ParseResult   = parseResultImpl;
     }
 
     private ErrorPositions : SCG.HashSet[int] = SCG.HashSet();
@@ -93,7 +95,7 @@ namespace Nitra.Internal.Recovery
     {
       def parseSession       = ParseResult.ParseSession;
       def completionPrefix   = parseSession.CompletionPrefix;
-      def completionStartPos = parseSession.CompletionStartPos;
+      def completionStartPos = CompletionPos;
       def timer = Stopwatch.StartNew();
       def timeout = timer.Elapsed + parseSession.RecoveryTimeout;
       def textPos = 0;
