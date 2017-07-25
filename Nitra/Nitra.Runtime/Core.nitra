@@ -55,7 +55,6 @@
 
     token IgnoreToken
     {
-      | SpaceToken = Spaces;
     }
 
     void s = IgnoreToken*;                // optional spacer

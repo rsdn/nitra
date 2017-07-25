@@ -51,6 +51,11 @@ syntax module NitraSyntax : NitraLang
     Identifier() : Nitra.Model.Identifier = Nitra.Model.Identifier(this, IdentifierBody);
   }
 
+  extend token IgnoreToken
+  {
+    | SpaceToken = Spaces;
+  }
+
   token Text  = !Keyword At="@"? IdentifierBody
   {
     Value() : string = GetText(IdentifierBody);

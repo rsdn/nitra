@@ -10,6 +10,7 @@
     extend token IgnoreToken
     {
       | [SpanClass(InlineComment),    ExplicitSpaces] Preprocessor = Start='#' Body=(!NewLineCharacter Any)* End=NewLine?;
+      | [SplitAtCompletionPosition] SpaceToken = Spaces;
     }
 
     syntax Expression
