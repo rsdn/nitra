@@ -107,7 +107,7 @@ namespace Nitra.Internal.Recovery
             {
               endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
               if (endPos < 0 || endPos == textPos)
-                SubruleParsed(textPos, textPos, record, tokenChanges, TokenChanges.None);
+                FinalizeSequence(textPos, record, tokenChanges);
               else
                 _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
@@ -291,6 +291,26 @@ namespace Nitra.Internal.Recovery
         foreach (next in record.ParsingState.Next)
           StartParseSubrule(record.Next(next, end), tokenChanges + subruleTokenChanges);
       }
+    }
+
+    public FinalizeSequence(pos : int, startRecord : ParseRecord, tokenChanges : TokenChanges) : void
+    {
+      def visited = SCG.HashSet();
+      def toProcess = SCG.Queue();
+      toProcess.Enqueue(startRecord);
+      while (toProcess.Count > 0)
+      {
+        def record = toProcess.Dequeue();
+        when (!visited.Add(record.State) || record.State < 0)
+          continue;
+        SubruleParsed(pos, pos, record, tokenChanges, TokenChanges.None);
+        foreach (next in record.ParsingState.Next)
+          toProcess.Enqueue(record.Next(next, pos));
+      }
+      startRecord.Sequence.AddEnd(pos, tokenChanges);
+      foreach (caller in startRecord.Sequence.Callers)
+        when (!caller.Sequence.Ends.Contains(pos))
+          FinalizeSequence(pos, caller, tokenChanges);
     }
   }
 }

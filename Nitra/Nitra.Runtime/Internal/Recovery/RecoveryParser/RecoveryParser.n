@@ -56,6 +56,7 @@ namespace Nitra.Internal.Recovery
 
     public CollectKeywordCompletionList(completionStartPos : int, completionPrefix : string) : void
     {
+      return;//TODO fix me
       when (completionStartPos < 0)
         return;
 

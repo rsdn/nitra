@@ -88,7 +88,7 @@ namespace Nitra.Internal.Recovery
         }
         else
           foreach ((nextSubrule, _) in subrules with nextIndex)
-            when (subrule.End == nextSubrule.Begin && state.Next.Contains(nextSubrule.State))
+            when (subrule.End == nextSubrule.Begin && state.Next.Contains(nextSubrule.State) && index != nextIndex)
             {
               walk(nextIndex);
               walkCalled = true;
@@ -160,7 +160,14 @@ namespace Nitra.Internal.Recovery
               //failed test-0014 in C# and test-0002 in extensible C#
               //remove || subruleInfo is SubruleInfo.Option || subruleInfo is SubruleInfo.List || subruleInfo is SubruleInfo.ListWithSeparator 
               //implement throw NotImplementedException("Fallback to standard parse tree reading");
-              when (changes.HasChanges || subruleInfo is SubruleInfo.ListItem || subruleInfo is SubruleInfo.Option || subruleInfo is SubruleInfo.List || subruleInfo is SubruleInfo.ListWithSeparator || subruleInfo.Parse(subrule.Begin, ParseResult.Text, ParseResult) != subrule.End)
+              when ((CompletionPos >= 0 && subrule.Begin <= CompletionPos && CompletionPos < subrule.End)
+                || changes.HasChanges
+                || subruleInfo is SubruleInfo.ListItem
+                || subruleInfo is SubruleInfo.Option
+                || subruleInfo is SubruleInfo.List
+                || subruleInfo is SubruleInfo.ListWithSeparator
+                || subruleInfo.Parse(subrule.Begin, ParseResult.Text, ParseResult) != subrule.End
+                )
                 SequencesToRecover.Enqueue(sequence, subrule.End);
             }
             else when (IsDeletedSubrule(subrule))
