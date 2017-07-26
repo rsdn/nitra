@@ -249,7 +249,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       
       if (_isCompleteWord && CanCompleteWord())
       {
-        assert2(_caretPosOpt >= 0);
+        //assert2(_caretPosOpt >= 0);
         Parent.AstCreated(this, completionPos);
       }
       else
