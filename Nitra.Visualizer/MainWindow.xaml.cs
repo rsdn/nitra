@@ -1140,8 +1140,11 @@ namespace Nitra.Visualizer
       _completionWindow.Closed += delegate
       {
         _completionWindow = null;
-        var client = ViewModel.CurrentSuite.Client;
-        client.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId, result.Version));
+        var suite = ViewModel.CurrentSuite;
+        if (suite == null)
+          return;
+        var client = suite.Client;
+        client?.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId, result.Version));
       };
     }
 
