@@ -13,12 +13,12 @@ namespace Nitra.Internal
   {
     public Read(parseResult : ParseResult, parsingSequence : ParsingSequence, startPos : int, endPos : int, context : TContext) : TParseTree
     {
-      if (startPos == endPos && startPos != parseResult.ParseSession.CompletionPos)
+      if (startPos == endPos && startPos != parseResult.CompletionPos)
         MakeEmptyParseTree(parseResult, startPos, context)
       else
         match (parseResult.TryGetRecoveredSequence(startPos, endPos, parsingSequence))
         {
-          | null when startPos == endPos && startPos == parseResult.ParseSession.CompletionPos => MakeEmptyParseTree(parseResult, startPos, context)
+          | null when startPos == endPos && startPos == parseResult.CompletionPos => MakeEmptyParseTree(parseResult, startPos, context)
           | null                               => ReadParseTreeInStandardMode(parseResult, startPos, endPos, context)
           | Unambiguous(recoveredSubruleIndex) => ReadParseTree(parseResult, startPos, endPos, recoveredSubruleIndex, context)
           | Ambiguous(indexes) =>

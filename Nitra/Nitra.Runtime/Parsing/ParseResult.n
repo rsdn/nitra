@@ -40,6 +40,7 @@ namespace Nitra
     public mutable  LastParseEnd     : int;
     public          ParseSession     : ParseSession    { get; }
     public          MainParserFail   : bool { get; private set; }
+    public          CompletionPos    : int;
     private mutable _maxFailPos      : int;
 
     internal this([NotNull] parseSession : ParseSession, [NotNull] sourceSnapshot : SourceSnapshot, oldParseResult : ParseResult, head : int, tail : int)
@@ -58,6 +59,7 @@ namespace Nitra
       this.ParserHost       = parseSession.CompositeGrammar.ParserHost;
       this.MaxFailPos       = 0;
       this.RuleParser       = parseSession.CompositeGrammar.GetStartRuleParser(parseSession.StartRuleDescriptor);
+      this.CompletionPos    = parseSession.CompletionPos;
 
       //Array.Copy(oldParseResult.memoize, 0, memoize, 0, head);
       Array.Copy(oldParseResult.memoize, oldParseResult.memoize.Length - (tail + 1), memoize, memoize.Length - (tail + 1), tail + 1);
@@ -101,6 +103,7 @@ namespace Nitra
       this.ParserHost       = parseSession.CompositeGrammar.ParserHost;
       this.MaxFailPos       = 0;
       this.RuleParser       = parseSession.CompositeGrammar.GetStartRuleParser(parseSession.StartRuleDescriptor);
+      this.CompletionPos    = parseSession.CompletionPos;
     }
 
     internal Parse() : void
@@ -130,7 +133,7 @@ namespace Nitra
           res > 0;
       
       def maxFailPos = MaxFailPos;
-      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || ParseSession.CompletionPos >= 0)
+      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || CompletionPos >= 0)
       {
         MainParserFail = true;
         
@@ -506,5 +509,10 @@ namespace Nitra
     }
 
     public CompilerMessages : ICompilerMessages { get { this.ParseSession.CompilerMessages } }
+    
+    CompletionPosImpl : int implements Nitra.IParseResult.CompletionPos
+    {
+      get { CompletionPos }
+    }
   }
 }

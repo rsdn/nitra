@@ -17,6 +17,7 @@ namespace Nitra
     CompilerMessages : ICompilerMessages                   { get; }
     MainParserFail   : bool                                { get; }
     MaxFailPos       : int                                 { get; }
+    CompletionPos    : int                                 { get; }
     
     CreateParseTree() : ParseTree;
     GetSpans(startPos : int, endPos : int, spans : SCG.HashSet[SpanInfo]) : void;

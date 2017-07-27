@@ -386,13 +386,13 @@ namespace Nitra.Runtime
 
     Walk(parseResult : IParseResult, parsingSequence : ParsingSequence, startPos : int, endPos : int, context : TContext) : bool
     {
-      when (startPos == endPos && startPos != parseResult.ParseSession.CompletionPos)
+      when (startPos == endPos && startPos != parseResult.CompletionPos)
         return true;
 
       def parseResult = parseResult :> ParseResult;
       match (parseResult.TryGetRecoveredSequence(startPos, endPos, parsingSequence))
       {
-        | null when startPos == endPos && startPos == parseResult.ParseSession.CompletionPos => true
+        | null when startPos == endPos && startPos == parseResult.CompletionPos => true
         | null => false
         | Unambiguous as recoveredSequence =>
           if (recoveredSequence.IsDeleted)

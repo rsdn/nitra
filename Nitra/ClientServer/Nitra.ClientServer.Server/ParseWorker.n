@@ -124,7 +124,7 @@ namespace Nitra.ClientServer.Server
         def parseTree = parseResult.CreateParseTree();
         def mappingMessages = CompilerMessageList();
         def ast = AstContext.GetAstUntyped(parseTree, mappingMessages);
-        def completionPos = parseResult.ParseSession.CompletionPos;
+        def completionPos = parseResult.CompletionPos;
         _mainQueue.Add(RouterAnswerMessage.AstCreated(projectId, fileId, parseResult.ParseSession.CancellationToken, ast, parseTree, completionPos));
         
         def version = FileVersion(parseResult.SourceSnapshot.Version);

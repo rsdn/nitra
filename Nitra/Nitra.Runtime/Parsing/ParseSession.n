@@ -63,7 +63,7 @@ namespace Nitra
       }
     }
     public CompletionPrefix    : string                   { get { _completionPrefix    } set { Check();                        _completionPrefix    = value; } }
-    public CompletionPos  : int                      { get { _completionStartPos  } set { Check();                        _completionStartPos  = value; } }
+    public CompletionPos       : int                      { get { _completionStartPos  } set { Check();                        _completionStartPos  = value; } }
     public CancellationToken   : CancellationToken        { get { _cancellationToken   } set { Check();                        _cancellationToken   = value; } }
     public ParseToEndOfString  : bool                     { get { _parseToEndOfString  } set { Check();                        _parseToEndOfString  = value; } }
     public RecoveryTimeout     : TimeSpan                 { get { _recoveryTimeout     } set { Check();                        _recoveryTimeout     = value; } }
