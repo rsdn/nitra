@@ -111,8 +111,12 @@
     <Compile Include="SpanInfoComparer.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Visitors\FindReferencesAstVisitor.n">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Visitors" />
     <Folder Include="ProjectSystem" />
     <Folder Include="Properties\" />
   </ItemGroup>

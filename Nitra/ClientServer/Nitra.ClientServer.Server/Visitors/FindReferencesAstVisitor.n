@@ -1,0 +1,53 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.Internal.Recovery;
+using Nitra.Runtime.Reflection;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using SCG = System.Collections.Generic;
+
+namespace Nitra.ClientServer.Server
+{
+  public class FindReferencesAstVisitor : IAstVisitor
+  {
+    private _span : NSpan;
+    public Result : List[Reference] = List();
+    
+    public this(span : NSpan) { _span = span; }
+
+    public Visit(parseTree : IAst) : void
+    {
+      when (parseTree.Span.IntersectsWith(_span))
+      {
+        parseTree.Accept(this);
+      }
+    }
+
+    public Visit(reference : Reference) : void implements IAstVisitor.Visit
+    {
+      when (reference.Span.IntersectsWith(_span))
+      {
+        Result.Add(reference);
+      }
+    }
+
+    public Visit(name : Name) : void implements IAstVisitor.Visit
+    {
+      _ = name;
+    }
+
+    public Visit(r : IRef) : void
+    {
+      _ = r;
+    }
+  }
+}

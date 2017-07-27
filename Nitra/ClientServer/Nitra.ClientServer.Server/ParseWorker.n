@@ -291,31 +291,39 @@ namespace Nitra.ClientServer.Server
 
       // находим цепочку ветвей AST ведущую к позиции комплита
 
-      def visitor = R.FindNodeAstVisitor(NSpan(pos, pos));
+      def visitor = FindReferencesAstVisitor(NSpan(pos, pos));
       astRoot.Accept(visitor);
       
-      def isEndOfIdentifier(ast : IAst) : bool
+      
+      def isReference(ast : IAst) : bool
       {
         | Reference as r => r.Span.IntersectsWith(pos)
         | _ => false
       }
       
-      def reference = visitor.Stack.FirstOrDefault(isEndOfIdentifier);
+      def isNotEmptyReference(ast : IAst) : bool
+      {
+        | Reference as r => r.Span.IntersectsWith(pos) && !r.Span.IsEmpty
+        | _ => false
+      }
+      
+      // TODO: искать снача нормальй Reference, и только если его нет, то продолбанный.
+      def reference = visitor.Result.FirstOrDefault(isNotEmptyReference) ?? visitor.Result.FirstOrDefault(isReference);
       
       when (reference == null)
         return;
 
       // Вычисляем префикс комплита (если есть). Он будет использоваться для фильтрации списка и будет заменен выбранным словом
       def span            = Nitra.NSpan(reference.Span.StartPos, pos);
-      def prefix          = source.Text.Substring(span.StartPos, span.Length);
+      def pattern          = source.Text.Substring(span.StartPos, span.Length);
       def replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
+
+      def symbolsSet = HashSet();
       
       // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
-      foreach (ast in visitor.Stack)
+      foreach (ast in visitor.Result)
       {
-//        | BindableAst(IsScopeEvaluated = true, Scope = scope)
         | Reference(IsScopeEvaluated=true, IsRefEvaluated=true, Scope=scope, Ref=r) when ast.Span.IntersectsWith(span) =>
-          //completionList.AddRange(scope.Bind(prefix));
           mutable r2 = r : IRef;
           while (r2.ResolvedTo != null)
             r2 = r2.ResolvedTo;
@@ -325,35 +333,39 @@ namespace Nitra.ClientServer.Server
           def matcher(symbol) : bool
           {
             def symbolTypeOpt = symbolTypeOpt;
-            def prefix = prefix;
-            def isNameMatch = !symbol.IsNameValid || symbol.Name.StartsWith(prefix); // TODO: заменить на спецфункцию
+            def pattern = pattern;
+            def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
             when (!isNameMatch)
               return false;
             def isTypeMatch = symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
             isTypeMatch
           }
           def br = scope.Bind(matcher);
-          def symbols = br.Symbols;
-          def builder = ImmutableArray.CreateBuilder(symbols.Length);
-          
+         
           foreach (symbol : DeclarationSymbol in br.Symbols)
           {
             def name = symbol.Name;
-            when (StringPatternMatching.MatchPattern(name, prefix))
+            when (StringPatternMatching.MatchPattern(name, pattern))
             {
-              def desc = symbol.ToString();
-              def elem = CompletionElem.Symbol(symbol.Id, name, desc, desc, -1);
-              builder.Add(elem);
+              _ = symbolsSet.Add(symbol);
             }
           }
           
-          def ver = FileVersion(fileData.FileVersion);
-          def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
-          SendAsyncResponse(msg);
-          break;
-
         | _ => ()
       }
+      
+      def builder = ImmutableArray.CreateBuilder(symbolsSet.Count);
+      foreach (symbol in symbolsSet)
+      {
+        def desc = symbol.ToString();
+        def elem = CompletionElem.Symbol(symbol.Id, symbol.Name, desc, desc, -1);
+        builder.Add(elem);
+      }
+      
+      def ver = FileVersion(fileData.FileVersion);
+      def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
+      SendAsyncResponse(msg);
+      
     }
     
     ConvertParseTreeReflection(node : R.ReflectionStruct, objectMap : Hashtable[R.ReflectionStruct, ParseTreeReflectionStruct]) : ParseTreeReflectionStruct
