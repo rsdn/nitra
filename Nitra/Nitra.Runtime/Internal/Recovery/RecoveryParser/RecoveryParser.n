@@ -48,7 +48,7 @@ namespace Nitra.Internal.Recovery
     {
       def parseResultImpl = parseResult :> ParseResult;
       Records       = array(parseResultImpl.Text.Length + 1);
-      CompletionPos = parseResultImpl.ParseSession.CompletionStartPos;
+      CompletionPos = parseResultImpl.ParseSession.CompletionPos;
       ParseResult   = parseResultImpl;
     }
 

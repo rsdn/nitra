@@ -17,7 +17,7 @@ namespace Nitra.Internal
       where T: ParseTree
     {
       def ruleParser = grammar.GetExtensibleRuleParser(ruleDescriptor, bindingPower);
-      if (startPos < endPos || ruleParser.CanParseEmptyString)
+      if (startPos < endPos || ruleParser.CanParseEmptyString || startPos == parseResult.ParseSession.CompletionPos)
       {
         match (parseResult.TryGetRecoveredSequence(startPos, endPos, ruleParser.ParsingSequence))
         {
@@ -57,7 +57,7 @@ namespace Nitra.Internal
             assert(resultParseTree == null);
 
             resultParseTree =
-              if (begin == end)
+              if (begin == end && begin != parseResult.ParseSession.CompletionPos) //!!!
                 CreateMissing(parseResult, ruleDescriptor, begin);
               else
               {

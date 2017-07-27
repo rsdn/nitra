@@ -130,7 +130,7 @@ namespace Nitra
           res > 0;
       
       def maxFailPos = MaxFailPos;
-      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || ParseSession.CompletionStartPos >= 0)
+      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || ParseSession.CompletionPos >= 0)
       {
         MainParserFail = true;
         
