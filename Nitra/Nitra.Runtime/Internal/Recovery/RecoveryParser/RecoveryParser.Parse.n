@@ -20,6 +20,8 @@ namespace Nitra.Internal.Recovery
   public partial class RecoveryParser
   {
     internal RecordsToComplete : SCG.Queue[int * ParseRecord * ParsedSequence] = SCG.Queue();
+    mutable _isReferenceParsedInCompletionPos : bool;
+    
     public Parse() : void
     {
       def completeAll() : void
@@ -84,26 +86,30 @@ namespace Nitra.Internal.Recovery
       //    SubruleParsed(textPos, textPos, record, tokenChanges, subruleTokenChanges);
       //  }
       //}
+      def p = CompletionPos;
       match (state)
       {
         | Simple           as state =>
           if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 &&
             {
-              def p = CompletionPos;
               !(textPos <= p && p < endPos)
             }})
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
-            when (textPos == endPos)
+            if (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-              //skipRecord();
+            }
+            else when (textPos <= p && p <= endPos)
+            {
+              when (state.IsReference && state.IsToken)
+                _isReferenceParsedInCompletionPos = true;
+              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
           }
           else
           {
-            def p = CompletionPos;
-            if (textPos == p && state.IsReference && state.IsToken)
+            if (textPos == p && !_isReferenceParsedInCompletionPos && state.IsReference && state.IsToken)
             {
               endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
               if (endPos < 0 || endPos == textPos)
@@ -153,15 +159,18 @@ namespace Nitra.Internal.Recovery
         | Extensible       as state =>
           if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && 
             { 
-              def p = CompletionPos;
               !(textPos <= p && p < endPos)
             }})
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
-            when (textPos == endPos)
+            if (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
               //skipRecord();
+            }
+            else when (textPos <= p && p <= endPos)
+            {
+              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
           }
           else
