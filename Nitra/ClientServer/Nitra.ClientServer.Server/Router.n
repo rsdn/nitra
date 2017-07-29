@@ -161,8 +161,7 @@ namespace Nitra.ClientServer.Server
       
       foreach (path in libs)
       {
-        def assembly = ServerUtils.LoadAssembly(path);
-        def langs = Language.GetLanguages(assembly);
+        def langs = Language.GetLanguages(path);
         def langsBuilder = ImmutableArray.CreateBuilder(langs.Length);
         foreach (lang in langs)
         {
@@ -182,7 +181,7 @@ namespace Nitra.ClientServer.Server
       
       foreach (path in libs)
       {
-        def assembly = ServerUtils.LoadAssembly(path);
+        def assembly = Language.LoadAssembly(path);
         def descriptors = GrammarDescriptor.GetDescriptors(assembly);
         def syntaxModulesBuilder = ImmutableArray.CreateBuilder(descriptors.Length);
         foreach (descriptor in descriptors)
@@ -200,7 +199,7 @@ namespace Nitra.ClientServer.Server
       foreach (path in libs)
       {
         def typeBuilder = ImmutableArray.CreateBuilder(libs.Length);
-        def assembly = ServerUtils.LoadAssembly(path);
+        def assembly = Language.LoadAssembly(path);
         def attributes = assembly.GetCustomAttributes(typeof(ProjectSystem.ProjectSupportAttribute), false);
 
         foreach (attr is ProjectSystem.ProjectSupportAttribute in attributes)

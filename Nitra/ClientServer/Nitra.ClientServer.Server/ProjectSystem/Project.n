@@ -62,7 +62,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       unless (config.ProjectSupport.IsNotSpecified)
       {
         def ps   = config.ProjectSupport;
-        def asm  = ServerUtils.LoadAssembly(ps.Path);
+        def asm  = Language.LoadAssembly(ps.Path);
         def type = asm.GetType(ps.TypeFullName);
         _projectSupport = Activator.CreateInstance(type, true) :> IProjectSupport;
       }
@@ -101,7 +101,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         for (mutable k = 0; k < extensions.Length; k++)
         {
           def dynamicExtension = extensions[k];
-          def extensionAssembly = ServerUtils.LoadAssembly(dynamicExtension.Path);
+          def extensionAssembly = Language.LoadAssembly(dynamicExtension.Path);
           def descriptor = GrammarDescriptor.GetDescriptors(extensionAssembly).FirstOrDefault(g => String.Equals(g.FullName, dynamicExtension.Name, StringComparison.Ordinal));
           if (descriptor == null)
             ServerUtils.Log($"Syntax module '$(dynamicExtension.Name)' not found in assembly '$(extensionAssembly.Location)'.");

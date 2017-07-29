@@ -110,7 +110,13 @@ namespace Nitra.LanguageCompiler
       AssemblyReferences = assemblyReferences.NToList();
       Binaries = binaries;
 
-      def asms = List();
+      when (string.IsNullOrEmpty(OutputPath))
+        OutputPath = Environment.CurrentDirectory;
+
+      OutputPath = Path.GetFullPath(OutputPath);
+
+      mutable matchedLanguages = [];
+      mutable matchedProjectSupportTypes = [];
 
       foreach (assemblyReference in assemblyReferences)
       {
@@ -124,20 +130,7 @@ namespace Nitra.LanguageCompiler
         }
 
         def asm = Assembly.LoadFrom(asmRef);
-        asms.Add(asm);
-      }
-
-      when (string.IsNullOrEmpty(OutputPath))
-        OutputPath = Environment.CurrentDirectory;
-
-      OutputPath = Path.GetFullPath(OutputPath);
-
-      mutable matchedLanguages = [];
-      mutable matchedProjectSupportTypes = [];
-      
-      foreach (asm in asms)
-      {
-        def languages = Language.GetLanguages(asm);
+        def languages = Language.GetLanguages(asmRef);
         foreach (language when language.FullName == LanguageName in languages)
           matchedLanguages ::= (asm, language);
           

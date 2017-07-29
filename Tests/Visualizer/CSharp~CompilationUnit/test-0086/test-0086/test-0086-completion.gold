@@ -1,0 +1,10 @@
+class Aaa
+{
+  public class Foo
+  {
+  }
+}
+class Ncs_2
+{
+  Aaa.«QualifiedIdentifierPart» ◄}►«;»
+«}»
