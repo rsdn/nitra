@@ -87,8 +87,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def languageInfo = languageInfos[i];
         def path         = languageInfo.Path;
         def name         = languageInfo.Name;
-        def assembly     = ServerUtils.LoadAssembly(path);
-        def language     = Nitra.Language.GetLanguages(assembly).FirstOrDefault(lang => String.Equals(lang.FullName, name, StringComparison.Ordinal));
+        def language     = Nitra.Language.GetLanguages(path).FirstOrDefault(lang => String.Equals(lang.FullName, name, StringComparison.Ordinal));
+        when (language == null)
+          throw ApplicationException($"The language $name not found in '$path'.");
         def fullName     = language.FullName;
         languages.Add(language);
         

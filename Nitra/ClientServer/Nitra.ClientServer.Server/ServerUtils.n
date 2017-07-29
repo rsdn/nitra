@@ -163,18 +163,6 @@ namespace Nitra.ClientServer.Server
       coreCount
     }
     
-    public LoadAssembly(path : string) : Assembly
-    {
-      // TODO: add chech GetReferencedAssemblies()
-      // TODO: use shadow copying
-      def assembly = 
-        if (path.Contains(", Version="))
-          Assembly.Load(path)
-        else
-          Assembly.LoadFrom(path);
-      assembly
-    }
-  
     public SendCompilerMessages(parseResult : IParseResult, router : Router, solutionId : SolutionId, projectId : ProjectId, fileId : FileId) : void
     {
       def compilerMessages = parseResult.CompilerMessages :> Nitra.ProjectSystem.CompilerMessageList;
