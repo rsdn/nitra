@@ -290,6 +290,9 @@
     <Compile Include="Parsing\IParseResult.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Parsing\KeywordCompletionInfo.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Parsing\ParseResult.n">
       <SubType>Code</SubType>
     </Compile>

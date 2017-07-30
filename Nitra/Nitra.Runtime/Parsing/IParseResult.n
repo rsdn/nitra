@@ -18,6 +18,7 @@ namespace Nitra
     MainParserFail   : bool                                { get; }
     MaxFailPos       : int                                 { get; }
     CompletionPos    : int                                 { get; }
+    Keywords         : SCG.ICollection[KeywordCompletionInfo] { get; }
     
     CreateParseTree() : ParseTree;
     GetSpans(startPos : int, endPos : int, spans : SCG.HashSet[SpanInfo]) : void;

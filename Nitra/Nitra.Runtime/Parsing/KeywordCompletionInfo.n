@@ -1,0 +1,20 @@
+﻿using Nemerle.Extensions;
+
+using Nitra.Runtime;
+using Nitra.Runtime.Reflection;
+
+using SCG = System.Collections.Generic;
+
+namespace Nitra
+{
+  [Record, StructuralEquality]
+  public struct KeywordCompletionInfo
+  {
+    public StartPos : int { get; }
+    public Keyword  : SubruleInfo.TokenString { get; }
+    public override ToString() : string
+    {
+      $"$StartPos \"$(Keyword.Str)\" $(Keyword.Owner.FullName)"
+    }
+  }
+}

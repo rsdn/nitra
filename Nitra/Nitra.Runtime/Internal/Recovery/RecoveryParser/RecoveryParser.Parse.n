@@ -78,29 +78,17 @@ namespace Nitra.Internal.Recovery
 
       def textPos = record.ParsePos;
       mutable endPos;
-      //def skipRecord()
-      //{
-      //  when (record.Sequence.StartTokenChanges < tokenChanges)
-      //  {
-      //    def subruleTokenChanges = TokenChanges(inserted = record.ParsingState.MandatoryTokenCount, deleted = 0);
-      //    SubruleParsed(textPos, textPos, record, tokenChanges, subruleTokenChanges);
-      //  }
-      //}
-      def p = CompletionPos;
       match (state)
       {
         | Simple           as state =>
-          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 &&
-            {
-              !(textPos <= p && p < endPos)
-            }})
+          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
             if (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
-            else when (textPos <= p && p <= endPos)
+            else when (textPos <= CompletionPos && CompletionPos <= endPos)
             {
               when (state.IsReference && state.IsToken)
                 _isReferenceParsedInCompletionPos = true;
@@ -109,7 +97,7 @@ namespace Nitra.Internal.Recovery
           }
           else
           {
-            if (textPos == p && !_isReferenceParsedInCompletionPos && state.IsReference && state.IsToken)
+            if (textPos == CompletionPos && !_isReferenceParsedInCompletionPos && state.IsReference && state.IsToken)
             {
               endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
               if (endPos < 0 || endPos == textPos)
@@ -121,7 +109,6 @@ namespace Nitra.Internal.Recovery
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
-            //skipRecord();
           }
 
         | DynamicExtensibleItem as state =>
@@ -137,38 +124,28 @@ namespace Nitra.Internal.Recovery
             StartParseSubrule(ParseRecord(record.Sequence, newState.Id, endPos), tokenChanges);
           }
 
-          if (optimize && { endPos >= 0 && 
-            { 
-              def p = CompletionPos;
-              !(textPos <= p && p < endPos)
-            }})
+          if (optimize && { endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
             when (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, parser.ParsingSequence, tokenChanges);
-              //skipRecord();
             }
           }
           else
           {
             _ = StartParseSequence(record, textPos, parser.ParsingSequence, tokenChanges);
-            //skipRecord();
           }
 
         | Extensible       as state =>
-          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && 
-            { 
-              !(textPos <= p && p < endPos)
-            }})
+          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
             if (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-              //skipRecord();
             }
-            else when (textPos <= p && p <= endPos)
+            else when (textPos <= CompletionPos && CompletionPos <= endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
@@ -176,7 +153,6 @@ namespace Nitra.Internal.Recovery
           else
           {
             _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-            //skipRecord();
           }
 
         | ExtensionPrefix  as state =>
@@ -198,12 +174,10 @@ namespace Nitra.Internal.Recovery
           when (continueParsing)  
             foreach (prefixRule in state.RuleParser.PrefixRules)
               _ = StartParseSequence(record, textPos, prefixRule.ParsingSequence, tokenChanges);
-          //skipRecord();
 
         | ExtensionPostfix as state =>
           foreach (postfixRule when state.RuleParser.FirstPostfixRuleId <= postfixRule.RuleId in state.RuleParser.PostfixRules)
             _ = StartParseSequence(record, textPos, postfixRule.ParsingSequence, tokenChanges);
-          //skipRecord();
 
         | List(SubruleInfo = SubruleInfo.List as subrule) when subrule.IsOptimized =>
           endPos = subrule.Parse(textPos, ParseResult.Text, ParseResult);
@@ -215,20 +189,20 @@ namespace Nitra.Internal.Recovery
         | Subsequence       as state3 with seq = state3.Sequence
         | DynamicExtensible as state4 with seq = state4.Sequence =>
           _ = StartParseSequence(record, textPos, seq, tokenChanges);
-          //skipRecord();
 
         | Scan             as state =>
+          when (CompletionPos >= 0)
+          when (state.SubruleInfo is SubruleInfo.TokenString as keyword)
+          when (textPos <= CompletionPos && CompletionPos <= (textPos + keyword.Str.Length))
+            _ = ParseResult._keywords.Add(KeywordCompletionInfo(textPos, keyword));
+
           endPos = state.SubruleInfo.Parse(textPos, ParseResult.Text, ParseResult);
           when (endPos >= 0)
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
-          //else
-            //skipRecord();
 
         | Predicate        as state =>
           when (state.HeadPredicate(textPos, ParseResult.Text, ParseResult))
             SubruleParsed(textPos, textPos, record, tokenChanges, TokenChanges.None);
-          //else
-            //skipRecord();
       }
     }
 
