@@ -53,8 +53,8 @@ namespace Nitra.ClientServer.Messages
     | FileInMemoryLoaded       { projectId : ProjectId; id : FileId; name : string; content : string; }
     | FileActivated            { projectId : ProjectId; id : FileId; version : FileVersion; }
     | FileDeactivated          { projectId : ProjectId; id : FileId; }
-    | FileChanged              { id : FileId; version : FileVersion; change : FileChange; }
-    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; }
+    | FileChanged              { id : FileId; version : FileVersion; change : FileChange; caretPos : int; }
+    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : int; }
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { projectId : ProjectId; id : FileId; version : FileVersion; pos : int; }
     | CompleteWordDismiss      { projectId : ProjectId; id : FileId; version : FileVersion; }

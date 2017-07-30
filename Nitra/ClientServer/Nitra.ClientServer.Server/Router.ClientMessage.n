@@ -63,8 +63,8 @@ namespace Nitra.ClientServer.Server
       | FileDeactivated    (projectId, id)               => _solution.GetFile(projectId, id).Deactivate();
       | FileUnloaded       (projectId, id)               => _solution.GetProject(projectId).RemoveFile(id);
       | FileRenamed        (oldId, newId, newPath)       => foreach (f in _solution.GetFiles(oldId)) f.RenameFile(newId, newPath); // TODO: get 'newVersion' from client
-      | FileChanged        (id, version, change)         => foreach (f in _solution.GetFiles(id)) f.Change(version, change);
-      | FileChangedBatch   (id, version, changes)        => foreach (f in _solution.GetFiles(id)) f.Change(version, changes);
+      | FileChanged        (id, version, change, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
+      | FileChangedBatch   (id, version, changes, caret) => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);
       | PrettyPrint        (state)                       => PrettyPrintState = state;
       | CompleteWord      (projectId, id, version, pos)  => _solution.GetFile(projectId, id).CompleteWord(version, pos);
       | CompleteWordDismiss    (projectId, id, version)  => _solution.GetFile(projectId, id).CompleteWordDismiss(version);

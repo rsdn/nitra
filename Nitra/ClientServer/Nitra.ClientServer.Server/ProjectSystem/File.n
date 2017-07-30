@@ -166,23 +166,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       | FileChange.Replace(span, text) => Replace(span, text)
     }
 
-    public Change(version : FileVersion, change : FileChange) : void
-    {
-      //assert2(_completeWordPosOpt < 0 && _prevSourceOpt == null);
-      ChangeImpl(version, change);
-    }
-
-    ChangeImpl(version : FileVersion, change : FileChange) : void
+    public Change(version : FileVersion, change : FileChange, caretPos : int) : void
     {
       _ = GetSource();
       FileVersion = version;
       ApplyChange(change);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
 
-      TrySendParseMessage();
+      TrySendParseMessage(if (_isCompleteWord) caretPos else -1);
     }
     
-    public Change(version : FileVersion, changes : ImmutableArray[FileChange]) : void
+    public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : int) : void
     {
       _ = GetSource();
       FileVersion = version;
@@ -191,7 +185,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
       //IO.File.WriteAllText($@"C:\Temp\005\$Name$(version.Value).ncs", _snapshot.Text);
       
-      TrySendParseMessage();
+      TrySendParseMessage(if (_isCompleteWord) caretPos else -1);
     }
     
     // overrides

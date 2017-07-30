@@ -155,7 +155,7 @@ namespace Nitra.Visualizer
       if (ViewModel.CurrentFile == null || _initializing)
         return;
 
-      ViewModel.CurrentFile.FinishBatchCodeUpdate();
+      ViewModel.CurrentFile.FinishBatchCodeUpdate(_textEditor.TextArea.Caret.Offset);
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -1103,49 +1103,80 @@ namespace Nitra.Visualizer
     private void CompleteWord(AsyncServerMessage.CompleteWord result)
     {
       var replacementSpan = result.replacementSpan;
+      var isOpenNewWindow = false;
 
-      _completionWindow = new CompletionWindow(_textEditor.TextArea);
+      if (_completionWindow == null)
+      {
+        isOpenNewWindow = true;
+        _completionWindow = new CompletionWindow(_textEditor.TextArea);
+      }
+      else
+      {
+        _completionWindow.CompletionList.CompletionData.Clear();
+      }
+
       IList<ICompletionData> data = _completionWindow.CompletionList.CompletionData;
 
-      CompletionElem.Literal lit;
-      CompletionElem.Symbol s;
-
-      Func<CompletionElem, string> completionKeySelector = el => {
-        if ((lit = el as CompletionElem.Literal) != null) return lit.text;
-        if ((s = el as CompletionElem.Symbol) != null) return s.name;
-        return "";
+      string completionKeySelector(CompletionElem el)
+      {
+        switch (el)
+        {
+          case CompletionElem.Literal lit: return lit.text;
+          case CompletionElem.Symbol  s:   return s.name;
+          default:                         return "";
+        }
       };
 
       var completionList = result.completionList
-                                 .Where(c => {
-                                   var key = completionKeySelector(c);
-                                   return !key.StartsWith("?") &&
-                                          !key.StartsWith("<");
-                                 })
+                                 .Where(c => 
+                                   {
+                                     var key = completionKeySelector(c);
+                                     return !key.StartsWith("?") &&
+                                            !key.StartsWith("<");
+                                   })
                                  .Distinct(completionKeySelector);
 
       foreach (var completionData in completionList)
       {
-        if ((lit = completionData as CompletionElem.Literal) != null)
+        switch (completionData)
         {
-          var escaped = Utils.Escape(lit.text);
-          var xaml = "<Span Foreground='blue'>" + escaped + "</Span>";
-          data.Add(new CompletionData(replacementSpan, lit.text, xaml, "keyword " + xaml, priority: 1.0));
+          case CompletionElem.Literal lit:
+            var escaped = Utils.Escape(lit.text);
+            var xaml = "<Span Foreground='blue'>" + escaped + "</Span>";
+            data.Add(new CompletionData(replacementSpan, lit.text, xaml, "keyword " + xaml, priority: 1.0));
+            break;
+          case CompletionElem.Symbol s:
+            //var replaceText = _textEditor.Document.GetText(replacementSpan.StartPos, replacementSpan.Length);
+            //var replace = $" {replacementSpan} - '{replaceText}'";
+            var replace = "";
+            data.Add(new CompletionData(replacementSpan, s.name, s.content + replace, s.description + replace, priority: 1.0));
+            break;
         }
-        else if ((s = completionData as CompletionElem.Symbol) != null)
-          data.Add(new CompletionData(replacementSpan, s.name, s.content, s.description, priority: 1.0));
       }
 
-      _completionWindow.Show();
-      _completionWindow.Closed += delegate
+      if (!_completionWindow.IsActive)
+        _completionWindow.Show();
+
+      if (isOpenNewWindow)
       {
-        _completionWindow = null;
-        var suite = ViewModel.CurrentSuite;
-        if (suite == null)
-          return;
-        var client = suite.Client;
-        client?.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId, result.Version));
-      };
+        _completionWindow.Closed += delegate
+        {
+          _completionWindow = null;
+          var suite = ViewModel.CurrentSuite;
+          if (suite == null)
+            return;
+          var client = suite.Client;
+          client?.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId, result.Version));
+        };
+      }
+      else
+      {
+        _completionWindow.CompletionList.OnApplyTemplate();
+        //_completionWindow.CompletionList.SelectItem(_textEditor.Document.GetText(replacementSpan.StartPos, replacementSpan.Length));
+        //var source = _completionWindow.CompletionList.ListBox.ItemsSource;
+        //_completionWindow.CompletionList.ListBox.ItemsSource = null;
+        //_completionWindow.CompletionList.ListBox.ItemsSource = source;
+      }
     }
 
     void _fillAstTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -1182,7 +1213,7 @@ namespace Nitra.Visualizer
       var version = new FileVersion(ViewModel.CurrentFile.Version.Value + 1);
 
       Debug.Assert(e.OffsetChangeMap != null);
-      ViewModel.CurrentFile.OnTextChanged(version, e.InsertedText, e.InsertionLength, e.Offset, e.RemovalLength, _textEditor.Text);
+      ViewModel.CurrentFile.OnTextChanged(version, e.InsertedText, e.InsertionLength, e.Offset, e.RemovalLength, _textEditor.Text, _textEditor.TextArea.Caret.Offset);
     }
 
     void UpdateVm(SuiteVm oldVm, SuiteVm newVm)

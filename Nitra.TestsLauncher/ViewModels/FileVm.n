@@ -137,17 +137,17 @@ namespace Nitra.ViewModels
       _isBatchCodeUpdate = true;
     }
     
-    public FinishBatchCodeUpdate() : void
+    public FinishBatchCodeUpdate(caretPos : int) : void
     {
       _isBatchCodeUpdate = false;
       when (_batchFileChanges.Count > 0)
       {
-        _client.Send(ClientMessage.FileChangedBatch(Id, Version, _batchFileChanges.ToImmutableArray()));
+        _client.Send(ClientMessage.FileChangedBatch(Id, Version, _batchFileChanges.ToImmutableArray(), caretPos));
         _batchFileChanges.Clear();
       }
     }
 
-    public OnTextChanged(version : FileVersion, inserted : string, insertionLength : int, offset : int, removalLength : int, newTextOpt : string) : void
+    public OnTextChanged(version : FileVersion, inserted : string, insertionLength : int, offset : int, removalLength : int, newTextOpt : string, caretPos : int) : void
     {
       Debug.WriteLine($"version=$version, offset=$offset, isBatch=$_isBatchCodeUpdate, inserted='$inserted' ($insertionLength) ($removalLength)");
       when (newTextOpt != null)
@@ -167,7 +167,7 @@ namespace Nitra.ViewModels
       if (_isBatchCodeUpdate)
         _batchFileChanges.Add(change);
       else
-        _client.Send(ClientMessage.FileChanged(Id, version, change));
+        _client.Send(ClientMessage.FileChanged(Id, version, change, caretPos));
     }
     
     public Run() : bool
