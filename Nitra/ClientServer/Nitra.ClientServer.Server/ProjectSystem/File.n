@@ -234,7 +234,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       ParserMessage.CreateAst(Parent.Parent.Id, Parent.Id, this.FileId, parseResult, IsActive)
     }
     
-    public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int) : void
+    public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int, parseResultOpt : IParseResult) : void
     {
       _parseTree = parseTree; 
       _ast = ast;
@@ -244,12 +244,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (_isCompleteWord && CanCompleteWord())
       {
         //assert2(_caretPosOpt >= 0);
-        Parent.AstCreated(this, completionPos);
+        Parent.AstCreated(this, completionPos, parseResultOpt);
       }
       else
         // TODO: make _astMessages local for working threads
         //_astMessages = NSP.CompilerMessageList();
-        Parent.AstCreated(this, -1);
+        Parent.AstCreated(this, -1, null);
     }
 
     CanCompleteWord() : bool

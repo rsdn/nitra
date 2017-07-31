@@ -36,13 +36,13 @@ namespace Nitra.ClientServer.Server
               
         _parseQueue.Add(file.CreateAstMessage(parseResult));
               
-      | AstCreated(projectId, fileId, cancellationToken, ast, parseTree, completionPos) =>
+      | AstCreated(projectId, fileId, cancellationToken, ast, parseTree, completionPos, parseResultOpt) =>
         when (cancellationToken.IsCancellationRequested)
           return;
 
         def file = _solution.GetFile(projectId, fileId);
         // TODO: send CollectOutlining and CollectTokebHighlighting mesages
-        file.AstCreated(ast, parseTree, completionPos);
+        file.AstCreated(ast, parseTree, completionPos, parseResultOpt);
         // TODO: send EvalProperties if ast != null
       | SemanticAnalysisFinished(projectId, cancellationToken, files) =>
         when (cancellationToken.IsCancellationRequested)

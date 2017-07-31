@@ -77,7 +77,8 @@
       | HexadecimalIntegerLiteral
       | DecimalIntegerLiteral
       | CharacterLiteral
-      | BooleanLiteral S;
+      | "true" S
+      | "false" S;
       | RegularStringLiteral;
       | "null" S;
       | RealLiteral;

@@ -165,16 +165,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       ServerUtils.CancelCancellation(ref _findDeclarationsCancellationTokenSource);
     }
     
-    public AstCreated(file : File, completeWordPosOpt : int) : void
+    public AstCreated(file : File, completeWordPosOpt : int, parseResultOpt : IParseResult) : void
     {
       when (file.IsSupported)
         _expectsToBuildAst--;
       assert2(_expectsToBuildAst >= 0);
       
-      TryStartSemanticAnalysis(file, completeWordPosOpt);
+      TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
     }
 
-    TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1) : void
+    TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
       when (IsOpened && IsAllAstCreated && this._files.Count > 0)
       {
@@ -218,7 +218,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             file.Ast.DeepResetProperties();
           
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
-          ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt));
+          ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
         else
           ServerUtils.Log("Project support not available!");

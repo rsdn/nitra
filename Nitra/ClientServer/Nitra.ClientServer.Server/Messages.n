@@ -39,6 +39,7 @@ namespace Nitra.ClientServer.Server
         data                  : object;
         completeWordFileIdOpt : FileId;
         completeWordPosOpt    : int;
+        parseTreeOpt          : IParseResult;
       }
     | CreatePrettyPrint         { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; version : FileVersion; state : PrettyPrintState; parseTree : ParseTree; }
     | SemanticAction            { solutionId : SolutionId; action : Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]; cancellationToken : CancellationToken; asts : ImmutableArray[IAst * bool]; }
@@ -52,7 +53,7 @@ namespace Nitra.ClientServer.Server
     public override MsgId : short { get { -1s } }
     
     | FileParsed               { projectId : ProjectId; fileId : FileId; parseResult : IParseResult; } // CancellationToken in ParseResult.ParseSession
-    | AstCreated               { projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; completionPos : int; }
+    | AstCreated               { projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; completionPos : int; parseResult : IParseResult; }
     | SemanticAnalysisFinished { projectId : ProjectId; cancellationToken : CancellationToken; files : ImmutableArray[FileEvalPropertiesData]; }
   }
 }

@@ -10,9 +10,14 @@ namespace CSharp
 {
   map syntax Core.Expression -> DotNet.Expr;
 
-  map syntax Expressions.Expression.BooleanLiteral -> DotNet.Expr
+  map syntax Expressions.Expression.True -> DotNet.Expr
   {
-    BooleanLiteral    { Value = ParsedValue(BooleanLiteral, try { bool.Parse(GetText(BooleanLiteral)); } catch { _ => false } ); }
+    BooleanLiteral    { Value = ParsedValue(NSpan(), true); }
+  }
+
+  map syntax Expressions.Expression.False -> DotNet.Expr
+  {
+    BooleanLiteral    { Value = ParsedValue(NSpan(), false); }
   }
 
   map syntax Expressions.Expression.RegularStringLiteral -> DotNet.Expr

@@ -49,7 +49,8 @@
     extend syntax Expression
     {
       // B.1.8 Literals
-      | BooleanLiteral;
+      | "true"
+      | "false"
       | RegularStringLiteral;
       | VerbatimStringLiteral;
       | RealLiteral;

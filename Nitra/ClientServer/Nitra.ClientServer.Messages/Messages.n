@@ -447,7 +447,7 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant CompletionElem
   {
-    | Literal { text : string; }
+    | Literal { text : string; description : string; }
     | Symbol  { Id : int; name : string; content : string; description : string; iconId : int; }
 
     public override ToString() : string

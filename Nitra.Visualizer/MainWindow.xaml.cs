@@ -1127,14 +1127,7 @@ namespace Nitra.Visualizer
         }
       };
 
-      var completionList = result.completionList
-                                 .Where(c => 
-                                   {
-                                     var key = completionKeySelector(c);
-                                     return !key.StartsWith("?") &&
-                                            !key.StartsWith("<");
-                                   })
-                                 .Distinct(completionKeySelector);
+      var completionList = result.completionList.OrderBy(completionKeySelector);
 
       foreach (var completionData in completionList)
       {
@@ -1142,8 +1135,9 @@ namespace Nitra.Visualizer
         {
           case CompletionElem.Literal lit:
             var escaped = Utils.Escape(lit.text);
+            var descEscaped = "<LineBreak/>\r\n&#160;&#160;<Span Foreground='black'>" + Utils.Escape(lit.description).Replace(Environment.NewLine, "<LineBreak/>\r\n&#160;&#160;") + "</Span>";
             var xaml = "<Span Foreground='blue'>" + escaped + "</Span>";
-            data.Add(new CompletionData(replacementSpan, lit.text, xaml, "keyword " + xaml, priority: 1.0));
+            data.Add(new CompletionData(replacementSpan, lit.text, xaml, "literal " + xaml + descEscaped, priority: 1.0));
             break;
           case CompletionElem.Symbol s:
             //var replaceText = _textEditor.Document.GetText(replacementSpan.StartPos, replacementSpan.Length);

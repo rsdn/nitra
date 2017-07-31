@@ -19,8 +19,11 @@ namespace Nitra.ClientServer.Server
 {
   public class FindReferencesAstVisitor : IAstVisitor
   {
-    private _span : NSpan;
-    public Result : List[Reference] = List();
+    _span : NSpan;
+    _steack : SCG.Stack[IAst] = SCG.Stack();
+    
+    public Result : List[Reference * array[IAst]] = List();
+    
     
     public this(span : NSpan) { _span = span; }
 
@@ -28,15 +31,17 @@ namespace Nitra.ClientServer.Server
     {
       when (parseTree.Span.IntersectsWith(_span))
       {
+        _steack.Push(parseTree);
         parseTree.Accept(this);
+        _ = _steack.Pop();
       }
     }
 
     public Visit(reference : Reference) : void implements IAstVisitor.Visit
     {
-      when (reference.Span.IntersectsWith(_span))
+      when (reference.Span.IntersectsWith(_span) && reference.IsRefEvaluated)
       {
-        Result.Add(reference);
+        Result.Add(reference, _steack.ToArray());
       }
     }
 

@@ -72,7 +72,5 @@
 
     [SpanClass(String)]
     token VerbatimStringLiteral = OpenQuote = "@\"" VerbatimStringLiteralPart* CloseQuote = "\"";
-
-    regex BooleanLiteral = "true" | "false";
   }
 }
