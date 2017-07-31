@@ -54,44 +54,6 @@ namespace Nitra.Internal.Recovery
 
     private ErrorPositions : SCG.HashSet[int] = SCG.HashSet();
 
-    public CollectKeywordCompletionList(completionStartPos : int, completionPrefix : string) : void
-    {
-      return;//TODO fix me
-      when (completionStartPos < 0)
-        return;
-
-      def len = completionPrefix.Length;
-      when (len > 42)
-        return;
-      def prefix = completionPrefix;
-      def i1 = Array.FindIndex(Records, completionStartPos, _ != null);
-      def index = if (i1 >= 0) i1 else Array.FindLastIndex(Records, completionStartPos, _ != null);
-      when (index < 0)
-        return;
-      def records = Records[index];
-      
-      when (records == null)
-        return;
-        
-      def result = SCG.HashSet();
-      foreach (record when !record.Key.IsComplete in records)
-        match (record.Key.ParsingState)
-        {
-          | ParsingState.Scan(SubruleInfo = SubruleInfo.TokenString(Str = literal)) =>
-            when (literal.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase))
-              _ = result.Add(literal);
-              
-          | ParsingState.Scan(SubruleInfo = SubruleInfo.RegularCall as c) when !c.Literals.IsEmpty =>
-            foreach(literal in c.Literals)
-              when (literal.StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase))
-                _ = result.Add(literal);
-            
-          | _ => ()
-        }
-          
-      throw LiteralCompletionException(result.OrderBy(x => x).ToArray())
-    }
-
     public RecoveryFromAllErrors() : void
     {
       def parseSession       = ParseResult.ParseSession;
@@ -109,9 +71,6 @@ namespace Nitra.Internal.Recovery
       }
       Parse();
 
-      unless (BestSolution.IsFail)
-        CollectKeywordCompletionList(completionStartPos, completionPrefix);
-      
       mutable prevMaxPos = -1;
       while (BestSolution.IsFail)
       {
@@ -119,9 +78,6 @@ namespace Nitra.Internal.Recovery
         def curMaxPos = MaxPos;
         prevMaxPos = MaxPos;
 
-        when (completionPrefix != null && MaxPos >= completionStartPos)
-          CollectKeywordCompletionList(completionStartPos, completionPrefix);
-        
         _ = ErrorPositions.Add(curMaxPos);
         InsertSubrules(curMaxPos);
         //Parse();
