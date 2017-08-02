@@ -175,39 +175,37 @@ namespace Nitra.VisualStudio.Models
       Debug.Assert(msg.FileId >= 0);
       ITextBuffer textBuffer = _textBuffer;
 
-      OutliningCreated outlining;
-      KeywordsHighlightingCreated keywordHighlighting;
-      SymbolsHighlightingCreated symbolsHighlighting;
-      MatchedBrackets matchedBrackets;
-      MappingMessages mappingMessages;
-      ParsingMessages parsingMessages;
-      SemanticAnalysisMessages semanticAnalysisMessages;
-      Hint hint;
-
-      if ((outlining = msg as OutliningCreated) != null)
+      switch (msg)
       {
-        var tegget = (OutliningTagger)textBuffer.Properties.GetProperty(Constants.OutliningTaggerKey);
-        tegget.Update(outlining);
-      }
-      else if ((keywordHighlighting = msg as KeywordsHighlightingCreated) != null)
-        UpdateSpanInfos(HighlightingType.Keyword, keywordHighlighting.spanInfos, keywordHighlighting.Version);
-      else if ((symbolsHighlighting = msg as SymbolsHighlightingCreated) != null)
-        UpdateSpanInfos(HighlightingType.Symbol, symbolsHighlighting.spanInfos, symbolsHighlighting.Version);
-      else if ((matchedBrackets = msg as MatchedBrackets) != null)
-      {
-        if (_activeTextViewModelOpt == null)
-          return;
+        case OutliningCreated outlining:
+          var tegget = (OutliningTagger)textBuffer.Properties.GetProperty(Constants.OutliningTaggerKey);
+          tegget.Update(outlining);
+          break;
+        case KeywordsHighlightingCreated keywordHighlighting:
+          UpdateSpanInfos(HighlightingType.Keyword, keywordHighlighting.spanInfos, keywordHighlighting.Version);
+          break;
+        case SymbolsHighlightingCreated symbolsHighlighting:
+          UpdateSpanInfos(HighlightingType.Symbol, symbolsHighlighting.spanInfos, symbolsHighlighting.Version);
+          break;
+        case MatchedBrackets matchedBrackets:
+          if (_activeTextViewModelOpt == null)
+            return;
 
-        _activeTextViewModelOpt.Update(matchedBrackets);
+          _activeTextViewModelOpt.Update(matchedBrackets);
+          break;
+        case ParsingMessages parsingMessages:
+          UpdateCompilerMessages(0, parsingMessages.messages, parsingMessages.Version);
+          break;
+        case MappingMessages mappingMessages:
+          UpdateCompilerMessages(1, mappingMessages.messages, mappingMessages.Version);
+          break;
+        case SemanticAnalysisMessages semanticAnalysisMessages:
+          UpdateCompilerMessages(2, semanticAnalysisMessages.messages, semanticAnalysisMessages.Version);
+          break;
+        case Hint hint:
+          _mouseHoverTextViewModelOpt?.ShowHint(hint);
+          break;
       }
-      else if ((parsingMessages = msg as ParsingMessages) != null)
-        UpdateCompilerMessages(0, parsingMessages.messages, parsingMessages.Version);
-      else if ((mappingMessages = msg as MappingMessages) != null)
-        UpdateCompilerMessages(1, mappingMessages.messages, mappingMessages.Version);
-      else if ((semanticAnalysisMessages = msg as SemanticAnalysisMessages) != null)
-        UpdateCompilerMessages(2, semanticAnalysisMessages.messages, semanticAnalysisMessages.Version);
-      else if ((hint = msg as Hint) != null)
-        _mouseHoverTextViewModelOpt?.ShowHint(hint);
     }
 
     internal Brush SpanClassToBrush(string spanClass, IWpfTextView _wpfTextView)
