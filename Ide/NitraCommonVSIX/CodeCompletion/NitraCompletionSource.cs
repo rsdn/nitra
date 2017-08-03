@@ -31,30 +31,46 @@ namespace Nitra.VisualStudio.CodeCompletion
       if (fileModel == null)
         return;
 
-      var client  = fileModel.Server.Client;
-      var triggerPoint = session.GetTriggerPoint(_textBuffer);
-      var snapshot = _textBuffer.CurrentSnapshot;
-      var version = snapshot.Version.Convert();
+      var msg = (AsyncServerMessage.CompleteWord)session.Properties[Constants.NitraCompleteWord];
 
-      client.Send(new ClientMessage.CompleteWord(fileModel.GetProjectId(), fileModel.Id, version, triggerPoint.GetPoint(snapshot).Position));
-      var result = client.Receive<ServerMessage.CompleteWord>();
-      var span = result.replacementSpan;
-      var applicableTo = snapshot.CreateTrackingSpan(new Span(span.StartPos, span.Length), SpanTrackingMode.EdgeInclusive);
+      if (msg == null)
+        return;
 
-      var completions = new List<Completion>();
+      var span          = msg.replacementSpan;
+      var triggerPoint  = session.GetTriggerPoint(_textBuffer);
+      var snapshot      = _textBuffer.CurrentSnapshot;
+      var version       = snapshot.Version.Convert();
 
-      CompletionElem.Literal literal;
-      CompletionElem.Symbol  symbol;
-
-      foreach (var elem in result.completionList)
+      if (msg.Version != version)
       {
-        if ((literal = elem as CompletionElem.Literal) != null)
-          completions.Add(new Completion(literal.text, literal.text, "literal", null, null));
-        else if ((symbol = elem as CompletionElem.Symbol) != null)
-          completions.Add(new Completion(symbol.name, symbol.name, symbol.description, null, null));
+        return;
       }
 
+      var applicableTo = snapshot.CreateTrackingSpan(new Span(span.StartPos, span.Length), SpanTrackingMode.EdgeInclusive);
+
+      List<Completion> completions = FillCompletionList(msg);
+
       completionSets.Add(new CompletionSet("NitraWordCompletion", "Nitra word completion", applicableTo, completions, null));
+    }
+
+    private static List<Completion> FillCompletionList(AsyncServerMessage.CompleteWord msg)
+    {
+      var completions = new List<Completion>();
+
+      foreach (var elem in msg.completionList)
+      {
+        switch (elem)
+        {
+          case CompletionElem.Literal literal:
+            completions.Add(new Completion(literal.text, literal.text, "literal", null, null));
+            break;
+          case CompletionElem.Symbol symbol:
+            completions.Add(new Completion(symbol.name, symbol.name, symbol.description, null, null));
+            break;
+        }
+      }
+
+      return completions;
     }
 
     public void Dispose()

@@ -34,7 +34,7 @@ namespace Nitra.Visualizer.Serialization
       var languageInfo = (Language)_serializer.Deserialize(reader);
 
       var languageAssembly = assemblyResolver(languageInfo.Path);
-      var language = Nitra.Language.GetLanguages(languageAssembly).FirstOrDefault(l => String.Equals(l.FullName, languageInfo.Name, StringComparison.Ordinal));
+      var language = Nitra.Language.GetLanguages(languageInfo.Path).FirstOrDefault(l => String.Equals(l.FullName, languageInfo.Name, StringComparison.Ordinal));
       if (language == null)
         throw new ApplicationException(string.Format("Language '{0}' not found in assembly '{1}'.", languageInfo.Name, languageAssembly.Location));
 

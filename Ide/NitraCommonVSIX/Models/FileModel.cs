@@ -16,6 +16,7 @@ using System.Windows.Media;
 using System.IO;
 using System.Xml.Linq;
 using System.Text;
+using Microsoft.VisualStudio.Language.Intellisense;
 
 namespace Nitra.VisualStudio.Models
 {
@@ -40,7 +41,9 @@ namespace Nitra.VisualStudio.Models
     TextViewModel _activeTextViewModelOpt;
     TextViewModel _mouseHoverTextViewModelOpt;
     bool _fileIsRemoved;
-
+    ICompletionSession _completionSession;
+    int _caretPosition;
+    FileVersion _caretFileVersion;
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
@@ -71,6 +74,9 @@ namespace Nitra.VisualStudio.Models
 
     public void CaretPositionChanged(int position, FileVersion fileVersion)
     {
+      _caretFileVersion = fileVersion;
+      _caretPosition    = position;
+
       var server = this.Server;
 
       if (server.IsLoaded)
@@ -141,12 +147,15 @@ namespace Nitra.VisualStudio.Models
     {
       var textBuffer = (ITextBuffer)sender;
       var newVersion = e.AfterVersion.Convert();
+      if (newVersion != _caretFileVersion)
+      {
+      }
       var fileModel = textBuffer.Properties.GetProperty<FileModel>(Constants.FileModelKey);
       var id = fileModel.Id;
       var changes = e.Changes;
 
       if (changes.Count == 1)
-        Server.Client.Send(new ClientMessage.FileChanged(id, newVersion, VsUtils.Convert(changes[0])));
+        Server.Client.Send(new ClientMessage.FileChanged(id, newVersion, VsUtils.Convert(changes[0]), _caretPosition));
       else
       {
         var builder = ImmutableArray.CreateBuilder<FileChange>(changes.Count);
@@ -154,7 +163,7 @@ namespace Nitra.VisualStudio.Models
         foreach (var change in changes)
           builder.Add(VsUtils.Convert(change));
 
-        Server.Client.Send(new ClientMessage.FileChangedBatch(id, newVersion, builder.MoveToImmutable()));
+        Server.Client.Send(new ClientMessage.FileChangedBatch(id, newVersion, builder.MoveToImmutable(), _caretPosition));
       }
     }
 
@@ -205,7 +214,30 @@ namespace Nitra.VisualStudio.Models
         case Hint hint:
           _mouseHoverTextViewModelOpt?.ShowHint(hint);
           break;
+        case CompleteWord completeWord:
+          if (_completionSession != null)
+          {
+            _completionSession.Properties[Constants.NitraCompleteWord] = completeWord;
+            if (_completionSession.IsStarted)
+              _completionSession.Recalculate();
+            else
+              _completionSession.Start();
+          }
+          break;
       }
+    }
+
+    internal void SetCompletionSession(ICompletionSession session)
+    {
+      _completionSession = session;
+      session.Dismissed += CompletionSessionDismissed;
+    }
+
+    private void CompletionSessionDismissed(object sender, EventArgs e)
+    {
+      _completionSession.Dismissed -= CompletionSessionDismissed;
+      _completionSession.Properties[Constants.NitraCompleteWord] = null;
+      _completionSession = null;
     }
 
     internal Brush SpanClassToBrush(string spanClass, IWpfTextView _wpfTextView)

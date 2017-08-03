@@ -257,6 +257,11 @@ namespace Nitra.VisualStudio
       return new FileVersion(version.VersionNumber - 1);
     }
 
+    public static SnapshotPoint GetCaretPoint(this ITextView textView)
+    {
+      return textView.Caret.Position.BufferPosition;
+    }
+
     public static EnvDTE.Project GetProject(this IVsHierarchy hierarchy)
     {
       var itemid = VSConstants.VSITEMID_ROOT;

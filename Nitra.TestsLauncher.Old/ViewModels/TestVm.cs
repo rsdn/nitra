@@ -39,8 +39,7 @@ namespace Nitra.ViewModels
     private class TestFile : FsFile<IAst>
     {
       private readonly TestVm _test;
-      public int _completionStartPos = -1;
-      public string _completionPrefix = null;
+      public int _completionPos = -1;
       private int _id;
       public override int Id { get { return _id; } }
 
@@ -55,8 +54,7 @@ namespace Nitra.ViewModels
       protected override ParseSession GetParseSession()
       {
         var session = base.GetParseSession();
-        session.CompletionStartPos = _completionStartPos;
-        session.CompletionPrefix   = _completionPrefix;
+        session.CompletionPos = _completionPos;
         session.DynamicExtensions  = _test.TestSuite.DynamicExtensions;
         switch (_test.TestSuite.RecoveryAlgorithm)
         {
@@ -149,8 +147,7 @@ namespace Nitra.ViewModels
     public bool Run(RecoveryAlgorithm recoveryAlgorithm = RecoveryAlgorithm.Smart, int completionStartPos = -1, string completionPrefix = null)
     {
       var project = _file.Project;
-      _file._completionStartPos = completionStartPos;
-      _file._completionPrefix   = completionPrefix;
+      _file._completionPos = completionStartPos;
       _file.ResetCache();
 
       if (TestSuite.DisableSemanticAnalysis || _file.Ast == null)

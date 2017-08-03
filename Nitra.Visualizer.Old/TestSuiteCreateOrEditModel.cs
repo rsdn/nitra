@@ -176,7 +176,7 @@ namespace Nitra.Visualizer
       var oldDynamicExtensions = model.DynamicExtensions.ToDictionary(x => x.Descriptor);
       foreach (var assembly in (Assembly[])e.NewValue)
       {
-        foreach (var language in Language.GetLanguages(assembly))
+        foreach (var language in Language.GetLanguages(assembly.CodeBase))
         {
           if (!oldLanguages.Remove(language))
             model.Languages.Add(language);

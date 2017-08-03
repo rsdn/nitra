@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
+using Nitra.ClientServer.Messages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,17 +89,29 @@ namespace Nitra.VisualStudio.CodeCompletion
 
     bool StartSession()
     {
-      if (_session != null)
+      var session = _session;
+
+      if (session != null)
+        return false;
+
+      var textBuffer = _wpfTextView.TextBuffer;
+
+      var fileModel = VsUtils.TryGetFileModel(_wpfTextView.TextBuffer);
+
+      if (fileModel == null)
         return false;
 
       var caret = _wpfTextView.Caret.Position.BufferPosition;
       var snapshot = caret.Snapshot;
 
-      _session = _provider.CompletionBroker.CreateCompletionSession(
-        _wpfTextView, snapshot.CreateTrackingPoint(caret, PointTrackingMode.Positive), true);
-      _session.Dismissed += _currentSession_Dismissed;
-      _session.Start();
 
+      var client = fileModel.Server.Client;
+      _session = session = _provider.CompletionBroker.CreateCompletionSession(_wpfTextView, snapshot.CreateTrackingPoint(caret, PointTrackingMode.Positive), true);
+      var triggerPoint = session.GetTriggerPoint(textBuffer);
+      var version = snapshot.Version.Convert();
+      fileModel.SetCompletionSession(session);
+      session.Dismissed += _currentSession_Dismissed;
+      client.Send(new ClientMessage.CompleteWord(fileModel.GetProjectId(), fileModel.Id, version, triggerPoint.GetPoint(snapshot).Position));
       return true;
     }
 
