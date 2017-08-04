@@ -294,6 +294,7 @@ namespace Nitra.ClientServer.Server
       def visitor = FindReferencesAstVisitor(NSpan(pos, pos));
       astRoot.Accept(visitor);
       
+      Log($"CompleteWord processed file=$(fileData.FileId) ver=$(fileData.FileVersion) pos=$pos");
       
       def isReference((ast : IAst, steack : array[IAst])) : bool
       {
@@ -325,6 +326,9 @@ namespace Nitra.ClientServer.Server
       def pattern         = pattern;
       def isPatternEmpty  = pattern.Length == 0;
       def replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
+
+      Log($"    replacementSpan=$replacementSpan pattern='$pattern'");
+      
       
       def matchedKeyWordsMap = Hashtable();
 
@@ -399,6 +403,10 @@ namespace Nitra.ClientServer.Server
         builder.Add(elem);
       }
 
+      
+      Log($"    KeyWords='$(matchedKeyWordsMap.Count)'");
+      Log($"    Symbols='$(symbolsSet.Count)'");
+      
       def ver = FileVersion(fileData.FileVersion);
       def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
       SendAsyncResponse(msg);

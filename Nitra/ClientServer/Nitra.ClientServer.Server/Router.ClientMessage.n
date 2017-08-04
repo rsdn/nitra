@@ -68,8 +68,8 @@ namespace Nitra.ClientServer.Server
       | PrettyPrint        (state)                       => PrettyPrintState = state;
       | CompleteWord      (projectId, id, version, pos)  => _solution.GetFile(projectId, id).CompleteWord(version, pos);
       | CompleteWordDismiss    (projectId, id, version)  => _solution.GetFile(projectId, id).CompleteWordDismiss(version);
-      | FindSymbolReferences (projectId, id, ver, pos)   => FindSymbolReferences(projectId, id, ver, pos);
-      | FindSymbolDefinitions(projectId, id, ver, pos)   => _solution.GetFile(projectId, id).FindSymbolDefinitions(ver, pos);
+      | FindSymbolReferences (projectId, id, pos)        => FindSymbolReferences(projectId, id, pos);
+      | FindSymbolDefinitions(projectId, id, pos)        => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos);
       | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
       | GetObjectContent(sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectContent(sId, ver, parentId);
       | GetObjectGraph  (sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectGraph(sId, ver, parentId);
@@ -78,8 +78,8 @@ namespace Nitra.ClientServer.Server
       | GetLibsSyntaxModules(libs)                       => GetLibsSyntaxModules(libs)
       | GetLibsProjectSupports(libs)                     => GetLibsProjectSupports(libs)
       | GetFileExtensions(projectId, languageNames)      => GetFileExtensions(projectId, languageNames)
-      | SetCaretPos(projectId, fileId, fileVersion, pos) => _solution.GetFile(projectId, fileId).SetCaretPos(fileVersion, pos);
-      | GetHint(projectId, fileId, fileVersion, pos)     => _solution.GetFile(projectId, fileId).GetHint(fileVersion, pos);
+      | SetCaretPos(projectId, fileId, pos)              => _solution.GetFile(projectId, fileId).SetCaretPos(pos);
+      | GetHint(projectId, fileId, pos)                  => _solution.GetFile(projectId, fileId).GetHint(pos);
       | FindDeclarations(pat, projectId, hide, kinds)    => _solution.FindDeclarations(pat, projectId, hide, kinds)
       | GetSubHint(projectId, symbolId)                  => GetSubHint(projectId, symbolId);
       | Shutdown                                         =>

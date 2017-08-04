@@ -257,6 +257,11 @@ namespace Nitra.VisualStudio
       return new FileVersion(version.VersionNumber - 1);
     }
 
+    public static VersionedPos ToVersionedPos(this SnapshotPoint pos)
+    {
+      return new VersionedPos(pos.Position, pos.Snapshot.Version.Convert());
+    }
+
     public static SnapshotPoint GetCaretPoint(this ITextView textView)
     {
       return textView.Caret.Position.BufferPosition;

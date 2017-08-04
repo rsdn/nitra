@@ -37,7 +37,6 @@ namespace Nitra.VisualStudio.CodeCompletion
         return;
 
       var span          = msg.replacementSpan;
-      var triggerPoint  = session.GetTriggerPoint(_textBuffer);
       var snapshot      = _textBuffer.CurrentSnapshot;
       var version       = snapshot.Version.Convert();
 
@@ -48,29 +47,9 @@ namespace Nitra.VisualStudio.CodeCompletion
 
       var applicableTo = snapshot.CreateTrackingSpan(new Span(span.StartPos, span.Length), SpanTrackingMode.EdgeInclusive);
 
-      List<Completion> completions = FillCompletionList(msg);
-
-      completionSets.Add(new CompletionSet("NitraWordCompletion", "Nitra word completion", applicableTo, completions, null));
-    }
-
-    private static List<Completion> FillCompletionList(AsyncServerMessage.CompleteWord msg)
-    {
-      var completions = new List<Completion>();
-
-      foreach (var elem in msg.completionList)
-      {
-        switch (elem)
-        {
-          case CompletionElem.Literal literal:
-            completions.Add(new Completion(literal.text, literal.text, "literal", null, null));
-            break;
-          case CompletionElem.Symbol symbol:
-            completions.Add(new Completion(symbol.name, symbol.name, symbol.description, null, null));
-            break;
-        }
-      }
-
-      return completions;
+      var completionSet = new NitraCompletionSet(applicableTo, session, snapshot);
+      completionSet.Recalculate();
+      completionSets.Add(completionSet);
     }
 
     public void Dispose()

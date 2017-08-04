@@ -52,8 +52,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _objToIdMap             : ConcurrentDictionary[object, int];
     mutable _idToObjMap             : ConcurrentDictionary[int, object];
     mutable _needHint               : bool;
-    mutable _caretPosOpt            : int = -1;
-    mutable _caretPosVersionOpt     : int = -1;
+    mutable _caretPosOpt            : VersionedPos = VersionedPos.Invalid;
+    mutable _highlightingPosOpt     : VersionedPos = VersionedPos.Invalid;
     mutable _isCompleteWord         : bool;
     
     public this(id : FileId, fullPath : string, version : FileVersion, parent : Project)
@@ -166,17 +166,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       | FileChange.Replace(span, text) => Replace(span, text)
     }
 
-    public Change(version : FileVersion, change : FileChange, caretPos : int) : void
+    public Change(version : FileVersion, change : FileChange, caretPos : VersionedPos) : void
     {
+      Log($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
       _ = GetSource();
       FileVersion = version;
       ApplyChange(change);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
 
-      TrySendParseMessage(if (_isCompleteWord) caretPos else -1);
+      TrySendParseMessage(if (_isCompleteWord) caretPos.Pos else -1);
     }
     
-    public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : int) : void
+    public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : VersionedPos) : void
     {
       _ = GetSource();
       FileVersion = version;
@@ -185,7 +186,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
       //IO.File.WriteAllText($@"C:\Temp\005\$Name$(version.Value).ncs", _snapshot.Text);
       
-      TrySendParseMessage(if (_isCompleteWord) caretPos else -1);
+      TrySendParseMessage(if (_isCompleteWord) caretPos.Pos else -1);
     }
     
     // overrides
@@ -243,8 +244,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       
       if (_isCompleteWord && CanCompleteWord())
       {
-        //assert2(_caretPosOpt >= 0);
-        Parent.AstCreated(this, completionPos, parseResultOpt);
+        def currentCompleteWordPos =
+          if (_caretPosOpt.IsInvalid &&  _caretPosOpt.Version == parseResultOpt.SourceSnapshot.Version) 
+            _caretPosOpt.Pos
+          else 
+            completionPos;
+        Parent.AstCreated(this, currentCompleteWordPos, parseResultOpt);
       }
       else
         // TODO: make _astMessages local for working threads
@@ -254,21 +259,21 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     CanCompleteWord() : bool
     {
-      def pos = _caretPosOpt;
+      def pos         = _caretPosOpt.Pos;
       def parseResult = _parseResult;
       
       when (parseResult == null)
         return false;
 
-      // Получаем информацию о пробельных ветках дерева разбора в области курсора
-      def curretSpan     = Nitra.NSpan(pos, pos);
-      def spans          = HashSet();
-      def spasesWalker   = VoidRuleWalker(curretSpan);
+      // Get information about the whitespace nodes of the Parse Tree in the cursor area
+      def curretSpan   = Nitra.NSpan(pos, pos);
+      def spans        = HashSet();
+      def spasesWalker = VoidRuleWalker(curretSpan);
       
       spasesWalker.Walk(parseResult, spans);
 
       foreach (spanInfo when spanInfo.Span.Contains(curretSpan) && spanInfo.SpanClass != Language.DefaultSpanClass in spans)
-        return false; // выходим, если комплит идет в комментарии или грязи
+        return false; // exit if the completion goes in the comments or garbage
 
       true
     }
@@ -355,11 +360,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _isCompleteWord = false;
     }
     
-    public FindSymbolDefinitions(fileVersion : int, pos : int) : void
+    public FindSymbolDefinitions(pos : VersionedPos) : void
     {
       def ast = _ast;
       
-      when (ast == null || ast.Location.Source.Version != fileVersion)
+      when (ast == null || ast.Location.Source.Version != pos.Version)
       {
         // maybe better return special message?
         assert2(false);
@@ -372,7 +377,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def router             = this.Parent.Router;
         def pos                = pos;
         def ast                = ast;
-        def (refSpan, symbols) = GetSymbols(cancellationToken, pos, ast);
+        def (refSpan, symbols) = GetSymbols(cancellationToken, pos.Pos, ast);
         
         def biulder = ImmutableArray.CreateBuilder();
         foreach (symbol in symbols)
@@ -386,13 +391,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       Parent.AddSemanticAction(action);
     }
     
-    public FindSymbolReferences(fileVersion : int, pos : int, forHighlighting : bool) : void
+    public FindSymbolReferences(pos : VersionedPos, forHighlighting : bool) : void
     {
       def ast      = _ast;
       def needHint = _needHint && forHighlighting;
       _needHint    = false;
       
-      when (ast == null || ast.Location.Source.Version != fileVersion)
+      when (ast == null || ast.Location.Source.Version != pos.Version)
       {
         // maybe better return special message?
         assert2(false);
@@ -407,7 +412,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def pos                = pos;
         def ast                = ast;
 
-        def (refSpan, symbols) = GetSymbols(cancellationToken, pos, ast);
+        def (refSpan, symbols) = GetSymbols(cancellationToken, pos.Pos, ast);
         def defsBiulder        = ImmutableArray.CreateBuilder();
         def symbolsBiulder     = ImmutableArray.CreateBuilder(symbols.Length);
         def refsBiulder        = ImmutableArray.CreateBuilder();
@@ -808,55 +813,49 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _parseQueue.Add(this.GetReParseMessage(completePos));
     }
     
-    public SetCaretPos(fileVersion : int, pos : int) : void
+    public SetCaretPos(pos : VersionedPos) : void
     {
+      Log($"SetCaretPos pos=$pos");
       _caretPosOpt        = pos;
-      _caretPosVersionOpt = fileVersion;
+      _highlightingPosOpt = pos;
       
       TryMatchBrackets();
       TryHighlightSymbolReferences();
     }
     
-    public GetHint(fileVersion : int, pos : int) : void
+    public GetHint(pos : VersionedPos) : void
     {
       _needHint           = true;
-      _caretPosOpt        = pos;
-      _caretPosVersionOpt = fileVersion;
+      _highlightingPosOpt = pos;
       
       TryHighlightSymbolReferences();
     }
     
     TryMatchBrackets() : void
     {
-      when (_caretPosOpt < 0)
+      when (_caretPosOpt.IsInvalid)
         return;
  
-      when (_caretPosVersionOpt < 0)
-        return;
-      
       def parseResult = _parseResult;
       
-      when (parseResult != null && parseResult.SourceSnapshot.Version == _caretPosVersionOpt)
+      when (parseResult != null && parseResult.SourceSnapshot.Version == _caretPosOpt.Version)
       {
         def solutionId  = Parent.Parent.Id;
-        _parseQueue.Add(ParserMessage.CreateMatchBrackets(solutionId, Parent.Id, this.FileId, parseResult, _caretPosOpt));
+        _parseQueue.Add(ParserMessage.CreateMatchBrackets(solutionId, Parent.Id, this.FileId, parseResult, _caretPosOpt.Pos));
       }
     }
     
     TryHighlightSymbolReferences() : void
     {
-      when (_caretPosOpt < 0)
-        return;
- 
-      when (_caretPosVersionOpt < 0)
+      when (_highlightingPosOpt.IsInvalid)
         return;
         
       def ast = _ast;
       
-      when (ast == null || ast.Location.Source.Version != _caretPosVersionOpt)
+      when (ast == null || ast.Location.Source.Version != _highlightingPosOpt.Version)
         return;
 
-      FindSymbolReferences(_caretPosVersionOpt, _caretPosOpt, forHighlighting=true);
+      FindSymbolReferences(_highlightingPosOpt, forHighlighting=true);
     }
     
     public override ToString() : string { $"$Name($(Parent.Name) project)" }

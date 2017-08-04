@@ -92,7 +92,7 @@ namespace Nitra.VisualStudio.CodeCompletion
       var session = _session;
 
       if (session != null)
-        return false;
+        return true;
 
       var textBuffer = _wpfTextView.TextBuffer;
 

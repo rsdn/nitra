@@ -150,7 +150,7 @@ namespace Nitra.VisualStudio.Models
       CheckDisposed();
       var fileModel = FileModel;
       var client = fileModel.Server.Client;
-      client.Send(new ClientMessage.FindSymbolReferences(fileModel.GetProjectId(), fileModel.Id, point.Snapshot.Version.Convert(), point.Position));
+      client.Send(new ClientMessage.FindSymbolReferences(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos()));
       var msg = client.Receive<ServerMessage.FindSymbolReferences>();
 
       var locs = msg.symbols.SelectMany(s => s.Definitions.Select(d => d.Location).Concat(s.References.SelectMany(
@@ -163,7 +163,7 @@ namespace Nitra.VisualStudio.Models
       CheckDisposed();
       var fileModel = FileModel;
       var client = fileModel.Server.Client;
-      client.Send(new ClientMessage.FindSymbolDefinitions(fileModel.GetProjectId(), fileModel.Id, point.Snapshot.Version.Convert(), point.Position));
+      client.Send(new ClientMessage.FindSymbolDefinitions(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos()));
       var msg = client.Receive<ServerMessage.FindSymbolDefinitions>();
       var len = msg.definitions.Length;
 
@@ -200,7 +200,7 @@ namespace Nitra.VisualStudio.Models
         var fileModel = this.FileModel;
         fileModel.OnMouseHover(this);
 
-        server.Client.Send(new ClientMessage.GetHint(fileModel.GetProjectId(), fileModel.Id, snapshot.Version.Convert(), point.Position));
+        server.Client.Send(new ClientMessage.GetHint(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos()));
       }
     }
 

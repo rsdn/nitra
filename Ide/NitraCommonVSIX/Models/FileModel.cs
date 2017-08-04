@@ -42,8 +42,7 @@ namespace Nitra.VisualStudio.Models
     TextViewModel _mouseHoverTextViewModelOpt;
     bool _fileIsRemoved;
     ICompletionSession _completionSession;
-    int _caretPosition;
-    FileVersion _caretFileVersion;
+    VersionedPos _caretPosition;
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
@@ -72,15 +71,14 @@ namespace Nitra.VisualStudio.Models
 
     public bool IsOnScreen => _textViewModelsMap.Count > 0;
 
-    public void CaretPositionChanged(int position, FileVersion fileVersion)
+    public void CaretPositionChanged(VersionedPos position)
     {
-      _caretFileVersion = fileVersion;
-      _caretPosition    = position;
+      _caretPosition = position;
 
       var server = this.Server;
 
       if (server.IsLoaded)
-        server.Client.Send(new ClientMessage.SetCaretPos(GetProjectId(), Id, fileVersion, position));
+        server.Client.Send(new ClientMessage.SetCaretPos(GetProjectId(), Id, position));
     }
 
     public TextViewModel GetOrAdd(IWpfTextView wpfTextView)
@@ -147,12 +145,12 @@ namespace Nitra.VisualStudio.Models
     {
       var textBuffer = (ITextBuffer)sender;
       var newVersion = e.AfterVersion.Convert();
-      if (newVersion != _caretFileVersion)
+      var changes = e.Changes;
+      if (newVersion != _caretPosition.Version)
       {
       }
       var fileModel = textBuffer.Properties.GetProperty<FileModel>(Constants.FileModelKey);
       var id = fileModel.Id;
-      var changes = e.Changes;
 
       if (changes.Count == 1)
         Server.Client.Send(new ClientMessage.FileChanged(id, newVersion, VsUtils.Convert(changes[0]), _caretPosition));

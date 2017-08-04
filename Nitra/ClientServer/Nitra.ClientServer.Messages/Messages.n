@@ -53,13 +53,13 @@ namespace Nitra.ClientServer.Messages
     | FileInMemoryLoaded       { projectId : ProjectId; id : FileId; name : string; content : string; }
     | FileActivated            { projectId : ProjectId; id : FileId; version : FileVersion; }
     | FileDeactivated          { projectId : ProjectId; id : FileId; }
-    | FileChanged              { id : FileId; version : FileVersion; change : FileChange; caretPos : int; }
-    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : int; }
+    | FileChanged              { id : FileId; version : FileVersion; change : FileChange;                  caretPos : VersionedPos; }
+    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : VersionedPos; }
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { projectId : ProjectId; id : FileId; version : FileVersion; pos : int; }
     | CompleteWordDismiss      { projectId : ProjectId; id : FileId; version : FileVersion; }
-    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; pos : int; }
-    | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; pos : int; }
+    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | ParseTreeReflection      { enable : bool; }
     | GetObjectContent         { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
     | GetObjectGraph           { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
@@ -68,8 +68,8 @@ namespace Nitra.ClientServer.Messages
     | GetLibsSyntaxModules     { libs : ImmutableArray[string]; }
     | GetLibsProjectSupports   { libs : ImmutableArray[string]; }
     | GetFileExtensions        { projectId : ProjectId; languageNames : ImmutableArray[string]; }
-    | SetCaretPos              { projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; pos : int; }
-    | GetHint                  { projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; pos : int; }
+    | SetCaretPos              { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | GetHint                  { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | GetSubHint               { projectId : ProjectId; symbolId : int; }
     | FindDeclarations         { pattern : string; primaryProjectId : ProjectId; hideExternalItems : bool; kinds : ImmutableArray[string]; }
     | Shutdown                 { }
@@ -821,6 +821,8 @@ namespace Nitra.ClientServer.Messages
     
     public Value : int;
     
+    public IsInvalid : bool { get { Value < 0 } }
+    
     public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
     public static new Deserialize(reader : BinaryReader) : FileVersion { FileVersion(reader.ReadInt32()) }
     
@@ -829,5 +831,19 @@ namespace Nitra.ClientServer.Messages
     public static @<=(x : FileVersion, y : FileVersion) : bool { x.Value <= y.Value }
     
     public override ToString() : string { Value.ToString() }
+  }
+  
+  [NitraMessage]
+  [StructuralEquality]
+  public struct VersionedPos
+  {
+    public static Invalid : VersionedPos = VersionedPos(-1, FileVersion(-1));
+    
+    public Pos : int;
+    public Version : FileVersion;
+    
+    public IsInvalid : bool { get { Pos < 0 || Version.IsInvalid } }
+
+    public override ToString() : string { if (IsInvalid) "<VersionedPos.Invalid>" else ("VersionedPos(" + Pos + ", " + Version + ")") }
   }
 }
