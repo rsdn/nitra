@@ -1,0 +1,7 @@
+﻿class Program
+{
+  public void Foo(
+  static void Main(string[] args)
+  {
+  }
+}
