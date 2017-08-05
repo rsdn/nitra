@@ -101,7 +101,12 @@ namespace Nitra.Internal.Recovery
             {
               endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
               if (endPos < 0 || endPos == textPos)
-                FinalizeSequence(textPos, record, tokenChanges);
+              {
+                def seq = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+                FinalizeSequence(record, tokenChanges);
+                foreach (startState in seq.ParsingSequence.StartStates)
+                  FinalizeSequence(ParseRecord(seq, startState, seq.StartPos), tokenChanges);
+              }
               else
                 _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
