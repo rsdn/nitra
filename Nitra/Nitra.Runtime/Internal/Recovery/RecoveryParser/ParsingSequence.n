@@ -280,9 +280,7 @@ namespace Nitra.Internal.Recovery
       }
       def printState(sb : Text.StringBuilder, state : ParsingState) : void
       {
-        def trimmed = state.Description.Trim();
-        def desc = if (trimmed == state.Description) state.Description else "(" + trimmed + ")";
-        _ = sb.Append(state.Id).Append(":").Append(desc);
+        _ = sb.Append(state.Id).Append(":").Append(state.SubruleInfo.Description);
       }
       def seq      = this;
       def bp       =
