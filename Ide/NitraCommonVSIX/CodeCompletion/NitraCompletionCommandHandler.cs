@@ -91,9 +91,6 @@ namespace Nitra.VisualStudio.CodeCompletion
     {
       var session = _session;
 
-      if (session != null)
-        return true;
-
       var textBuffer = _wpfTextView.TextBuffer;
 
       var fileModel = VsUtils.TryGetFileModel(_wpfTextView.TextBuffer);
@@ -101,22 +98,25 @@ namespace Nitra.VisualStudio.CodeCompletion
       if (fileModel == null)
         return false;
 
-      var caret = _wpfTextView.Caret.Position.BufferPosition;
-      var snapshot = caret.Snapshot;
+      var caretPos = _wpfTextView.Caret.Position.BufferPosition;
+      var snapshot = caretPos.Snapshot;
 
 
       var client = fileModel.Server.Client;
-      _session = session = _provider.CompletionBroker.CreateCompletionSession(_wpfTextView, snapshot.CreateTrackingPoint(caret, PointTrackingMode.Positive), true);
+      if (session == null)
+        _session = session = _provider.CompletionBroker.CreateCompletionSession(_wpfTextView, snapshot.CreateTrackingPoint(caretPos, PointTrackingMode.Positive), true);
       var triggerPoint = session.GetTriggerPoint(textBuffer);
       var version = snapshot.Version.Convert();
-      fileModel.SetCompletionSession(session);
+      fileModel.SetCompletionSession(session, caretPos);
       session.Dismissed += _currentSession_Dismissed;
-      client.Send(new ClientMessage.CompleteWord(fileModel.GetProjectId(), fileModel.Id, version, triggerPoint.GetPoint(snapshot).Position));
       return true;
     }
 
     private void _currentSession_Dismissed(object sender, EventArgs e)
     {
+      if (_session == null)
+        return;
+
       _session.Dismissed -= _currentSession_Dismissed;
       _session = null;
     }

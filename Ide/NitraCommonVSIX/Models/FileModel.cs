@@ -225,14 +225,20 @@ namespace Nitra.VisualStudio.Models
       }
     }
 
-    internal void SetCompletionSession(ICompletionSession session)
+    internal void SetCompletionSession(ICompletionSession session, SnapshotPoint caretPos)
     {
       _completionSession = session;
+      var snapshot = caretPos.Snapshot;
+      var version = snapshot.Version.Convert();
+      var triggerPoint = session.GetTriggerPoint(session.TextView.TextBuffer);
+      Server.Client.Send(new ClientMessage.CompleteWord(GetProjectId(), Id, version, triggerPoint.GetPoint(snapshot).Position));
       session.Dismissed += CompletionSessionDismissed;
     }
 
     private void CompletionSessionDismissed(object sender, EventArgs e)
     {
+      if (_completionSession == null)
+        return;
       _completionSession.Dismissed -= CompletionSessionDismissed;
       _completionSession.Properties[Constants.NitraCompleteWord] = null;
       _completionSession = null;
