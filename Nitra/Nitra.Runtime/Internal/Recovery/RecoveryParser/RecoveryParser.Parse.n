@@ -281,8 +281,9 @@ namespace Nitra.Internal.Recovery
       }
     }
 
-    public FinalizeSequence(pos : int, startRecord : ParseRecord, tokenChanges : TokenChanges) : void
+    public FinalizeSequence(startRecord : ParseRecord, tokenChanges : TokenChanges) : void
     {
+      def pos = startRecord.ParsePos;
       def visited = SCG.HashSet();
       def toProcess = SCG.Queue();
       toProcess.Enqueue(startRecord);
@@ -298,7 +299,7 @@ namespace Nitra.Internal.Recovery
       startRecord.Sequence.AddEnd(pos, tokenChanges);
       foreach (caller in startRecord.Sequence.Callers)
         when (!caller.Sequence.Ends.Contains(pos))
-          FinalizeSequence(pos, caller, tokenChanges);
+          FinalizeSequence(caller, tokenChanges);
     }
   }
 }
