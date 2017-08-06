@@ -78,7 +78,7 @@ namespace Nitra.Runtime.Reflection
 
     public override OnListItem(rawTreePtr : int, ruleInfo : SubruleInfo.ListItem, startPos : int, endPos : int, parseResult : IParseResult, context : List[ReflectionStruct]) : void
     {
-      if (startPos == endPos)
+      if (startPos == endPos && startPos != parseResult.CompletionPos)
       {
         def name = "Missed: " + ruleInfo;
         def node = CreateNode(ruleInfo, name, startPos, endPos, null);

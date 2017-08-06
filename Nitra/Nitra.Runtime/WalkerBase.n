@@ -280,7 +280,7 @@ namespace Nitra.Runtime
         match (state)
         {
           | DynamicExtensibleItem as state =>
-            if (begin == end)
+            if (begin == end && begin != parseResult.CompletionPos)
               OnPrefixMissed(state.RuleParser, begin, parseResult, context);
             else
             {
@@ -302,7 +302,7 @@ namespace Nitra.Runtime
             }
 
           | ExtensionPrefix  as state =>
-            if (begin == end)
+            if (begin == end && begin != parseResult.CompletionPos)
               OnPrefixMissed(state.RuleParser, begin, parseResult, context);
             else
             {
