@@ -21,11 +21,14 @@ namespace DotNet
 
     | Aliased
       {
-        Name.Scope  = NameScopeFactory(Scope);
-        Ref         = Name.Ref.Resolve(AstUtils.TypeOverloadResolution(Arity));
+        // TODO: https://gist.github.com/VladD2/8eee961759409ebdd2e71f613b7696ab 
+        //Alias.Scope         = // TODO: set global aliases scope
+        QualifiedName.Arity = 0;
+        QualifiedName.Scope = Scope; // TODO: get scope from Alias
+        Ref                 = QualifiedName.Ref;
 
-        Alias : Reference;
-        Name  : Reference;
+        Alias         : Reference;
+        QualifiedName : QualifiedReference;
       }
 
     | Qualified
@@ -41,15 +44,26 @@ namespace DotNet
 
     | Generic
       {
-        Arguments.Arity     = 0;
-        QualifiedName.Arity = Arguments.Count;
-        QualifiedName.Scope = Scope;
         QualifiedName.NameScopeFactory = NameScopeFactory;
-        Arguments.Scope     = Scope;
-        Ref                 = QualifiedName.Ref.Resolve(AstUtils.MakeConstructedType(this, Arguments.Ref, context));
+        Arguments.Arity                = 0;
+        QualifiedName.Arity            = Arguments.Count;
+        QualifiedName.Scope            = Scope;
+        Arguments.Scope                = Scope;
+        Ref                            = QualifiedName.Ref.Resolve(AstUtils.MakeConstructedType(this, Arguments.Ref, context));
 
         QualifiedName : QualifiedReference;
         Arguments     : QualifiedReference*; // TODO: change to  QualifiedReference+
+      }
+
+    | Open
+      {
+        QualifiedName.NameScopeFactory = NameScopeFactory;
+        QualifiedName.Arity            = Rank.Value;
+        QualifiedName.Scope            = Scope;
+        Ref                            = QualifiedName.Ref;
+
+        QualifiedName : QualifiedReference;
+        Rank          : int;
       }
   }
 }

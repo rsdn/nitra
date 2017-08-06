@@ -21,6 +21,8 @@
     alias Attributes    = AttributeSection*;
     alias QualifiedName = QualifiedIdentifier;
 
+    alias InterfaceType = QualifiedIdentifier;
+
     extend syntax TypeMemberDeclaration
     {
       | PropertyWithInitializer  = Attributes Modifiers AnyType sm InterfaceType? Name PropertyBody sm "=" sm Initializer=Expression ";"  nl;

@@ -42,7 +42,24 @@ namespace CSharp
     token Name      = !Keyword At="@"? IdentifierBody { map Nitra.Declarations.Name      = Nitra.Declarations.Name(this); }
 
     [ExplicitSpaces]
-    syntax QualifiedIdentifier  = QualifiedAlias? (QualifiedIdentifierPart; s "." s)+; // TODO: In C# spec. it's "namespace-or-type-name". Rename it!
+    syntax QualifiedIdentifier
+    {
+      | Aliased = Alias=Reference s "::" s QualifiedReferenceParts
+      | Normal  = QualifiedReferenceParts
+    }
+
+    [ExplicitSpaces]
+    syntax QualifiedReferenceParts
+    {
+      [SpanClass(OpenBrace)]  regex OpenBrace = "<";
+      [SpanClass(CloseBrace)] regex CloseBrace = ">";
+
+      | Simple = Reference
+    precedence MemberAcces:
+      | Qualified   = QualifiedReferenceParts s "." s Reference
+      | GenericType = QualifiedReferenceParts s OpenBrace s TypeArgs=(AnyType; s "," s sm)+ s          CloseBrace;
+      | OpenType    = QualifiedReferenceParts s OpenBrace s RankSeparators=(RankSeparator s)* CloseBrace;
+    }
 
     [ExplicitSpaces]
     syntax QualifiedIdentifierContinuation = (QualifiedIdentifierPart; s "." s)+;
@@ -62,14 +79,6 @@ namespace CSharp
 
     [ExplicitSpaces]
     syntax QualifiedIdentifierPart = Reference (s QualifiedIdentifierPartTypeArguments)?;
-
-    syntax QualifiedAlias = Alias=Reference "::";
-
-    // same as 'QualifiedIdentifierPart' but avoids capturing type arguments of method name
-    [ExplicitSpaces]
-    syntax InterfaceTypePart        = Reference (s QualifiedIdentifierPartTypeArguments)? !"(";
-
-    syntax InterfaceType            = QualifiedAlias? (InterfaceTypePart ".")+;
 
     regex IdentifierStartCharacter  = LetterCharacter | "_" | UnicodeEscapeSequence;
     regex IdentifierPartCharacters  = LetterCharacter | DecimalDigitCharacter | ConnectingCharacter | CombiningCharacter | FormattingCharacter | UnicodeEscapeSequence;

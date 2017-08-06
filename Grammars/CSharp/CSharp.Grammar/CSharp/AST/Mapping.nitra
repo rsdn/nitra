@@ -547,13 +547,28 @@ namespace CSharp
 
   map syntax CsIdentifiers.QualifiedIdentifier -> QualifiedReference
   {
-    match (this)
-    {
-      | (None,    (first :: other, _)) -> fold (item in other; acc = first();    acc = item(acc))
-      | (Some(a), (first :: other, _)) -> fold (item in other; acc = first(a()); acc = item(acc))
-      | (_,       ([],             _)) = AstUtils.CreateMissingQualifiedReference(QualifiedIdentifierParts.Location);
-    }
+    | Aliased -> Aliased { Alias -> Alias; QualifiedReferenceParts -> QualifiedName; }
+    | Normal -> QualifiedReferenceParts
   }
+
+  map syntax CsIdentifiers.QualifiedReferenceParts -> QualifiedReference
+  {
+    | Simple      -> Simple    { Reference -> Name; }
+    | Qualified   -> Qualified { QualifiedReferenceParts -> Qualifier;     Reference      -> Name; }
+    | GenericType -> Generic   { QualifiedReferenceParts -> QualifiedName; TypeArgs.Item1 -> Arguments; }
+    | OpenType    -> Open      { QualifiedReferenceParts -> QualifiedName; Rank = ParsedValue(RankSeparators.Span, RankSeparators.Count); }
+  }
+  
+
+  //map syntax CsIdentifiers.QualifiedIdentifier -> QualifiedReference
+  //{
+  //  match (this)
+  //  {
+  //    | (None,    (first :: other, _)) -> fold (item in other; acc = first();    acc = item(acc))
+  //    | (Some(a), (first :: other, _)) -> fold (item in other; acc = first(a()); acc = item(acc))
+  //    | (_,       ([],             _)) = AstUtils.CreateMissingQualifiedReference(QualifiedIdentifierParts.Location);
+  //  }
+  //}
 
   map syntax CsIdentifiers.QualifiedIdentifierPartTypeArguments -> QualifiedReference*
   {
@@ -578,57 +593,7 @@ namespace CSharp
     }
   }
 
-  map syntax CsIdentifiers.QualifiedIdentifierPart(aliasAst : Nitra.Declarations.Reference) -> QualifiedReference
-  {
-    let qid : QualifiedReference = Aliased { Reference -> Name; aliasAst -> Alias; } in
-    match (QualifiedIdentifierPartTypeArgumentsOpt)
-    {
-      | None -> qid
-      | Some(typeArgs) -> Generic { qid -> QualifiedName; typeArgs -> Arguments; }
-    }
-  }
-
   map syntax CsIdentifiers.QualifiedIdentifierPart(qualifier : QualifiedReference) -> QualifiedReference
-  {
-    let qid : QualifiedReference = Qualified { Reference -> Name; qualifier -> Qualifier; } in
-    match (QualifiedIdentifierPartTypeArgumentsOpt)
-    {
-      | None -> qid
-      | Some(typeArgs) -> Generic { qid -> QualifiedName; typeArgs -> Arguments; }
-    }
-  }
-
-  map syntax CsIdentifiers.InterfaceType -> QualifiedReference
-  {
-    match (this)
-    {
-      | (None,    (first, _) :: other) -> fold (item in other; acc = first();    acc = item(acc))
-      | (Some(a), (first, _) :: other) -> fold (item in other; acc = first(a()); acc = item(acc))
-      | (_,       []                 ) = AstUtils.CreateMissingQualifiedReference(InterfaceTypeParts.Location);
-    }
-  }
-
-  map syntax CsIdentifiers.InterfaceTypePart -> QualifiedReference
-  {
-    let qid : QualifiedReference = Simple { Reference -> Name; } in
-    match (QualifiedIdentifierPartTypeArgumentsOpt)
-    {
-      | None -> qid
-      | Some(typeArgs) -> Generic { qid -> QualifiedName; typeArgs -> Arguments; }
-    }
-  }
-
-  map syntax CsIdentifiers.InterfaceTypePart(aliasAst : Nitra.Declarations.Reference) -> QualifiedReference
-  {
-    let qid : QualifiedReference = Aliased { Reference -> Name; aliasAst -> Alias; } in
-    match (QualifiedIdentifierPartTypeArgumentsOpt)
-    {
-      | None -> qid
-      | Some(typeArgs) -> Generic { qid -> QualifiedName; typeArgs -> Arguments; }
-    }
-  }
-
-  map syntax CsIdentifiers.InterfaceTypePart(qualifier : QualifiedReference) -> QualifiedReference
   {
     let qid : QualifiedReference = Qualified { Reference -> Name; qualifier -> Qualifier; } in
     match (QualifiedIdentifierPartTypeArgumentsOpt)
@@ -711,9 +676,6 @@ namespace CSharp
     | Var  -> CsVarReference { Name = Reference(Location(Location.Source, KwVar), "var"); }
     | Type -> this.AnyType
   }
-
-  // Reference is a predefined declaration
-  map syntax CsIdentifiers.QualifiedAlias -> Reference { Alias }
 
   map syntax Attributes.Attribute(targetOpt : CustomAttributeTarget?) -> CustomAttributeReference
   {

@@ -53,6 +53,8 @@
     syntax TypeBody = outline_begin_before "{" inl TypeMemberDeclaration* d "}" ";"? nl outline_end_before;
     syntax EnumBody = outline_begin_before "{" inl EnumMemberDeclarations d "}" ";"? nl outline_end_before;
 
+    alias InterfaceType = QualifiedIdentifier;
+
     syntax TypeMemberDeclaration
     {
       | NestedType      = TypeDeclaration;

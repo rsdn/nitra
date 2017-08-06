@@ -144,6 +144,8 @@
       | RefReturn = "ref" sm "return" sm Expression ";" nl;
     }
 
+    alias InterfaceType = QualifiedIdentifier;
+
     extend syntax TypeMemberDeclaration
     {
       | RefMethod                   = Attributes Modifiers "ref" sm MethodHeader Body;
