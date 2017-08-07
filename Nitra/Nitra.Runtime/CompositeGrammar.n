@@ -452,7 +452,7 @@ namespace Nitra
         {
           | Predicate                  => ()
           | Simple               (ruleParser, _)
-          | Extensible           (ruleParser)
+          | Extensible           (ruleParser, _)
           | DynamicExtensibleItem(ruleParser) =>
             def tokenParser = GetTokenParser(state.SubruleInfo);
             if (tokenParser == null)
