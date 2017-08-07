@@ -64,7 +64,7 @@
       | Cast1                  = "(" !Expression AnyType ")" Expression;
       | Cast2                  = "(" &Expression AnyType ")" &CastPredicate Expression;
       | ThisAccess             = "this";
-      | BaseAccessMember       = "base" "." QualifiedName=QualifiedIdentifierContinuation;
+      | BaseAccessMember       = "base" "." QualifiedName=QualifiedReferenceParts;
       | BaseAccessIndexer      = "base" "[" ArgumentList "]";
       //BaseError              = "base" = Error;
 
@@ -151,8 +151,8 @@
       //ExplicitlyCast         = (T) Expression ;
 
       precedence Primary:
-      | MemberAccess1          =  Expr1 = Expression ^ Primary "." QualifiedName=QualifiedIdentifierContinuation; // member-access
-      | MemberAccess2          =  PredefinedType "." QualifiedName=QualifiedIdentifierContinuation; // member-access
+      | MemberAccess1          =  Expr1 = Expression ^ Primary "." QualifiedName=QualifiedReferenceParts; // member-access
+      | MemberAccess2          =  PredefinedType "." QualifiedName=QualifiedReferenceParts; // member-access
       | Invocation             =  !"var" Expression ^ Primary "(" ArgumentList ")";
       | IndexerAccess          =  Expression ^ Primary "[" ArgumentList "]";
       | PostIncrement          =  Expression "++";

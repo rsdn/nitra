@@ -426,11 +426,24 @@ namespace CSharp
     }
   }
 
+  map syntax CsIdentifiers.Reference -> Nitra.Declarations.Reference
+  {
+    | Normal   = Nitra.Declarations.Reference(this);
+    | Verbatim = Nitra.Declarations.Reference(this.Location, GetText(this.IdentifierBody));
+  }
+
+  map syntax CsIdentifiers.Name -> Nitra.Declarations.Name
+  {
+    | Normal   = Nitra.Declarations.Name(this);
+    | Verbatim = Nitra.Declarations.Name(this.Location, GetText(this.IdentifierBody));
+  }
+
   ast ImplicitNamespaceTag { }
 
   map syntax CsIdentifiers.Name(_tag : ImplicitNamespaceTag) -> ImplicitNamespace
   {
-    this -> Name;
+    | Normal   -> ImplicitNamespace { this -> Name; }
+    | Verbatim -> ImplicitNamespace { this -> Name; }
   }
 
   map syntax TopDeclarations.ConstructorInitializer -> ConstructorInitializer

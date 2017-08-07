@@ -38,8 +38,17 @@ namespace CSharp
     /////////////////////////////////////////////////////////
     // Identifiers
 
-    token Reference = !Keyword At="@"? IdentifierBody { map Nitra.Declarations.Reference = Nitra.Declarations.Reference(this); }
-    token Name      = !Keyword At="@"? IdentifierBody { map Nitra.Declarations.Name      = Nitra.Declarations.Name(this); }
+    token Reference
+    {
+      | Normal   = !Keyword        IdentifierBody
+      | Verbatim = !Keyword At="@" IdentifierBody
+    }
+
+    token Name
+    {
+      | Normal   = !Keyword        IdentifierBody
+      | Verbatim = !Keyword At="@" IdentifierBody
+    }
 
     [ExplicitSpaces]
     syntax QualifiedIdentifier
@@ -60,9 +69,6 @@ namespace CSharp
       | GenericType = QualifiedReferenceParts s OpenBrace s TypeArgs=(AnyType; s "," s sm)+ s          CloseBrace;
       | OpenType    = QualifiedReferenceParts s OpenBrace s RankSeparators=(RankSeparator s)* CloseBrace;
     }
-
-    [ExplicitSpaces]
-    syntax QualifiedIdentifierContinuation = (QualifiedIdentifierPart; s "." s)+;
 
     [ExplicitSpaces]
     syntax NamespaceName        = Path=(Name s "." s)* Name;
