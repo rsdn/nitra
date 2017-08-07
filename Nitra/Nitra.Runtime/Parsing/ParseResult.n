@@ -16,6 +16,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 
 using System.Text;
 using System.Threading;
@@ -41,8 +42,7 @@ namespace Nitra
     public          ParseSession     : ParseSession    { get; }
     public          MainParserFail   : bool { get; private set; }
     public          CompletionPos    : int;
-    internal        _keywords        : SCG.HashSet[KeywordCompletionInfo] = SCG.HashSet();
-    public          Keywords         : SCG.ICollection[KeywordCompletionInfo] { get { _keywords } }
+    public          Keywords         : ImmutableArray[KeywordCompletionInfo] { get; internal set; }
     private mutable _maxFailPos      : int;
 
     internal this([NotNull] parseSession : ParseSession, [NotNull] sourceSnapshot : SourceSnapshot, oldParseResult : ParseResult, head : int, tail : int)

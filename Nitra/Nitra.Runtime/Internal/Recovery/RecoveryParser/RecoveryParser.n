@@ -6,6 +6,7 @@ using Nemerle.Utility;
 using Nemerle.Extensions;
 
 using Nitra.Runtime;
+using Nitra.Runtime.GraphUtils;
 using Nitra.Runtime.Reflection;
 
 using System;
@@ -14,6 +15,7 @@ using System.IO;
 using System.Linq;
 
 using SCG = System.Collections.Generic;
+using SCI = System.Collections.Immutable;
 
 namespace Nitra.Internal.Recovery
 {
@@ -57,8 +59,6 @@ namespace Nitra.Internal.Recovery
     public RecoveryFromAllErrors() : void
     {
       def parseSession       = ParseResult.ParseSession;
-      def completionPrefix   = parseSession.CompletionPrefix;
-      def completionStartPos = CompletionPos;
       def timer = Stopwatch.StartNew();
       def timeout = timer.Elapsed + parseSession.RecoveryTimeout;
       def textPos = 0;
@@ -97,6 +97,61 @@ namespace Nitra.Internal.Recovery
       }
 
       SaveRecoveredRawTreePart();
+
+      ParseResult.Keywords = FilterKeywordsForCompletion();
+    }
+
+    [Record]
+    private class KeywordRecordNode : GraphNodeWithConnections[KeywordRecordNode]
+    {
+      public Record : ParseRecord;
+    }
+
+    private FilterKeywordsForCompletion() : SCI.ImmutableArray[KeywordCompletionInfo]
+    {
+      when (CompletionPos < 0)
+        return SCI.ImmutableArray.Empty;
+
+      def keywords = SCI.ImmutableArray.CreateBuilder();
+      foreach (keyword in KeywordsForCompletion)
+        when (keyword.ParsePos != CompletionPos)
+          keywords.Add(KeywordCompletionInfo(keyword.ParsePos, keyword.ParsingState.SubruleInfo :> SubruleInfo.TokenString));
+
+      def records = Records[CompletionPos];
+      when (records == null)
+        return keywords.ToImmutable();
+
+      def recordMap = Hashtable();
+      foreach (record in records.Keys)
+        recordMap[record] = KeywordRecordNode(record);
+
+      foreach (node in recordMap.Values)
+      {
+        def record = node.Record;
+        foreach (caller in record.Callers)
+          when (recordMap.Get(caller) is Some(callerNode))
+            callerNode.AddConnection(node);
+        when (!record.IsComplete)
+          foreach (next in record.ParsingState.Next)
+            when (recordMap.Get(record.Next(next, record.ParsePos)) is Some(nextNode))
+              nextNode.AddConnection(node);
+      }
+      //def nodes = GraphAlgorithms.FindMaximalDistanceToLeafInDAG(recordMap.Values).ToArray().SortInplace(((_, l), (_, r)) => -l.CompareTo(r));
+      //KeywordsForCompletion.
+      /*{
+        mutable isFake = FakeRecords.Contains(keyword);
+        foreach (prev in keyword.ParsingState.Prev)
+          when (prev >= 0)
+            isFake = isFake || FakeRecords.Contains(ParseRecord(keyword.Sequence, prev, keyword.ParsePos));
+        when (keyword.ParsingState.IsStart)
+          foreach (caller in keyword.Callers)
+            isFake = isFake || FakeRecords.Contains(caller);
+        when (!isFake)
+          keywords.Add(KeywordCompletionInfo(keyword.ParsePos, keyword.ParsingState.SubruleInfo :> SubruleInfo.TokenString));
+      }*/
+
+
+      keywords.ToImmutable();
     }
 
     private ParseToFailPos() : void

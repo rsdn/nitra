@@ -1,6 +1,7 @@
 ﻿using Nitra.Runtime;
 using Nitra.Runtime.Reflection;
 
+using System.Collections.Immutable;
 using SCG = System.Collections.Generic;
 
 namespace Nitra
@@ -18,8 +19,8 @@ namespace Nitra
     MainParserFail   : bool                                { get; }
     MaxFailPos       : int                                 { get; }
     CompletionPos    : int                                 { get; }
-    Keywords         : SCG.ICollection[KeywordCompletionInfo] { get; }
-    
+    Keywords         : ImmutableArray[KeywordCompletionInfo] { get; }
+
     CreateParseTree() : ParseTree;
     GetSpans(startPos : int, endPos : int, spans : SCG.HashSet[SpanInfo]) : void;
     GetOutlining(outlining : SCG.List[OutliningInfo]) : void;

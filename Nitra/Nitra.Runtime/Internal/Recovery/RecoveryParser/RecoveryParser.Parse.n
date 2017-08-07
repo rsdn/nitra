@@ -19,6 +19,9 @@ namespace Nitra.Internal.Recovery
 {
   public partial class RecoveryParser
   {
+    private KeywordsForCompletion : SCG.HashSet[ParseRecord] = SCG.HashSet();
+    private FakeRecords           : SCG.HashSet[ParseRecord] = SCG.HashSet();
+
     internal RecordsToComplete : SCG.Queue[int * ParseRecord * ParsedSequence] = SCG.Queue();
     mutable _isReferenceParsedInCompletionPos : bool;
     
@@ -81,38 +84,28 @@ namespace Nitra.Internal.Recovery
       match (state)
       {
         | Simple           as state =>
-          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
+          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos <= endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
-            if (textPos == endPos)
+            when (textPos == endPos)
             {
-              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-            }
-            else when (textPos <= CompletionPos && CompletionPos <= endPos)
-            {
-              when (state.IsReference && state.IsToken)
-                _isReferenceParsedInCompletionPos = true;
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
           }
           else
           {
-            if (textPos == CompletionPos && !_isReferenceParsedInCompletionPos && state.IsReference && state.IsToken)
+            def seq = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            when (CompletionPos >= 0 && state.IsReference && state.IsToken)
             {
               endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
-              if (endPos < 0 || endPos == textPos)
+              when (textPos <= CompletionPos && CompletionPos <= endPos)
               {
-                def seq = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-                FinalizeSequence(record, tokenChanges);
-                foreach (startState in seq.ParsingSequence.StartStates)
-                  FinalizeSequence(ParseRecord(seq, startState, seq.StartPos), tokenChanges);
+                _isReferenceParsedInCompletionPos = true;
               }
-              else
-                _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-            }
-            else
-            {
-              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+              when (textPos == CompletionPos && !_isReferenceParsedInCompletionPos && endPos < 0)
+              {
+                MakeFakeReferenceForCodeCompletion(record, seq, tokenChanges);
+              }
             }
           }
 
@@ -129,7 +122,7 @@ namespace Nitra.Internal.Recovery
             StartParseSubrule(ParseRecord(record.Sequence, newState.Id, endPos), tokenChanges);
           }
 
-          if (optimize && { endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
+          if (optimize && { endPos >= 0 && !(textPos <= CompletionPos && CompletionPos <= endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
             when (textPos == endPos)
@@ -143,21 +136,29 @@ namespace Nitra.Internal.Recovery
           }
 
         | Extensible       as state =>
-          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos < endPos) })
+          if (optimize && { endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult); endPos >= 0 && !(textPos <= CompletionPos && CompletionPos <= endPos) })
           {
             SubruleParsed(textPos, endPos, record, tokenChanges, TokenChanges.None);
-            if (textPos == endPos)
-            {
-              _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
-            }
-            else when (textPos <= CompletionPos && CompletionPos <= endPos)
+            when (textPos == endPos)
             {
               _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
             }
           }
           else
           {
-            _ = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            def seq = StartParseSequence(record, textPos, state.RuleParser.ParsingSequence, tokenChanges);
+            when (CompletionPos >= 0 && state.IsReference && state.IsToken)
+            {
+              endPos = state.RuleParser.Parse(textPos, ParseResult.Text, ParseResult);
+              when (textPos <= CompletionPos && CompletionPos <= endPos)
+              {
+                _isReferenceParsedInCompletionPos = true;
+              }
+              when (textPos == CompletionPos && !_isReferenceParsedInCompletionPos && endPos < 0)
+              {
+                MakeFakeReferenceForCodeCompletion(record, seq, tokenChanges);
+              }
+            }
           }
 
         | ExtensionPrefix  as state =>
@@ -199,7 +200,7 @@ namespace Nitra.Internal.Recovery
           when (CompletionPos >= 0)
           when (state.SubruleInfo is SubruleInfo.TokenString as keyword)
           when (textPos <= CompletionPos && CompletionPos <= (textPos + keyword.Str.Length))
-            _ = ParseResult._keywords.Add(KeywordCompletionInfo(textPos, keyword));
+            _ = KeywordsForCompletion.Add(record);
 
           endPos = state.SubruleInfo.Parse(textPos, ParseResult.Text, ParseResult);
           when (endPos >= 0)
@@ -281,25 +282,32 @@ namespace Nitra.Internal.Recovery
       }
     }
 
-    public FinalizeSequence(startRecord : ParseRecord, tokenChanges : TokenChanges) : void
+    public MakeFakeReferenceForCodeCompletion(record : ParseRecord, referenceSequence : ParsedSequence, tokenChanges : TokenChanges) : void
     {
-      def pos = startRecord.ParsePos;
       def visited = SCG.HashSet();
-      def toProcess = SCG.Queue();
-      toProcess.Enqueue(startRecord);
-      while (toProcess.Count > 0)
+      def finalizeSequence(startRecord : ParseRecord) : void
       {
-        def record = toProcess.Dequeue();
-        when (!visited.Add(record.State) || record.State < 0)
-          continue;
-        SubruleParsed(pos, pos, record, tokenChanges, TokenChanges.None);
-        foreach (next in record.ParsingState.Next)
-          toProcess.Enqueue(record.Next(next, pos));
+        def pos = startRecord.ParsePos;
+        def toProcess = SCG.Queue();
+        toProcess.Enqueue(startRecord);
+        while (toProcess.Count > 0)
+        {
+          def record = toProcess.Dequeue();
+          when (!visited.Add(record.State) || record.State < 0 || record.ParsingState.IsNullable)
+            continue;
+          _ = FakeRecords.Add(record);
+          SubruleParsed(pos, pos, record, tokenChanges, TokenChanges.None);
+          foreach (next in record.ParsingState.Next)
+            toProcess.Enqueue(record.Next(next, pos));
+        }
+        startRecord.Sequence.AddEnd(pos, tokenChanges);
+        foreach (caller in startRecord.Sequence.Callers)
+          when (!caller.Sequence.Ends.Contains(pos))
+            finalizeSequence(caller);
       }
-      startRecord.Sequence.AddEnd(pos, tokenChanges);
-      foreach (caller in startRecord.Sequence.Callers)
-        when (!caller.Sequence.Ends.Contains(pos))
-          FinalizeSequence(caller, tokenChanges);
+      finalizeSequence(record);
+      foreach (startState in referenceSequence.ParsingSequence.StartStates)
+        finalizeSequence(ParseRecord(referenceSequence, startState, referenceSequence.StartPos));
     }
   }
 }

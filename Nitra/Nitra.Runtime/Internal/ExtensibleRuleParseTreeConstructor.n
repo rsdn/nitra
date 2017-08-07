@@ -79,7 +79,7 @@ namespace Nitra.Internal
 
                 match (prefixBuffer.Count)
                 {
-                  | 0 => assert(false)
+                  | 0 => CreateMissing(parseResult, ruleDescriptor, begin);
                   | 1 => prefixBuffer.FirstItem
                   | _ => CreateAmbiguous(ruleDescriptor, prefixBuffer.ToArray(), ParseTreeAmbiguityType.Prefix)
                 }
