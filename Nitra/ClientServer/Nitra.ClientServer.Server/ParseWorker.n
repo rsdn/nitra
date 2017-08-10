@@ -315,7 +315,18 @@ namespace Nitra.ClientServer.Server
         else
           visitor.Result.FirstOrDefault(isReference);
       
-      
+      foreach ((r, steack) in visitor.Result)
+      {
+        Debug.WriteLine("------------------------------");
+        Debug.WriteLine("'" + r.Location.GetText() + "'");
+        mutable prefix = "..";
+        foreach (e in steack)
+        {
+          Debug.WriteLine(prefix + "'" + e.Location.GetText().Replace("\r\n", " ") + "' - " + e.GetType().Name + " - " + e.GetType().FullName);
+          prefix += "..";
+        }
+      }
+          
       when (reference == null)
         return;
 
@@ -350,6 +361,13 @@ namespace Nitra.ClientServer.Server
       }
 
       def symbolsSet = HashSet.[DeclarationSymbol]();
+      
+      //def filter(node : IAst) : bool
+      //{
+      //  | x is IQualifiedReference => true
+      //  | _ => false
+      //}
+      //visitor.Result.Where(filter);
       
       // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
       foreach ((ast, steack) in visitor.Result)

@@ -114,6 +114,9 @@
     </When>
   </Choose>
   <ItemGroup>
+    <Compile Include="Core\QualifiedReference.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Expr\Expr.nitra">
       <SubType>Code</SubType>
     </Compile>

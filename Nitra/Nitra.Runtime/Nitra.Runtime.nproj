@@ -159,6 +159,9 @@
     <Compile Include="Declarations\IProjectSupport.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Declarations\IQualifiedReference.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Declarations\Name.n">
       <SubType>Code</SubType>
       <DependentUpon>Declarations\Name.nitra</DependentUpon>
