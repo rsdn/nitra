@@ -135,11 +135,11 @@ namespace Nitra.Compiler
       _listEmitter.DefineMembers(dependentProps);
       _optionEmitter.DefineMembers(dependentProps);
 
-      _ambiguousTb.Define(<[ decl:
+      _ = _ambiguousTb.DefineWithSource(<[ decl:
         public this(location : Nitra.Location) { ..$missingBody }
       ]>);
 
-      _ambiguousTb.Define(<[ decl: 
+      _ = _ambiguousTb.DefineWithSource(<[ decl: 
         public override Accept(visitor : Nitra.Declarations.IAstVisitor) : void
         {
           Nitra.Internal.AstUtils.AcceptToAll(visitor, this.Ambiguities);

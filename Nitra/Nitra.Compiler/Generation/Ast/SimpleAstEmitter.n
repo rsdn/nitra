@@ -167,7 +167,7 @@ namespace Nitra.Compiler
       _optionEmitter.DefineMembers(dependentProps);
 
       when (acceptBody.Count > 0)
-        _tb.Define(<[ decl: public override Accept(visitor : Nitra.Declarations.IAstVisitor) : void { ..$acceptBody } ]>);
+        _ = _tb.DefineWithSource(<[ decl: public override Accept(visitor : Nitra.Declarations.IAstVisitor) : void { ..$acceptBody } ]>);
 
       when (_symbol.Symbol is SymbolRef.Some(s))
         _tb.Define(<[ decl:
