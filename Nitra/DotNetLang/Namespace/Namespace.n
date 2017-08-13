@@ -1,0 +1,19 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Serialization2;
+
+namespace DotNet
+{
+	public partial interface NamespaceMemberDeclarationSymbol : ISerializable, IDependentPropertyContainer, DeclarationSymbol
+	{
+	}
+	//public partial interface Namespace : IDependentPropertyContainer, ILocated, IAst, ScopedAst, Declaration, BindableAst, NamespaceMember, NamespaceMemberDeclaration, Container
+  public partial class NamespaceSymbol : SymbolBase, INamespace, DeclarationSymbol, ISerializable, IDependentPropertyContainer, ContainerSymbol, NamespaceMemberDeclarationSymbol
+  {
+	}
+}

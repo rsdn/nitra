@@ -362,15 +362,21 @@ namespace Nitra.ClientServer.Server
 
       def symbolsSet = HashSet.[DeclarationSymbol]();
       
-      //def filter(node : IAst) : bool
-      //{
-      //  | x is IQualifiedReference => true
-      //  | _ => false
-      //}
-      //visitor.Result.Where(filter);
+      def filter(_ : Reference, nodes : array[IAst]) : bool
+      {
+        foreach (node in nodes)
+        {
+          | qr is IQualifiedReference when !qr.Span.IsEmpty => return true;
+          | _ is IQualifiedReference => ()
+          | _ => return false;
+        }
+        false
+      }
+      def qualified = visitor.Result.Where(filter).ToList();
+      def candidats = if (qualified.Count > 0) qualified else visitor.Result;
       
       // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
-      foreach ((ast, steack) in visitor.Result)
+      foreach ((ast, steack) in candidats)
       {
         def steack = steack;
         match (ast)
@@ -382,14 +388,14 @@ namespace Nitra.ClientServer.Server
             
             def symbolTypeOpt = if (r2 == null) null else r2.GetType().GetGenericArguments()[0];
             
-            def matcher(symbol) : bool
+            def matcher(symbol : DeclarationSymbol) : bool
             {
               def symbolTypeOpt = symbolTypeOpt;
               def pattern = pattern;
               def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
               when (!isNameMatch)
                 return false;
-              def isTypeMatch = symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
+              def isTypeMatch = symbol is INamespace || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
               isTypeMatch
             }
             def br = scope.Bind(matcher);

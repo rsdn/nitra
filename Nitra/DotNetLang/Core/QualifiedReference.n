@@ -3,12 +3,15 @@ using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
 
+using Nitra;
 using Nitra.Declarations;
+using Nitra.Runtime;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Nitra.Runtime.Declarations
+namespace DotNet
 {
   public partial interface QualifiedReference : IQualifiedReference, BindableAst, IDependentPropertyContainer, ILocated, IAst
   {

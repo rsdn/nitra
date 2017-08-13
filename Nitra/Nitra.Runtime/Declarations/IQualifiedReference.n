@@ -1,15 +1,6 @@
-﻿using Nemerle;
-using Nemerle.Collections;
-using Nemerle.Text;
-using Nemerle.Utility;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Nitra.Declarations
+﻿namespace Nitra.Declarations
 {
-  public interface IQualifiedReference
+  public interface IQualifiedReference : IAst
   {
   }
 }

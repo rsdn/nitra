@@ -156,6 +156,9 @@
     <Compile Include="Declarations\IAst.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Declarations\INamespace.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Declarations\IProjectSupport.n">
       <SubType>Code</SubType>
     </Compile>
