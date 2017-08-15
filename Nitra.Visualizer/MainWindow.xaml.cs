@@ -870,6 +870,7 @@ namespace Nitra.Visualizer
                                                .Where(vm => vm.IsSelected)
                                                .Select(vm => vm.Source)
                                                .FirstOrDefault();
+        suite.SetName(viewmodel.SuiteName);
         suite.Save();
 
         suite.IsSelected = true;

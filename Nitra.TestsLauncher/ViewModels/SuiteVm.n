@@ -36,12 +36,11 @@ namespace Nitra.ViewModels
     public RecoveryAlgorithm      : RecoveryAlgorithm { get; set; }
     
     _rootPath: string;
-    _configPath: string;
+    mutable _configPath: string;
 
     public this(workspace : WorkspaceVm, name : string, _config : string)
     {
       base(null, Path.Combine(workspace.RootFolder, name));
-      Name = name;
       Workspace = workspace;
       LoadSolutions();
       //Statistics = StatisticsTask.Container("TestSuite", "Test Suite");
@@ -98,8 +97,6 @@ namespace Nitra.ViewModels
       Workspace.TestSuites.Add(this)
     }
 
-    public override Name : string { get; private set; }
-    
     LoadSolutions() : void
     {
       if (Directory.Exists(FullPath))
@@ -118,6 +115,14 @@ namespace Nitra.ViewModels
           TestState = TestState.Ignored;
         }
       }
+    }
+    
+    public SetName(name : string) : void
+    {
+      FullPath = Path.Combine(Workspace.RootFolder, name);
+      _configPath = Path.GetFullPath(Path.Combine(FullPath, ConfigFileName));
+      OnPropertyChanged("FullPath");
+      OnPropertyChanged("Name");
     }
 
     public Save() : void
