@@ -49,8 +49,16 @@ namespace Nitra.VisualStudio.CodeCompletion
 
       _filterText = this.ApplicableTo.GetText(currentSnapshot);
 
-      this.WritableCompletions.Clear();
-      FillCompletionList(msg, this.WritableCompletions);
+      try
+      {
+        this.WritableCompletions.BeginBulkOperation();
+        this.WritableCompletions.Clear();
+        FillCompletionList(msg, this.WritableCompletions);
+      }
+      finally
+      {
+        this.WritableCompletions.EndBulkOperation();
+      }
       base.Recalculate();
     }
 
@@ -80,10 +88,10 @@ namespace Nitra.VisualStudio.CodeCompletion
         switch (elem)
         {
           case CompletionElem.Literal literal:
-            completions.Add(new Completion(literal.text, literal.text, "literal", null, null));
+            completions.Add(new NitraCompletion(literal.text, literal.text, "literal", null, null));
             break;
           case CompletionElem.Symbol symbol:
-            completions.Add(new Completion(symbol.name, symbol.name, symbol.description, null, null));
+            completions.Add(new NitraCompletion(symbol.name, symbol.name, symbol.description, null, null));
             break;
         }
       }
