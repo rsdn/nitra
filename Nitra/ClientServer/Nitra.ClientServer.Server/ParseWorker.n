@@ -376,9 +376,8 @@ namespace Nitra.ClientServer.Server
       def candidats = if (qualified.Count > 0) qualified else visitor.Result;
       
       // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
-      foreach ((ast, steack) in candidats)
+      foreach ((ast, _) in candidats)
       {
-        def steack = steack;
         match (ast)
         {
           | Reference(IsScopeEvaluated=true, IsRefEvaluated=true, Scope=scope, Ref=r) when ast.Span.IntersectsWith(span) =>
@@ -427,6 +426,7 @@ namespace Nitra.ClientServer.Server
         builder.Add(elem);
       }
 
+      builder.Sort(CompletionElemComparer());
       
       Log($"    KeyWords='$(matchedKeyWordsMap.Count)'");
       Log($"    Symbols='$(symbolsSet.Count)'");

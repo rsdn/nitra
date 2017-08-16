@@ -444,6 +444,14 @@ namespace Nitra.ClientServer.Messages
     }
   }
   
+  public class CompletionElemComparer : IComparer[CompletionElem]
+  {
+    public Compare(x : CompletionElem, y : CompletionElem) : int
+    {
+      x.Text.CompareTo(y.Text)
+    }
+  }
+  
   [NitraMessage]
   public variant CompletionElem
   {
@@ -456,6 +464,18 @@ namespace Nitra.ClientServer.Messages
       {
         | Literal as x => "Literal: " + x.text
         | Symbol  as x => "Symbol: " + x.description
+      }
+    }
+
+    public Text : string
+    {
+      get
+      {
+        match (this)
+        {
+          | Literal as x => x.text
+          | Symbol  as x => x.name
+        }
       }
     }
   }

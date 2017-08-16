@@ -72,8 +72,7 @@ namespace Nitra.Declarations
 
     | Union
       {
-        public DistinctSymbols : ImmutableArray[TSymbol]             { get; }
-        public Results         : ImmutableArray[BindResult[TSymbol]] { get; }
+        public Results : ImmutableArray[BindResult[TSymbol]] { get; }
 
         public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
         {
@@ -99,16 +98,24 @@ namespace Nitra.Declarations
 
     public GetSymbols() : ImmutableArray[TSymbol]
     {
+      // TODO: Optimize for special cases
+      def symbolSet = HashSet(SymbolByNameComparer());
+      GetSymbols(symbolSet);
+      symbolSet.ToImmutableArray()
+    }
+
+    GetSymbols(symbolSet : HashSet[TSymbol]) : void
+    {
       match (this)
       {
-        | Single   as x => ImmutableArray.Create(x.Symbol)
-        | Multiple as x => x.Symbols
-        | Hiding   as x => x.Result.Symbols
-        | Nil           => ImmutableArray.Empty
-        | Union    as x => x.DistinctSymbols
+        | Single   as x => _ = symbolSet.Add(x.Symbol);
+        | Multiple as x => symbolSet.UnionWith(x.Symbols);
+        | Hiding   as x => x.Result.GetSymbols(symbolSet); x.Hidden.GetSymbols(symbolSet);
+        | Nil           => ()
+        | Union    as x =>  foreach (r in x.Results) r.GetSymbols(symbolSet);
       }
     }
-    
+
     public Filter[TConcreteSymbol]() : BindResult[TConcreteSymbol]
       where TConcreteSymbol : DeclarationSymbol
     {

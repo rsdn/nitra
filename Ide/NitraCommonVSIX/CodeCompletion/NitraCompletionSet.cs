@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Microsoft.VisualStudio.Language.Intellisense;
@@ -13,12 +14,14 @@ namespace Nitra.VisualStudio.CodeCompletion
   {
     ICompletionSession _session;
     ITextSnapshot      _snapshot;
+    string             _filterText;
 
     public NitraCompletionSet(ITrackingSpan applicableTo, ICompletionSession session, ITextSnapshot snapshot)
       : base("NitraWordCompletion", "Nitra word completion", applicableTo, new List<Completion>(24), new List<Completion>())
     {
       _session = session;
       _snapshot = snapshot;
+      _filterText = "";
     }
 
     public override void Recalculate()
@@ -31,10 +34,10 @@ namespace Nitra.VisualStudio.CodeCompletion
 
       var snapshot = _snapshot;
       var version = msg.Version;
+      var currentSnapshot = snapshot.TextBuffer.CurrentSnapshot;
 
       if (msg.Version != snapshot.Version.Convert())// && snapshot.TextBuffer.CurrentSnapshot is ITextSnapshot currentSnapshot && currentSnapshot.Version != snapshot.Version)
       {
-        var currentSnapshot = snapshot.TextBuffer.CurrentSnapshot;
         var currentVersion = currentSnapshot.Version.Convert();
         if (currentVersion == version)
         {
@@ -44,17 +47,23 @@ namespace Nitra.VisualStudio.CodeCompletion
         }
       }
 
-      //var triggerPoint = session.GetTriggerPoint(_textBuffer);
-      //var snapshot = _textBuffer.CurrentSnapshot;
-      //var version = snapshot.Version.Convert();
-      //
-      //if (msg.Version != version)
-      //{
-      //  return;
-      //}
+      _filterText = this.ApplicableTo.GetText(currentSnapshot);
+
       this.WritableCompletions.Clear();
       FillCompletionList(msg, this.WritableCompletions);
       base.Recalculate();
+    }
+
+    public override void SelectBestMatch()
+    {
+      //this.SelectionStatus = new CompletionSelectionStatus();
+      base.SelectBestMatch();
+    }
+
+    public override IReadOnlyList<Span> GetHighlightedSpansInDisplayText(string displayText)
+    {
+      var spans = StringPatternMatching.MatchPatternSpans(displayText, _filterText);
+      return spans.Select(s => new Span(s.StartPos, s.Length)).ToImmutableArray();
     }
 
     public override void Filter()
