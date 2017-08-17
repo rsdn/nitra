@@ -139,7 +139,7 @@ namespace Nitra.ViewModels
         if (path.Contains(", Version=") || Path.IsPathRooted(path))
           path
         else
-          Path.Combine(rootPath, path)
+          Path.GetFullPath(Path.Combine(rootPath, path))
       }
       def makeReferencePath(line : string) : string
       {
@@ -154,6 +154,10 @@ namespace Nitra.ViewModels
         type + ":" + makePath(path);
       }
       def projectSupport = c.ProjectSupport;
+      
+      when (projectSupport != null && projectSupport.Path != null)
+        projectSupport.Path = makePath(projectSupport.Path);
+        
       def langs = c.Languages?.Select(x => 
         Messages.LanguageInfo(
           x.Name,
