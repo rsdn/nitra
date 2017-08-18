@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="CodeCompletion\NitraCompletion.cs" />
     <Compile Include="CodeCompletion\NitraCompletionSet.cs" />
+    <Compile Include="CodeCompletion\ToolTipProvider.cs" />
     <Compile Include="CompilerMessages\NitraErrorTag.cs" />
     <Compile Include="Hierarchy\DocumentWindowEventArgs.cs" />
     <Compile Include="InteractiveHighlighting\NitraReferenceClassifications.cs" />
