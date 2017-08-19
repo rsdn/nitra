@@ -64,7 +64,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def ps   = config.ProjectSupport;
         def asm  = Language.LoadAssembly(ps.Path);
         def type = asm.GetType(ps.TypeFullName);
-        _projectSupport = Activator.CreateInstance(type, true) :> IProjectSupport;
+        def obj  = Activator.CreateInstance(type, true);
+        try _projectSupport = obj :> IProjectSupport;
+        catch 
+        { | e is InvalidCastException =>
+          def serverItf = typeof(IProjectSupport);
+          throw InvalidCastException($<#Unable to cast object of type '$(ps.TypeFullName)' to '$(serverItf.FullName)'.
+  $(ServerUtils.MakeIntarfaceMismatchInfo(obj, serverItf))#>, e);
+        }
       }
 
       parent.AddProject(this);

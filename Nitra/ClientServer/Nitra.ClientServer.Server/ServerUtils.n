@@ -193,5 +193,28 @@ namespace Nitra.ClientServer.Server
         cts.Dispose();
       }
     }
-  }
-}
+
+    public MakeIntarfaceMismatchInfo(obj : object, serverItf : Type) : string
+    {
+      def itfFullName       = serverItf.FullName;
+      def serverItfAsmPath  = serverItf.Assembly.Location;
+      def serverItfAsmVar   = serverItf.Assembly.GetName().Version;
+      def serverItfFullName = serverItf.FullName;
+      def objectType        = obj.GetType();
+      def objectFullName    = objectType.FullName;
+      def objectAsmPath     = objectType.Assembly.Location;
+      def objectItf         = obj.GetType().GetInterface(serverItfFullName);
+      def objectItfAsmPath  = objectItf.Assembly.Location;
+      def objectItfAsmVar   = objectItf.Assembly.GetName().Version;
+      $<#The object $objectFullName from: "$objectAsmPath".
+    Information about $itfFullName:
+      Implemented in the object:
+        Version: $objectItfAsmVar
+        From: "$objectItfAsmPath"
+      Loaded by the Server
+        Version: $serverItfAsmVar
+        From: "$serverItfAsmPath"
+      #>
+    }
+  } // module
+} // namespace
