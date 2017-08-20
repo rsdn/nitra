@@ -6,4 +6,4 @@ set NuGetSource=%2
 set ExternalTools=%SolutionDir%\ExternalTools
 set NuGet=%ExternalTools%\NuGet.exe
 
-%NuGet% restore %ProjectDir%\packages.config -PackagesDirectory %ProjectDir%\packages 
+%NuGet% restore %ProjectDir%\packages.config -PackagesDirectory %ProjectDir%\..\packages 
