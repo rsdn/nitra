@@ -40,14 +40,14 @@ namespace CSharp
 
     token Reference
     {
-      | Normal   = !Keyword        IdentifierBody
-      | Verbatim = !Keyword At="@" IdentifierBody
+      | Normal   = !Keyword IdentifierBody
+      | Verbatim = At="@"   IdentifierBody
     }
 
     token Name
     {
-      | Normal   = !Keyword        IdentifierBody
-      | Verbatim = !Keyword At="@" IdentifierBody
+      | Normal   = !Keyword IdentifierBody
+      | Verbatim = At="@"   IdentifierBody
     }
 
     [ExplicitSpaces]
