@@ -9,6 +9,7 @@ using Nitra.ClientServer.Server;
 using System;
 using System.Console;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Pipes;
@@ -19,6 +20,7 @@ module Program
 {
   Main(args : array[string]) : void
   {
+    ServerUtils.Log("Process ID: " + Process.GetCurrentProcess().Id);
     assert2(false, "Start debugger");
     
     when (args.Length != 1)
