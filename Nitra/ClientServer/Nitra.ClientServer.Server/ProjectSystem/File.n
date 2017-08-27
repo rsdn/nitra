@@ -524,7 +524,25 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         
       (refSpan, symbols.ToArray())
     }
-    
+
+    public static GetFullName(obj : DeclarationSymbol) : string
+    {
+      if (obj.IsFullNameEvaluated)
+        obj.FullName
+      else if (obj.IsNameValid)
+        obj.Name + " <FullName not evaluated>"
+      else
+        obj.InitialName + " <FullName not evaluated. Name not valid.>"
+    }
+
+    public static GetName(obj : DeclarationSymbol) : string
+    {
+      if (obj.IsNameValid)
+        obj.Name
+      else
+        obj.InitialName + " <Name not valid>"
+    }
+
     public static GetText(obj : IAst) : string
     {
       try
@@ -533,10 +551,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def loc    = obj.Location;
         def span   = loc.Span;
         def text   = loc?.Source?.OriginalText;
-      
+
         when (text == null)
           return <#«incorrect Source for AST»#>;
-      
+
         def index  = text.IndexOfAny(array['\r', '\n'], span.StartPos, span.Length);
         def len    = if (index > 0) index - span.StartPos else Math.Min(maxLen, span.Length);
         if (len == span.Length)
@@ -603,7 +621,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             Parent.Router.SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail("Operation canceled.")));
             return;
           }
-        
+
           def astType = typeof(IAst);
           def isContentProperty(prop : PropertyInfo) : bool
           {
@@ -623,7 +641,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             obj = if (objectId == 0) ast
                   else if (idToObjMap.TryGetValue(objectId, out obj)) obj
                   else null;
-                  
+
             when (ast?.Location.Source.Version != fileVersion)
               obj = null;
 
@@ -678,14 +696,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           
               id
             }
-          
+
             match (obj)
             {
-              | null                    => ObjectDescriptor.Null()
-              | obj is DeclarationSymbol => def t = obj.GetType();  ObjectDescriptor.Symbol(getId(obj), obj.Name, obj.FullName, t.Name, t.FullName, null)
-              | obj is IAstList[IAst]   => ObjectDescriptor.AstList(ConvertNSpan(obj.Span), getId(obj), null, null, obj.Count)
-              | obj is IAst           => def t = obj.GetType(); ObjectDescriptor.Ast(ConvertNSpan(obj.Span), getId(obj), GetText(obj), t.Name, t.FullName, null)
-              | obj is string         =>
+              | null                     => ObjectDescriptor.Null()
+              | obj is DeclarationSymbol => def t = obj.GetType();  ObjectDescriptor.Symbol(getId(obj), GetName(obj), GetFullName(obj), t.Name, t.FullName, null)
+              | obj is IAstList[IAst]    => ObjectDescriptor.AstList(ConvertNSpan(obj.Span), getId(obj), null, null, obj.Count)
+              | obj is IAst              => def t = obj.GetType(); ObjectDescriptor.Ast(ConvertNSpan(obj.Span), getId(obj), GetText(obj), t.Name, t.FullName, null)
+              | obj is string =>
                 mutable i = 0;
                 for (mutable nlCount = 0; nlCount < 5 && i < obj.Length && i < 400; )
                 {
@@ -698,9 +716,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                   else
                     i++;
                 }
-              
+
                 ObjectDescriptor.String(if (obj.Length == i) obj else (obj.Substring(0, i) + "..."))
-              
+
               | obj is SC.IEnumerable => ObjectDescriptor.Seq(getId(obj), null, count(obj))
               | obj is System.Int16   => ObjectDescriptor.Int16  (obj)
               | obj is System.Int32   => ObjectDescriptor.Int32  (obj)
@@ -752,7 +770,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
             PropertyDescriptor(kind, name, objDesc)
           }
-        
+
           def content = loadObjectContent(obj);
           Parent.Router.SendResponse(ServerMessage.ObjectContent(solutionId, content));
         }
@@ -761,17 +779,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           | e => Parent.Router.SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail(e.ToString())));
         }
       }
-      
+
       Parent.AddSemanticAction(action);
     }
 
     public GetObjectGraph(solutionId : SolutionId, fileVersion : int, objectId : int) : void
     {
       def ast = _ast;
-      
+
       when (ast == null || ast.Location.Source.Version != fileVersion || Parent.Data == null || Parent.Parent.Id != solutionId)
         return;
-      
+
       def action(cancellationToken : CancellationToken, _solutionId : SolutionId, _asts : ImmutableArray[IAst * bool]) : void
       {
         def idToObjMap = _idToObjMap;
