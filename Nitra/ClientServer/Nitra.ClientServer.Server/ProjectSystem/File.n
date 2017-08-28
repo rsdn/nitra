@@ -55,7 +55,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _caretPosOpt            : VersionedPos = VersionedPos.Invalid;
     mutable _highlightingPosOpt     : VersionedPos = VersionedPos.Invalid;
     mutable _isCompleteWord         : bool;
-    
+
     public this(id : FileId, fullPath : string, version : FileVersion, parent : Project)
     {
       base(null);
@@ -67,7 +67,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       FileVersion       = version;
       (Language, DynamicExtensions) = parent.GetLanguage(Path.GetExtension(fullPath));
       // TODO: Add statistics support.
-      
+
       parent.AddFile(this);
     }
 
@@ -81,19 +81,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _text     = StringBuilder(text);
       _name     = name;
       (Language, DynamicExtensions) = parent.GetLanguage(Path.GetExtension(name));
-      
+
       parent.AddFile(this);
     }
-    
+
     public override Ast : IAst { get { _ast } }
     public override Language : Language { get; }
     public override Name : string { get { _name } }
     public override FullName : string { get { _fileInfo.FullName } }
-    
+
     public IsSupported : bool { get { this.Language != null } }
-    
+
     public override GetSource() : SourceSnapshot
-    { 
+    {
       when (_snapshot == null)
       {
         assert2(_fileInfo != null);
@@ -102,10 +102,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _snapshot = SourceSnapshot(text, this, Version);
         _text     = StringBuilder(text);
       }
-      
+
       _snapshot
     }
-    
+
     public override Length : int
     {
       get
@@ -120,9 +120,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _text.Length
       }
     }
-    
+
     public override Project : NSP.Project { get { Parent } }
-    
+
     public Dispose() : void
     {
       assert2(!IsDisposed);
@@ -134,31 +134,31 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (cts != null)
       {
         CancellationTokenSource = null;
-      
+
         unless (cts.IsCancellationRequested)
           cts.Cancel();
         cts.Dispose();
       }
-      
+
       IsDisposed = true;
     }
- 
+
     Insert(pos: int, text: string) : void
     {
       _ = _text.Insert(pos, text)
     }
-    
+
     Delete(span: Span) : void
     {
       _ = _text.Remove(span.StartPos, span.Length)
     }
-    
+
     Replace(span: Span, text: string) : void
     {
       Delete(span);
       Insert(span.StartPos, text)
     }
-    
+
     ApplyChange(change : FileChange) : void
     {
       | FileChange.Insert(pos, text)   => Insert(pos, text)
@@ -176,7 +176,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       TrySendParseMessage(if (_isCompleteWord) caretPos.Pos else -1);
     }
-    
+
     public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : VersionedPos) : void
     {
       _ = GetSource();
@@ -185,24 +185,24 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         ApplyChange(changes[i]);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
       //IO.File.WriteAllText($@"C:\Temp\005\$Name$(version.Value).ncs", _snapshot.Text);
-      
+
       TrySendParseMessage(if (_isCompleteWord) caretPos.Pos else -1);
     }
-    
+
     // overrides
-    
+
     GetReParseMessage(completePos : int = -1) : ParserMessage.ParseFile
     {
       _parseMessages.Clear();
       _astMessages.Clear();
       _typingMessages.Clear();
-      
+
       def language = Language;
       assert2(language.StartRule != null);
- 
+
       CancellationTokenSource?.Cancel();
       CancellationTokenSource?.Dispose();
-      
+
       if (_ast == null)
         Parent.CancelSemanticAnalysisCancellation();
       else
@@ -212,11 +212,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _parseTree   = null;
         Parent.AstDropped(this);
       }
-        
+
       def cancellationTokenSource = CancellationTokenSource();
       def cancellationToken       = cancellationTokenSource.Token;
       def source                  = GetSource();
-      def parseSession            = ParseSession(language.StartRule, 
+      def parseSession            = ParseSession(language.StartRule,
                                         language.CompositeGrammar,
                                         cancellationToken = cancellationToken,
                                         dynamicExtensions = DynamicExtensions,
@@ -225,29 +225,29 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       ParserMessage.ParseFile(Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
     }
-    
+
     public CreateAstMessage(parseResult : IParseResult) : ParserMessage.CreateAst
     {
       _parseResult = parseResult;
       TryMatchBrackets();
-      
-      _parseTree   = parseResult.CreateParseTree(); 
+
+      _parseTree   = parseResult.CreateParseTree();
       ParserMessage.CreateAst(Parent.Parent.Id, Parent.Id, this.FileId, parseResult, IsActive)
     }
-    
+
     public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int, parseResultOpt : IParseResult) : void
     {
-      _parseTree = parseTree; 
+      _parseTree = parseTree;
       _ast = ast;
-      
+
       TryHighlightSymbolReferences();
-      
+
       if (_isCompleteWord && CanCompleteWord())
       {
         def currentCompleteWordPos =
-          if (_caretPosOpt.IsInvalid &&  _caretPosOpt.Version == parseResultOpt.SourceSnapshot.Version) 
+          if (_caretPosOpt.IsInvalid &&  _caretPosOpt.Version == parseResultOpt.SourceSnapshot.Version)
             _caretPosOpt.Pos
-          else 
+          else
             completionPos;
         Parent.AstCreated(this, currentCompleteWordPos, parseResultOpt);
       }
@@ -261,7 +261,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       def pos         = _caretPosOpt.Pos;
       def parseResult = _parseResult;
-      
+
       when (parseResult == null)
         return false;
 
@@ -269,7 +269,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def curretSpan   = Nitra.NSpan(pos, pos);
       def spans        = HashSet();
       def spasesWalker = VoidRuleWalker(curretSpan);
-      
+
       spasesWalker.Walk(parseResult, spans);
 
       foreach (spanInfo when spanInfo.Span.Contains(curretSpan) && spanInfo.SpanClass != Language.DefaultSpanClass in spans)
@@ -277,18 +277,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       true
     }
-    
+
     public CreateVisualInfo(parseResult : IParseResult) : void
     {
       def solutionId = Parent.Parent.Id;
       _parseQueue.Add(ParserMessage.CreateKeywordsHighlighting(solutionId, Parent.Id, this.FileId, parseResult));
       _parseQueue.Add(ParserMessage.CreateOutlining(solutionId, Parent.Id, this.FileId, parseResult));
     }
-    
+
     public Activate(version : FileVersion) : void
     {
       IsActive = true;
-      
+
       when (version != FileVersion)
       {
         FileVersion = version;
@@ -296,45 +296,45 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         TrySendParseMessage();
         return;
       }
-      
+
       when (!this.IsSupported)
         return;
-      
+
       def parseResult = _parseResult;
-      
+
       when (parseResult != null)
       {
         CreateVisualInfo(parseResult);
         SendCompilerMessages(parseResult);
         SendSemanticAnalysisMessages();
       }
-        
+
       TryPrettyPrint();
       TryCreateParseTreeReflection();
-        
+
       when (Parent.IsSemanticAvailable)
-        Parent.ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Parent.Id, Parent.Id, this.FileId, this.FileVersion, Ast));
+        Parent.ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Parent.Id, Parent.Id, this.FileId, this.FileVersion, Ast, -1));
     }
-    
+
     SendSemanticAnalysisMessages() : void
     {
       def cm = Parent.GetSemanticAnalysisMessages(FileId);
       Parent.Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisMessages(FileId(FileId), FileVersion(FileVersion), Parent.Parent.Id, Parent.Id, cm));
     }
-    
+
     SendCompilerMessages(parseResult : IParseResult) : void
     {
       def parent = Parent;
       ServerUtils.SendCompilerMessages(parseResult, parent.Router, parent.Parent.Id, parent.Id, this.FileId);
     }
-    
+
     TryCreateParseTreeReflection() : void
     {
       def router           = Parent.Router;
       when (router.IsParseTreeReflectionEnable && _parseResult != null)
         Parent.ParseQueue.Add(ParserMessage.CreateParseTreeReflection(Parent.Parent.Id, Parent.Id, this.FileId, this.FileVersion, _parseResult));
     }
-    
+
     TryPrettyPrint() : void
     {
       def router           = Parent.Router;
@@ -347,23 +347,26 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       IsActive = false;
     }
-    
+
     public CompleteWord(version : FileVersion, pos : int) : void
     {
       Log($"CompleteWord started in the $version file in position: $pos");
       _isCompleteWord = true;
+      Parent.IsCompleteWord = true;
       TrySendParseMessage(pos);
     }
-    
-    public CompleteWordDismiss(version : FileVersion) : void
+
+    public CompleteWordDismiss() : void
     {
       _isCompleteWord = false;
+      Parent.IsCompleteWord = false;
+      TrySendParseMessage(); // Restore normal state
     }
-    
+
     public FindSymbolDefinitions(pos : VersionedPos) : void
     {
       def ast = _ast;
-      
+
       when (ast == null || ast.Location.Source.Version != pos.Version)
       {
         // maybe better return special message?
@@ -371,32 +374,32 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         Parent.Router.SendResponse(ServerMessage.FindSymbolDefinitions(Parent.Parent.Id, NSpan(), ImmutableArray.Empty));
         return;
       }
-        
+
       def action(cancellationToken : CancellationToken, solutionId : SolutionId, _asts : ImmutableArray[IAst * bool]) : void
-      { // execute when Parent.IsSemanticAvailable 
+      { // execute when Parent.IsSemanticAvailable
         def router             = this.Parent.Router;
         def pos                = pos;
         def ast                = ast;
         def (refSpan, symbols) = GetSymbols(cancellationToken, pos.Pos, ast);
-        
+
         def biulder = ImmutableArray.CreateBuilder();
         foreach (symbol in symbols)
           foreach (decl in symbol.GetDeclarationsUntyped())
             biulder.Add(SymbolLocation(symbol.Id, ServerUtils.ConvertLocation(decl.Name.Location, withText=true)));
-      
+
         def names = biulder.ToImmutableArray();
         router.SendResponse(ServerMessage.FindSymbolDefinitions(solutionId, refSpan, names));
       }
-      
+
       Parent.AddSemanticAction(action);
     }
-    
+
     public FindSymbolReferences(pos : VersionedPos, forHighlighting : bool) : void
     {
       def ast      = _ast;
       def needHint = _needHint && forHighlighting;
       _needHint    = false;
-      
+
       when (ast == null || ast.Location.Source.Version != pos.Version)
       {
         // maybe better return special message?
@@ -404,9 +407,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty));
         return;
       }
-        
+
       def action(cancellationToken : CancellationToken, solutionId : SolutionId, mutable asts : ImmutableArray[IAst * bool]) : void
-      { // execute when Parent.IsSemanticAvailable 
+      { // execute when Parent.IsSemanticAvailable
         Log("action(FindSymbolReferences) started", ConsoleColor.DarkYellow);
         def router             = this.Parent.Router;
         def pos                = pos;
@@ -417,7 +420,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def symbolsBiulder     = ImmutableArray.CreateBuilder(symbols.Length);
         def refsBiulder        = ImmutableArray.CreateBuilder();
         def spansBiulder       = ImmutableArray.CreateBuilder();
-        
+
         when (forHighlighting)
         {
           def builder = ImmutableArray.CreateBuilder();
@@ -425,7 +428,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             builder.Add(elem);
           asts = builder.ToImmutable();
         }
-          
+
         def hintBuilderOpt = if (needHint) Text.StringBuilder("<hint>", 64) else null;
 
         foreach (symbol in symbols with index)
@@ -436,17 +439,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               _ = hintBuilderOpt.AppendLine();
             _ = hintBuilderOpt.AppendLine(symbol.MakeHint());
           }
-          
+
           def decls = symbol.GetDeclarationsUntyped();
           assert2(defsBiulder.Count == 0);
           defsBiulder.Capacity = decls.Count();
-          
+
           foreach (decl in decls)
             defsBiulder.Add(SymbolLocation(symbol.Id, ServerUtils.ConvertLocation(decl.Name.Location, !forHighlighting)));
-            
+
           def projectSupport = Parent.GetProjectSupport();
           def visitor = CollectSymbolRefsAstVisitor(cancellationToken, projectSupport, symbol);
-          
+
           for (mutable i = 0; i < asts.Length; i++)
           {
             def (curAst, _) = asts[i];
@@ -456,8 +459,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             curAst.Accept(visitor);
             def source       = curAst.Source;
             def fileIdentity = FileIdentity(FileId(source.File.Id), FileVersion(source.Version));
-            
-            
+
+
             assert2(spansBiulder.Count == 0);
             spansBiulder.Capacity = visitor.FoundSymbols.Count;
 
@@ -469,13 +472,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
           symbolsBiulder.Add(SymbolRreferences(symbol.Id, defsBiulder.MoveToImmutable(), refsBiulder.ToImmutable()));
         }
-        
+
         when (needHint)
         {
           def source = ast.Location.Source;
           def hint   = hintBuilderOpt.Append("</hint>").ToString();
           router.SendAsyncResponse(AsyncServerMessage.Hint(FileId(source.File.Id), FileVersion(source.Version), solutionId, hint, refSpan));
-        }        
+        }
 
         if (forHighlighting)
           router.SendAsyncResponse(AsyncServerMessage.FindSymbolReferences(FileId.Invalid, FileVersion.Invalid, solutionId, refSpan, symbolsBiulder.MoveToImmutable()));
@@ -484,19 +487,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
           Log("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
       }
-      
+
       Log("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
       Parent.AddSemanticAction(action);
     }
-  
+
     static GetSymbols(cancellationToken : CancellationToken, pos : int, ast : IAst) : Span * array[DeclarationSymbol]
     {
       def visitor = CollectSymbolsAndRefsInSpanAstVisitor(cancellationToken, NSpan(pos));
       ast.Accept(visitor);
-      
+
       def symbols = HashSet();
       mutable refSpan : Span;
-      
+
       unless (cancellationToken.IsCancellationRequested)
         foreach (name when name.IsSymbolEvaluated in visitor.Names)
         {
@@ -505,7 +508,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
           _ = symbols.Add(name.Symbol);
         }
-      
+
       def processRef(r : IRef) : void
       {
         | r when r.IsResolvedToEvaluated => processRef(r.ResolvedTo)
@@ -517,11 +520,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _ = symbols.Add(r.Symbol);
         | _ => ()
       }
-        
+
       unless (cancellationToken.IsCancellationRequested)
         foreach (r in visitor.Refs)
           processRef(r);
-        
+
       (refSpan, symbols.ToArray())
     }
 
@@ -576,17 +579,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       else
         str
     }
-    
+
     public GetObjectContent(solutionId : SolutionId, fileVersion : int, objectId : int) : void
     {
       def ast = _ast;
-      
+
       when (ast == null || ast.Location.Source.Version != fileVersion || Parent.Data == null || Parent.Parent.Id != solutionId)
       {
         Parent.Router.SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail("AST not created yet.")));
         return;
       }
-      
+
       def action(cancellationToken : CancellationToken, solutionId : SolutionId, _asts : ImmutableArray[IAst * bool]) : void
       {
         try
@@ -605,17 +608,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               _objToIdMap.Clear();
               _idToObjMap.Clear();
             }
-          
+
             _objToIdMap[ast] = 0;
             _idToObjMap[0]   = ast;
           }
 
           def objToIdMap = _objToIdMap;
           def idToObjMap = _idToObjMap;
-        
+
           assert2(objToIdMap != null);
           assert2(idToObjMap != null);
-        
+
           when (cancellationToken.IsCancellationRequested)
           {
             Parent.Router.SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail("Operation canceled.")));
@@ -676,7 +679,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             def count(seq : SC.IEnumerable) : int
             {
               | x is SC.ICollection => x.Count
-              | _ => 
+              | _ =>
                 mutable i;
                 foreach (_ in seq)
                   i++;
@@ -685,7 +688,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             def getId(obj : object) : int
             {
               assert2(obj != null);
-            
+
               mutable id;
               unless (objToIdMap.TryGetValue(obj, out id))
               {
@@ -693,7 +696,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                 objToIdMap[obj] = id;
                 idToObjMap[id]  = obj;
               }
-          
+
               id
             }
 
@@ -793,10 +796,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def action(cancellationToken : CancellationToken, _solutionId : SolutionId, _asts : ImmutableArray[IAst * bool]) : void
       {
         def idToObjMap = _idToObjMap;
-        
+
         when (idToObjMap == null)
           return;
-        
+
         when (cancellationToken.IsCancellationRequested)
           return;
 
@@ -812,7 +815,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           //Parent.Router.SendAsyncResponse(AsyncServerMessage.ObjectDot(FileId(FileId), FileVersion(FileVersion), Parent.Parent.Id, objectId, dot));
         }
       }
-      
+
       Parent.AddSemanticAction(action);
     }
 
@@ -824,64 +827,64 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def newFile = File(newId, newPath, newVersion, project);
       newFile.TrySendParseMessage();
     }
-    
+
     public TrySendParseMessage(completePos : int = -1) : void
     {
       when (this.IsSupported)
         _parseQueue.Add(this.GetReParseMessage(completePos));
     }
-    
+
     public SetCaretPos(pos : VersionedPos) : void
     {
       Log($"SetCaretPos pos=$pos");
       _caretPosOpt        = pos;
       _highlightingPosOpt = pos;
-      
+
       TryMatchBrackets();
       TryHighlightSymbolReferences();
     }
-    
+
     public GetHint(pos : VersionedPos) : void
     {
       _needHint           = true;
       _highlightingPosOpt = pos;
-      
+
       TryHighlightSymbolReferences();
     }
-    
+
     TryMatchBrackets() : void
     {
       when (_caretPosOpt.IsInvalid)
         return;
- 
+
       def parseResult = _parseResult;
-      
+
       when (parseResult != null && parseResult.SourceSnapshot.Version == _caretPosOpt.Version)
       {
         def solutionId  = Parent.Parent.Id;
         _parseQueue.Add(ParserMessage.CreateMatchBrackets(solutionId, Parent.Id, this.FileId, parseResult, _caretPosOpt.Pos));
       }
     }
-    
+
     TryHighlightSymbolReferences() : void
     {
       when (_highlightingPosOpt.IsInvalid)
         return;
-        
+
       def ast = _ast;
-      
+
       when (ast == null || ast.Location.Source.Version != _highlightingPosOpt.Version)
         return;
 
       FindSymbolReferences(_highlightingPosOpt, forHighlighting=true);
     }
-    
+
     public override ToString() : string { $"$Name($(Parent.Name) project)" }
-  
+
     public override HasAst                : bool               { get { _ast != null } }
     public override ParseResult           : Nitra.IParseResult { get { _parseResult }   }
     public override GetParseTree()        : Nitra.ParseTree    { _parseTree }
-    
+
     public override DeepResetProperties() : void               { throw System.NotImplementedException() }
   }
 }

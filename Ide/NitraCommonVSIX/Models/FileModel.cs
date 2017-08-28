@@ -242,6 +242,7 @@ namespace Nitra.VisualStudio.Models
       _completionSession.Dismissed -= CompletionSessionDismissed;
       _completionSession.Properties[Constants.NitraCompleteWord] = null;
       _completionSession = null;
+      Server.Client.Send(new ClientMessage.CompleteWordDismiss(GetProjectId(), Id));
     }
 
     internal Brush SpanClassToBrush(string spanClass, IWpfTextView _wpfTextView)

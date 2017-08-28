@@ -45,7 +45,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _expectsToBuildAst                       : int;
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
-           
+    public  IsCompleteWord                           : bool { get; set; }
+
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
       ParseQueue    = parseQueue;
@@ -265,8 +266,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       }
       empty
     }
-    
-    public SemanticAnalysisFinished(files : ImmutableArray[FileEvalPropertiesData]) : void
+
+    public SemanticAnalysisFinished(files : ImmutableArray[FileEvalPropertiesData], completeWordFileIdOpt : FileId, completeWordPosOpt : int) : void
     {
       IsSemanticAvailable = true;
       _semanticResult     = files;
@@ -275,23 +276,23 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       foreach (file in files)
         when (file.Ast?.Location?.Source?.File is NCSSPS.File as file when file.IsActive)
-          ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Id, Id, file.FileId, file.FileVersion, file.Ast));
-      
+          ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Id, Id, file.FileId, file.FileVersion, file.Ast, if (file.FileId == completeWordFileIdOpt) completeWordPosOpt else -1));
+
       def semanticActions = SemanticActions;
       mutable action;
       mutable asts;
-      
+
       while (semanticActions.TryDequeue(out action))
       {
         when (asts.IsDefault)
           asts = GetAsts(files);
-        
+
         ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, cancellationToken, asts));
       }
-      
+
       when (cancellationToken.IsCancellationRequested)
         return;
-        
+
       Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisDone(FileId.Invalid, FileVersion.Invalid, Parent.Id, Id));
     }
 

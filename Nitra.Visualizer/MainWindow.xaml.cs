@@ -1161,7 +1161,7 @@ namespace Nitra.Visualizer
           if (suite == null)
             return;
           var client = suite.Client;
-          client?.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId, result.Version));
+          client?.Send(new ClientMessage.CompleteWordDismiss(ViewModel.CurrentProject.Id, result.FileId));
         };
       }
       else

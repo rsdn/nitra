@@ -15,11 +15,12 @@ namespace Nitra.ClientServer.Server
 {
   using SpanInfo2 = Nitra.ClientServer.Messages.SpanInfo;
   using NSpan2    = Nitra.ClientServer.Messages.NSpan;
-  
+
   [Record]
   internal class CollectSymbolsAstVisitor : IAstVisitor
   {
     _spanClassesManager : SpanClassesManager;
+    _completeWordPosOpt : int;
     [RecordIgnore] _spanInfos : ImmutableArray[SpanInfo2].Builder = ImmutableArray.CreateBuilder();
 
     public GetSpanInfos() : ImmutableArray[SpanInfo2]
@@ -28,7 +29,7 @@ namespace Nitra.ClientServer.Server
       _spanInfos.Sort(comparer);
       _spanInfos.ToImmutable()
     }
-    
+
     public Visit(parseTree : IAst) : void
     {
       parseTree.Accept(this);
@@ -47,8 +48,11 @@ namespace Nitra.ClientServer.Server
       when (spanClass == Nitra.Language.DefaultSpanClass)
         return;
 
-      def spanClassId = _spanClassesManager[spanClass];
-      _spanInfos.Add(SpanInfo2(NSpan2(span.StartPos, span.EndPos), spanClassId));
+      unless (span.IntersectsWith(_completeWordPosOpt))
+      {
+        def spanClassId = _spanClassesManager[spanClass];
+        _spanInfos.Add(SpanInfo2(NSpan2(span.StartPos, span.EndPos), spanClassId));
+      }
     }
 
     public Visit(reference : Reference) : void implements IAstVisitor.Visit
@@ -65,22 +69,22 @@ namespace Nitra.ClientServer.Server
       }
 
       def span      = r.Location.Span;
-      
+
       if (r.IsAmbiguous && r.IgnoreAmbiguities)
       {
         foreach (symbol in r.GetSymbols())
         {
           def spanClass = symbol.SpanClass;
-          when (spanClass == Nitra.Language.DefaultSpanClass)
+          when (spanClass == Nitra.Language.DefaultSpanClass || span.IntersectsWith(_completeWordPosOpt))
             continue;
           _spanInfos.Add(SpanInfo2(NSpan2(span.StartPos, span.EndPos), _spanClassesManager[spanClass]));
         }
       }
       else
-      {      
+      {
         def spanClass = r.SpanClass;
 
-        when (spanClass != Nitra.Language.DefaultSpanClass)
+        when (spanClass != Nitra.Language.DefaultSpanClass && !span.IntersectsWith(_completeWordPosOpt))
           _spanInfos.Add(SpanInfo2(NSpan2(span.StartPos, span.EndPos), _spanClassesManager[spanClass]));
       }
     }

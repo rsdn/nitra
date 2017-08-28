@@ -44,11 +44,11 @@ namespace Nitra.ClientServer.Server
         // TODO: send CollectOutlining and CollectTokebHighlighting mesages
         file.AstCreated(ast, parseTree, completionPos, parseResultOpt);
         // TODO: send EvalProperties if ast != null
-      | SemanticAnalysisFinished(projectId, cancellationToken, files) =>
+      | SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt) =>
         when (cancellationToken.IsCancellationRequested)
           return;
         def project = _solution[projectId];
-        project.SemanticAnalysisFinished(files);
+        project.SemanticAnalysisFinished(files, completeWordFileIdOpt, completeWordPosOpt);
     }
   }
 }

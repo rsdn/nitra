@@ -57,7 +57,7 @@ namespace Nitra.ClientServer.Messages
     | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : VersionedPos; }
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { projectId : ProjectId; id : FileId; version : FileVersion; pos : int; }
-    | CompleteWordDismiss      { projectId : ProjectId; id : FileId; version : FileVersion; }
+    | CompleteWordDismiss      { projectId : ProjectId; id : FileId }
     | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | ParseTreeReflection      { enable : bool; }
