@@ -178,12 +178,12 @@ namespace Nitra.Compiler
         | RegularRule.Chars(StringOpt=Some(str)) when str.All(char.IsLetter) => result.Add(str);
         | _ => ()
       }
-      
+
       loop(symbol.Rule);
       def ordered = result.OrderBy(x => x).Select(x => <[ $(x : string) ]>).NToList();
       <[ [..$ordered] ]>
     }
-    
+
     protected DefineInit(tb : TypeBuilder, sequence : SequenceCompileInfo.Root) : void
     {
       def inits = List();

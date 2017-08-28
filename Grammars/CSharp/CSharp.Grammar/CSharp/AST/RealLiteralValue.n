@@ -17,7 +17,7 @@ namespace Nitra
   public variant RealLiteralValue : Located
   {
     public override Location : Location { get; }
-    
+
     | None
     | Overflow
     | Single  { Value : float; }   // f

@@ -222,7 +222,7 @@ namespace Nitra.Compiler
             ]>);
 
             def deserializeBody = SCG.List();
-            _serializationEmitter.Formatter.ReadRecordMembers(deserializeBody, serializationMembers, 
+            _serializationEmitter.Formatter.ReadRecordMembers(deserializeBody, serializationMembers,
               (expr, info) => <[
                 def value = $expr;
                 unless (symbol.$(info.IsEvaluated : usesite))

@@ -23,7 +23,7 @@ namespace Nitra.MSBuild.Tasks
         public string VisualStudioVersion { get; set; }
 
         class VisualStudio
-        { 
+        {
             public readonly string Version;
             public readonly string ExePath;
 

@@ -22,7 +22,7 @@ namespace Nitra.Declarations
     {
       _fileMap[fileId]
     }
-    
+
     public Files : ImmutableArray[FileEvalPropertiesData]
     {
       get { _files }

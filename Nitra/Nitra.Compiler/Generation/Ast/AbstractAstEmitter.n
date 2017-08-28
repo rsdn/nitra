@@ -139,7 +139,7 @@ namespace Nitra.Compiler
         public this(location : Nitra.Location) { ..$missingBody }
       ]>);
 
-      _ = _ambiguousTb.DefineWithSource(<[ decl: 
+      _ = _ambiguousTb.DefineWithSource(<[ decl:
         public override Accept(visitor : Nitra.Declarations.IAstVisitor) : void
         {
           Nitra.Internal.AstUtils.AcceptToAll(visitor, this.Ambiguities);

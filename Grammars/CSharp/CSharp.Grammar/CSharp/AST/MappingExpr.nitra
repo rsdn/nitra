@@ -58,9 +58,9 @@ namespace CSharp
   // ??
   map syntax Expressions.Expression.QualifiedName -> DotNet.Expr
   {
-    QualifiedName  { 
+    QualifiedName  {
         // QualifiedAliasOpt -> QualifiedAlias
-        // QualifiedIdentifierPart -> QualifiedIdentifierPart; 
+        // QualifiedIdentifierPart -> QualifiedIdentifierPart;
         Key = null;
     }
   }
@@ -74,7 +74,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.Cast1 -> DotNet.Expr
   {
-    Cast 
+    Cast
     {
       AnyType -> TypeName;
       Expression -> Expression;
@@ -83,7 +83,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.Cast2 -> DotNet.Expr
   {
-    Cast 
+    Cast
     {
       AnyType -> TypeName;
       Expression -> Expression;
@@ -107,7 +107,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.NewObject_1 -> DotNet.Expr
   {
-    NewObject_1 
+    NewObject_1
     {
       AnyNonArrayType -> ConstructorType;
       // ArgumentList.Arguments.Item1 -> Arguments;
@@ -206,7 +206,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.Conditional -> DotNet.Expr
   {
-    Conditional 
+    Conditional
     {
       Condition -> Condition;
       Expr1 -> Expr1;
@@ -276,19 +276,19 @@ namespace CSharp
 
   map syntax Expressions.Expression.Is -> DotNet.Expr
   {
-    Is 
-    { 
-      Expr1 -> Expr1; 
+    Is
+    {
+      Expr1 -> Expr1;
       //Expr2 -> TypeName; // FIXME
     }
   }
 
   map syntax Expressions.Expression.As -> DotNet.Expr
   {
-    As 
-    { 
-      Expr1 -> Expr1; 
-      // Expr2 -> TypeName; 
+    As
+    {
+      Expr1 -> Expr1;
+      // Expr2 -> TypeName;
     }
   }
 
@@ -364,7 +364,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.MemberAccess1 -> DotNet.Expr
   {
-    MemberAccess1 
+    MemberAccess1
     {
       Expr1 -> Expr1;
       // QualifiedName -> QualifiedName;
@@ -373,7 +373,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.MemberAccess2 -> DotNet.Expr
   {
-    MemberAccess2 
+    MemberAccess2
     {
       // PredefinedType -> TypeName;
       // QualifiedName -> QualifiedName;
@@ -382,7 +382,7 @@ namespace CSharp
 
   map syntax Expressions.Expression.Invocation -> DotNet.Expr
   {
-    Invocation 
+    Invocation
     {
       Expression -> Expr1;
       // ArgumentList.Arguments.Item1 -> Arguments;
@@ -521,21 +521,21 @@ namespace CSharp
   map syntax Expressions.Argument -> DotNet.Expr
   {
     | Ref    ->
-      Argument 
+      Argument
       {
         Expression -> Expr;
         // ArgumentNameOpt -> Name;
         // Modifier -> Modifier;
       }
     | Out    ->
-      Argument 
+      Argument
       {
         Expression -> Expr;
         // ArgumentNameOpt -> Name;
         // Modifier -> Modifier;
       }
     | Simple ->
-      Argument 
+      Argument
       {
         Expression -> Expr;
         // ArgumentNameOpt -> Name;

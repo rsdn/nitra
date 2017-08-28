@@ -73,7 +73,7 @@ namespace Nitra.Typing
     {
       buffer.Append(ctor.Name).Append('(').AppendNTimes(ctor.Arity, "_", ", ").Append(')')
     }
- 
+
     public override ToString() : string
     {
       StringBuilder().AppendCtor(this).ToString()

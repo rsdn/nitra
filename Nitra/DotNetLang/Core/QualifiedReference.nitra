@@ -21,7 +21,7 @@ namespace DotNet
 
     | Aliased
       {
-        // TODO: https://gist.github.com/VladD2/8eee961759409ebdd2e71f613b7696ab 
+        // TODO: https://gist.github.com/VladD2/8eee961759409ebdd2e71f613b7696ab
         //Alias.Scope         = // TODO: set global aliases scope
         QualifiedName.Arity = 0;
         QualifiedName.Scope = Scope; // TODO: get scope from Alias

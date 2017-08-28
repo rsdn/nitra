@@ -43,7 +43,7 @@ namespace DotNet
     private mutable _ancestorsFullScope     : Scope;
     private         _parentTypes            : HashSet[TypeSymbol];
     private mutable _implicitBaseTypeResolver : Seq[TypeSymbol] -> TypeSymbol;
-    
+
     public CreatedOnStage       : int                { get; }
     public CreatedOnPass        : int                { get; }
     public IsCycled             : bool               { get { TryEvaluateHierarchy(); _isCycled } }
@@ -114,7 +114,7 @@ namespace DotNet
         mutable parentClassScope;
         mutable parentFullScope = EmptyScope.Instance : Scope;
         mutable ancestorsFullScope = EmptyScope.Instance : Scope;
-        
+
         foreach (type in _parentTypes)
         {
           | SupportsInheritanceTypeSymbol(BaseTypeSet = parentTypeSet, MemberTable = symbolScope) as symbol
@@ -130,15 +130,15 @@ namespace DotNet
 
           | _ => ()
         }
-        
-        foreach (type in ancestorTypes) 
+
+        foreach (type in ancestorTypes)
         {
           | SupportsInheritanceTypeSymbol(MemberTable = symbolScope)
           | ConstructedTypeSymbol(IsTypeInfoEvaluated = true, TypeInfo = GenericContainerTypeSymbol(MemberTable = symbolScope)) =>
             ancestorsFullScope = ancestorsFullScope.HideWith(symbolScope);
           | _ => ()
         }
-        
+
         unless (_isCycled)
         {
           _ancestorTypes    = ancestorTypes;
@@ -161,7 +161,7 @@ namespace DotNet
       def parentTypes = metadataReader.ReadObjects(reader);
       BaseTypeReferenceSet(parentTypes)
     }
-    
+
     public override ToString() : string
     {
       $"$CreatedOnStage($CreatedOnPass): ..$_parentTypes"

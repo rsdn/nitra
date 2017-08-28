@@ -31,7 +31,7 @@ namespace Nitra.ProjectSystem
 
     public SetFutureMessagesKind(kind : Guid) : void { _compilerMessages.SetFutureMessagesKind(kind); }
     public Remove(predicate : Func[Guid, Location, bool]) : void { _compilerMessages.Remove(predicate); }
-    
+
     public Dispose() : void { }
   }
 }

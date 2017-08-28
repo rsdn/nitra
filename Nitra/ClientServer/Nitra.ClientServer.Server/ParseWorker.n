@@ -62,7 +62,7 @@ namespace Nitra.ClientServer.Server
       {
         try
         {
-          foreach(m in _incomeQueue.GetConsumingEnumerable(_cts.Token)) 
+          foreach(m in _incomeQueue.GetConsumingEnumerable(_cts.Token))
           {
             try
               ProcessMessage(m)
@@ -224,18 +224,18 @@ namespace Nitra.ClientServer.Server
         def infos             = ImmutableArray.CreateBuilder(outlining.Count);
         def cancellationToken = parseResult.ParseSession.CancellationToken;
         def version           = FileVersion(parseResult.SourceSnapshot.Version);
-        
+
         foreach (info in outlining with i)
         {
           when (i % 30 == 0 && cancellationToken.IsCancellationRequested)
             return;
-          
+
           infos.Add(Messages.OutliningInfo(ConvertNSpan(info.Span), info.IsDefaultCollapsed, info.IsImplementation));
         }
-     
+
         when (cancellationToken.IsCancellationRequested)
           return;
-        
+
         infos.Sort(OutliningInfo.Comparer);
         SendAsyncResponse(AsyncServerMessage.OutliningCreated(fileId, version, solutionId, projectId, infos.MoveToImmutable()));
         ServerUtils.LogMsgHandled("CreateOutlining", timer, 50);

@@ -22,13 +22,13 @@ namespace DotNet
       base(typeInfo, scope, args);
       _parent = parent;
     }
-    
+
     public override Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
     {
       base.Serialize(writer, metadataWriter);
       metadataWriter.WriteObject(_parent, writer);
     }
-    
+
     new public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : this
     {
       def (typeInfo, args) = Read(reader, metadataReader);

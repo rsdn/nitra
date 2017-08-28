@@ -44,16 +44,16 @@ namespace Nitra.Declarations
           unless (enumerated.Contains(symbol))
             result.Add(symbol);
         }
-          
+
         result.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
       }
     }
-    
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def result       = this.Scope.Bind(isMatch);
       def resultHidden = this.Hidden.Bind(isMatch);
-      
+
       if (result.IsEmpty)
         resultHidden
       else if (resultHidden.IsEmpty)
@@ -66,7 +66,7 @@ namespace Nitra.Declarations
     {
       def result       = this.Scope.Bind(reference);
       def resultHidden = this.Hidden.Bind(reference);
-      
+
       if (result.IsEmpty)
         resultHidden
       else if (resultHidden.IsEmpty)
@@ -74,7 +74,7 @@ namespace Nitra.Declarations
       else
         BindResult.Hiding(result, resultHidden)
     }
-    
+
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
     {
       def id            = nodeToIdMap.GetObjectId(this);
@@ -88,7 +88,7 @@ namespace Nitra.Declarations
       this.Scope.ToDot(nodeToIdMap, nodes, edges);
       this.Hidden.ToDot(nodeToIdMap, nodes, edges);
     }
-    
+
     public override ToString() : string
     {
       <#HidingScope#>

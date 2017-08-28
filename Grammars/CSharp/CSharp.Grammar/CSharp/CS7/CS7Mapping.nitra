@@ -11,7 +11,7 @@ namespace CSharp
 {
   map syntax CS7.Argument.OutVar -> DotNet.Expr
   {
-    OutVarArgument 
+    OutVarArgument
     {
       LocalVariableType -> VariableType;
       Name -> Name;
@@ -22,7 +22,7 @@ namespace CSharp
 
   map syntax CS7.Argument.OutWildcard -> DotNet.Expr
   {
-    IgnoreOutVarArgument 
+    IgnoreOutVarArgument
     {
       // ArgumentNameOpt -> Name;
       // Modifier -> Modifier;

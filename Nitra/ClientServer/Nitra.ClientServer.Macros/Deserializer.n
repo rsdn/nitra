@@ -15,7 +15,7 @@ namespace Nitra.ClientServer.Macros
   {
     Deserializer.Transform(Macros.ImplicitCTX())
   }
-  
+
   module Deserializer
   {
     public Transform(typer: Typer): PExpr
@@ -28,7 +28,7 @@ namespace Nitra.ClientServer.Macros
           foreach ((msgId, type) in registry)
             exprs.Add(<[ case: | $(msgId) => $(type: typed).Deserialize(reader) :> T ]>);
           exprs.Add(<[ case: | id => assert(false, "Not supported Id: " + id) ]>);
-          <[ 
+          <[
             match (reader.ReadInt16())
             {
               ..$exprs
@@ -36,17 +36,17 @@ namespace Nitra.ClientServer.Macros
           ]>
         })
     }
-    
+
     public GenerateModule(manager : ManagerClass): void
     {
       def className = "Deserializer";
       def node = manager.CoreEnv.EnterIntoNamespace("Nitra.ClientServer.Messages".SplitToList('.'));
       def classOpt = node.CurrentNamespace.LookupType([className], 0);
-      
+
       match (classOpt)
       {
         | Some(_ is TypeBuilder) => ()
-        | None() => 
+        | None() =>
           manager.MacroColors.InGlobalColor(
           fun()
           {
@@ -57,7 +57,7 @@ namespace Nitra.ClientServer.Macros
               public Sync : object = object();
               public mutable IsTrace : bool;
                      mutable _indent : string = "";
-              
+
               [System.Diagnostics.Conditional($cond)]
               public Indent() : void  { _indent += "  "; }
               [System.Diagnostics.Conditional($cond)]
@@ -82,7 +82,7 @@ namespace Nitra.ClientServer.Macros
                   System.Diagnostics.Trace.WriteLine(_indent + msg);
                 }
               }
-              
+
               public Deserialize[T](reader: System.IO.BinaryReader): T
               {
                 GenerateDeserializer()
@@ -90,8 +90,8 @@ namespace Nitra.ClientServer.Macros
             } ]>);
             tb.Compile()
           })
-        
-        | _ => 
+
+        | _ =>
           def key = "Nitra.ClientServer.Messages.Deserializer declared";
           when (manager.UserData[key] == null)
           {

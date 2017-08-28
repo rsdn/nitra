@@ -74,9 +74,9 @@ namespace Nitra.LanguageCompiler
                     help = "Nitra assembly references.",
                     handler = assemblyReferences.Add),
         ];
-      
+
       Getopt.Parse(options);
-      
+
       //assert2(LanguageName != "Nitra.Language");
 
       def usage() : void
@@ -133,12 +133,12 @@ namespace Nitra.LanguageCompiler
         def languages = Language.GetLanguages(asmRef);
         foreach (language when language.FullName == LanguageName in languages)
           matchedLanguages ::= (asm, language);
-          
+
         def projectSupportAttributes = asm.GetCustomAttributes(typeof(ProjectSupportAttribute));
         foreach (projectSupportAttribute is ProjectSupportAttribute when projectSupportAttribute.Caption == ProjectSupport in projectSupportAttributes)
           matchedProjectSupportTypes ::= projectSupportAttribute.Type;
       }
-      
+
       match (matchedLanguages)
       {
         | [(asm, lang)] =>

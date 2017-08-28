@@ -50,9 +50,9 @@ namespace DotNet
 
     private         _baseTypes : HashSet[TypeSymbol];
     private mutable _flags     : TypeConstraint;
-    
+
     public SpecialConstraintMask : TypeConstraint { get { _flags } }
-    
+
     public BaseTypes : Seq[TypeSymbol] { get { _baseTypes } }
 
     [Collect]

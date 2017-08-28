@@ -27,7 +27,7 @@ namespace Nitra.Visualizer
       | DIRECTORY = 0x10
       //| NORMAL = 0x80
     }
-    
+
     _configRx: Regex = Regex(@"[\\/](Release|Debug)[\\/]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public LoadAssembly(assemblyFilePath: string, config: string): Assembly
@@ -36,17 +36,17 @@ namespace Nitra.Visualizer
 
       //def assembly = Assembly.ReflectionOnlyLoadFrom(assemblyFilePath);
       //def runtime = typeof(ParseResult).Assembly.GetName();
-      
-      //def refWithIncompatibleRuntime = 
+
+      //def refWithIncompatibleRuntime =
       //  assembly
       //    .GetReferencedAssemblies()
       //    .Filter(x => x.Name == runtime.Name)
       //    .Find(x => x.Version != runtime.Version);
-        
+
       //when (refWithIncompatibleRuntime is Some(reference))
       //  throw Exception($"Assembly '$assemblyFilePath' use incompatible runtime (Nitra.Runtime.dll) version $(reference.Version)." +
       //                  $" The current runtime has version $(runtime.Version).");
-      
+
       Assembly.LoadFrom(assemblyFilePath)
     }
 
@@ -62,12 +62,12 @@ namespace Nitra.Visualizer
     public MakeRelativePath(from: string, isFromDir: bool, to: string, isToDir: bool): string
     {
       def builder = StringBuilder(1024);
-      def result = 
+      def result =
         PathRelativePathTo(
-          builder, 
-          @from, 
-          if (isFromDir) FILE_ATTRIBUTE.DIRECTORY else 0, 
-          to, 
+          builder,
+          @from,
+          if (isFromDir) FILE_ATTRIBUTE.DIRECTORY else 0,
+          to,
           if (isToDir) FILE_ATTRIBUTE.DIRECTORY else 0);
 
       if (result) builder.ToString() else to
@@ -75,8 +75,8 @@ namespace Nitra.Visualizer
 
     public EnsureBackslash(baseDir: string): string
     {
-      if (baseDir.Length == 0) "" 
-      else 
+      if (baseDir.Length == 0) ""
+      else
         if (baseDir[baseDir.Length - 1] == '\\') baseDir else baseDir + @"\"
     }
 

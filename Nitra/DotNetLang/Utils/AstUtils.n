@@ -57,10 +57,10 @@ namespace DotNet
         else
           buildEnterNsScope(declaredIn).HideWith(scope)
       }
-      
+
       buildEnterNsScope(enteredNs)
     }
-    
+
     [Memoize]
     public TypeOverloadResolution(argumentsCount : int) : ResolutionAlgorithm[DeclarationSymbol, DeclarationSymbol]
     {
@@ -91,7 +91,7 @@ namespace DotNet
 
     public CreateFuncQualifiedReference(loc : Location, qualifiedReference1 : QualifiedReference, qualifiedReference2 : QualifiedReference) : QualifiedReference
     {
-      def arguments = 
+      def arguments =
         match (qualifiedReference1)
         {
           | QualifiedReference.Generic(QualifiedName = QualifiedReference.Simple(Name = Reference(Text = "#Tuple")), Arguments = tupleArguments) => tupleArguments.Append(qualifiedReference2)
@@ -107,7 +107,7 @@ namespace DotNet
     {
       MakeNamespaceFullName(parentFullName, name, default(ImmutableArray[TypeParameterSymbol]))
     }
-    
+
     public MakeNamespaceFullName(parentFullName : string, name : string, typeParameters : ImmutableArray[TypeParameterSymbol]) : string
     {
       def result =
@@ -115,7 +115,7 @@ namespace DotNet
           name
         else
           parentFullName + "." + name;
-          
+
       if (typeParameters.IsDefaultOrEmpty)
         result
       else
@@ -259,7 +259,7 @@ namespace DotNet
           symbols.Add(resolvedArg.Symbol)
         else
         {
-          isResolvedAll  = false; 
+          isResolvedAll  = false;
           symbols.Add(default(TSymbol));
         }
       }
@@ -298,7 +298,7 @@ namespace DotNet
     {
       declarations.FirstOrDefault()?.IsPartial.ValueOrDefault
     }
-    
+
     public FilterDeclaredTypeSymbol(memberTable : TableScope) : IList[NestedTypeSymbol]
     {
       def symbols = memberTable.Symbols;
@@ -309,10 +309,10 @@ namespace DotNet
     {
       AstTypeUnifier.Instance.Require(symbol1, symbol2)
     }
-    
+
     public IsNumeric(this symbol : TypeSymbol) : bool
     {
-      match (symbol) 
+      match (symbol)
       {
         | x when x.FullName == PlatformTypes.Byte.FullName
         | x when x.FullName == PlatformTypes.SByte.FullName
@@ -328,8 +328,8 @@ namespace DotNet
         | _ => false
       }
     }
-    
-    public HasImplicitConversion(this from : TypeSymbol, to : TypeSymbol) : bool 
+
+    public HasImplicitConversion(this from : TypeSymbol, to : TypeSymbol) : bool
     {
       def char = PlatformTypes.Char.FullName;
       def byte = PlatformTypes.Byte.FullName;
@@ -343,7 +343,7 @@ namespace DotNet
       def float = PlatformTypes.Single.FullName;
       def double = PlatformTypes.Double.FullName;
       def decimal = PlatformTypes.Decimal.FullName;
-      
+
       match(from) {
         | x when x.FullName == sbyte => [short, int, long, float, double, decimal].Any(s => s == to.FullName)
         | x when x.FullName == byte => [short, ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
@@ -358,7 +358,7 @@ namespace DotNet
         | _ => false
       }
     }
-    
+
     public GetMemberReturnType(this member : DeclarationSymbol) : TypeSymbol
     {
       match (member)

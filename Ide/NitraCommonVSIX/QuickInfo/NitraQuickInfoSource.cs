@@ -195,7 +195,7 @@ namespace Nitra.VisualStudio.QuickInfo
     {
       var hintRectOpt = GetHintRect();
       _hintRect = hintRectOpt.HasValue ? (D.Rectangle)hintRectOpt.Value : default(D.Rectangle);
-      
+
       Debug.WriteLine($"Container_LayoutUpdated Rect='{hintRectOpt}'  _container?.PopupOpt={_container?.PopupOpt}");
     }
 

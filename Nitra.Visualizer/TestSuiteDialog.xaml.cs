@@ -29,7 +29,7 @@ namespace Nitra.Visualizer
 
       InitializeComponent();
     }
-    
+
     public string TestSuiteName
     {
       get { return ViewModel.SuiteName; }
@@ -45,7 +45,7 @@ namespace Nitra.Visualizer
         _testSuiteName.Focus();
         return;
       }
-      
+
       var path = ViewModel.SuitPath;
 
       if (Directory.Exists(path) && ViewModel.IsCreate)

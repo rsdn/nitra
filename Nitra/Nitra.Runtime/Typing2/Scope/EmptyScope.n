@@ -26,7 +26,7 @@ namespace Nitra.Declarations
       IgnoreParams();
       BindResult.Nil()
     }
-    
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       IgnoreParams();

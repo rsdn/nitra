@@ -15,7 +15,7 @@ namespace Nitra.Declarations
       def xId = x.NameId;
       xId == y.NameId && xId >= 0
     }
-      
+
     public GetHashCode(obj : TSymbol) : int
     {
       obj.NameId

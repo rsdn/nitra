@@ -198,7 +198,7 @@ namespace Nitra.VisualStudio
       var props      = textBuffer.Properties;
       FileModel fileModel;
       if (!props.TryGetProperty<FileModel>(Constants.FileModelKey, out fileModel))
-        props.AddProperty(Constants.FileModelKey, 
+        props.AddProperty(Constants.FileModelKey,
           fileModel = new FileModel(id, textBuffer, server, wpfTextView.VisualElement.Dispatcher, hierarchy, fullPath));
       return fileModel;
     }

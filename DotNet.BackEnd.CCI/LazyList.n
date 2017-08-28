@@ -15,15 +15,15 @@ namespace Nitra.BackEnd.Cci
   public abstract class LazyList[T] : IReadOnlyList[T], IList[T]
   {
     protected mutable _list : ImmutableArray[T];
-    
+
     protected abstract OnLoad() : void;
-    
+
     Load() : void
     {
       when (_list == null)
         OnLoad();
     }
-    
+
     public Item[index : int] : T
     {
       get
@@ -46,13 +46,13 @@ namespace Nitra.BackEnd.Cci
         _list.Length
       }
     }
-    
+
     public GetEnumerator() : ImmutableArray[T].Enumerator
     {
       Load();
       _list.GetEnumerator()
     }
-    
+
     GetEnumeratorImpl() : IEnumerator[T]
      implements Seq[T].GetEnumerator
     {
@@ -72,51 +72,51 @@ namespace Nitra.BackEnd.Cci
       Load();
       _list.CopyTo(ary, arrayIndex)
     }
-    
+
     public IndexOf(item : T) : int
     {
       Load();
       _list.IndexOf(item)
     }
-    
+
     Contains(item : T) : bool
      implements System.Collections.Generic.ICollection[T].Contains
     {
       Load();
       _list.Contains(item)
     }
-    
+
     Add(item : T) : void
      implements System.Collections.Generic.ICollection[T].Add
     {
       _ = item;
       throw NotSupportedException()
     }
-    
+
     Clear() : void
      implements System.Collections.Generic.ICollection[T].Clear
     { throw NotSupportedException() }
-    
+
     IsReadOnly : bool
      implements System.Collections.Generic.ICollection[T].IsReadOnly
     {
       get { true }
     }
-    
+
     Remove(item : T) : bool
      implements System.Collections.Generic.ICollection[T].Remove
     {
       _ = item;
       throw NotSupportedException()
     }
-    
+
     Insert(index : int, item : T) : void
      implements System.Collections.Generic.IList[T].Insert
     {
       _ = index; _ = item;
       throw NotSupportedException()
     }
-    
+
     RemoveAt(index : int) : void
      implements System.Collections.Generic.IList[T].RemoveAt
     {

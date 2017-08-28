@@ -25,7 +25,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  Path             : string     { get; }
     public  Id               : SolutionId { get; }
     public  IsDisposed       : bool       { get; private set; }
-    
+
     public this(id : SolutionId, path : string)
     {
       Id   = id;
@@ -33,10 +33,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       Log("Solution opening. Id=" + id + " Path='" + path + "'")
     }
-    
+
     public IsOpened       : bool    { get; private set; }
     public Item[projectId : int] : Project { get { GetProject(projectId) } }
-    
+
     public GetProject(id : int) : Project
     {
       assert2(!IsDisposed);
@@ -56,16 +56,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       else
         throw ArgumentException($"Can't find file with id=$id.", "id")
     }
-    
+
     public GetFile(projectId : ProjectId, id : int) : File
     {
       assert2(!IsDisposed);
-      
+
       def project = GetProject(projectId);
 
       project.GetFile(id)
     }
-    
+
     internal _N_OnFileAdded(file : File) : void
     {
       assert2(!IsDisposed);
@@ -86,7 +86,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       else
         _files[id] = filteredFiles;
     }
-    
+
     public Open(): void
     {
       assert2(!IsDisposed);
@@ -94,22 +94,22 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     }
 
     public Log(msg : string) : void { ServerUtils.Log(msg) }
-    
+
     public AddProject(project : Project): void
     {
       assert2(!IsDisposed);
       _projects.Add(project.Id, project);
     }
-    
+
     public RemoveProject(id : int) : void
     {
       assert2(!IsDisposed);
       def project = _projects[id];
-      
+
       _projects.Remove(id);
       project.Dispose();
     }
-    
+
     public FindDeclarations(pattern : string, primaryProjectId : ProjectId, hideExternalItems : bool, kinds : ImmutableArray[string]) : void
     {
       def projects = _projects.Values.ToArray();
@@ -118,19 +118,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       foreach (project when project.Id != primaryProjectId in projects) // start calcs for other projects
         project.FindDeclarations(pattern, kinds);
     }
-    
+
     public override Projects : Seq[NSP.Project] { get { _projects.Values } }
-    
+
     public Dispose() : void
     {
       assert2(!IsDisposed);
-      
+
       when (IsDisposed)
         return;
-      
+
       foreach (v in _projects.Values)
         v.Dispose();
- 
+
       IsOpened = false;
       _files.Clear();
       _projects.Clear();

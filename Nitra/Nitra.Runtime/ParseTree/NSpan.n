@@ -39,7 +39,7 @@ namespace Nitra
       [TargetedPatchingOptOut(AssemblyConstants.TargetedPatchingOptOutText), ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
       get { StartPos == EndPos }
     }
-    
+
     public static @+(x : NSpan, y : NSpan) : NSpan { NSpan(Math.Min(x.StartPos, y.StartPos), Math.Max(x.EndPos, y.EndPos)) }
 
     [TargetedPatchingOptOut(AssemblyConstants.TargetedPatchingOptOutText)]
@@ -66,7 +66,7 @@ namespace Nitra
       else
         VNone()
     }
-    
+
     [TargetedPatchingOptOut(AssemblyConstants.TargetedPatchingOptOutText)]
     [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
     public Contains(pos : int) : bool { Contains(pos, pos) }
@@ -79,7 +79,7 @@ namespace Nitra
     [TargetedPatchingOptOut(AssemblyConstants.TargetedPatchingOptOutText)]
     [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
     public Contains(other : Location)       : bool { Contains(other.StartPos, other.EndPos) }
-    
+
 
     public override ToString() : string
     {

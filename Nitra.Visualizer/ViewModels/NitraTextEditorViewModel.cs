@@ -25,7 +25,7 @@ namespace Nitra.Visualizer.ViewModels
       Host = host;
 
       IntelliSensePopup = new IntelliSensePopupViewModel(this);
-      
+
       TryHighlightBraces = ReactiveCommand.Create();
       TryHighlightBraces.Subscribe(_ => {
         //if (_matchedBracketsMarkers.Count > 0)

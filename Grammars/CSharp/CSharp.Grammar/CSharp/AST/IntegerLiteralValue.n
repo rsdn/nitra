@@ -13,7 +13,7 @@ namespace Nitra
   public struct IntegerLiteralValue : ILocated
   {
     public Location : Location { get; }
-    
+
     public Value      : ulong { get; }
     public IsUnsigned : bool  { get; }
     public IsLong     : bool  { get; }

@@ -134,7 +134,7 @@
       | Sub                    = Expr1 = Expression sm "-"  sm Expr2 = Expression;
 
       precedence Multiplicative:
-      | Mul                    = Expr1 = Expression sm "*"  sm Expr2 = Expression; 
+      | Mul                    = Expr1 = Expression sm "*"  sm Expr2 = Expression;
       | Div                    = Expr1 = Expression sm "/"  sm Expr2 = Expression;
       | Remainder              = Expr1 = Expression sm "%"  sm Expr2 = Expression;
 

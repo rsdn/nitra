@@ -49,7 +49,7 @@ namespace Nitra.Declarations
     {
       when (name != null)
         (declaration :> DeclarationBase).UpdateName(name);
-        
+
       def     name2            = declaration.Name;
       def     candidateSymbols = LightList();
       mutable ambiguousSymbols : HashSet[DeclarationSymbol];
@@ -141,7 +141,7 @@ namespace Nitra.Declarations
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def res = LightList();
-      
+
       foreach (symbols in _nameTable.Values)
       foreach (symbol is TSymbol when isMatch(symbol) in symbols)
         res.Add(symbol);
@@ -167,9 +167,9 @@ namespace Nitra.Declarations
     {
       def id = nodeToIdMap.GetObjectId(this);
       def symbols = AllSymbols.ToArray();
-      
+
       // make DOT HTML table for symbols
-      
+
       def maxCols = 6;
       def last = symbols.Length - 1;
       mutable cols = Math.Min(maxCols, symbols.Length);
@@ -178,7 +178,7 @@ namespace Nitra.Declarations
         rows++;
 
       def builder = StringBuilder();
-      def owner = if (Owner == null) "" 
+      def owner = if (Owner == null) ""
                   else
                   {
                     "Owner: " + (if (Owner.IsKindEvaluated) " <FONT COLOR='blue'>" + Owner.Kind + "</FONT>&nbsp;" else "")
@@ -213,7 +213,7 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
 
       nodes.Add($<#Obj_$id [shape=none label=<$builder>]#>);
     }
-    
+
     public override ToString() : string
     {
       $<#TableScope($(AllSymbols.Count()))]#>

@@ -28,7 +28,7 @@ namespace Nitra.Compiler.PatternMatching
         Access       : Access;
         Continuation : Decision[T];
       }
- 
+
     public static AppendDecision(this buffer : StringBuilder, tab : int, decision : Decision[T]) : StringBuilder
     {
       match (decision)
@@ -46,7 +46,7 @@ namespace Nitra.Compiler.PatternMatching
             .AppendDecision(tab, continuation)
       }
     }
- 
+
     public override ToString() : string
     {
       StringBuilder().AppendDecision(0, this).ToString()

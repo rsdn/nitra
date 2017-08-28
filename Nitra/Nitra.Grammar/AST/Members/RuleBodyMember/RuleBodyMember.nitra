@@ -24,7 +24,7 @@ namespace Nitra.Ast
 
     Symbol.Parent   = Parent;
   }
-  
+
   abstract declaration ExtensionRule : SyntaxRule, RuleBodyMemberDeclaration
   {
     sealed symbol

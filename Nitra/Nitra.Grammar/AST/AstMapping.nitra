@@ -51,7 +51,7 @@ namespace Nitra.Ast
         MapSyntaxBody -> Body;
       }
 
-    | SyntaxModule -> SyntaxModule // SyntaxModuleAttributes Name LanguageOpt SyntaxModuleMembers 
+    | SyntaxModule -> SyntaxModule // SyntaxModuleAttributes Name LanguageOpt SyntaxModuleMembers
       {
         Name -> Name;
         match (LanguageOpt)
@@ -572,7 +572,7 @@ namespace Nitra.Ast
 
     | Braces -> NitraType
     | Tuple = AstUtils.CreateTupleQualifiedReference(Location, NitraType2.GetAst(QualifiedReference.AstList(Location, NitraType1.GetAst())));
-    | Func  = AstUtils.CreateFuncQualifiedReference(Location, NitraType1.GetAst(), NitraType2.GetAst()); 
+    | Func  = AstUtils.CreateFuncQualifiedReference(Location, NitraType1.GetAst(), NitraType2.GetAst());
     | OptionList -> ListAstReference   { NitraType -> Elem; }
     | List       -> ListAstReference   { NitraType -> Elem; }
     | Option     -> OptionAstReference { NitraType -> Value; }

@@ -22,7 +22,7 @@ namespace Nitra.Declarations
         _state
       }
     }
-    
+
     public GetAstUntyped(parseTree : ParseTree, astMessages : CompilerMessageList) : IAst
     {
       mutable oldState;
@@ -33,7 +33,7 @@ namespace Nitra.Declarations
       }
       finally AstContext.Restore(oldState);
     }
-    
+
 
     internal Set(compilerMessage : ICompilerMessages) : ValueOption[ICompilerMessages]
     {

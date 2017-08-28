@@ -24,7 +24,7 @@ namespace Nitra.ClientServer.Client
     mutable _responsePipe : NamedPipeServerStream;
     public  PipeName      : string { get; private set }
             _onMessage    : AsyncServerMessage -> void;
-    
+
     public this(onMessage : AsyncServerMessage -> void, priority : ThreadPriority = ThreadPriority.Normal)
     {
       _onMessage       = onMessage;
@@ -38,11 +38,11 @@ namespace Nitra.ClientServer.Client
       def thread = Thread.CurrentThread;
       thread.Name = "Active Source Pipe - " + PipeName;
       thread.CurrentCulture = CultureInfo.InvariantCulture;
-        
+
       _responsePipe    = NamedPipeServerStream(PipeName, PipeDirection.In);
       _responsePipe.WaitForConnection();
       Log($"Pipe server started (pipe name = $PipeName).");
-      
+
       using (reader = BinaryReader(_responsePipe))
       {
         def loop()
@@ -59,18 +59,18 @@ namespace Nitra.ClientServer.Client
             | e => Log($"Message read error: $e");
           }
         }
-          
+
         loop()
       }
     }
-    
-    
-    public Dispose() : void 
+
+
+    public Dispose() : void
     {
       _responsePipe?.Dispose();
       _responsePipe = null
     }
-    
+
     Log(msg : string) : void
     {
       Trace.WriteLine(msg);

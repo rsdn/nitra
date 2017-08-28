@@ -41,13 +41,13 @@ namespace Nitra
         public Reset()   : void { _timer.Reset(); }
         public Stop()    : void { _timer.Stop(); }
       }
-        
+
     | Container
       {
         public this(idAndTitle : string) { this(idAndTitle, idAndTitle) }
         [RecordIgnore] private _tasks : Dictionary[string, StatisticsTask] = Dictionary();
         [RecordIgnore] public  Tasks  : List[StatisticsTask] { get; default List(); }
-      
+
         public override Total : TimeSpan
         {
           get
@@ -58,17 +58,17 @@ namespace Nitra
             result
           }
         }
-          
+
         protected override ToString(sb : Text.StringBuilder, level : int) : void
         {
           HeaderToString(sb, level);
-          
+
           def nextLevel = level + 1;
-          
+
           foreach (task in Tasks)
             task.ToString(sb, nextLevel);
         }
-        
+
         public Item[id : string] : StatisticsTask
         {
           get
@@ -78,13 +78,13 @@ namespace Nitra
             result
           }
         }
-          
+
         private AddSubtask(task : StatisticsTask) : void
         {
           _tasks.Add(task.Id, task);
           Tasks.Add(task);
         }
-        
+
         public ReplaceSingleSubtask(idAndTitle : string) : StatisticsTask.Single { ReplaceSingleSubtask(idAndTitle, idAndTitle) }
         public ReplaceSingleSubtask(id : string, title : string) : StatisticsTask.Single
         {
@@ -103,7 +103,7 @@ namespace Nitra
             _tasks[newTask.Id] = newTask;
             return;
           }
-          
+
           AddSubtask(newTask);
         }
 
@@ -121,7 +121,7 @@ namespace Nitra
           mutable node;
           when (_tasks.TryGetValue(id, out node))
             return node :> StatisticsTask.Container;
-          
+
           def newTask = StatisticsTask.Container(id, title);
           AddSubtask(newTask);
           newTask

@@ -30,7 +30,7 @@ namespace Nitra.VisualStudio.CodeCompletion
       if (textView == null)
         return;
 
-      Func<NitraCompletionCommandHandler> createCommandHandler = 
+      Func<NitraCompletionCommandHandler> createCommandHandler =
         delegate () { return new NitraCompletionCommandHandler(textViewAdapter, textView, this); };
       textView.Properties.GetOrCreateSingletonProperty(createCommandHandler);
     }

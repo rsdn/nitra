@@ -49,7 +49,7 @@ namespace Nitra.Runtime.GraphUtils
       tmp.Add(node);
       Nodes = tmp;
     }
-    
+
     public override ToString() : string { $<#..$(Nodes.ToArray())#> }
   }
 
@@ -74,10 +74,10 @@ namespace Nitra.Runtime.GraphUtils
       }
     }
 
-    // In the mathematical theory of directed graphs, a graph is said to be strongly connected 
+    // In the mathematical theory of directed graphs, a graph is said to be strongly connected
     // if every vertex is reachable from every other vertex.
     // The strongly connected components of an arbitrary directed graph
-    // form a partition into subgraphs that are themselves strongly connected. 
+    // form a partition into subgraphs that are themselves strongly connected.
     // https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
     public FindStronglyConnectedComponents[NodeType, GroupType](nodes : IEnumerable[NodeType]) : IEnumerable[SimpleGraphNodeGroup[NodeType]]
       where NodeType  : IGraphNode[NodeType]
@@ -114,7 +114,7 @@ namespace Nitra.Runtime.GraphUtils
         foreach (nextNode in sccNode.Node.Connections)
         {
           def nextSCCNode = getSCCNode(nextNode);
-          if (nextSCCNode.Index == -1) 
+          if (nextSCCNode.Index == -1)
           {
             strongConnect(nextSCCNode);
             sccNode.Lowlink = Math.Min(sccNode.Lowlink, nextSCCNode.Lowlink)

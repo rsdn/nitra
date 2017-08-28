@@ -93,7 +93,7 @@
     syntax CatchSpecifier = "(" AnyType Name=(sm Name)? ")";
 
     syntax CatchClause
-    { 
+    {
       | Simple        = "catch"   sm Block;
       | WithSpecifier = "catch"   sm CatchSpecifier sm Block;
     }

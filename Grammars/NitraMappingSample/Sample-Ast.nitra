@@ -55,7 +55,7 @@ ast Div : Binary { Result = Expression1.Result / Expression2.Result; }
 abstract ast Unary : Expression
 {
   Expression.Scope = Scope;
-  
+
   Expression : Expression;
 }
 

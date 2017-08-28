@@ -37,12 +37,12 @@ namespace Nitra.ViewModels
       foreach (var aSuite in suits)
       {
         var suite = aSuite.Trim();
-        
+
         if (string.IsNullOrEmpty(suite))
           continue;
 
         var testSuite = new TestSuiteVm(this, suite, config);
-        
+
         if (selectePath != null)
         {
           if (testSuite.FullPath == selectePath)

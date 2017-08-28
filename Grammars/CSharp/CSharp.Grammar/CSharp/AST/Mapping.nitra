@@ -15,7 +15,7 @@ namespace CSharp
   map syntax Types.TypeParameter -> TypeParameterAlias
   {
     Name -> Name;
-    Variance = 
+    Variance =
       if (VarianceAnnotationOpt.HasValue)
         ParsedValue(VarianceAnnotationOpt.Value.Annotation, if (VarianceAnnotationOpt.Value.Annotation.Length == 2) Variance.Covariant else Variance.Contravariant)
       else ParsedValue(VarianceAnnotationOpt.Span, Variance.None);
@@ -571,7 +571,7 @@ namespace CSharp
     | GenericType -> Generic   { QualifiedReferenceParts -> QualifiedName; TypeArgs.Item1 -> Arguments; }
     | OpenType    -> Open      { QualifiedReferenceParts -> QualifiedName; Rank = ParsedValue(RankSeparators.Span, RankSeparators.Count); }
   }
-  
+
 
   //map syntax CsIdentifiers.QualifiedIdentifier -> QualifiedReference
   //{

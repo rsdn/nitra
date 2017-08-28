@@ -31,12 +31,12 @@ namespace DotNet
       public Language      : LanguageSymbol    { get; set; }
       public Declaration   : DeclarationSymbol { get; set; }
     }
-    
+
     public static BindFullName[TSymbol](this context : DependentPropertyEvalContext, typeArgsCount : int, params names : array[string]) : GenericTypeSymbol
       where TSymbol : GenericTypeSymbol
     {
       def rootNamespace = (context :> DependentPropertyEvalContextEx).RootNamespace;
-      
+
       def loop(ns : NamespaceSymbol, i : int) : GenericTypeSymbol
       {
         def name = names[i];
@@ -57,7 +57,7 @@ namespace DotNet
             {
               t.IsTypeParametersCountEvaluated && t.TypeParametersCount == typeArgsCount
             }
-            
+
             if (m.Filter(hasNoParams) is BindResult.Single as s)
               s.Symbol
             else
@@ -66,7 +66,7 @@ namespace DotNet
           | _ => assert2(false, error()); assert(false, error())
         }
       }
-      
+
       loop(rootNamespace, 0)
     }
 

@@ -16,7 +16,7 @@ namespace Nitra.TestsLauncher
   {
     IndentString = "    ";
     mutable _currentIndent = "";
-    
+
     Main(args: array[string]) : void
     {
       if (args.Length != 2)
@@ -25,7 +25,7 @@ namespace Nitra.TestsLauncher
       {
         def solutionFilePath = args[0];
         def config = args[1];
-        
+
         if (!File.Exists(solutionFilePath ?? ""))
         {
           ForegroundColor = ConsoleColor.Red;
@@ -37,7 +37,7 @@ namespace Nitra.TestsLauncher
           def stackSize = 20 * 1024 * (if (IntPtr.Size == 8) { 8 } else 1) * 1024;
           def thread = Thread(() => Start(solutionFilePath, config), stackSize);
           thread.Name = "Main test thread";
-          thread.Start();        
+          thread.Start();
           thread.Join()
         }
       }
@@ -97,16 +97,16 @@ namespace Nitra.TestsLauncher
       using (workspace = WorkspaceVm(workspaceFilePath, null, config))
       {
         def testSuites = workspace.TestSuites;
-        
+
         def maxNameLen = CalcMaxNameLen(testSuites);
         mutable someTestsFailed = false;
         mutable someTestSuitesFailedToLoad = false;
-        
+
         foreach (suite in testSuites)
         {
           PrintLine("Test suite: " + suite.Name);
           Indent();
-        
+
           if (suite.TestState == TestState.Ignored)
           {
             PrintLine(suite.Hint, ConsoleColor.Red);
@@ -124,19 +124,19 @@ namespace Nitra.TestsLauncher
                   Out.Flush();
                   someTestsFailed |= RunTestFile(test);
                 }
-          
+
             Unindent();
           }
         }
-        
+
         when (someTestSuitesFailedToLoad)
           PrintLine("Some test suits is failed to load!", ConsoleColor.Red);
-          
+
         when (someTestsFailed)
           PrintLine("Some tests is failed!", ConsoleColor.Red);
-        
+
         WriteLine("done...");
-        
+
         when (someTestsFailed || someTestSuitesFailedToLoad)
           Environment.Exit(-1);
       }

@@ -25,13 +25,13 @@ namespace Nitra.Ast
       def loc = Location();
       SupportedTypes = ImmutableArray.Create(Reference(loc, "Some"), Reference(loc, "None"), Reference(loc, "Cons"), Reference(loc, "Nil"));
     }
-    
+
     private this()
     {
     }
 
     // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { [] } } 
+    public override AllSymbols : Seq[DeclarationSymbol] { get { [] } }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
@@ -41,7 +41,7 @@ namespace Nitra.Ast
         | _ => BindResult.Nil()
       }
     }
-    
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def res = LightList();
@@ -59,7 +59,7 @@ namespace Nitra.Ast
 
       res.ToBindResult()
     }
-    
+
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
     {
       def id            = nodeToIdMap.GetObjectId(this);

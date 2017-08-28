@@ -284,7 +284,7 @@ namespace Nitra.Visualizer
         return null;
 
       // check for circular dependency
-      for (var i = 0; i < checkedSpans.Count; i++) { 
+      for (var i = 0; i < checkedSpans.Count; i++) {
         // if current span was previously checked
         if (ast.Span == checkedSpans[i]) {
           // and it's not a topmost span
@@ -295,7 +295,7 @@ namespace Nitra.Visualizer
           break;
         }
       }
-      
+
       checkedSpans.Add(ast.Span);
 
       if (ast.Span.IntersectsWith(pos))
@@ -388,7 +388,7 @@ namespace Nitra.Visualizer
             cmpilerMessages.AddRange(test.File.GetCompilerMessages());
         else
           cmpilerMessages.AddRange(_currentTest.File.GetCompilerMessages());
-         
+
         cmpilerMessages.Sort();
 
 
@@ -483,7 +483,7 @@ namespace Nitra.Visualizer
           UpdateHtmlPrettyPrint();
         else if (_needUpdateTextPrettyPrint && object.ReferenceEquals(_tabControl.SelectedItem, _textPrettyPrintTabItem))
           UpdateTextPrettyPrint();
-        
+
         UpdateDeclarations();
       }
       catch(Exception e)
@@ -764,7 +764,7 @@ namespace Nitra.Visualizer
 
       foreach (var stat in stats)
         sb.AppendLine(stat.ToString());
-      
+
       var result = sb.ToString();
 
       Clipboard.SetData(DataFormats.Text, result);

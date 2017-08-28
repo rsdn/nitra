@@ -27,7 +27,7 @@ namespace Nitra.ViewModels
   {
     public        Id                       : FileId { get; protected set; }
     mutable       _client                  : NitraClient;
-    public static TypingMsg                : Guid = Guid.NewGuid(); 
+    public static TypingMsg                : Guid = Guid.NewGuid();
     public        Project                  : ProjectVm { get; private set }
     mutable       _isBatchCodeUpdate       : bool;
                   _batchFileChanges        : List[FileChange] = List();
@@ -46,7 +46,7 @@ namespace Nitra.ViewModels
       Project = project;
       Statistics = Statistics();
     }
-    
+
     public Code              : string
     {
       get
@@ -122,7 +122,7 @@ namespace Nitra.ViewModels
       _client.Send(ClientMessage.FileDeactivated(Project.Id, Id));
       Dispose();
     }
-    
+
     public Save() : void
     {
       when (IsDirty)
@@ -131,12 +131,12 @@ namespace Nitra.ViewModels
         IsDirty = false;
       }
     }
-    
+
     public StartBatchCodeUpdate() : void
     {
       _isBatchCodeUpdate = true;
     }
-    
+
     public FinishBatchCodeUpdate(caretPos : int) : void
     {
       _isBatchCodeUpdate = false;
@@ -154,7 +154,7 @@ namespace Nitra.ViewModels
         _code = newTextOpt;
       Version = version;
       IsDirty = true;
-      def change = 
+      def change =
         if (insertionLength == 0 && removalLength > 0)
           FileChange.Delete(NSpan(offset, offset + removalLength))
         else if (insertionLength > 0 && removalLength == 0)
@@ -163,13 +163,13 @@ namespace Nitra.ViewModels
           FileChange.Replace(NSpan(offset, offset + removalLength), inserted)
         else
           assert(false);
-          
+
       if (_isBatchCodeUpdate)
         _batchFileChanges.Add(change);
       else
         _client.Send(ClientMessage.FileChanged(Id, version, change, VersionedPos(caretPos, version)));
     }
-    
+
     public Run() : bool
     {
       // TODO: Send massages to server: Close(old_prj), Open(new_prj), Open(file)*, Reference()*, ProjectRedy().
@@ -186,7 +186,7 @@ namespace Nitra.ViewModels
         //def gold = Gold;
         // TODO: For each twst file send massages to server: RetrivePrettyprint()
         // Check pretty print with gold.
-        
+
         //def parseTree = _file.GetParseTree() : ParseTree;
         //def prettyPrintResult = parseTree.ToString(PrettyPrintOptions.DebugIndent | PrettyPrintOptions.MissingNodes);
         //PrettyPrintResult = prettyPrintResult;
@@ -213,7 +213,7 @@ namespace Nitra.ViewModels
       when (tests.Count > 0)
         tests[index].IsSelected = true;
     }
-    
+
     public StartCompleteWord(pos : int) : void
     {
       def client = _client;
@@ -222,9 +222,9 @@ namespace Nitra.ViewModels
     }
 
     public override GetAllTests() : Seq[FileVm] { [this] }
-        
+
     public override ToString(): string { Name }
-    
+
     public Dispose() : void
     {
       _client = null;

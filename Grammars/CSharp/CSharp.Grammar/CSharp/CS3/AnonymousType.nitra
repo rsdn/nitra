@@ -13,7 +13,7 @@
       | Named      = Reference sm "=" sm Expression;
       // We need to accept any expressions (not only valid) for IntelliSense needs.
       // TODO: Verify that the Expression is a simple-name or a member-access during mapping (see member-declarator in C# spec)
-      | Expression = !(Reference "=") Expression 
+      | Expression = !(Reference "=") Expression
     }
 
     extend syntax Expression

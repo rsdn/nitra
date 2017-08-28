@@ -43,7 +43,7 @@ namespace Nitra
       def start = loc.Span.StartPos;
       ParsedValue(NSpan(start, start + text.Length), (value, userDefined))
     }
-    
+
     public MakeName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
     {
       unless (parsedValue.HasValue)
@@ -52,7 +52,7 @@ namespace Nitra
       def (value, userDefined) = parsedValue.Value;
       MakeName(loc, value, userDefined)
     }
-    
+
     public MakeOptionalName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
     {
       unless (parsedValue.HasValue)
@@ -73,9 +73,9 @@ namespace Nitra
     {
       unless (parsedValue.HasValue)
         return ParsedValue(parsedValue.Span.StartPos);
-        
+
       def value = parsedValue.ValueOrDefault;
-      
+
       if (literals.Find(value) is Some(name))
         ParsedValue(parsedValue.Span, (name, true))
       else if (Utils.IsIdentifier(value))
@@ -97,10 +97,10 @@ namespace Nitra
       when (reference.IsSymbolEvaluated)
       when (reference.Symbol is SyntaxModuleSymbol/*(IsLiteralsEvaluated = true)*/ as m)
         return literals.ReplaceRange(m.Literals);
-        
+
       literals
     }
-    
+
     public static Init[T](this context : DependentPropertyEvalContext, symbol : T) : T
       where T: DeclarationSymbol
     {
@@ -122,12 +122,12 @@ namespace Nitra
         else
           return WellKnownSymbols.VoidRuleType;
       }
-        
+
       def args = List();
-      
+
       when (CanBeTupleElem(arg1))
         args.Add(arg1);
-        
+
       foreach (arg when CanBeTupleElem(arg) in restArgs)
         args.Add(arg);
 
@@ -260,7 +260,7 @@ namespace Nitra
     public BindAstExtension(name : Reference, scope : Scope, defaultReturnType : AstTypeSymbol) : Ref[AstTypeSymbol]
     {
       def bindRes = scope.Bind(name);
-      
+
       if (bindRes.IsEmpty)
         Ref.CreateBind(name.Location, BindResult.Single(defaultReturnType))
       else
@@ -396,13 +396,13 @@ namespace Nitra
         def scope = if (thisType.IsScopeEvaluated) thisType.Scope else EmptyScope.Instance;
         validCasts = scope.Bind.[MapSyntaxSymbol](canBeImplicitCast);
       }
-      
+
       if (validCasts.IsEmpty)
         Ref.CreateBind(loc.Location, CreateFunctionType(loc, array[thisType], thisType, context))
       else
         Ref.CreateBind(loc.Location, "MapSyntaxCast", validCasts.Filter());
     }
-    
+
     public FilterResolvedLanguage(refs : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[LanguageSymbol]
     {
       def lst = List(refs.Length);
@@ -425,12 +425,12 @@ namespace Nitra
         when (candidates.Contains.[AstTypeSymbol]() && (candidates.Contains.[ClassSymbol]() || candidates.Contains.[InterfaceSymbol]()))
           candidates2 = candidates.Result.Filter(s => !(s is ClassSymbol || s is InterfaceSymbol));
       }
-        
+
       mutable parsedValueType;
       def resolve(candidate) : ValueOption[TypeSymbol]
       {
         | ast is AstTypeSymbol => VSome(ast)
-        | typeSymbol is TypeSymbol =>                
+        | typeSymbol is TypeSymbol =>
           when (parsedValueType == null)
             parsedValueType = context.BindFullName(1, "Nitra", "ParsedValue");
           def constructedType = TopConstructedTypeSymbol();
@@ -445,7 +445,7 @@ namespace Nitra
       def result = candidates2.Map(resolve);
       candidates.CreateRevole(result)
     }
-    
+
     public GetImplicitBaseTypeForLanguage(context : DependentPropertyEvalContext, symbol : LanguageSymbol) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseLanguage(symbol)
@@ -479,7 +479,7 @@ namespace Nitra
 
       lst
     }
-    
+
     public GetImplicitBaseTypeForDeclaration(context : DependentPropertyEvalContext, symbol : AstSymbol, _for_dependency : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseDeclaration(symbol)

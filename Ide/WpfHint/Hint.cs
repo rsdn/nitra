@@ -26,7 +26,7 @@ namespace WpfHint2
 
     /// <summary>
     /// Deafult = 400.0
-    /// </summary>      
+    /// </summary>
     public double WrapWidth
     {
       get { return _wrapWidth; }

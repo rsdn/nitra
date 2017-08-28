@@ -26,8 +26,8 @@ namespace DotNet
     }
 
     // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } } 
-    
+    public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } }
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       _typeInfo.Scope.Bind.[TSymbol](reference)
@@ -37,7 +37,7 @@ namespace DotNet
     {
       _typeInfo.Scope.Bind.[TSymbol](isMatch)
     }
-    
+
     public override ToDot(nodeToIdMap : SCG.Dictionary[object, int], nodes : SCG.List[string], edges : SCG.List[string]) : void
     {
       def id      = nodeToIdMap.GetObjectId(this);
@@ -61,7 +61,7 @@ namespace DotNet
       def args     = metadataReader.ReadObjects(reader);
       (typeInfo, args)
     }
-    
+
     public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : this
     {
       def (typeInfo, args) = Read(reader, metadataReader);

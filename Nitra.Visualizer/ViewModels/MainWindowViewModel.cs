@@ -22,7 +22,7 @@ namespace Nitra.Visualizer.ViewModels
     [Reactive] public SolutionVm  CurrentSolution { get; set; }
     [Reactive] public Settings    Settings        { get; private set; }
     [Reactive] public string      StatusText      { get; private set; }
-    
+
     public NitraTextEditorViewModel Editor { get; private set; }
 
     public IReactiveCommand<object> FindSymbolDefinitions { get; private set; }
@@ -33,16 +33,16 @@ namespace Nitra.Visualizer.ViewModels
       Editor = new NitraTextEditorViewModel(this);
       Settings = Settings.Default;
 
-      var canFindSymbolDefinitions = this.WhenAny(v => v.CurrentSuite, v => v.CurrentFile, 
+      var canFindSymbolDefinitions = this.WhenAny(v => v.CurrentSuite, v => v.CurrentFile,
                                                   (suite, test) => suite != null && test != null);
 
       FindSymbolDefinitions = ReactiveCommand.Create(canFindSymbolDefinitions);
-      FindSymbolDefinitions.ThrownExceptions.Subscribe(e => 
+      FindSymbolDefinitions.ThrownExceptions.Subscribe(e =>
         StatusText = "GOTO definition failed!");
       FindSymbolDefinitions.Subscribe(OnFindSymbolDefinitions);
 
       FindSymbolReferences = ReactiveCommand.Create(canFindSymbolDefinitions);
-      FindSymbolReferences.ThrownExceptions.Subscribe(e => 
+      FindSymbolReferences.ThrownExceptions.Subscribe(e =>
         StatusText = "Find all references definition failed!");
       FindSymbolReferences.Subscribe(OnFindSymbolReferences);
 

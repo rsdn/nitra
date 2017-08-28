@@ -27,7 +27,7 @@ namespace Nitra.ClientServer.Server
       match (serverMsg)
       {
         | FileChanged | FileChangedBatch                    => ()
-        | ReferenceLoaded | ReferenceUnloaded 
+        | ReferenceLoaded | ReferenceUnloaded
         | ProjectReferenceLoaded | ProjectReferenceUnloaded => ServerUtils.Log(serverMsg.ToString(), ConsoleColor.Magenta);
         | _                                                 => ServerUtils.Log(serverMsg.ToString(), ConsoleColor.DarkGray);
       }

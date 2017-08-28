@@ -23,7 +23,7 @@ namespace Nitra.ProjectSystem
 
       when  (index1 <= 0)
         return null;
-      
+
       def value = data.Substring(index1 + 1, data.Length - index1 - 1);
       def kind  = data.Substring(0, index1);
 
@@ -42,7 +42,7 @@ namespace Nitra.ProjectSystem
             def path  = value.Substring(0, index2);
             ProjectReference(projectId, path)
           }
-          
+
         | _ => null
       }
     }
@@ -53,7 +53,7 @@ namespace Nitra.ProjectSystem
   public class ProjectReference : LibReference
   {
     public this(path : string) { this(-1, path); }
-    
+
     public          ProjectId : int;
     public override Path      : string { get; }
     public override Kind      : string { get { "Project" } }
@@ -76,17 +76,17 @@ namespace Nitra.ProjectSystem
   public class FullNameLibReference : LibReference
   {
     public override Kind : string { get { "FullName" } }
-    
+
     [EqualsIgnore]
     [RecordIgnore]
     private mutable _path : string;
-    
+
     public FullName : string { get; }
 
     [EqualsIgnore]
     [RecordIgnore]
     public Exception : Exception { get; protected set; }
-    
+
     public override Path : string
     {
       get
@@ -101,11 +101,11 @@ namespace Nitra.ProjectSystem
           }
           catch { | e => this.Exception = e; }
         }
-          
+
         _path
       }
     }
-    
+
     public override ToString() : string { FullName }
   } // class
 } // namespace

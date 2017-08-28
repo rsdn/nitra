@@ -462,7 +462,7 @@ namespace Nitra
               state.FirstTokens.UnionWith(ruleParser.ParsingSequence.FirstTokens);
             else
               _ = state.FirstTokens.Add(tokenParser);
-          
+
           | ListWithSeparator(seq)
           | Subsequence      (seq, _)
           | List             (seq)
@@ -595,7 +595,7 @@ namespace Nitra
         | _ => null
       }
     }
-    
+
     public GetExtensibleRuleParser(rd : ExtensibleRuleDescriptor, bindingPower : string) : ExtensibleRuleParser
     {
       ExtensibleRules[rd].GetParser(bindingPower)
@@ -642,7 +642,7 @@ namespace Nitra
     {
       get { Tokens.Values.OfType.[TokenParser.TokenString]().Select(t => t.Str) }
     }
-    
+
     public ParseAllGrammarTokens(pos : int, parseResult : ParseResult) : SCG.HashSet[int]
     {
       parseResult.ParseSession.CancellationToken.ThrowIfCancellationRequested();

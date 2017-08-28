@@ -63,7 +63,7 @@ public partial class Top : AstBase, IProjectSupport
     typeArgs = ImmutableArray.Empty;
     false
   }
-  
+
   public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
   {
   }

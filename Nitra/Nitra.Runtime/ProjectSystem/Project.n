@@ -115,16 +115,16 @@ namespace Nitra.ProjectSystem
 
       when (files.Length == 0)
         return null;
-      
+
       def fileWithAst = files.FirstOrDefault(f => f.Ast != null);
-      
+
       when (fileWithAst == null)
         return null;
-      
+
       match (fileWithAst.Ast)
       {
         | x is IProjectSupport => x
-        | x => 
+        | x =>
           Trace.WriteLine($"The $(x.GetType().FullName) not support IProjectSupport.");
           null
       }

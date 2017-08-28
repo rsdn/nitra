@@ -73,11 +73,11 @@ namespace Nitra.LanguageCompiler
         def pathWithWildcards = Path.ChangeExtension(path, ".???");
         files.Add($<#    <file src="$(pathWithWildcards)" target="lib\net45\" />#>);
       }
-      
+
       def filesContent  = $<#..$(files; "\r\n")#>;
       ("XXFilesXX", filesContent)
     }
-    
+
     GetFilesRecursively(dir: string): Seq[string]
     {
         foreach (file in Directory.GetFiles(dir))
@@ -86,13 +86,13 @@ namespace Nitra.LanguageCompiler
         foreach (file in Directory.GetDirectories(dir).SelectMany(GetFilesRecursively))
             yield file;
     }
-    
+
     CopyStandardExternalDependencies(config: CommandPromptReader) : void
     {
-            
+
       def copyDir(source, destination)
       {
-        
+
         _ = Directory.CreateDirectory(destination);
 
         foreach (sourcePath in GetFilesRecursively(source))
@@ -104,13 +104,13 @@ namespace Nitra.LanguageCompiler
           WriteLine($"$sourcePath => $destPath done.")
         }
       }
-      
+
       def rootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
       WriteLine($"Target ext deps = $(GetExternalDependenciesOutputPath(config)), source root = $rootPath");
       copyDir(Path.Combine(rootPath, @"ExternalDependencies"), GetExternalDependenciesOutputPath(config));
       copyDir(Path.Combine(rootPath, @"ExternalTools"), Path.Combine(config.OutputPath, config.ProjectName, "ExternalTools"));
     }
-    
+
     CopyBinaries(config : CommandPromptReader) : void
     {
       ExternalDependencies(config, config.Binaries);
@@ -127,14 +127,14 @@ namespace Nitra.LanguageCompiler
       _ = Directory.CreateDirectory(dir);
       dir
     }
-    
+
     ExternalDependencies(config : CommandPromptReader, paths : list[string]) : void
     {
       def binPath = GetExternalDependenciesOutputPath(config);
-      
+
       unless (Directory.Exists(binPath))
         _ = Directory.CreateDirectory(binPath);
-        
+
       foreach (path1 in paths)
       {
         def path = Path.GetFullPath(path1);
@@ -153,7 +153,7 @@ namespace Nitra.LanguageCompiler
             File.Copy(pdbPath, pdbOutPath, overwrite=true);
           }
         }
-        else 
+        else
           config.CompilerMessages.Error(Location.Default, "File or directory '" + path + "' does not exist.");
       }
     }
@@ -167,7 +167,7 @@ namespace Nitra.LanguageCompiler
       foreach (ext in config.Language.FileExtensions)
       {
         def extName = ExtensionToName(ext);
-        ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\FileExtensionToContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\$(extName)FileExtensionToContentTypeDefinition.Generated.cs", 
+        ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\FileExtensionToContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\$(extName)FileExtensionToContentTypeDefinition.Generated.cs",
           ("XXFileExtensionNameXX", extName) ::
           ("XXFileExtensionXX",     ext) ::
           vars,
@@ -178,16 +178,16 @@ namespace Nitra.LanguageCompiler
 
       def fileExtensionsReplacement = (<#"XXFileExtensionsXX"#>, $<#..$(fileExtensions; ", "; e => "\"" + e + "\"")#>);
 
-      ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\NitraContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\NitraContentTypeDefinition.Generated.cs", 
+      ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\NitraContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\NitraContentTypeDefinition.Generated.cs",
         fileExtensionsReplacement :: vars,
         config);
     }
 
     public DefaultVars(config : CommandPromptReader) : list[string * string]
     {
-      
+
       def lang = config.Language;
-      
+
       [
         ("XXNamespaceXX",                config.DefaultNamespace),
         ("XXProjectSupportXX",           config.ProjectSupport),
@@ -285,7 +285,7 @@ namespace Nitra.LanguageCompiler
       foreach (spanClass in config.Language.GetSpanClasses())
       {
         def color = ColorFromArgb(spanClass.Style.ForegroundColor);
-        ExpandTemplate(@"Templates\Highlighting\ClassificationDefinition.cs",  $@"$prjName\Highlighting\$(spanClass.Name)ClassificationDefinition.Generated.cs", 
+        ExpandTemplate(@"Templates\Highlighting\ClassificationDefinition.cs",  $@"$prjName\Highlighting\$(spanClass.Name)ClassificationDefinition.Generated.cs",
           [("XXNamespaceXX",         config.DefaultNamespace),
            ("XXDisplay nameXX",      SpanClass.GetDisplayNameForIde(config.Language, spanClass)),
            ("XXSpanClassNameXX",     SpanClass.GetNameForIde(config.Language, spanClass)),
@@ -296,7 +296,7 @@ namespace Nitra.LanguageCompiler
           config);
       }
     }
- 
+
     ExpandTemplates(templateRootPath : string, outputPath : string, vars : Seq[string * string], config : CommandPromptReader) : void
     {
       unless (Directory.Exists(outputPath))
@@ -304,7 +304,7 @@ namespace Nitra.LanguageCompiler
         _ = Directory.CreateDirectory(outputPath);
         assert(true);
       }
- 
+
       foreach (file in Directory.EnumerateFiles(templateRootPath))
       {
         def fileName = Path.GetFileName(file);

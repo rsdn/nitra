@@ -13,7 +13,7 @@ syntax module GherkinSyntax
 
   keyword regex ['A'..'Z', 'a'..'z']+ rule S;
 
-  token Content = sm Str=(!NewLineCharacter Any)* // parse everything till end of line (and including) 
+  token Content = sm Str=(!NewLineCharacter Any)* // parse everything till end of line (and including)
   {
     Value() : string = GetText(Str);
   }
@@ -24,7 +24,7 @@ syntax module GherkinSyntax
     syntax AsA     = "As" sm "a"            Content nl { Value() : string = Content.Value(); }
     syntax IWantTo = "I"  sm "want" sm "to" Content nl { Value() : string = Content.Value(); }
     syntax SoThat  = "So" sm "that"         Content nl { Value() : string = Content.Value(); }
-  
+
     Value() : B.Feature = B.Feature(Content.Value(), AsA.Value(), IWantTo.Value(), SoThat.Value(), Scenarios.Select(s => s.Value()));
   }
 

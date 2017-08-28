@@ -35,7 +35,7 @@ namespace DotNet
       public RootScope     : Scope;
       public Manager       : ManagerClass;
     }
-    
+
     // IProjectSupport
 
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
@@ -94,7 +94,7 @@ namespace DotNet
       def (context, rootNamespace, rootScope, manager) = data :> ProjectData;
 
       context.CancellationToken = cancellationToken;
-      
+
       try
       {
         ManagerClass.Instance = manager;
@@ -107,7 +107,7 @@ namespace DotNet
             removeParsedSymbols(symbol.MemberTable);
         }
         removeParsedSymbols(rootNamespace.MemberTable);
-        
+
         def evalHost = NitraProjectEvalPropertiesHost(files, rootNamespace, rootScope);
         evalHost.EvalProperties(context, "SymbolHierarchy", 0);
         evalHost.EvalProperties(context, "Scopes", 1);
@@ -135,13 +135,13 @@ namespace DotNet
               return result;
           }
         }
-        
+
         ValueOption.None()
       }
-      
+
       findSymbol(rootNamespace.MemberTable)
     }
-    
+
     public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
     {
       match (symbol)
@@ -151,15 +151,15 @@ namespace DotNet
         | _ => type = null; typeArgs = ImmutableArray.Empty; false
       }
     }
-    
+
     public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
     {
       def rootNamespace = (data :> ProjectData).RootNamespace;
       _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
     }
-    
+
     // end of IProjectSupport implementation
-    
+
     class StubCompiler : ManagerClass
     {
       public this(project : Project)
@@ -355,7 +355,7 @@ namespace DotNet
             | VariantOption
             | Class =>
               def symbol : TopGenericTypeSymbol =
-                        if (tycon.IsDelegate) ExternalTypeDeclaration.[TopDelegateSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable) 
+                        if (tycon.IsDelegate) ExternalTypeDeclaration.[TopDelegateSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else if (tycon.IsInterface) ExternalTypeDeclaration.[TopInterfaceSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else if (tycon.IsValueType) ExternalTypeDeclaration.[TopStructSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else                        ExternalTypeDeclaration.[TopClassSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
@@ -365,7 +365,7 @@ namespace DotNet
               nodeToSymbolMap[tycon] = symbol;
               symbol.Scope = EmptyScope.Instance; // temp
               symbol.EvalProperties(context);
-                
+
             | Alias         =>
               def symbol = ExternalTypeDeclaration.[TypeAliasSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
               makeTypeParameters(symbol, tycon);
@@ -375,7 +375,7 @@ namespace DotNet
 
               nodeToSymbolMap[tycon] = symbol;
               symbol.EvalProperties(context);
-          
+
             | Enum          =>
               def symbol = ExternalTypeDeclaration.[TopEnumSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
               nodeToSymbolMap[tycon] = symbol;
@@ -385,13 +385,13 @@ namespace DotNet
           }
         }
         node.EnsureCached();
-   
+
         match (node.Value)
         {
           | No                               => ()
           | MacroCall                        => ()
           | null                             => ()
-          | NamespaceReference               => 
+          | NamespaceReference               =>
             when (cancellationToken.IsCancellationRequested)
               return;
             def name   = NRB.Name(loc, node.PartName);
@@ -402,19 +402,19 @@ namespace DotNet
             symbol.EvalProperties(context);
             foreach (subNode in node.Children.Values.ToArray())
               loadNsMemebers(subNode, symbol);
-            
+
           | Cached(tycon) =>  addTopType(node, tycon);
           | CachedAmbiguous(elems)       => foreach (e in elems) addTopType(node, e);
           | NotLoaded(_externalType)     => assert2(false)
           | NotLoadedList(_externalType) => assert2(false)
         }
       }
-      
+
       rootNamespace.EvalProperties(context);
-      
+
       foreach (node in nemerleNsRoot.Children.Values.ToArray())
         loadNsMemebers(node, rootNamespace);
-      
+
       def nodeToSymbolMap = nodeToSymbolMap;
 
       foreach (alias in aliases)
@@ -463,9 +463,9 @@ namespace DotNet
           }
         }
       }
-      
+
       setParents(rootNamespace);
-      
+
       def bindTuple(scope : Scope, typeParameterCoiunt : int) : Ref[GenericContainerTypeSymbol]
       {
         def alg(symbol : GenericContainerTypeSymbol) : ValueOption[GenericContainerTypeSymbol]
@@ -482,7 +482,7 @@ namespace DotNet
       {
         Reference(loc, name).Bind(scope)
       }
-      
+
       def makeTuples() : void
       {
         def nemerleNs = bind(rootNamespace.MemberTable, "Nemerle");
@@ -507,12 +507,12 @@ namespace DotNet
           symbol.EvalProperties(context);
         }
       }
-      
-      
+
+
       makeTuples();
-      
+
       def res1 = bind(rootNamespace.MemberTable, "Nemerle");
-      
+
       when (res1.IsSymbolEvaluated)
       {
         def res2 = bind(res1.Symbol.MemberTable, "Core");
@@ -522,15 +522,15 @@ namespace DotNet
 
       rootNamespace.MemberTable
     }
-  
+
     static FixedTypeToTypeRef(ti : TypeInfo, typeMap : Hashtable[TypeInfo, TypeSymbol], loc : Nitra.Location, t : Nemerle.Compiler.TypeVar, context : DependentPropertyEvalContext, pos : int = -1) : TypeSymbol
     {
       match (t)
       {
-        | FixedType.Class(ti, []) => 
+        | FixedType.Class(ti, []) =>
           def sym = typeMap[ti];
           sym
-          
+
         //| FixedType.Class(ti, args) =>
         //  def constructedType = AstUtils.CreateConstructedTypeSymbol(file, span);
         //  def sym = typeMap[ti] :> GenericTypeSymbol;
@@ -538,7 +538,7 @@ namespace DotNet
         //  def resultArgs = array(args.Length);
         //  constructedType
 
-        | FixedType.StaticTypeVarRef(staticTypeVar) => 
+        | FixedType.StaticTypeVarRef(staticTypeVar) =>
           null
 
         | _ => null

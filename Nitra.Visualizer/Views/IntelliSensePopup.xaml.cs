@@ -21,7 +21,7 @@ namespace Nitra.Visualizer.Views
 
       this.OneWayBind(ViewModel, vm => vm.Items, v => v.List.ItemsSource);
       this.Bind(ViewModel, vm => vm.SelectedPopupItem, v => v.List.SelectedItem);
-      
+
       events.KeyDown
             .Where(a => a.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None)
             .Do(a => a.Handled = true)

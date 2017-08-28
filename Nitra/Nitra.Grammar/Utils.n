@@ -30,9 +30,9 @@ namespace Nitra
     //{
 		//  //TSymbol	Nitra.Declarations.DeclarationSymbol	Nitra.Declarations.DeclarationSymbol
 		//  //TConcreteSymbol	Nitra.Ast.RuleTypeSymbol	Nitra.Ast.RuleTypeSymbol
-    //  
+    //
     //}
-    
+
     [DebuggerStepThroughAttribute]
     public PassThrough[TElem, TValue](elems : ListParseTree[TElem], value : TValue, func : TElem * TValue -> TValue) : TValue
       where TElem : IParseTree
@@ -400,7 +400,7 @@ namespace Nitra
     {
       BindByHierarchyImpl(symbol, name, compilerMessages)
     }
-    
+
     BindByHierarchyImpl[T](symbol : Symbol, name : Located, compilerMessages : ICompilerMessages) : SymbolRef[T]
       where T: Symbol
     {

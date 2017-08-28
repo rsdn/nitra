@@ -473,7 +473,7 @@ namespace Nitra.Compiler
 
       foreach (syntaxMapping in this.RuleSymbol.SyntaxMappings)
       {
-        def makeAmbiguous = 
+        def makeAmbiguous =
           if (syntaxMapping.Parameters.IsEmpty)
             <[ $(AstEmitter.GetAmbiguousAstCtor(Environment, syntaxMapping.ReturnType))(Nitra.Internal.AstUtils.GetAstAmbiguities(this.ambiguities)) ]>
           else

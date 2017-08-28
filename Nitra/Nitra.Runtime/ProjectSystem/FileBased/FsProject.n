@@ -30,7 +30,7 @@ namespace Nitra.ProjectSystem
       Libs = libs;
       ProjectDir = projectDir;
     }
-    
+
     public this([NotNull] solution : FsSolution[TAst], projectDir : string, [NotNull] files : Seq[FsFile[TAst]], libs : Seq[LibReference])
     {
       this(solution, projectDir, libs);
@@ -48,7 +48,7 @@ namespace Nitra.ProjectSystem
     {
       get { this.FsFiles }
     }
-    
+
     OnCollectionChanged(_sender : object, e : NotifyCollectionChangedEventArgs) : void
     {
       when (e.OldItems != null)
@@ -69,7 +69,7 @@ namespace Nitra.ProjectSystem
             _ = oldProj.FsFiles.Remove(newItem);
           newItem.FsProject = this;
           //Add listener for each item on PropertyChanged event
-          //newItem.PropertyChanged += this.OnItemPropertyChanged;         
+          //newItem.PropertyChanged += this.OnItemPropertyChanged;
         }
       }
     }

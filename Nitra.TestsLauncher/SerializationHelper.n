@@ -31,13 +31,13 @@ namespace Nitra.Visualizer.Serialization
   {
     [XmlAttribute] public Name : string { get; set }
     [XmlAttribute] public Path : string { get; set }
-    
+
     public ToDynamicExtensionInfo(rootPath : string) : Messages.DynamicExtensionInfo
     {
       Messages.DynamicExtensionInfo(Name, Path.GetFullPath(Path.Combine(rootPath, Path)))
     }
   }
-  
+
   public module SerializationHelper
   {
     _configXmlSerializer   : XmlSerializer = XmlSerializer(typeof(Messages.Config));
@@ -54,9 +54,9 @@ namespace Nitra.Visualizer.Serialization
     {
       def text   = File.ReadAllText(configPath);
       def reader = StringReader(text);
-      
-      def result   = 
-        try _configXmlSerializer.Deserialize(reader) :> Messages.Config 
+
+      def result   =
+        try _configXmlSerializer.Deserialize(reader) :> Messages.Config
         catch
         { | _e is InvalidOperationException =>
           // Try interpret config as old version. Try to read "Language" type

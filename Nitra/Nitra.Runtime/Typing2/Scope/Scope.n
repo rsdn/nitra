@@ -25,9 +25,9 @@ namespace Nitra.Declarations
       def nodes       = List();
       def edges       = List();
       def nodeToIdMap = Dictionary();
-      
+
       ToDot(nodeToIdMap, nodes, edges);
-      
+
       def typeName = GetType().Name;
       def content = $<#
         digraph RecoveryParser

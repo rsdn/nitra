@@ -31,7 +31,7 @@ namespace Nitra.Declarations
     protected override ExecutePass(context : DependentPropertyEvalContext, passName : string) : void
     {
       context.Files = _files;
-      
+
       foreach (symbol in _symbols)
         EvalProperties(context, symbol);
 
@@ -39,7 +39,7 @@ namespace Nitra.Declarations
       {
         when (context.CancellationToken.IsCancellationRequested)
           return;
-          
+
         def stat = GetStatistics(file, passName);
         def ast  = file.Ast;
         when (ast : object != null)
@@ -63,7 +63,7 @@ namespace Nitra.Declarations
     private GetStatistics(file : FileEvalPropertiesData, passName : string) : StatisticsTask.Single
     {
       def statistics = file.Statistics;
-      def passStatistics = 
+      def passStatistics =
         if      (passName == null)   statistics
         else                         statistics?.GetOrAddContainerSubtask(passName);
 

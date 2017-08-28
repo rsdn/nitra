@@ -23,14 +23,14 @@ namespace Nitra.ClientServer.Server
   {
     _sync : object = object();
     _emptyArray : array[Messages.CompilerMessage] = array(0);
-    
+
     public ConvertCompilerMessages(source : Messages.CompilerMessageSource, compilerMessages : Seq[Nitra.ProjectSystem.CompilerMessage]) : array[Messages.CompilerMessage]
     {
       def count = compilerMessages.Count();
-      
+
       when (count == 0)
         return _emptyArray;
-            
+
       def result = array(count) : array[Messages.CompilerMessage];
 
       foreach (cm in compilerMessages with i)
@@ -38,25 +38,25 @@ namespace Nitra.ClientServer.Server
         def convertType(t : Nitra.CompilerMessageType) : Messages.CompilerMessageType
         {
           | FatalError => Messages.CompilerMessageType.FatalError
-          | Error      => Messages.CompilerMessageType.Error     
-          | Warning    => Messages.CompilerMessageType.Warning   
-          | Hint       => Messages.CompilerMessageType.Hint                   
+          | Error      => Messages.CompilerMessageType.Error
+          | Warning    => Messages.CompilerMessageType.Warning
+          | Hint       => Messages.CompilerMessageType.Hint
         }
         def t      = convertType(cm.Type);
         def loc    = ConvertLocation(cm.Location, withText=false);
-        def nested = 
+        def nested =
           if (cm.HasNestedMessages)
             ConvertCompilerMessages(source, cm.NestedMessages).NToList()
           else
             [];
-              
+
         def x = Messages.CompilerMessage(t, loc, cm.Text, cm.Number, source, nested);
         result[i] = x;
       }
-          
+
       result
     }
-    
+
     public ConvertLocation(loc : Nitra.Location, withText : bool) : Messages.Location
     {
       def source = loc.Source;
@@ -68,7 +68,7 @@ namespace Nitra.ClientServer.Server
     {
       Messages.NSpan(span.StartPos, span.EndPos)
     }
-    
+
     public ConvertToRange(loc : Nitra.Location, withText : bool) : Messages.Range
     {
       def start = loc.StartLineColumn;
@@ -76,7 +76,7 @@ namespace Nitra.ClientServer.Server
       def text  = if (withText) loc.Source.GetSourceLine(loc.Span.StartPos).GetText() else null;
       Messages.Range(ConvertNSpan(loc.Span), start.Line, start.Column, end.Line, end.Column, text)
     }
-    
+
     public Padding(str : string, len : int, ch : char = ' ') : string
     {
       def count = len - str.Length;
@@ -88,7 +88,7 @@ namespace Nitra.ClientServer.Server
       def count = len - str.Length;
       if (str.Length >= len) str else str + (string(ch, count))
     }
-    
+
     public LogMsgHandled(msg : string, timer : Stopwatch, millisecondToTimeout : int) : void
     {
       timer.Stop();
@@ -99,7 +99,7 @@ namespace Nitra.ClientServer.Server
       def color           = if (timeoutExceeded) ConsoleColor.Yellow else ConsoleColor.Green;
       def threadId        = Padding(Thread.CurrentThread.ManagedThreadId.ToString(), 3);
       def msg3            = msg2 + "took: " + milliseconds + " ms  ThreadId:" + threadId;
-    
+
       lock (_sync)
       {
         Console.ForegroundColor = color;
@@ -117,7 +117,7 @@ namespace Nitra.ClientServer.Server
         Console.ResetColor();
       }
     }
-    
+
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
     {
       def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
@@ -136,7 +136,7 @@ namespace Nitra.ClientServer.Server
         Console.ResetColor();
       }
     }
-    
+
     public Log(msg : string) : void
     {
       lock (_sync)
@@ -144,7 +144,7 @@ namespace Nitra.ClientServer.Server
         Console.WriteLine(msg)
       }
     }
-    
+
     public Log(msg : string, color : ConsoleColor) : void
     {
       lock (_sync)
@@ -154,7 +154,7 @@ namespace Nitra.ClientServer.Server
         Console.ResetColor();
       }
     }
-    
+
     public GetCoreCount() : int
     {
       mutable coreCount = 0;
@@ -162,7 +162,7 @@ namespace Nitra.ClientServer.Server
         coreCount += int.Parse(item["NumberOfCores"].ToString());
       coreCount
     }
-    
+
     public SendCompilerMessages(parseResult : IParseResult, router : Router, solutionId : SolutionId, projectId : ProjectId, fileId : FileId) : void
     {
       def compilerMessages = parseResult.CompilerMessages :> Nitra.ProjectSystem.CompilerMessageList;

@@ -34,20 +34,20 @@ namespace Nitra.BackEnd.Cci
     public static NoSpan : NSpan              = NSpan(0);
 
     public CciHost : IMetadataHost { get; protected set; }
-    
+
     [RecordIgnore] mutable _cciInternedKeyToSymbolMap : Hashtable.[uint, TypeSymbol];
     [RecordIgnore] mutable _cciInternedKeyToGenericSymbolMap : ConcurrentDictionary.[uint, TypeSymbol];
     [RecordIgnore] mutable _singleDimensionArray      : SingleDimensionArraySymbol;
     [RecordIgnore] mutable _cciObject                 : INamespaceTypeDefinition;
     [RecordIgnore] mutable _objectSymbol              : TypeSymbol;
     [RecordIgnore] public  CancellationToken          : CancellationToken { get; set; }
-    
+
     public this() { this(PeReader.DefaultHost()) }
 
     public Types                : Seq[TypeSymbol]            { get { _cciInternedKeyToSymbolMap.Values } }
     public Object               : TypeSymbol                 { get { _objectSymbol } }
     public SingleDimensionArray : SingleDimensionArraySymbol { get { _singleDimensionArray } }
-    
+
     public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       LoadExternalSymbols(libs, libPath, (loc, err) => compilerMessages.Error(loc, err), context);
@@ -59,19 +59,19 @@ namespace Nitra.BackEnd.Cci
         return true;
       false
     }
-    
+
     public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, addError : Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       Debug.WriteLine("LoadExternalSymbols started");
-      
+
       def timer = Stopwatch.StartNew();
       _singleDimensionArray = null;
       _cciObject = null;
       _objectSymbol = null;
-      
+
       def cciInternedKeyToSymbolMap = Hashtable.[uint, TypeSymbol]();
       _cciInternedKeyToSymbolMap = cciInternedKeyToSymbolMap;
-      
+
       _cciInternedKeyToGenericSymbolMap = ConcurrentDictionary();
 
       def rootNamespace = NamespaceSymbol();
@@ -88,10 +88,10 @@ namespace Nitra.BackEnd.Cci
         | name is FullNameLibReference with filePath = name.Path
         | file is FileLibReference     with filePath = file.Path =>
           this.CancellationToken.ThrowIfCancellationRequested();
-        
+
           def fullPath = IO.Path.Combine(libPath, filePath);
           def unit     = host.LoadUnitFrom(fullPath);
-          
+
           when (unit == null || unit.Equals(Dummy.Module) || unit.Equals(Dummy.Assembly) || !(unit is IAssembly))
           {
             addError(NoLocation, "The referenced file '" + fullPath + "' is not .Net assembly.");
@@ -99,10 +99,10 @@ namespace Nitra.BackEnd.Cci
           }
 
           def asm = unit :> IAssembly;
-          
+
           unless (loadedAsmsSet.Add(asm.AssemblyIdentity))
             continue; // alredy loaded
-          
+
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
             cciInternedKeyToSymbolMap[type.InternedKey] = typeSymbol;
@@ -123,14 +123,14 @@ namespace Nitra.BackEnd.Cci
             // Modifiers
             match (type)
             {
-              | INamespaceTypeDefinition as nsType => 
+              | INamespaceTypeDefinition as nsType =>
                 when (nsType.IsPublic)
                   modifiers |= Modifiers.Public;
-                  
+
               | INestedTypeDefinition as nsType => modifiers |= MakeModifiers(nsType.Visibility);
               | _ => ()
             }
-                
+
             flags.Add(modifiers);
             modifierHost.Flags = flags;
 
@@ -148,7 +148,7 @@ namespace Nitra.BackEnd.Cci
                 when (visibility != TypeMemberVisibility.Private && visibility != TypeMemberVisibility.Assembly)
                   nestedTypes.Add(loadNestedType(cciNestedType, genericContainerTypeSymbol));
               }
-              
+
               genericContainerTypeSymbol.NestedTypes = nestedTypes.ToArray();
             }
           }
@@ -156,12 +156,12 @@ namespace Nitra.BackEnd.Cci
           {
             def name = Name(NoLocation, type.Name.Value); // TODO: type.Name.UniqueKey
             def symbol : NestedTypeSymbol  =
-                     if (type.IsDelegate)  ExternalNestsdTypeDeclaration.[NestedDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable) 
+                     if (type.IsDelegate)  ExternalNestsdTypeDeclaration.[NestedDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
                 else if (type.IsInterface) ExternalNestsdTypeDeclaration.[NestedInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
                 else if (type.IsEnum)      ExternalNestsdTypeDeclaration.[NestedEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable)
                 else if (type.IsValueType) ExternalNestsdTypeDeclaration.[NestedStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
                 else                       ExternalNestsdTypeDeclaration.[NestedClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
-            
+
             unless (symbol.IsDeclaredInEvaluated)
               symbol.DeclaredIn = declaredIn;
 
@@ -176,10 +176,10 @@ namespace Nitra.BackEnd.Cci
                 def strName = type.Name.Value;
                 when (IgnoreName(strName))
                   return;
-                
+
                 def name = Name(NoLocation, strName); // TODO: type.Name.UniqueKey
                 def symbol : TopTypeSymbol =
-                         if (type.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable) 
+                         if (type.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsEnum)
                     {
@@ -189,12 +189,12 @@ namespace Nitra.BackEnd.Cci
                     }
                     else if (type.IsValueType) ExternalTopTypeDeclaration.[TopStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
                     else                       ExternalTopTypeDeclaration.[TopClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
-                
+
                 unless (symbol.IsDeclaredInEvaluated)
                   symbol.DeclaredIn = declaredIn;
 
                 initTypeSymbol(symbol, type);
-                      
+
               | cciNs is INamespaceDefinition => //loadNsMembers(ns, nsSymbol.MemberTable)
                 def strName = cciNs.Name.Value;
                 when (IgnoreName(strName))
@@ -206,30 +206,30 @@ namespace Nitra.BackEnd.Cci
                 symbol.EvalProperties(context);
                 foreach (subMember in cciNs.Members)
                   loadNsMember(subMember, symbol);
-                
+
               | _ => {}
             }
           }
-              
+
           foreach (subMember in asm.NamespaceRoot.Members with i)
           {
             when (i % 10 == 0)
               this.CancellationToken.ThrowIfCancellationRequested();
             loadNsMember(subMember, rootNamespace);
           }
-            
+
         | _ => throw NotImplementedException("Loading types from " + lib + " not supported yet.")
       }
 
       Debug.WriteLine($"Read external symbols took: $(timer.Elapsed)");
-            
+
       this.CancellationToken.ThrowIfCancellationRequested();
-      
+
       InitSystemTypes(context, rootNamespace);
       InitBaseTypeSet(context);
-      
+
       Debug.WriteLine($"Total of LoadExternalSymbols took: $(timer.Elapsed)");
-      
+
       this.CancellationToken.ThrowIfCancellationRequested();
 
       rootNamespace
@@ -242,7 +242,7 @@ namespace Nitra.BackEnd.Cci
       unless (symbol.IsTypeParametersEvaluated)
         symbol.TypeParameters = CreateGenericParameters(cciType.GenericParameterCount, cciType.GenericParameters, context);
     }
-      
+
     public LoadCustomAttribute(cciCustomAttribute : ICustomAttribute, context : DependentPropertyEvalContext) : CustomAttributeSymbol
     {
       def customAttributeSymbol = CustomAttributeSymbol();
@@ -255,13 +255,13 @@ namespace Nitra.BackEnd.Cci
         def decl = sym.GetDeclarationsOfType.[ExternalConstructorDeclaration]().FirstOrDefault();
         when (decl == null)
           return false;
-        
+
         decl.Method.InternedKey == cciCtorKey
       }
       def result = attrType.Scope.Bind(filter);
       when (result.HasResult)
         customAttributeSymbol.Constructor = result.Symbols.First();
-      
+
       def cciArgToCustomAttributeExpression(cciExpr : IMetadataExpression) : CustomAttributeExpression
       {
         | c is IMetadataConstant =>
@@ -324,7 +324,7 @@ namespace Nitra.BackEnd.Cci
         modifiers |= Modifiers.Protected;
       modifiers
     }
-    
+
     internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : void
     {
       foreach (p in paremeters)
@@ -345,19 +345,19 @@ namespace Nitra.BackEnd.Cci
         parameter.EvalProperties(context);
       }
     }
-    
+
     internal LoadTypeMembers(member : ITypeDefinitionMember, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
     {
       def visibility = member.Visibility;
-            
+
       //when (visibility != TypeMemberVisibility.Public && visibility != TypeMemberVisibility.Family && visibility != TypeMemberVisibility.FamilyOrAssembly)
       //  return;
-              
+
       def makeStaticIf(isStatic : bool, flags : ModifierSet) : void { when (isStatic) flags.Add(Modifiers.Static) }
       def name = Name(NoLocation, member.Name.Value); // TODO: type.Name.UniqueKey
       def flags = ModifierSet(context);
       flags.Add(MakeModifiers(visibility));
-            
+
       def symbol : DeclarationSymbol =
         match (member)
         {
@@ -367,9 +367,9 @@ namespace Nitra.BackEnd.Cci
             prop.Flags = flags;
             unless (prop.IsDeclaredInEvaluated)
               prop.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-            prop.Type = CciTypeToTypeSymbol(m.Type, context); 
+            prop.Type = CciTypeToTypeSymbol(m.Type, context);
             prop
-                  
+
           | m is IMethodDefinition when m.IsConstructor =>
             def method = ExternalConstructorDeclaration(name, m).DefineSymbol(declaredIn.MemberTable);
             makeStaticIf(m.IsStatic, flags);
@@ -391,13 +391,13 @@ namespace Nitra.BackEnd.Cci
               method.TypeParametersCount = m.GenericParameterCount;
             unless (method.IsTypeParametersEvaluated)
               method.TypeParameters = CreateGenericParameters(m.GenericParameterCount, m.GenericParameters, context);
-            
-            method.ReturnType = CciTypeToTypeSymbol(m.Type, context); 
+
+            method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
             method.EvalProperties(context);
-            
+
             LoadParameters(m.Parameters, method.ParameterScope, context);
             method
-                  
+
           | m is IFieldDefinition    =>
             if (member.ContainingTypeDefinition.IsEnum)
             {
@@ -410,48 +410,48 @@ namespace Nitra.BackEnd.Cci
             else
             {
               makeStaticIf(m.IsStatic, flags);
-              
+
               when(m.IsReadOnly)
                 flags.Add(Modifiers.Readonly);
-              
+
               def field = ExternalFieldDeclaration (name, m).DefineSymbol(declaredIn.MemberTable);
               field.Flags = flags;
               unless (field.IsDeclaredInEvaluated)
                 field.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;;
-              field.Type = CciTypeToTypeSymbol(m.Type, context); 
+              field.Type = CciTypeToTypeSymbol(m.Type, context);
               field
             }
-                  
+
           | m is IEventDefinition    =>
             def evnt = ExternalEventDeclaration   (name, m).DefineSymbol(declaredIn.MemberTable);
             unless (evnt.IsDeclaredInEvaluated)
               evnt.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-            evnt.Type = CciTypeToTypeSymbol(m.Type, context); 
+            evnt.Type = CciTypeToTypeSymbol(m.Type, context);
             evnt
-                  
+
           | _ => assert(false)
         };
-        
+
         when (symbol is CustomAttributeHostDeclarationSymbol as attrHost)
           attrHost.CustomAttributes = LazyAttributeList(member, this);
-              
+
         symbol.EvalProperties(context);
         symbol
     }
 
     CciTypeToTypeSymbol(cciTypeReference : ITypeReference, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      match (cciTypeReference) 
+      match (cciTypeReference)
       {
         | t is IGenericTypeParameter =>
           def typeInfo = CciTypeToTypeSymbol(t.DefiningType, context) :> GenericTypeSymbol;
           def tp = typeInfo.TypeParameters[t.Index];
           tp
-          
+
         | t is IArrayTypeReference =>
           def args = ImmutableArray.Create(CciTypeToTypeSymbol(t.ElementType, context));
           def typeInfo = if (t.IsVector) _singleDimensionArray : ArraySymbol
-                          else 
+                          else
                           {
                             def a = MultiDimensionArraySymbol();
                             a.TypeParametersCount = 0;
@@ -467,7 +467,7 @@ namespace Nitra.BackEnd.Cci
           constructedType.EvalProperties(context);
           //constructedType.Scope = typeInfo.Scope;
           constructedType
-        
+
         | t is ITypeDefinition =>
           mutable typeSymbol;
           if (_cciInternedKeyToSymbolMap.TryGetValue(t.InternedKey, out typeSymbol))
@@ -479,14 +479,14 @@ namespace Nitra.BackEnd.Cci
             // the type definition not found
             _objectSymbol
           }
-          
+
         | t is IGenericTypeInstanceReference =>
           _cciInternedKeyToGenericSymbolMap.GetOrAdd(cciTypeReference.InternedKey, _key => {
             def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
             def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
             def name = Name(NoLocation, t.GenericType.Name.Value);
             def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, t.ResolvedType).DefineSymbol(null);
-            
+
             constructedType.TypeInfo = typeInfo;
             constructedType.Args = args;
             constructedType.EvalProperties(context);
@@ -495,7 +495,7 @@ namespace Nitra.BackEnd.Cci
         | _ =>
           //resolvs++;
           mutable typeSymbol;
-          
+
           if (_cciInternedKeyToSymbolMap.TryGetValue(cciTypeReference.InternedKey, out typeSymbol))
           {
             //resolvedByKey++;
@@ -507,7 +507,7 @@ namespace Nitra.BackEnd.Cci
           }
       }
     }
-    
+
     CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeParameterSymbol]
     {
       if (genericParameterCount == 0)
@@ -525,7 +525,7 @@ namespace Nitra.BackEnd.Cci
         result.MoveToImmutable()
       }
     }
-    
+
     InitSystemTypes(context : DependentPropertyEvalContext, rootNamespace : NamespaceSymbol) : void
     {
       def textName             = "#Array1";
@@ -542,12 +542,12 @@ namespace Nitra.BackEnd.Cci
       //singleDimensionArray.BaseTypeSet // TODO: fill with array interfaces
       singleDimensionArray.EvalProperties(context);
       _singleDimensionArray = singleDimensionArray;
-      
+
       def cciObject = CciHost.PlatformType.SystemObject.ResolvedType;
-      _cciObject = cciObject; 
+      _cciObject = cciObject;
       _ = _cciInternedKeyToSymbolMap.TryGetValue(cciObject.InternedKey, out _objectSymbol);
     }
-    
+
     MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeParameterSymbol
     {
       def name  = NRB.Name(NoLocation, "T");
@@ -555,7 +555,7 @@ namespace Nitra.BackEnd.Cci
       tps.EvalProperties(context);
       tps
     }
-    
+
     InitBaseTypeSet(context : DependentPropertyEvalContext) : void
     {
       when (_objectSymbol == null)
@@ -564,7 +564,7 @@ namespace Nitra.BackEnd.Cci
       mutable resolvs = 0;
       mutable resolvedByKey = 0;
       mutable resolvedByResolvedTypeProp = 0;
-      
+
       foreach (x in _cciInternedKeyToSymbolMap.Values)
       {
         def cciType = (x.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
@@ -598,7 +598,7 @@ namespace Nitra.BackEnd.Cci
       Debug.WriteLine($"InitBaseTypeSet took: $(timer.Elapsed) resolvs=$resolvs, resolvedByKey=$resolvedByKey, resolvedByResolvedTypeProp=$resolvedByResolvedTypeProp");
     }
   }
-  
+
 
   [Record]
   public class ExternalNamespaceDeclaration : ExternalDeclaration[NamespaceSymbol]
@@ -606,7 +606,7 @@ namespace Nitra.BackEnd.Cci
     public Namespace : INamespaceDefinition { get; private set; }
     public override CreateSymbol() : DeclarationSymbol { NamespaceSymbol() }
   }
-  
+
   public interface IExternalTypeDeclaration
   {
     Type : ITypeDefinition { get; }

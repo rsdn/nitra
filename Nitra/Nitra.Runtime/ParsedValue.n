@@ -16,7 +16,7 @@ namespace Nitra
     HasValue : bool   { get; }
     Value    : object { get; }
   }
-  
+
   [Record, StructuralEquality]
   public struct ParsedValue[T] : IParsedValue
   {

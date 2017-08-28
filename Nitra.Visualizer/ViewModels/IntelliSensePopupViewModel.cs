@@ -11,7 +11,7 @@ namespace Nitra.Visualizer.ViewModels
 
     public ReactiveList<PopupItemViewModel> Items { get; set; }
     public IReactiveCommand<object> Select { get; private set; }
-    
+
     public IntelliSensePopupViewModel(NitraTextEditorViewModel editor)
     {
       Items = new ReactiveList<PopupItemViewModel>();

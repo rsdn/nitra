@@ -22,19 +22,19 @@ module Program
   {
     ServerUtils.Log("Process ID: " + Process.GetCurrentProcess().Id);
     assert2(false, "Start debugger");
-    
+
     when (args.Length != 1)
     {
       assert2(false, "Invalid number of parameters!");
       ServerUtils.Log("Invalid number of parameters, expected: <request pipe name> <response pipe name>");
       Environment.Exit(42);
     }
-    
+
     def mainPipeName = args[0];
     def requestPipeName       = mainPipeName + Constants.RequestPipeSuffix;
     def asyncResponsePipeName = mainPipeName + Constants.AsyncResponsePipeSuffix;
     def responsePipeName      = mainPipeName + Constants.ResponsePipeSuffix;
-      
+
     using (asyncResponsePipe = NamedPipeServerStream(asyncResponsePipeName, PipeDirection.Out))
     using (responsePipe      = NamedPipeServerStream(responsePipeName,      PipeDirection.Out))
     using (requestPipe       = NamedPipeServerStream(requestPipeName,       PipeDirection.In))
@@ -48,14 +48,14 @@ module Program
       def asyncResponseWriter = BinaryWriter(asyncResponsePipe);
       def responseWriter      = BinaryWriter(responsePipe);
       def router              = Router(responseWriter, asyncResponseWriter);
-    
+
       ServerUtils.Log("Connected to pipe.");
       def MainPipeReaderThreadMain()
       {
         def thread = Thread.CurrentThread;
         thread.Name = "Server Pipe Reader";
         thread.CurrentCulture = CultureInfo.InvariantCulture;
-          
+
         using (reader = BinaryReader(requestPipe))
         {
           while (requestPipe.IsConnected)

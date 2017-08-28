@@ -53,7 +53,7 @@ namespace Nitra.Declarations
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
     {
       def id = nodeToIdMap.GetObjectId(this);
-      
+
       nodes.Add($<#Obj_$id [label="UnionScope"]#>);
       foreach (scope in Scopes)
       {
@@ -78,7 +78,7 @@ namespace Nitra.Declarations
 
     public override GetHashCode() : int
     {
-      unchecked 
+      unchecked
       {
         mutable acc = Scopes.Length << 2;
         foreach (s in Scopes)

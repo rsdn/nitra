@@ -24,11 +24,11 @@ namespace Nitra.LanguageCompiler
     public ExtensionToName(ext : string) : string
     {
       assert3(ext != null && ext.Length > 1);
-      
+
       def ext2 = if (ext[0] == '.') ext.Substring(1) else ext;
       ToCamel(ext2.ToLowerInvariant())
     }
-    
+
     public ToCamel(str : string) : string
     {
       assert3(str != null && str.Length > 0);
@@ -70,27 +70,27 @@ namespace Nitra.LanguageCompiler
 
       color.ToString()
     }
-    
-    
+
+
     public IsBinary(path : string) : bool
     {
       !(IsUtf8File(path) || IsAscii(path))
     }
-    
+
     public IsAscii(path : string) : bool
     {
       def content = File.ReadAllBytes(path);
-      
+
       when (content.Length == 0)
         return false;
-      
+
       foreach (ch :> int in content)
         when (ch < 1 || ch > 127)
           return false;
 
       true
     }
-    
+
     public IsUtf8File(path : string) : bool
     {
       using (file = IO.File.OpenRead(path))
@@ -100,7 +100,7 @@ namespace Nitra.LanguageCompiler
         && file.ReadByte() == 0xBF
       }
     }
-    
+
     public CreateSnk(path : string) : void
     {
       def parms = CspParameters();

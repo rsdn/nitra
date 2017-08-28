@@ -288,9 +288,9 @@ namespace Nitra.VisualStudio
         else
           TryFierOnAddReference(currentItem);
 
-        // NOTE: At the moment we skip the nested hierarchies, so here  we 
+        // NOTE: At the moment we skip the nested hierarchies, so here  we
         // look for the  children of this node. Before looking at the children
-        // we have to make sure that the enumeration has not side effects to 
+        // we have to make sure that the enumeration has not side effects to
         // avoid unexpected behavior.
         //
         object propertyValue;

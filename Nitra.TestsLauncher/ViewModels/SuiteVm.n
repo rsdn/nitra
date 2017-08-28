@@ -23,7 +23,7 @@ namespace Nitra.ViewModels
   {
     public static ConfigFileName  : string = "config.xml";
     public static NoAssembiles    : array[Assembly] = array[];
-    
+
     public IsClientCreated        : bool { get; private set; }
     public Client                 : NitraClient { [Memoize] get { IsClientCreated = true; NitraClient(Workspace.StringManager) } }
     public Workspace              : WorkspaceVm { get; }
@@ -34,7 +34,7 @@ namespace Nitra.ViewModels
     public override Hint          : string { get; private set }
     public Xml                    : string { get { Utils.MakeXml(Config) } }
     public RecoveryAlgorithm      : RecoveryAlgorithm { get; set; }
-    
+
     _rootPath: string;
     mutable _configPath: string;
 
@@ -45,7 +45,7 @@ namespace Nitra.ViewModels
       LoadSolutions();
       //Statistics = StatisticsTask.Container("TestSuite", "Test Suite");
       def rootPath = workspace.RootFolder;
-      
+
       _rootPath = rootPath;
       _configPath = Path.GetFullPath(Path.Combine(FullPath, ConfigFileName));
 
@@ -77,17 +77,17 @@ namespace Nitra.ViewModels
       {
         | ex is FileNotFoundException =>
             TestState = TestState.Ignored;
-            
+
             mutable additionMsg =
               if (ex.FileName.EndsWith("config.xml", StringComparison.OrdinalIgnoreCase))
                 @"The configuration file (config.xml) does not exist in the test suite folder.";
               else if (ex.FileName.EndsWith("Nitra.Runtime.dll", StringComparison.OrdinalIgnoreCase))
                 @"Try to recompile the parser."
               else null;
-            
+
             unless (additionMsg == null)
               additionMsg = Environment.NewLine + Environment.NewLine + additionMsg;
-            
+
             Hint = "Failed to load test suite:" + Environment.NewLine + ex.Message + additionMsg;
         | ex is Exception =>
            TestState = TestState.Ignored;
@@ -107,7 +107,7 @@ namespace Nitra.ViewModels
           .Select(SolutionVm(this, _))
           .Iter(Children.Add)
       }
-      else 
+      else
       {
         when (TestState != TestState.Ignored)
         {
@@ -116,7 +116,7 @@ namespace Nitra.ViewModels
         }
       }
     }
-    
+
     public SetName(name : string) : void
     {
       FullPath = Path.Combine(Workspace.RootFolder, name);
@@ -129,7 +129,7 @@ namespace Nitra.ViewModels
     {
       File.WriteAllText(_configPath, SerializationHelper.Serialize(Config))
     }
-    
+
     public GetConfigWithFullPaths() : Messages.Config
     {
       def c = this.Config;
@@ -144,31 +144,31 @@ namespace Nitra.ViewModels
       def makeReferencePath(line : string) : string
       {
         def split = line.Split(array[':'], 2);
-        
+
         when (split.Length != 2)
           throw FormatException("Reference path format is invalid: " + line);
-        
+
         def type = split[0];
         def path = split[1];
-        
+
         type + ":" + makePath(path);
       }
       def projectSupport = c.ProjectSupport;
-      
+
       when (projectSupport != null && projectSupport.Path != null)
         projectSupport.Path = makePath(projectSupport.Path);
-        
-      def langs = c.Languages?.Select(x => 
+
+      def langs = c.Languages?.Select(x =>
         Messages.LanguageInfo(
           x.Name,
-          makePath(x.Path), 
+          makePath(x.Path),
           x.DynamicExtensions?.Select(e => Messages.DynamicExtensionInfo(e.Name, makePath(e.Path)))?.ToArray()))?.ToArray() ?? array(0);
       def libs = c.References?.MapToArray(x => makeReferencePath(x)) ?? array(0);
       def result = Messages.Config(projectSupport, langs, libs);
       result
     }
-    
-    
+
+
     public Activate() : void
     {
       // TODO: send messages to server
@@ -193,21 +193,21 @@ namespace Nitra.ViewModels
         }
       }
     }
-    
+
     public TestStateChanged(): void
     {
       unless (this.TestState == TestState.Ignored)
       {
         this.TestState =
-          if (Children.Any(x => x.TestState == TestState.Failure)) 
+          if (Children.Any(x => x.TestState == TestState.Failure))
             TestState.Failure
           else if (Children.Any(x => x.TestState != TestState.Failure && x.TestState != TestState.Success))
-            TestState.Skipped 
+            TestState.Skipped
           else TestState.Success
       }
     }
 
-    //public Run(code: string, _gold: string = null, completionStartPos: int = -1, completionPrefix: string = null, 
+    //public Run(code: string, _gold: string = null, completionStartPos: int = -1, completionPrefix: string = null,
     //           recoveryAlgorithm: RecoveryAlgorithm = RecoveryAlgorithm.Smart): IParseResult
     //{
     //  def source = SourceSnapshot(code);
@@ -224,14 +224,14 @@ namespace Nitra.ViewModels
     //        parseToEndOfString = true,
     //        dynamicExtensions = DynamicExtensions,
     //        statistics = Statistics);
-          
+
     //      match (recoveryAlgorithm)
     //      {
     //        | RecoveryAlgorithm.Smart => parseSession.OnRecovery = ParseSession.SmartRecovery
     //        | RecoveryAlgorithm.Panic => parseSession.OnRecovery = ParseSession.PanicRecovery
     //        | RecoveryAlgorithm.FirstError => parseSession.OnRecovery = ParseSession.FirsrErrorRecovery
     //      }
-          
+
     //      def parseResult = parseSession.Parse(source);
     //      this.Exception = null;
     //      parseResult
@@ -259,11 +259,11 @@ namespace Nitra.ViewModels
     {
       _ = Workspace.TestSuites.Remove(this);
       Workspace.Save();
-      
+
       when (Directory.Exists(FullPath))
         Directory.Delete(FullPath, true);
     }
- 
+
     public override GetAllTests() : Seq[FileVm]
     {
       foreach (s in Children)
@@ -271,13 +271,13 @@ namespace Nitra.ViewModels
           yield t;
     }
 
-    public Dispose() : void 
+    public Dispose() : void
     {
       foreach(solution in Children)
         solution.Dispose();
-      
+
       Children.Clear();
-      
+
       when (IsClientCreated)
         Client.Dispose()
     }

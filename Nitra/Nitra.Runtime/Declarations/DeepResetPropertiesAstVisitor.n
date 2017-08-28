@@ -14,7 +14,7 @@
     {
       reference.ResetProperties();
     }
-    
+
     public Visit(name : Name) : void implements IAstVisitor.Visit
     {
       name.ResetProperties();

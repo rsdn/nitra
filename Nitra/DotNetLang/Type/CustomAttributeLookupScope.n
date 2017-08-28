@@ -23,9 +23,9 @@ namespace DotNet
     }
 
     private _scope : Scope;
-    
+
     // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { _scope.AllSymbols } } 
+    public override AllSymbols : Seq[DeclarationSymbol] { get { _scope.AllSymbols } }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
@@ -45,7 +45,7 @@ namespace DotNet
     {
       _scope.Bind.[TSymbol](isMatch)
     }
-    
+
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
     {
       def id            = nodeToIdMap.GetObjectId(this);

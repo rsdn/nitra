@@ -23,7 +23,7 @@ namespace Nitra.BackEnd.Cci
   {
     _cciAttributeHost : IReference;
     _cciBackEnd       : CciBackEnd;
-    
+
     protected override OnLoad() : void
     {
       def count = _cciAttributeHost.Attributes.Count();

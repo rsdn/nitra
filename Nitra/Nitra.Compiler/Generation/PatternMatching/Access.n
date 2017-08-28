@@ -21,7 +21,7 @@ namespace Nitra.Compiler.PatternMatching
         Index  : int;
         Access : Access;
       }
- 
+
     public static AppendAccess(this buffer : StringBuilder, access : Access) : StringBuilder
     {
       match (access)
@@ -30,7 +30,7 @@ namespace Nitra.Compiler.PatternMatching
         | Sel(_, index, next) => buffer.AppendAccess(next).Append('#').Append(index)
       }
     }
- 
+
     public override ToString() : string
     {
       StringBuilder().AppendAccess(this).ToString()

@@ -63,10 +63,10 @@
 
     [SpanClass(Number)]
     regex RealLiteralWithSeparator = RealLiteral_1_WithSeparator | RealLiteral_2_WithSeparator | RealLiteral_3_WithSeparator;
-    
+
     regex BinPrefix = "0b" | "0B";
     regex BinDigits = (['0', '1']+; "_"+)+;
-    
+
     [ExplicitSpaces]
     [SpanClass(Number)]
     token BinaryLiteralWithSeparator = BinPrefix Digits=BinDigits SuffixOpt=IntegerTypeSuffixOpt;
@@ -106,7 +106,7 @@
       | Name
       | TupleDeconstruction
     }
-    
+
 
     // [ExplicitSpaces] - inherited
     extend syntax TypeName

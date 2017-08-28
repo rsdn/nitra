@@ -17,14 +17,14 @@ namespace Nitra.Declarations
     _cancellationToken    : CancellationToken;
     _projectSupport       : IProjectSupport { get; }
     public Symbol         : DeclarationSymbol { get; }
-    
+
     [RecordIgnore] public FoundSymbols : List[IRef] { get; default List(); }
 
     public Visit(parseTree : IAst) : void
     {
       when (_cancellationToken.IsCancellationRequested)
         return;
-        
+
       parseTree.Accept(this);
     }
 
@@ -60,7 +60,7 @@ namespace Nitra.Declarations
           }
         }
       }
-      
+
       loop(reference.Ref)
     }
 

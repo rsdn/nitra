@@ -30,7 +30,7 @@ namespace Nitra.Typing
       })
       + Location.GetText()
     }
-    
+
     | Assign { CompiledMethodName : string }
     | Use
   }

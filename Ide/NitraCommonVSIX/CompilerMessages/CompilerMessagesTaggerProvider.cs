@@ -15,7 +15,7 @@ namespace Nitra.VisualStudio.CompilerMessages
   {
     public ITagger<T> CreateTagger<T>(ITextBuffer buffer) where T : ITag
     {
-      return (ITagger<T>)buffer.Properties.GetOrCreateSingletonProperty(Constants.CompilerMessagesTaggerKey, 
+      return (ITagger<T>)buffer.Properties.GetOrCreateSingletonProperty(Constants.CompilerMessagesTaggerKey,
         () => new CompilerMessagesTagger(buffer));
     }
   }

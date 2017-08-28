@@ -52,7 +52,7 @@ namespace Nitra.Declarations
 
     /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
     /// If return value is 0 the name of symbol is not set.
-    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous). 
+    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
     ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
     ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
     public TryGetNameId() : int { _nameId }
@@ -139,7 +139,7 @@ namespace Nitra.Declarations
         | _ => ()
       }
     }
-    
+
     public IsParsed : bool
     {
       get
@@ -152,7 +152,7 @@ namespace Nitra.Declarations
             foreach (decl when decl.IsParsed in lst)
               return true;
             false
-            
+
           | _ => assert(false)
         }
       }
@@ -167,10 +167,10 @@ namespace Nitra.Declarations
       def symbol = this :> DeclarationSymbol;
       when (symbol.IsParsed && callback(symbol))
         return true;
-        
+
       foreach (childSymbol when childSymbol.VisitChildrenAndSelf(getNestedSymbol, callback) in getNestedSymbol(symbol))
         return true;
-        
+
       false
     }
 

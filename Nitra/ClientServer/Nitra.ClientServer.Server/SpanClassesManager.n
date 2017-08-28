@@ -21,12 +21,12 @@ namespace Nitra.ClientServer.Server
      mutable _spanClassMap : ImmutableDictionary[SpanClass, int] = ImmutableDictionary.Create();
      mutable _languages    : HashSet[Nitra.Language]             = HashSet();
      _sync : object = object();
-            
+
     public this(router : Router)
     {
       _router = router;
     }
-    
+
     public Clear() : void
     {
       lock (_sync)
@@ -36,7 +36,7 @@ namespace Nitra.ClientServer.Server
         _languages.Clear();
       }
     }
-            
+
     public Item[spanClass : SpanClass] : int
     {
       get
@@ -59,12 +59,12 @@ namespace Nitra.ClientServer.Server
         }
       }
     }
-    
+
     public GetSpanClasses() : Seq[SpanClass]
     {
       _spanClassMap.Keys.ToArray()
     }
-    
+
     public LosdLanguages(languages : List[Nitra.Language]) : void
     {
       lock (_sync)
@@ -79,7 +79,7 @@ namespace Nitra.ClientServer.Server
           LosdLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages);
       });
     }
-    
+
     LosdLanguage(language : Nitra.Language) : void
     {
       LosdSpanClasses((spanClassMapBilder, spanClassInfosBilder) => LosdLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages));
@@ -98,7 +98,7 @@ namespace Nitra.ClientServer.Server
     {
       unless (langs.Add(language))
         return;
-      
+
       def spanClasses = language.GetDeclaredSpanClasses();
       foreach (spanClass in spanClasses)
       {
@@ -106,7 +106,7 @@ namespace Nitra.ClientServer.Server
         spanClassMapBilder.Add(spanClass, spanClassMapBilder.Count);
         spanClassInfosBilder.Add(SpanClassInfo(spanClass.FullName, id, spanClass.Style.ForegroundColor));
       }
-      
+
       when (language.Parent != null)
         LosdLanguageImpl(language.Parent, spanClassMapBilder, spanClassInfosBilder, langs);
     }

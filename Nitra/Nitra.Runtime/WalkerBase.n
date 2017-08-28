@@ -24,7 +24,7 @@ namespace Nitra.Runtime
     public RawTreePtr          : int;
     public ExtensionRuleParser : T;
   }
-  
+
   public abstract class WalkerBase[TContext]
   {
     mutable _isRecovered : bool;

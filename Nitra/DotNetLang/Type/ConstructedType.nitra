@@ -17,7 +17,7 @@ namespace DotNet
       in Args     : ImmutableArray[TypeSymbol];
     }
   }
-  
+
   declaration TopConstructedType : ConstructedType
   {
     symbol

@@ -21,7 +21,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 namespace Nitra.VisualStudio.Models
 {
   /// <summary>
-  /// Represent file in a text editor. An instance of this class is created for opened (in editors) files 
+  /// Represent file in a text editor. An instance of this class is created for opened (in editors) files
   /// that at least once were visible on the screen. If the user closes a tab, its associated the FileModel is destroyed.
   /// </summary>
   internal class FileModel : IDisposable

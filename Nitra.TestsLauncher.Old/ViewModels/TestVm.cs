@@ -18,7 +18,7 @@ namespace Nitra.ViewModels
 {
   public class TestVm : FullPathVm, ITest
   {
-    public static readonly Guid TypingMsg = Guid.NewGuid(); 
+    public static readonly Guid TypingMsg = Guid.NewGuid();
 
     public string                   TestPath              { get; private set; }
     public FsFile<IAst>             File { get { return _file; } }
@@ -82,7 +82,7 @@ namespace Nitra.ViewModels
       _testFolder = parent as TestFolderVm;
       TestPath = testPath;
       TestSuite = _testFolder == null ? (TestSuiteVm)parent : _testFolder.TestSuite;
-      
+
       if (_testFolder != null)
       {
         Statistics            = null;
@@ -152,7 +152,7 @@ namespace Nitra.ViewModels
 
       if (TestSuite.DisableSemanticAnalysis || _file.Ast == null)
         return false;
-      
+
       var tests = _testFolder == null ? (IEnumerable<TestVm>)new[] {this} : _testFolder.Tests;
       var files = tests.Select(t => t.File).ToArray();
       foreach (var file in files)
@@ -192,7 +192,7 @@ namespace Nitra.ViewModels
       if (TestSuite.TestState == TestState.Ignored)
         return;
 
-      
+
       var gold = Gold;
       var parseTree = (ParseTree)_file.GetParseTree();
       var prettyPrintResult = parseTree.ToString(PrettyPrintOptions.DebugIndent | PrettyPrintOptions.MissingNodes);

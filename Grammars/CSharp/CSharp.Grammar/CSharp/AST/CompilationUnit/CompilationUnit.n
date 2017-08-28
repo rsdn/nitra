@@ -51,7 +51,7 @@ namespace CSharp
         def symbolRef  = bindType(systemNs.Scope, name);
         unless (symbolRef.IsSymbolEvaluated)
           return;
-          
+
         def symbol     = symbolRef.Symbol;
         def decl       = symbol.FirstDeclarationOrDefault :> IExternalTopTypeDeclaration;
         def aliasDecl  = ExternalTopTypeDeclaration.[TypeAliasSymbol](ND.Name(Location.Default, aliasName), decl.Type);
@@ -71,7 +71,7 @@ namespace CSharp
       when (systemNsRef.IsSymbolEvaluated)
       {
         def systemNs = systemNsRef.Symbol;
-      
+
         defineAlias(context, systemNs, rootNamespace, "Object",  "object");
         defineAlias(context, systemNs, rootNamespace, "Void",    "void");
         defineAlias(context, systemNs, rootNamespace, "String",  "string");
@@ -92,7 +92,7 @@ namespace CSharp
 
       (backEnd, context, rootNamespace)
     }
-    
+
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
       def (_backEnd, context, rootNamespace) = (data :> CciBackEnd * DependentPropertyEvalContext * NamespaceSymbol);
@@ -149,17 +149,17 @@ namespace CSharp
 
         ValueOption.None()
       }
-      
+
       foreach (symbols in rootNamespace.MemberTable.Symbols)
       {
         def result = findSymbol(symbols);
         when (result.IsSome)
           return result;
       }
-      
+
       ValueOption.None()
     }
-    
+
     public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
     {
       match (symbol)

@@ -22,11 +22,11 @@ namespace Nitra.Declarations
     public          IsEmpty        : bool                               { get { this is Nil } }
     public          HasResult      : bool                               { get { !IsEmpty } }
     public virtual  Symbols        : ImmutableArray[TSymbol]  { get { GetSymbols() } }
-    
+
     | Single
       {
         public Symbol : TSymbol { get; }
-        
+
         public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
         {
           metadataWriter.WriteObject(Symbol, writer);
@@ -37,7 +37,7 @@ namespace Nitra.Declarations
           Single(symbol)
         }
       }
-    
+
     | Multiple
       {
         public new Symbols : ImmutableArray[TSymbol] { get; }
@@ -51,7 +51,7 @@ namespace Nitra.Declarations
           Multiple(symbols.ToImmutableArray())
         }
       }
-    
+
     | Hiding
       {
         public Result : BindResult[TSymbol] { get; }
@@ -84,7 +84,7 @@ namespace Nitra.Declarations
           NitraUtils.MakeUnion(results.ToImmutableArray()) :> this
         }
       }
-      
+
     | Nil
       {
         public override Serialize(_writer : BinaryWriter, _metadataWriter : MetadataWriter) : void { }
@@ -121,7 +121,7 @@ namespace Nitra.Declarations
     {
       Filter.[TConcreteSymbol](null)
     }
-    
+
     /// Filter by predicate. Filter by TConcreteSymbol If predicate is null.
     public Filter[TConcreteSymbol](predicate : Predicate[TConcreteSymbol]) : BindResult[TConcreteSymbol]
       //where TConcreteSymbol : TSymbol
@@ -132,7 +132,7 @@ namespace Nitra.Declarations
       {
         | Single(Symbol=sym is TConcreteSymbol) => if (predicate == null || predicate(sym)) Single(sym) else Nil()
         | Single => Nil()
-        | Multiple as m => 
+        | Multiple as m =>
           def res = LightList.[TConcreteSymbol]();
           if (predicate == null)
             foreach(sym is TConcreteSymbol in m.Symbols)
@@ -148,17 +148,17 @@ namespace Nitra.Declarations
             | _ => Multiple(res.ToImmutableArray())
           }
 
-        | Hiding as h => 
+        | Hiding as h =>
           def r = h.Result.Filter.[TConcreteSymbol](predicate);
           def h = h.Hidden.Filter.[TConcreteSymbol](predicate);
-          
+
           if (r.IsEmpty)
             h
           else if (h.IsEmpty)
             r
           else
             Hiding(r, h)
-          
+
         | Union as u =>
           def results = LightList();
           foreach (res in u.Results)
@@ -167,7 +167,7 @@ namespace Nitra.Declarations
             when (res2.HasResult)
               results.Add(res2);
           }
-          
+
           match (results.Count)
           {
             | 0 => Nil()
@@ -185,7 +185,7 @@ namespace Nitra.Declarations
       match (this)
       {
         | Single(Symbol=sym) => if (algorithm(sym) is VSome(resSym)) Single(resSym : TConcreteSymbol) else Nil()
-        | Multiple as m => 
+        | Multiple as m =>
           def res = LightList.[TConcreteSymbol]();
             foreach(sym in m.Symbols)
               when (algorithm(sym) is VSome(resSym))
@@ -198,17 +198,17 @@ namespace Nitra.Declarations
             | _ => Multiple(res.ToImmutableArray())
           }
 
-        | Hiding as h => 
+        | Hiding as h =>
           def r = h.Result.Map.[TConcreteSymbol](algorithm);
           def h = h.Hidden.Map.[TConcreteSymbol](algorithm);
-          
+
           if (r.IsEmpty)
             h
           else if (h.IsEmpty)
             r
           else
             Hiding(r, h)
-          
+
         | Union as u =>
           def results = LightList();
           foreach (res in u.Results)
@@ -217,7 +217,7 @@ namespace Nitra.Declarations
             when (res2.HasResult)
               results.Add(res2);
           }
-          
+
           match (results.Count)
           {
             | 0 => Nil()
@@ -228,7 +228,7 @@ namespace Nitra.Declarations
         | Nil => Nil()
       }
     }
-    
+
     public override ToString() : string
     {
       def displayCount = 5;

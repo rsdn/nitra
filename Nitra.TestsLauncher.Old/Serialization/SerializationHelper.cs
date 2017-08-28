@@ -48,7 +48,7 @@ namespace Nitra.Visualizer.Serialization
         dynamicExtensions.Add(descriptor);
       }
 
-      var libs = languageInfo.Libs == null 
+      var libs = languageInfo.Libs == null
         ? new LibReference[0]
         : languageInfo.Libs.Select(LibReference.Deserialize).ToArray();
 

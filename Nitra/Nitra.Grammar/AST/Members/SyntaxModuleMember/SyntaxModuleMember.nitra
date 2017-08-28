@@ -56,7 +56,7 @@ namespace Nitra.Ast
     BaseName : QualifiedReference;
     Members  : RuleBodyMember*;
   }
-  
+
   declaration TopExtendRule : ExtendRule, SyntaxModuleMemberDeclaration
   {
     Symbol             = Parent.ExtendsTable.Define(this, context);

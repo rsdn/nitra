@@ -87,13 +87,13 @@ namespace Nitra.Visualizer
       _highlightingStyles[CurrentAstSpanClassId] = new HighlightingColor { Background = new SimpleHighlightingBrush(Brushes.LightCyan) };
 
       foreach (var spanClassInfo in languageInfo.spanClassInfos)
-        _highlightingStyles[spanClassInfo.Id] = 
+        _highlightingStyles[spanClassInfo.Id] =
           new HighlightingColor
             {
               Foreground = new SimpleHighlightingBrush(ColorFromArgb(spanClassInfo.ForegroundColor))
             };
     }
-    
+
     private void ResetHighlightingStyles()
     {
       _highlightingStyles.Clear();

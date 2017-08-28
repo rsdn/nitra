@@ -24,7 +24,7 @@ namespace Nitra.Declarations
     {
       when (_cancellationToken.IsCancellationRequested)
         return;
-      
+
       when (parseTree.Span.IntersectsWith(_span))
         parseTree.Accept(this);
     }

@@ -48,9 +48,9 @@ namespace Nitra.ClientServer.Server
       this.SpanClassesManager = SpanClassesManager(this);
       _parseWorkers = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
     }
-    
+
     public SolutionId : SolutionId { get { if (_solution == null) SolutionId.Invalid else _solution.Id } }
-    
+
     public ProjectLoadCancellationToken : CancellationToken
     {
       get
@@ -65,7 +65,7 @@ namespace Nitra.ClientServer.Server
     {
       _projectLoadingCts = null;
     }
-    
+
     public ProjectLoadCancel() : void
     {
       def cts = _projectLoadingCts;
@@ -77,7 +77,7 @@ namespace Nitra.ClientServer.Server
         cts.Dispose();
       }
     }
-    
+
     public SendAsyncResponse(msg : AsyncServerMessage) : void
     {
       lock (_asyncResponseWriter)
@@ -113,7 +113,7 @@ namespace Nitra.ClientServer.Server
 
       RouteMessages();
     }
-    
+
     RouteMessages() : void
     {
       while (!_mainQueue.IsCompleted)
@@ -135,7 +135,7 @@ namespace Nitra.ClientServer.Server
         }
       }
     }
-    
+
     public Wait() : void
     {
       unless (_stopped)
@@ -148,17 +148,17 @@ namespace Nitra.ClientServer.Server
         _stopped = true;
       }
     }
-    
+
     public AddMessage(msg : RouterMessage): void
     {
       unless (_stopped)
         _mainQueue.Add(msg)
     }
-    
-    GetLibsMetadata(libs : ImmutableArray[string]) : void 
+
+    GetLibsMetadata(libs : ImmutableArray[string]) : void
     {
       def metadataBuilder = ImmutableArray.CreateBuilder(libs.Length);
-      
+
       foreach (path in libs)
       {
         def langs = Language.GetLanguages(path);
@@ -175,10 +175,10 @@ namespace Nitra.ClientServer.Server
       SendResponse(ServerMessage.LibsMetadata(SolutionId, metadataBuilder.MoveToImmutable()));
     }
 
-    GetLibsSyntaxModules(libs : ImmutableArray[string]) : void 
+    GetLibsSyntaxModules(libs : ImmutableArray[string]) : void
     {
       def libsBuilder = ImmutableArray.CreateBuilder(libs.Length);
-      
+
       foreach (path in libs)
       {
         def assembly = Language.LoadAssembly(path);
@@ -188,14 +188,14 @@ namespace Nitra.ClientServer.Server
           syntaxModulesBuilder.Add(descriptor.FullName);
         libsBuilder.Add(SyntaxModules(syntaxModulesBuilder.MoveToImmutable()));
       }
-      
+
       SendResponse(ServerMessage.LibsSyntaxModules(SolutionId, libsBuilder.MoveToImmutable()));
     }
 
-    GetLibsProjectSupports(libs : ImmutableArray[string]) : void 
+    GetLibsProjectSupports(libs : ImmutableArray[string]) : void
     {
       def libsBuilder = ImmutableArray.CreateBuilder(libs.Length);
-      
+
       foreach (path in libs)
       {
         def typeBuilder = ImmutableArray.CreateBuilder(libs.Length);
@@ -204,7 +204,7 @@ namespace Nitra.ClientServer.Server
 
         foreach (attr is ProjectSystem.ProjectSupportAttribute in attributes)
         {
-          def caption = 
+          def caption =
             if (attr == null)
             {
               def fullName = attr.Type.FullName;
@@ -218,14 +218,14 @@ namespace Nitra.ClientServer.Server
               attr.Caption;
           typeBuilder.Add(ProjectSupport(caption, attr.Type.FullName, path));
         }
-          
+
         libsBuilder.Add(ProjectSupports(typeBuilder.ToImmutable()));
       }
-      
+
       SendResponse(ServerMessage.LibsProjectSupports(SolutionId, libsBuilder.MoveToImmutable()));
     }
-    
-    GetFileExtensions(projectId : int, languageNames : ImmutableArray[string]) : void 
+
+    GetFileExtensions(projectId : int, languageNames : ImmutableArray[string]) : void
     {
       def project = _solution[projectId];
       def fileExtensions = project.GetFileExtensions(languageNames);
@@ -237,7 +237,7 @@ namespace Nitra.ClientServer.Server
       try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting=false);
       catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty)); throw }
     }
-    
+
     GetSubHint(projectId : ProjectId, symbolId : int) : void
     {
       try _solution[projectId].GetSymbolHint(symbolId)

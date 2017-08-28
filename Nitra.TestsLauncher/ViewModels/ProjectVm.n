@@ -32,17 +32,17 @@ namespace Nitra.ViewModels
       Solution = solution;
       LoadTests()
     }
-    
+
     public IsSingleFileTest : bool { get { Children.Count == 1 } }
 
     public override Name : string { get { Path.GetFileName(FullPath) + "  (Project)" }}
-    
+
     LoadTests() : void
     {
       foreach (filePath in Directory.GetFiles(FullPath).Where(f => !Path.GetExtension(f).Equals(".gold", StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x))
         Children.Add(FileVm(Suite, this, filePath));
     }
-    
+
     // IClientHost
     public Activate([NotNull] client : NitraClient) : void
     {
@@ -56,13 +56,13 @@ namespace Nitra.ViewModels
       // TODO: send messages to server
       _client = null;
     }
- 
+
     public override GetAllTests() : Seq[FileVm]
     {
       Children
     }
-    
-    public Dispose() : void 
+
+    public Dispose() : void
     {
       foreach(test in Children)
         test.Dispose();

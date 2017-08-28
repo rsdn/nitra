@@ -37,10 +37,10 @@ namespace Nitra.Declarations
         | _   => _symbols = result.Symbols;
       }
     }
-    
+
     public          Result               : BindResult[TSymbol]     { get { _result } }
     public          Symbols              : ImmutableArray[TSymbol] { get { _symbols } }
-    
+
     public abstract Location             : Location                 { get; }
     public virtual  IgnoreAmbiguities    : bool                     { get { false } }
 
@@ -68,7 +68,7 @@ namespace Nitra.Declarations
     {
       get
       {
-        if(IsUnresolved) 
+        if(IsUnresolved)
           "unresolved"
         else if (IsAmbiguous)
           "ambiguous"
@@ -99,7 +99,7 @@ namespace Nitra.Declarations
       }
     }
     public          IsSpanClassEvaluated  : bool                    { get { true } }
-    
+
     [DependentProperty("IsScopeEvaluated")]
     public          Scope                 : Scope
     {
@@ -134,11 +134,11 @@ namespace Nitra.Declarations
           Symbol.IsScopeEvaluated
       }
     }
-    
+
     public          Ambiguities           : Seq[DeclarationSymbol] { get { Symbols } }
 
     public GetSymbols() : Seq[DeclarationSymbol] { Symbols }
-    
+
     public Resolve[TConcreteSymbol](predicate : Predicate[TConcreteSymbol]) : Ref[TConcreteSymbol]
       where TConcreteSymbol : DeclarationSymbol
       //where TConcreteSymbol : TSymbol
@@ -156,7 +156,7 @@ namespace Nitra.Declarations
       def bindResult = _result.Filter.[TConcreteSymbol](null);
       CreateRevole(bindResult)
     }
-    
+
     public Resolve[TConcreteSymbol](algorithm : ResolutionAlgorithm[TSymbol, TConcreteSymbol]) : Ref[TConcreteSymbol]
       where TConcreteSymbol : DeclarationSymbol
       requires !IsResolvedToEvaluated
@@ -165,7 +165,7 @@ namespace Nitra.Declarations
       def bindResult = _result.Map.[TConcreteSymbol](algorithm);
       CreateRevole(bindResult)
     }
-    
+
     public ResolveAsIgnoreAmbiguities() : Ref[TSymbol]
     {
       def result = Ignore(_result, this);
@@ -196,17 +196,17 @@ namespace Nitra.Declarations
     {
       BindUnresolved(BindResult.Nil(), location, location.GetText())
     }
-    
+
     public static CreateUnresolved(location : Location, text : string) : Ref[TSymbol]
     {
       BindUnresolved(BindResult.Nil(), location, text)
     }
-    
+
     public static CreateUnresolved(text : string) : Ref[TSymbol]
     {
       BindUnresolved(BindResult.Nil(), Location.NoLocation, text)
     }
-    
+
     public static CreateBind(location : Location, bindResult : BindResult[TSymbol]) : Ref[TSymbol]
     {
       match (bindResult)
@@ -233,12 +233,12 @@ namespace Nitra.Declarations
         | _   => Bind(bindResult, location)
       }
     }
-    
+
     public static CreateBind(location : Location, symbol : TSymbol) : Ref[TSymbol]
     {
       Bind(BindResult.Single(symbol), location)
     }
-    
+
     public CreateRevole[TConcreteSymbol](bindResult : BindResult[TConcreteSymbol]) : Ref[TConcreteSymbol]
       where TConcreteSymbol : DeclarationSymbol
       requires !IsResolvedToEvaluated
@@ -270,7 +270,7 @@ namespace Nitra.Declarations
       public override Name                : string   { get { Symbol.Name } }
       public override IsFullNameEvaluated : bool     { get { Symbol.IsFullNameEvaluated } }
       public override FullName            : string   { get { Symbol.FullName } }
-      
+
       public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
       {
         metadataWriter.WriteObject(_result, writer);
@@ -326,7 +326,7 @@ namespace Nitra.Declarations
         metadataWriter.WriteObject(From, writer);
       }
     }
-    
+
     [Record]
     private class Resolved : ResolvedBase
     {
@@ -353,7 +353,7 @@ namespace Nitra.Declarations
         res
       }
     }
-      
+
     [Record]
     private class Unresolved : ResolvedBase
     {
@@ -390,7 +390,7 @@ namespace Nitra.Declarations
     }
 
     public abstract Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void;
-    
+
     public override ToString() : string
     {
       def displayCount = 5;

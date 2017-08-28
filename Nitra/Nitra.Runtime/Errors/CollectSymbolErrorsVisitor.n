@@ -21,7 +21,7 @@ namespace Nitra
   public class CollectSymbolErrorsVisitor : IAstVisitor
   {
     public CompilerMessages : CompilerMessageList;
-    
+
     public this()
     {
       this(CompilerMessageList())
@@ -41,7 +41,7 @@ namespace Nitra
     {
       when (reference.IsRefEvaluated)
       {
-        
+
         def processRef(r : IRef)
         {
           if (r.IsResolvedToEvaluated)
@@ -53,11 +53,11 @@ namespace Nitra
             def builder = StringBuilder(64)
               .Append("<hint>'").HintMlEscape(reference).Append("' is an ambiguous reference between ")
               .JoinAnd(r.Ambiguities, HintML.MakeHintMlPath(_, _, ".", true)).Append("</hint>");
-            
+
             CompilerMessages.Error(reference, builder.ToString());
           }
         }
-        
+
         processRef(reference.Ref)
       }
     }

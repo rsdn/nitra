@@ -21,7 +21,7 @@
     regex InOrOut  = "in" | "out";
     syntax VarianceAnnotation  = Annotation=InOrOut sm;
     syntax TypeParameter       = Attributes VarianceAnnotation? Name;
-    [ExplicitSpaces] 
+    [ExplicitSpaces]
     syntax TypeParameters   = OpenBrace s (TypeParameter; s "," s sm)+ s CloseBrace
     {
       [SpanClass(OpenBrace)]

@@ -83,12 +83,12 @@ namespace Nitra.Compiler
       foreach (node in nodes.OrderBy(n => n.Order))
         foreach (to in node.DependendOn.OrderBy(n => n.Order))
           edges.Add($<#$(name(node)) -> $(name(to))#>);
-      
+
       def callNodes = List();
       foreach (call in calls with i)
       {
         def to = "call" + i;
-        def kind = 
+        def kind =
           match (call)
           {
             | Collect   => "Collect: "
@@ -96,9 +96,9 @@ namespace Nitra.Compiler
             | Normal    => "Normal: "
           };
         def label = DotUtils.DotEscape("(" + to + ") " + kind + call.NitraLocation.GetText());
-        
+
         callNodes.Add($<#$to [label="$label" color=purple shape=box]#>);
-        
+
         foreach (node in call.DependendOn.OrderBy(n => n.Order))
           edges.Add($<#$(name(node)) -> $to#>);
       }
@@ -142,7 +142,7 @@ namespace Nitra.Compiler
           node._order = -10;
         }
       }
-      
+
       when (isCycled)
         foreach (p is PropertyDependencyNode.Use when !p.IsDependent && p.State == PropertyDependencyNodeState.Cycling && p.Path.IsSinglePropertyPath in graph)
           _ = p.DependendOn.RemoveWhere(dependOn => dependOn.State == PropertyDependencyNodeState.Cycling);
@@ -160,7 +160,7 @@ namespace Nitra.Compiler
       mutable cycling = false;
 
       def roots = GetRoots(graphNodes).ToArray();
-      
+
       foreach (node in roots)
         cycling |= node.Sort(ref index);
       otherwise

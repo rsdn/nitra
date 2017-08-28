@@ -35,7 +35,7 @@ namespace Nitra.Visualizer.ViewModels
     }
 
     readonly protected ObjectDescriptor _objectDescriptor;
-    public AstContext Context { get; private set; } 
+    public AstContext Context { get; private set; }
 
 
     [Reactive] public bool                           NeedLoadContent { get; private set; }
@@ -44,7 +44,7 @@ namespace Nitra.Visualizer.ViewModels
     [Reactive] public bool                           IsExpanded      { get; set; }
                public string                         Value           { get { return _objectDescriptor.ToString(); } }
                public NSpan                          Span            { get { return _objectDescriptor.Span; } }
-    
+
     public AstNodeViewModel(AstContext context, ObjectDescriptor objectDescriptor)
     {
       Context           = context;

@@ -59,7 +59,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _config       = config;
       Libs          = _libs;
       Router        = router;
-      
+
       unless (config.ProjectSupport.IsNotSpecified)
       {
         def ps   = config.ProjectSupport;
@@ -67,7 +67,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def type = asm.GetType(ps.TypeFullName);
         def obj  = Activator.CreateInstance(type, true);
         try _projectSupport = obj :> IProjectSupport;
-        catch 
+        catch
         { | e is InvalidCastException =>
           def serverItf = typeof(IProjectSupport);
           throw InvalidCastException($<#Unable to cast object of type '$(ps.TypeFullName)' to '$(serverItf.FullName)'.
@@ -78,7 +78,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       parent.AddProject(this);
       LoadLangs(_config.Languages);
     }
-    
+
     public GetLanguage(ext : string) : Nitra.Language * List[GrammarDescriptor]
     {
       mutable result;
@@ -100,10 +100,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           throw ApplicationException($"The language $name not found in '$path'.");
         def fullName     = language.FullName;
         languages.Add(language);
-        
+
         assert2(language.StartRule != null);
         ServerUtils.Log("  Language " + i + ": "+ fullName + " - '" + path + "' " + language.Authors);
-        
+
         def dynamicExtensions = List();
         def extensions = languageInfo.DynamicExtensions;
         for (mutable k = 0; k < extensions.Length; k++)
@@ -130,12 +130,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
         _extToLanguages[".test"] = (language, dynamicExtensions);
       }
-      
+
       Router.SpanClassesManager.LosdLanguages(languages);
-      
+
       assert2(_extToLanguages != null);
     }
-    
+
     public GetFileExtensions(languageNames : ImmutableArray[string]) : ImmutableArray[string]
     {
       def builder = ImmutableArray.CreateBuilder();
@@ -152,7 +152,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public IsAllAstCreated   : bool { get { _expectsToBuildAst == 0 } }
     public ExpectsToBuildAst : int { get { _expectsToBuildAst } }
-    
+
     public AstDropped(file : File) : void
     {
       when (file.IsSupported)
@@ -162,23 +162,23 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       }
       CancelSemanticAnalysisCancellation();
     }
-    
+
     public CancelSemanticAnalysisCancellation() : void
     {
       ServerUtils.CancelCancellation(ref _semanticAnalysisCancellationTokenSource);
     }
-    
+
     public CancelFindDeclarationsCancellation() : void
     {
       ServerUtils.CancelCancellation(ref _findDeclarationsCancellationTokenSource);
     }
-    
+
     public AstCreated(file : File, completeWordPosOpt : int, parseResultOpt : IParseResult) : void
     {
       when (file.IsSupported)
         _expectsToBuildAst--;
       assert2(_expectsToBuildAst >= 0);
-      
+
       TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
     }
 
@@ -190,7 +190,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def cancellationTokenSource              = CancellationTokenSource();
         def cancellationToken                    = cancellationTokenSource.Token;
         _semanticAnalysisCancellationTokenSource = cancellationTokenSource;
-        
+
         def projectSupport = _projectSupport ?? this.GetProjectSupport();
         if (projectSupport != null)
         {
@@ -203,17 +203,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               catch
               {
                 | e is OperationCanceledException => ServerUtils.LogCanceled(e); null
-                | e => 
+                | e =>
                 ServerUtils.LogException(e);
                 Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
                 null
               };
-            
+
             this.Data = data;
-            
+
             Router.ProjectLoadFinish();
             LogMsgHandled("RefreshReferences " + this.Name + " ", timer, 1000);
-            
+
             when (data == null)
               return;
           }
@@ -224,7 +224,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _semanticResult = ImmutableArray.Empty;
           foreach (file in files)
             file.Ast.DeepResetProperties();
-          
+
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
           ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
@@ -240,21 +240,21 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         buffer.Add(FileEvalPropertiesData(file.FullName, file.Name, file.Id, file.Version, file.Ast, file.Statistics?.Typing, file.IsActive));
       buffer.ToImmutable();
     }
-    
+
     public GetSemanticAnalysisMessages(fileId : FileId) : array[CompilerMessage]
     {
       def files = _semanticResult;
       def empty = array(0);
-      
+
       when (files.IsDefaultOrEmpty)
         return empty;
-      
+
       for (mutable i = 0; i < files.Length; i++)
       {
         def file = files[i];
         when (fileId != file.FileId)
           continue;
-        
+
         if (file.HasCompilerMessage)
         {
           def msgs = file.GetCompilerMessage();
@@ -303,7 +303,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         builder.Add((file.Ast, file.IsActive));
       builder.MoveToImmutable();
     }
-    
+
     static GetAsts(files : ImmutableArray[FileEvalPropertiesData]) : ImmutableArray[IAst * bool]
     {
       def builder = ImmutableArray.CreateBuilder(files.Count());
@@ -311,7 +311,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         builder.Add(file.Ast, file.IsActive);
       builder.MoveToImmutable();
     }
-    
+
     public AddSemanticAction(action : Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]) : void
     {
       if (IsSemanticAvailable)
@@ -319,17 +319,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       else
         SemanticActions.Enqueue(action);
     }
-    
+
     public IsOpened : bool { get; private set }
-    
+
     public Open() : void
     {
       IsOpened = true;
       TryStartSemanticAnalysis();
     }
-    
+
     public Item[fileId : int] : File { get { GetFile(fileId) } }
-    
+
     public GetFile(id : int) : File
     {
       mutable value;
@@ -338,14 +338,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       else
         throw ArgumentException($"Can't find file with id=$id.", "id")
     }
-    
+
     public TryGetFile(id : int) : File
     {
       mutable file;
       _ = _files.TryGetValue(id, out file);
       file
     }
-    
+
     public AddFile(file : File): void
     {
       _files.Add(file.Id, file);
@@ -354,7 +354,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     }
 
     public RemoveFile(file : File): void { RemoveFile(file.Id); }
-    
+
     public RemoveFile(id : int): void
     {
       def file = _files[id];
@@ -366,7 +366,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       Parent._N_OnFileRemoved(id);
       TryStartSemanticAnalysis();
     }
-    
+
     public AddProjectReference(projectId : int, path : string) : void
     {
       def name = projectId.ToString();
@@ -381,7 +381,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _libs.Add(r);
       }
     }
-    
+
     public AddLib(name : string) : void
     {
       mutable index;
@@ -402,19 +402,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           {
             assert(false, "Unsupported LibReference kind: " + name.Substring(0, separatorPos));
           };
-          
+
         assert2(!string.IsNullOrEmpty(r.Path));
-            
+
         _libs.Add(r);
       }
     }
-    
+
     public RemoveLib(fullPath : string) : void
     {
       IgnoreParams();
       throw NotImplementedException()
     }
-    
+
     public GetSymbolHint(symbolId : int) : void
     {
       def action(_cancellationToken : CancellationToken, _solutionId : SolutionId, mutable _asts : ImmutableArray[IAst * bool]) : void
@@ -432,7 +432,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             send("<hint>" + symbol.MakeHint() + "</hint>");
           else
             send($"<hint>The symbol with symbolId=$symbolId not found.</hint>");
-            
+
           return;
         }
 
@@ -440,25 +440,25 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       }
       AddSemanticAction(action);
     }
-    
+
     // implementation
-    
+
     LogMsgHandled(msg : string, timer : Stopwatch, millisecondToTimeout : int) : void { ServerUtils.LogMsgHandled(msg, timer, millisecondToTimeout); }
-    
+
     // overrides
-    
-    public override Files : Seq[NSP.File] 
-    { 
+
+    public override Files : Seq[NSP.File]
+    {
       get { _files.Values }
     }
-    
+
     public FindDeclarations(pattern : string, kinds : ImmutableArray[string]) : void
     {
       CancelFindDeclarationsCancellation();
       def cancellationTokenSource              = CancellationTokenSource();
       def findDeclarationsCancellationToken    = cancellationTokenSource.Token;
       _findDeclarationsCancellationTokenSource = cancellationTokenSource;
-      
+
       def action(cancellationToken : CancellationToken, _solutionId : SolutionId, mutable _asts : ImmutableArray[IAst * bool]) : void
       {
         def isCancellationRequested() : bool { findDeclarationsCancellationToken.IsCancellationRequested || cancellationToken.IsCancellationRequested }
@@ -469,7 +469,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         when (projectSupport != null)
         {
           //ServerUtils.Log($"FindDeclarations('$pattern', [..$kinds]) ProjectId=$(this.Id)");
-          
+
           def timer = Stopwatch.StartNew();
           def infos = List();
           def send() : void
@@ -509,7 +509,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                 }
               }
             }
-            
+
             cancellationToken.IsCancellationRequested
           }
           projectSupport.VisitGlobalSymbols(this.Data, callbac);
@@ -524,13 +524,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       when (IsDisposed)
         return;
-        
+
       foreach (v in _files.Values)
       {
         Parent._N_OnFileRemoved(v.Id);
         v.Dispose();
       }
-      
+
       _files.Clear();
 
       ServerUtils.DisposeCancellationTokenSource(ref _semanticAnalysisCancellationTokenSource);

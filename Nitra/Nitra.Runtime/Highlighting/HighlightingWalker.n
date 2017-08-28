@@ -35,7 +35,7 @@ namespace Nitra.Runtime.Highlighting
           _ = context.Add(SpanInfo(NSpan(startPos, endPos), spanClass));
       }
     }
-    
+
     public override OnRegularCall(ruleInfo : SubruleInfo.RegularCall, startPos : int, endPos : int, parseResult : IParseResult, context : SpanInfoSet) : void
     {
       OnToken(ruleInfo.SpanClass, startPos, endPos, parseResult, context);

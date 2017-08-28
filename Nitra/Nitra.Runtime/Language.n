@@ -56,14 +56,14 @@ namespace Nitra
 
     public static LoadAssembly(path : string) : Assembly
     {
-      def assembly = 
+      def assembly =
         if (path.Contains(", Version="))
           Assembly.Load(path)
         else
           Assembly.LoadFrom(path);
       assembly
     }
-  
+
     public static GetLanguages(path : string) : array[Language]
     {
       def assembly  = LoadAssembly(path);
@@ -83,7 +83,7 @@ namespace Nitra
           }
           continue;
         }
-        
+
         def languageTypes = attr.ConstructorArguments[0].Value :> Seq[CustomAttributeTypedArgument];
         foreach (languageTypeArgument in languageTypes)
         {

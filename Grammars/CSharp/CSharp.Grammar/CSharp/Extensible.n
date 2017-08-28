@@ -46,7 +46,7 @@ namespace CSharp
     {
       def walker = UsingImportDeclarationWalker();
       walker.WalkPrefix(rawTreePtr, startPos, endPos, ruleParser, parseResult, 0);
-    
+
       def descriptor = (parseResult :> ParseResult).TryGetDynamicSyntaxExtension(walker.Name.ToString());
       if (descriptor != null)
         grammar.Add(descriptor);

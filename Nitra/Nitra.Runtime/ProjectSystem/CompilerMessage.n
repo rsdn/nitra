@@ -30,7 +30,7 @@ namespace Nitra.ProjectSystem
     }
 
     public override ToString() : string { this.Location.ToMessageString() + Text }
-    
+
     public CompareTo(other : Nitra.ProjectSystem.CompilerMessage) : int
     {
       this.Location.CompareTo(other.Location)

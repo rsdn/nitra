@@ -15,15 +15,15 @@ namespace Nitra.ClientServer.Macros
   {
     ToStringImpl.DoTransform(Macros.ImplicitCTX())
   }
-  
+
   module ToStringImpl
   {
     public DoTransform(typer : Typer) : PExpr
     {
       def tb = typer.CurrentTypeBuilder;
-      
+
       def options = tb.GetVariantOptions();
-      
+
       if (options.IsEmpty)
         ProcessClass(typer, tb)
       else
@@ -36,7 +36,7 @@ namespace Nitra.ClientServer.Macros
       {
         def type = member.GetMemType();
         if (typer.InternalType.String.Equals(type))
-          <[ "\"" + x.$(member.Name : usesite) + "\"" ]> 
+          <[ "\"" + x.$(member.Name : usesite) + "\"" ]>
         else
           <[ x.$(member.Name : usesite).ToString() ]>
       }
@@ -52,14 +52,14 @@ namespace Nitra.ClientServer.Macros
       def exprs = List();
       exprs.Add(<[ ", " ]>);
       MakeFielsd(typer, tb, exprs);
-      def result = 
+      def result =
         if (exprs.Count == 1)
           <[ $(tb.Name : global) => $(tb.Name + "()") ]>
         else
           <[ $(tb.Name : global) as x => $(tb.Name + "(") + string.Join(..$exprs) + ")" ]>;
       result
     }
-    
+
     ProcessVariant(typer : Typer, tb : TypeBuilder, options : list[TypeBuilder]) : PExpr
     {
       def optionToCase(o : TypeBuilder) : MatchCase
@@ -68,7 +68,7 @@ namespace Nitra.ClientServer.Macros
         exprs.Add(<[ ", " ]>);
         MakeFielsd(typer, tb, exprs);
         MakeFielsd(typer, o,  exprs);
-        def result = 
+        def result =
           if (exprs.Count == 1)
             <[ case: | $(tb.Name : global).$(o.Name : global)      => $(o.Name + "()") ]>
           else

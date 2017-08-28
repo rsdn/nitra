@@ -90,7 +90,7 @@ namespace Nitra.Visualizer
       _responseDispatcher = msg => _textEditor.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action<AsyncServerMessage>(Response), msg);
 
       _mainRow.Height  = new GridLength(ViewModel.Settings.TabControlHeight);
-      
+
       _configComboBox.ItemsSource = new[] {"Debug", "Release"};
       var config = ViewModel.Settings.Config;
       _configComboBox.SelectedItem = config == "Release" ? "Release" : "Debug";
@@ -187,7 +187,7 @@ namespace Nitra.Visualizer
       ViewModel.Settings.LastTextInput = _textEditor.Text;
       ViewModel.Settings.ActiveTabIndex = _tabControl.SelectedIndex;
       ViewModel.Settings.Save();
-      
+
       ViewModel.CurrentSuite    = null;
       ViewModel.CurrentSolution = null;
       ViewModel.CurrentProject  = null;
@@ -251,7 +251,7 @@ namespace Nitra.Visualizer
     {
       ShowNodeForCaret();
     }
-    
+
     private void ShowNodeForCaret()
     {
       if (_doTreeOperation)
@@ -351,14 +351,14 @@ namespace Nitra.Visualizer
 
 
       var node = FindParseTreeNode((ParseTreeReflectionStruct[])_reflectionTreeView.ItemsSource, _textEditor.CaretOffset);
-      
+
       if (node != null)
       {
         var selected = _reflectionTreeView.SelectedItem as ParseTreeReflectionStruct;
-      
+
         if (node == selected)
           return;
-      
+
         _reflectionTreeView.SelectedItem = node;
         _reflectionTreeView.BringIntoView(node);
       }
@@ -372,9 +372,9 @@ namespace Nitra.Visualizer
         {
           if (node.Children.Length == 0)
             return node;
-      
+
           _reflectionTreeView.Expand(node);
-      
+
           return FindParseTreeNode(node.Children, p);
         }
       }
@@ -407,12 +407,12 @@ namespace Nitra.Visualizer
         var location = message.Location;
         var file     = location.File;
         var span     = location.Span;
-        if (currentFileId == file.FileId) 
+        if (currentFileId == file.FileId)
         {
           if (span.StartPos >= doc.TextLength)
             continue;
 
-          var spanLength = (span.StartPos + span.Length) <= doc.TextLength 
+          var spanLength = (span.StartPos + span.Length) <= doc.TextLength
                            ? span.Length
                            : doc.TextLength - span.StartPos;
           var marker = _textMarkerService.Create(span.StartPos, spanLength);
@@ -590,7 +590,7 @@ namespace Nitra.Visualizer
 
       //foreach (var stat in stats)
        // sb.AppendLine(stat.ToString());
-      
+
       var result = sb.ToString();
 
       Clipboard.SetData(DataFormats.Text, result);
@@ -600,7 +600,7 @@ namespace Nitra.Visualizer
     void CopyReflectionNodeText(object sender, ExecutedRoutedEventArgs e)
     {
       var value = _reflectionTreeView.SelectedItem as ParseTreeReflectionStruct;
-      
+
       if (value != null)
       {
         var result = value.Description;
@@ -842,11 +842,11 @@ namespace Nitra.Visualizer
 
       if (workspace == null)
         return;
-      
-      var suite = create 
+
+      var suite = create
                   ? new SuiteVm(workspace, "New suite", ViewModel.Settings.Config)
                   : ViewModel.CurrentSuite;
-      
+
       var viewmodel = new TestSuiteCreateOrEditViewModel(suite.Client) {
         Title = create ? "New test suite" : "Edit test suite",
         RootFolder = suite.Workspace.RootFolder,
@@ -858,7 +858,7 @@ namespace Nitra.Visualizer
 
       viewmodel.References
                .AddRange(suite.Config.References);
-      
+
       var dialog = new TestSuiteDialog(suite, viewmodel) {
         Owner = this
       };
@@ -1410,7 +1410,7 @@ namespace Nitra.Visualizer
           control.FontSize++;
         else if (e.Key == Key.Subtract && Keyboard.Modifiers == ModifierKeys.Control)
           control.FontSize--;
-        
+
         if (Keyboard.Modifiers != ModifierKeys.Control)
           return;
 

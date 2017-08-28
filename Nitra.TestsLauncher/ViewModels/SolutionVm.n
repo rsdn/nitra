@@ -36,27 +36,27 @@ namespace Nitra.ViewModels
       when (IsSingleFileTest)
         IsExpanded = false;
     }
-    
+
     public IsSingleFileTest : bool { get { Children.Count == 1 && Children[0].Children.Count == 1 } }
-    
+
     public override Name : string { get { Path.GetFileName(FullPath) + "  (Solution)" }}
-    
+
     LoadProjects() : void
     {
       foreach (dir in Directory.GetDirectories(FullPath).OrderBy(x => x))
         Children.Add(ProjectVm(Suite, this, dir));
     }
-    
+
     public GetFile(fileId : int) : FileVm
     {
       // TODO: use Haschtable
       foreach (test when test.Id == fileId in GetAllTests())
         return test;
-        
+
       assert2(false);
       assert(false);
     }
-    
+
     // IClientHost
     public Activate(client : NitraClient) : void
     {
@@ -68,14 +68,14 @@ namespace Nitra.ViewModels
       {
         def projectId = project.Id;
         client.Send(ClientMessage.ProjectStartLoading(projectId, project.FullPath, config));
-        
+
         when (references != null)
           foreach (reference in references)
             client.Send(ClientMessage.ReferenceLoaded(projectId, reference));
-        
+
         foreach(test in project.Children)
           client.Send(ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version));
-        
+
         client.Send(ClientMessage.ProjectLoaded(project.Id));
       }
       client.Send(ClientMessage.SolutionLoaded(Id));
@@ -88,14 +88,14 @@ namespace Nitra.ViewModels
       Suite.Client.Send(ClientMessage.SolutionUnloaded(Id));
       _client = null;
     }
-    
+
     public override GetAllTests() : Seq[FileVm]
     {
       foreach (p in Children)
         foreach (t in p.Children)
           yield t;
     }
-    
+
     public Dispose() : void
     {
       foreach (project in Children)

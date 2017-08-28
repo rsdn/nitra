@@ -45,7 +45,7 @@ namespace Nitra.ViewModels
       foreach (suiteFolder in suiteFolders.Map(_.Trim()).Filter(x => !string.IsNullOrEmpty(x)))
       {
         def testSuite = SuiteVm(this, suiteFolder, config);
-          
+
         unless (selectedPath == null)
         {
           match (testSuite.GetTree().Find(x => x.FullPath == selectedPath))
@@ -72,10 +72,10 @@ namespace Nitra.ViewModels
       when (IsDirty && !_disosed)
       {
         def builder = StringBuilder();
-  
+
         foreach (testSuiteVm in TestSuites)
           _ = builder.AppendLine(testSuiteVm.Name);
-  
+
         File.WriteAllText(SolutinFilePath, builder.ToString(), Encoding.UTF8);
         IsDirty = false
       }
@@ -96,13 +96,13 @@ namespace Nitra.ViewModels
           yield t;
     }
 
-    public Dispose() : void 
-    { 
+    public Dispose() : void
+    {
       _disosed = true;
 
       foreach(suite in TestSuites)
         suite.Dispose();
-      
+
       TestSuites.Clear();
     }
   }

@@ -22,12 +22,12 @@ namespace Nitra.Visualizer.Views
     {
       SyntaxHighlighting = new StubHighlightingDefinition();
       TextArea.DefaultInputHandler.NestedInputHandlers.Add(new NitraSearchInputHandler(TextArea));
-      
+
       this.WhenActivated(disposables => {
         _popup = new IntelliSensePopup(ViewModel.IntelliSensePopup);
 
         AddVisualChild(_popup);
-        
+
         this.OneWayBind(ViewModel, vm => vm.IntelliSensePopup, v => v._popup.ViewModel)
             .AddTo(disposables);
 
@@ -57,7 +57,7 @@ namespace Nitra.Visualizer.Views
                  .Subscribe(visible => TextArea.Focus())
                  .AddTo(disposables);
 
-        TextArea.SelectionChanged += (sender, args) => 
+        TextArea.SelectionChanged += (sender, args) =>
           {
             isSelectionChanging = true;
             try

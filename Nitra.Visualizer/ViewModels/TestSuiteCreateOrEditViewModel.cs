@@ -24,7 +24,7 @@ namespace Nitra.Visualizer.ViewModels
     [Reactive]
     public string SuitPath { get; set; }
     public bool IsCreate { get; private set; }
-    
+
     public IReactiveList<ParserLibViewModel> ParserLibs { get; set; }
     public IReactiveList<ProjectSupportViewModel> ProjectSupports { get; set; }
     public IReactiveList<string> References { get; set; }
@@ -42,7 +42,7 @@ namespace Nitra.Visualizer.ViewModels
       ProjectSupports = new ReactiveList<ProjectSupportViewModel>();
       References = new ReactiveList<string>();
       DynamicExtensions = new ReactiveList<DynamicExtensionViewModel>();
-      
+
       ParserLibs.Changed
                 .Subscribe(_ => UpdateParserLibs(client));
 
@@ -95,7 +95,7 @@ namespace Nitra.Visualizer.ViewModels
 
         client.Send(new ClientMessage.GetLibsProjectSupports(libsArray));
         var libsProjectSupports = client.Receive<ServerMessage.LibsProjectSupports>().libs;
-      
+
         Languages.Clear();
         DynamicExtensions.Clear();
         ProjectSupports.Clear();

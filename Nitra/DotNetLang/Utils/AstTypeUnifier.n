@@ -17,7 +17,7 @@ namespace DotNet
   public sealed class AstTypeUnifier : TypeUnifier
   {
     public static Instance : AstTypeUnifier = AstTypeUnifier();
-    
+
     protected override IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       when (supertype : object == PlatformTypes.Object)

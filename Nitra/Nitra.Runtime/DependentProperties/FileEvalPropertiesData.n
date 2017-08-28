@@ -32,11 +32,11 @@ namespace Nitra.Declarations
       {
         when (_compilerMessage == null)
           _ = GetCompilerMessage();
-        
+
         _compilerMessage.Count > 0
       }
     }
-     
+
     public GetCompilerMessage() : CompilerMessageList
     {
       when (_compilerMessage == null)

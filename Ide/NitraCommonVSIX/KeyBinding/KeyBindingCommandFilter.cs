@@ -41,7 +41,7 @@ namespace Nitra.VisualStudio.KeyBinding
     {
       if (IsAdded)
         return;
-        
+
       //get the view adapter from the editor factory
       IOleCommandTarget next;
       var hr = viewAdapter.AddCommandFilter(this, out next);
@@ -72,7 +72,7 @@ namespace Nitra.VisualStudio.KeyBinding
         {
           case VSStd2KCmdID.AUTOCOMPLETE:
           case VSStd2KCmdID.SHOWMEMBERLIST:
-          case VSStd2KCmdID.COMPLETEWORD: 
+          case VSStd2KCmdID.COMPLETEWORD:
             prgCmds[0].cmdf = (uint)OLECMDF.OLECMDF_ENABLED | (int)OLECMDF.OLECMDF_SUPPORTED;
             return S_OK;
         }
@@ -97,7 +97,7 @@ namespace Nitra.VisualStudio.KeyBinding
       else if (pguidCmdGroup == VSStd2K)
       {
         var cmd = (VSStd2KCmdID)nCmdID;
-        
+
         switch (cmd)
         {
           case VSStd2KCmdID.GOTOBRACE:

@@ -21,7 +21,7 @@ namespace Nitra.Visualizer.Controls
       _value = value;
     }
 
-    class NotEvalUITypeEditor : UITypeEditor 
+    class NotEvalUITypeEditor : UITypeEditor
     {
       public override bool GetPaintValueSupported(ITypeDescriptorContext context)
       {

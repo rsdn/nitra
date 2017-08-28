@@ -19,7 +19,7 @@ namespace Nitra.VisualStudio.Models
 {
   /// <summary>
   /// Represent a text view in a text editor. An instance of this class is created for each IWpfTextView
-  /// that visible on the screen. If the IWpfTextView is hidding (tab is switched or closed), 
+  /// that visible on the screen. If the IWpfTextView is hidding (tab is switched or closed),
   /// its associated the TextViewModel is destroyed.
   /// </summary>
   internal class TextViewModel : IEquatable<TextViewModel>, IDisposable

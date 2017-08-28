@@ -69,7 +69,7 @@ namespace Nitra.Runtime.Reflection
     public override WalkPrefix(rawTreePtr : int, startPos : int, endPos : int, ruleParser : PrefixRuleParser, parseResult : IParseResult, context : SpanInfoSet) : void
     {
       base.WalkPrefix(rawTreePtr, startPos, endPos, ruleParser, parseResult, context);
-      
+
       when (endPos >= 0 && _inVoidRule)
       {
         def spanClass = ruleParser.Descriptor.SpanClass;

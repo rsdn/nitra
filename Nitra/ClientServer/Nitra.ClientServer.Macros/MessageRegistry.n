@@ -14,12 +14,12 @@ namespace Nitra.ClientServer.Macros
   {
     TypeToIdKey  = "nitra_messages_FixedType_to_id";
     IdToTypeKey = "nitra_messages_id_to_FixedType";
-    
+
     public Register(manager: ManagerClass, type: FixedType): short
     {
       def typeToId = GetMap.[FixedType, short](manager, TypeToIdKey);
       def idToType = GetMap.[short, FixedType](manager, IdToTypeKey);
-      
+
       mutable id;
       unless (typeToId.TryGetValue(type, out id))
       {
@@ -29,8 +29,8 @@ namespace Nitra.ClientServer.Macros
       }
       id
     }
-    
-    public GetRegistry(manager: ManagerClass): array[short * FixedType] 
+
+    public GetRegistry(manager: ManagerClass): array[short * FixedType]
     {
       match (manager.UserData[IdToTypeKey])
       {

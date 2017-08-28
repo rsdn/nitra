@@ -84,7 +84,7 @@ namespace Nitra.ViewModels
 
     public void CalcDependProps(TestVm testVm)
     {
-      
+
     }
   }
 }

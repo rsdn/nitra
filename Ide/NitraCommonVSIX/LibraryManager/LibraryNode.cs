@@ -274,7 +274,7 @@ namespace Nitra.VisualStudio
 				else
 					i += 1;
 			}
-			
+
 			_filteredView.Add(filterType, filtered);
 
 			return filtered;

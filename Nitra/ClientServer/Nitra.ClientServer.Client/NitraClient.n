@@ -24,7 +24,7 @@ using System.Threading;
 namespace Nitra.ClientServer.Client
 {
   using Nitra.ClientServer.Messages.AsyncServerMessage;
-  
+
   public sealed class NitraClient : IDisposable
   {
     public  StringManager    : StringManager;
@@ -36,25 +36,25 @@ namespace Nitra.ClientServer.Client
     mutable _isDisposed      : bool;
     public  ResponseMap      : ConcurrentDictionary[int, Action[AsyncServerMessage]] = ConcurrentDictionary();
             _mainPipeReader  : BinaryReader;
-    
+
     public this([NotNull] stringManager : StringManager)
     {
       StringManager             = stringManager;
       def executingAssemblyPath = Assembly.GetExecutingAssembly().Location;
       def assembliesPath        = Path.GetDirectoryName(executingAssemblyPath);
       def serverPath            = Path.Combine(assembliesPath, "Nitra.ClientServer.Server.exe");
-      
+
       def startInfo = ProcessStartInfo() <- {
         FileName = serverPath;
         Arguments = MaintPipeName;
         WindowStyle = ProcessWindowStyle.Minimized;
       };
-      
+
       _serverProc = Process.Start(startInfo);
-      
+
       assert2(_serverProc != null);
       Log("Server started.");
-      _mainPipeClient           = NamedPipeClientStream(".", MaintPipeName + Constants.RequestPipeSuffix, PipeDirection.Out); 
+      _mainPipeClient           = NamedPipeClientStream(".", MaintPipeName + Constants.RequestPipeSuffix, PipeDirection.Out);
       _mainPipeWriter           = BinaryWriter(_mainPipeClient);
       _responsePipe             = NamedPipeClientStream(".", MaintPipeName + Constants.ResponsePipeSuffix, PipeDirection.In);
       _mainPipeReader           = BinaryReader(_responsePipe);
@@ -67,20 +67,20 @@ namespace Nitra.ClientServer.Client
       readerThread.IsBackground = true;
       readerThread.Start();
     }
-    
+
     AsyncResponseReaderThreadMain() : void
     {
       def asyncResponsePipet  = NamedPipeClientStream(".", MaintPipeName + Constants.AsyncResponsePipeSuffix, PipeDirection.In);
       def asyncResponseReader = BinaryReader(asyncResponsePipet);
       asyncResponsePipet.Connect();
-      
+
       while (!_isDisposed && asyncResponsePipet.IsConnected)
       {
         try
         {
           def msg = Deserializer.Deserialize.[AsyncServerMessage](asyncResponseReader);
           Trace.WriteLine(msg);
-          
+
           mutable handler;
           if (ResponseMap.TryGetValue(msg.FileId, out handler))
           {
@@ -100,7 +100,7 @@ namespace Nitra.ClientServer.Client
           | _ is EndOfStreamException =>
             Trace.WriteLine("AsyncResponseReader disconnected.");
             return;
-            
+
           | e => Trace.WriteLine("AsyncResponseReader exception: " + e);
         }
       }
@@ -117,7 +117,7 @@ namespace Nitra.ClientServer.Client
       }
       msg.Serialize(_mainPipeWriter);
     }
-    
+
     public Receive[T]() : T
       where T: ServerMessage
     {
@@ -128,30 +128,30 @@ namespace Nitra.ClientServer.Client
     {
       Deserializer.Deserialize.[ServerMessage](_mainPipeReader)
     }
-    
+
     public Flush() : void
     {
       _mainPipeWriter.Flush();
     }
-    
+
     public Dispose() : void
     {
       when (_isDisposed)
         return;
-        
+
       Send(Messages.ClientMessage.Shutdown());
-      
+
       _mainPipeClient.Dispose();
       _responsePipe.Dispose();
       _isDisposed = true;
       GC.SuppressFinalize(this);
     }
-    
+
     protected override Finalize() : void
     {
       Dispose();
     }
-    
+
     Log(msg : string, params args: array[object]) : void
     {
       WriteLine(msg, args);

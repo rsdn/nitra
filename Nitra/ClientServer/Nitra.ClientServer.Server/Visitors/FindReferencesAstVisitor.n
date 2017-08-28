@@ -21,10 +21,10 @@ namespace Nitra.ClientServer.Server
   {
     _span : NSpan;
     _steack : SCG.Stack[IAst] = SCG.Stack();
-    
+
     public Result : List[Reference * array[IAst]] = List();
-    
-    
+
+
     public this(span : NSpan) { _span = span; }
 
     public Visit(parseTree : IAst) : void

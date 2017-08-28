@@ -17,7 +17,7 @@ namespace Nitra
   public struct Location : IEquatable[string], IComparable[Location]
   {
     public static NoLocation : Location = Location(SourceSnapshot.Default.File, NSpan(0));
-    
+
     public Source   : SourceSnapshot { get; }
     public StartPos : int            { get; }
     public EndPos   : int            { get; }
@@ -70,7 +70,7 @@ namespace Nitra
     }
 
     public static Default : Location { get; default Location(SourceSnapshot.Default, -1, -1) }
-    
+
     public static MakeFake(text : string) : Location { Location(SourceSnapshot(text), NSpan(0, text.Length)) }
 
     public IsEmpty         : bool { get { StartPos == EndPos } }
@@ -194,11 +194,11 @@ namespace Nitra
     {
       when (other == null)
         return 1;
-        
+
       def result = other.Source.File.FullName.CompareTo(Source.File.FullName);
       when (result != 0)
         return result;
-      
+
       Span.CompareTo(other.Span)
     }
   }

@@ -50,7 +50,7 @@ namespace WpfHint2
 			return ptr = SetWindowProc(hwnd, ptr);
 
 			//this throwed InvalidFunctionPointerInDelegateException
-			//return (Callback)Marshal.GetDelegateForFunctionPointer(ptr, typeof(Callback)); 
+			//return (Callback)Marshal.GetDelegateForFunctionPointer(ptr, typeof(Callback));
 		}
 
 		[DllImport("user32.dll")]

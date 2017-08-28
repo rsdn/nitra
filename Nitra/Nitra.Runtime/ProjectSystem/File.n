@@ -23,7 +23,7 @@ namespace Nitra.ProjectSystem
       def language = metadataReader.ReadObject(reader);
       DeserializedFile(fullName, language)
     };
-    
+
     public abstract Project     : Project        { get; }
     public abstract Length      : int            { get; }
     public abstract FullName    : string         { get; }
@@ -47,17 +47,17 @@ namespace Nitra.ProjectSystem
 
     [RecordIgnore] protected mutable _typingMessages : CompilerMessageList = CompilerMessageList();
     public TypingMessages       : CompilerMessageList{ get { _typingMessages } }
-    
+
     protected this()
     {
       Statistics = null;
     }
-    
+
     protected this(statistics : FileStatistics)
     {
       Statistics = statistics;
     }
-    
+
     protected OnRedraw() : void
     {
       Redraw?.Invoke();
@@ -68,7 +68,7 @@ namespace Nitra.ProjectSystem
 
     public GetCompilerMessages() : array[CompilerMessage]
     {
-      def symbolErrors = 
+      def symbolErrors =
         if (HasAst)
         {
           def errorCollector = CollectSymbolErrorsVisitor();
@@ -88,7 +88,7 @@ namespace Nitra.ProjectSystem
     }
 
     public abstract GetSource() : SourceSnapshot;
-    
+
     public override ToString() : string { FullName }
 
     public Serialize(writer : IO.BinaryWriter, metadataWriter : MetadataWriter) : void
@@ -146,7 +146,7 @@ namespace Nitra.ProjectSystem
     }
 
     public override HasAst : bool { get { _ast != null } }
-    
+
     public override Ast        : IAst
     {
       get

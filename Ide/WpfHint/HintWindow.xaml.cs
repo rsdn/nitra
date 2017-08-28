@@ -113,7 +113,7 @@ namespace WpfHint2
 		private void OnClick(object sender, RoutedEventArgs e)
 		{
 			var hc = e.Source as HintControl;
-			
+
 			if (hc == null)
 				return;
 
@@ -195,7 +195,7 @@ namespace WpfHint2
 			}
 
 			this.Close();
-			
+
 			var owner = Owner as HintWindow;
 
 			if (owner != null)

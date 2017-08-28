@@ -49,7 +49,7 @@ namespace Nitra.ProjectSystem
             _ = oldSolution.FsProjects.Remove(newItem);
           newItem.FsSolution = this;
           //Add listener for each item on PropertyChanged event
-          //newItem.PropertyChanged += this.OnItemPropertyChanged;         
+          //newItem.PropertyChanged += this.OnItemPropertyChanged;
         }
       }
     }

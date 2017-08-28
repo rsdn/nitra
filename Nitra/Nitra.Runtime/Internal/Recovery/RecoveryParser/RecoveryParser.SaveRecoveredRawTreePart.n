@@ -158,7 +158,7 @@ namespace Nitra.Internal.Recovery
               def subruleInfo = ParseResult.ParserHost.ParsingStates[subrule.State].SubruleInfo;
               //TODO:hardcase
               //failed test-0014 in C# and test-0002 in extensible C#
-              //remove || subruleInfo is SubruleInfo.Option || subruleInfo is SubruleInfo.List || subruleInfo is SubruleInfo.ListWithSeparator 
+              //remove || subruleInfo is SubruleInfo.Option || subruleInfo is SubruleInfo.List || subruleInfo is SubruleInfo.ListWithSeparator
               //implement throw NotImplementedException("Fallback to standard parse tree reading");
               when ((CompletionPos >= 0 && subrule.Begin <= CompletionPos && CompletionPos < subrule.End)
                 || changes.HasChanges

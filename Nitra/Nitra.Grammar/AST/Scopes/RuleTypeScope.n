@@ -25,7 +25,7 @@ namespace Nitra.Ast
       when (_members : object == null)
         _members = CreateMembers();
     }
-    
+
     // TODO: add type subst
     public override AllSymbols : Seq[DeclarationSymbol]
     {
@@ -34,17 +34,17 @@ namespace Nitra.Ast
         Init();
         _members.Symbols.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
       }
-    } 
+    }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def id = reference.Id;
-      
+
       when (id <= StringIndex.InvalidId)
         return BindResult.Nil();
 
       Init();
-      
+
       def isMatch(symbol : TSymbol) : bool
       {
         symbol.NameId == id
@@ -62,7 +62,7 @@ namespace Nitra.Ast
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
     {
       Init();
-      
+
       def id = nodeToIdMap.GetObjectId(this);
 
       nodes.Add($<#Obj_$id [label="RuleTypeScope"]#>);

@@ -17,7 +17,7 @@ namespace Nitra.ClientServer.Messages
   {
     [ThreadStatic]
     static mutable _flags : array[bool];
-    
+
     public MatchPattern(source : string, pattern : string) : bool
     {
       def compareInfo = CultureInfo.InvariantCulture.CompareInfo;
@@ -30,7 +30,7 @@ namespace Nitra.ClientServer.Messages
           return false;
         index++;
       }
-      
+
       true
     }
 
@@ -49,7 +49,7 @@ namespace Nitra.ClientServer.Messages
         flags[index] = true;
         index++;
       }
-      
+
       def spans = MatchPatternSpans(flags, len);
       //def dbg =spans.Select(r => (source.Substring(r.StartPos, r.Length), r));
       //Console.WriteLine($"Match: '$source' [..$dbg]\n        012345678901234567890");
@@ -59,7 +59,7 @@ namespace Nitra.ClientServer.Messages
     public MatchPatternSpans(flags : array[bool], len : int) : ImmutableArray[NSpan]
     {
       assert(flags.Length >= len);
-        
+
       def builder = ImmutableArray.CreateBuilder();
       mutable start = 0;
       mutable prev  = false;
@@ -78,7 +78,7 @@ namespace Nitra.ClientServer.Messages
       //assert(len > builder.Count);
       //assert(builder.Last().EndPos <= len);
       //assert(builder.All(x => !x.IsEmpty));
-      
+
       builder.ToImmutable()
     }
 
@@ -94,7 +94,7 @@ namespace Nitra.ClientServer.Messages
 
 		    when (newCapacity < min)
 			    newCapacity = min;
-			    
+
 		    flags = array(newCapacity);
 		    _flags = flags;
 		    flags

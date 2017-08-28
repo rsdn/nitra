@@ -12,7 +12,7 @@ namespace DotNet
   {
     Type = if (Value.HasValue) Value.Value.Type else PlatformTypes.GetFreeVar();  // TODO: use free type var
 
-    Value : RealLiteralValue; 
+    Value : RealLiteralValue;
   }
 
   ast IntegerLiteral : Expr
@@ -29,7 +29,7 @@ namespace DotNet
     Type = PlatformTypes.Boolean;
   stage 1:
     out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
-    
+
     Expr1 : Expr;
     TypeName : QualifiedReference;
   }

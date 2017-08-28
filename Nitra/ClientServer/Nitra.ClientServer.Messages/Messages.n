@@ -30,7 +30,7 @@ namespace Nitra.ClientServer.Messages
 
   [NitraMessage]
   public abstract class RouterMessage : Message { }
-  
+
   [NitraMessage]
   public variant ClientMessage : RouterMessage
   {
@@ -73,10 +73,10 @@ namespace Nitra.ClientServer.Messages
     | GetSubHint               { projectId : ProjectId; symbolId : int; }
     | FindDeclarations         { pattern : string; primaryProjectId : ProjectId; hideExternalItems : bool; kinds : ImmutableArray[string]; }
     | Shutdown                 { }
-    
+
     public override ToString() : string { ToStringImpl() }
   }
-  
+
   [NitraMessage]
   public variant ServerMessage
   {
@@ -99,7 +99,7 @@ namespace Nitra.ClientServer.Messages
     public FileId     : FileId;
     public Version    : FileVersion;
     public SolutionId : SolutionId;
-    
+
     | LanguageLoaded              { spanClassInfos : ImmutableArray[SpanClassInfo]; }
     | OutliningCreated            { projectId : ProjectId; outlining      : ImmutableArray[OutliningInfo]; }
     | KeywordsHighlightingCreated { projectId : ProjectId; spanInfos      : ImmutableArray[SpanInfo]; }
@@ -119,7 +119,7 @@ namespace Nitra.ClientServer.Messages
     | Exception                   { exception : string; }
     | FoundDeclarations           { projectId : ProjectId; declarations : ImmutableArray[DeclarationInfo]; }
     | CompleteWord                { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
-    
+
     public override ToString() : string { ToStringImpl() }
   }
 
@@ -127,7 +127,7 @@ namespace Nitra.ClientServer.Messages
   public class ProjectSupports
   {
     public ProjectSupports : ImmutableArray[ProjectSupport];
-    
+
     public override ToString() : string { ProjectSupports.ToString(", ") }
   }
 
@@ -143,7 +143,7 @@ namespace Nitra.ClientServer.Messages
     public ProjectSupprts : ImmutableArray[string];
     public Languages      : ImmutableArray[LanguageInfo];
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct SymbolRreferences
   {
@@ -151,35 +151,35 @@ namespace Nitra.ClientServer.Messages
     public Definitions : ImmutableArray[SymbolLocation];
     public References  : ImmutableArray[FileEntries]
   }
-  
-  
+
+
   public enum PrettyPrintState
   {
     | Disabled
     | Text
     | Html
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct NSpan : IComparable[NSpan]
   {
     public StartPos : int;
     public EndPos   : int;
     public Length   : int { get { EndPos - StartPos }}
-    
+
     public IsEmpty : bool
     {
       get { StartPos == EndPos }
     }
-    
+
     public IntersectsWith(pos : int)              : bool { pos <= EndPos && pos >= StartPos }
     public IntersectsWith(start : int, end : int) : bool { start <= EndPos && end >= StartPos }
     public IntersectsWith(other : NSpan)          : bool { IntersectsWith(other.StartPos, other.EndPos) }
     public IntersectsWith(other : Range)          : bool { IntersectsWith(other.Span) }
     public IntersectsWith(other : Location)       : bool { IntersectsWith(other.Range) }
-    
+
     public override ToString() : string { StartPos + ", " + EndPos }
-    
+
     public CompareTo(other : NSpan) : int
     {
       def result = StartPos.CompareTo(other.StartPos);
@@ -189,7 +189,7 @@ namespace Nitra.ClientServer.Messages
         result
     }
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct SpanInfo
   {
@@ -203,7 +203,7 @@ namespace Nitra.ClientServer.Messages
     {
       "Span=" + Span + ", SpanClassId=" + SpanClassId
     }
-    
+
     public class SpanInfoComparer : IComparer[SpanInfo]
     {
       public Compare(x : SpanInfo, y : SpanInfo) : int
@@ -211,12 +211,12 @@ namespace Nitra.ClientServer.Messages
         def res = x.Span.StartPos.CompareTo(y.Span.StartPos);
         when (res != 0)
           return res;
-          
+
         x.SpanClassId - y.SpanClassId
       }
     }
   }
-  
+
   [NitraMessage]
   public variant FileChange
   {
@@ -224,13 +224,13 @@ namespace Nitra.ClientServer.Messages
     | Delete  { span : NSpan }
     | Replace { span : NSpan; text : string }
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct FileIdentity : IComparable[FileIdentity]
   {
     public FileId      : FileId;
     public FileVersion : FileVersion;
-    
+
     public CompareTo(other : FileIdentity) : int
     {
       FileId.Value.CompareTo(other.FileId.Value)
@@ -263,7 +263,7 @@ namespace Nitra.ClientServer.Messages
     public SymbolId : int;
     public Location : Location;
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct Range : IComparable[Range]
   {
@@ -273,19 +273,19 @@ namespace Nitra.ClientServer.Messages
     public EndLine     : int;
     public EndColumn   : int;
     public Text        : string;
-    
+
     public CompareTo(other : Range) : int { Span.CompareTo(other.Span) }
     public override ToString() : string { "{" + StartLine + ", " + StartColumn + "}" }
   }
-  
+
   [NitraMessage, StructuralEquality]
   public struct Location : IComparable[Location]
   {
     public File  : FileIdentity;
     public Range : Range;
-    
+
     public Span : NSpan { get { this.Range.Span } }
-    
+
     public CompareTo(other : Location) : int
     {
       mutable result = File.CompareTo(other.File);
@@ -294,7 +294,7 @@ namespace Nitra.ClientServer.Messages
       else
         result
     }
-    
+
     public override ToString() : string
     {
       "Location(" + this.File.FileId.Value + ", v=" + this.File.FileVersion.Value + ", " + this.Range + ")"
@@ -326,7 +326,7 @@ namespace Nitra.ClientServer.Messages
     public Number         : int;
     public Source         : CompilerMessageSource;
     public NestedMessages : list[CompilerMessage];
-    
+
     public CompareTo(other : CompilerMessage) : int
     {
       this.Location.CompareTo(other.Location)
@@ -342,25 +342,25 @@ namespace Nitra.ClientServer.Messages
       TypeFullName = "";
       Path         = "";
     }
-    
+
     /// Caption from ProjectSupportAttributr of the type which implement IProjectSupport
     [XmlAttribute] public mutable Caption      : string;
     /// Fully qualified name of the type which implement IProjectSupport
     [XmlAttribute] public mutable TypeFullName : string;
     /// Path of assembly where defined the type which implement IProjectSupport
     [XmlAttribute] public mutable Path         : string;
-    
+
     public IsNotSpecified : bool { get { string.IsNullOrEmpty(TypeFullName) || string.IsNullOrEmpty(Caption) } }
-    
+
     public override ToString() : string { if (IsNotSpecified) "<not specified>" else Caption }
   }
-  
+
 
   [NitraMessage]
   public sealed class Config
   {
     public this() { }
-    
+
     public static InitNew() : Config
     {
       def x = Config();
@@ -369,7 +369,7 @@ namespace Nitra.ClientServer.Messages
       x.References      = array(0);
       x
     }
-    
+
     /// Descriptions of class which implements IProjectSupport
     public mutable ProjectSupport : ProjectSupport;
     /// Language descriptions
@@ -389,10 +389,10 @@ namespace Nitra.ClientServer.Messages
     [XmlAttribute] public mutable Name : string;
     /// Path of assembly where defined lanuage extensions
     [XmlAttribute] public mutable Path : string;
-    
+
     public override ToString() : string { "DynamicExtension: " + Name }
   }
-  
+
   [NitraMessage]
   public struct LanguageInfo
   {
@@ -404,10 +404,10 @@ namespace Nitra.ClientServer.Messages
     [XmlArray(ElementName="DynamicExtensions", IsNullable=false)]
     [XmlArrayItem("Extension")]
                    public mutable DynamicExtensions : array[DynamicExtensionInfo];
-    
+
     public override ToString() : string { "Language: " + Name }
   }
-  
+
   [NitraMessage]
   public struct SpanClassInfo
   {
@@ -420,7 +420,7 @@ namespace Nitra.ClientServer.Messages
       "SpanClass=" + FullName + " Id=" + Id
     }
   }
-  
+
   [NitraMessage]
   public struct OutliningInfo
   {
@@ -443,7 +443,7 @@ namespace Nitra.ClientServer.Messages
       }
     }
   }
-  
+
   public class CompletionElemComparer : IComparer[CompletionElem]
   {
     public Compare(x : CompletionElem, y : CompletionElem) : int
@@ -451,7 +451,7 @@ namespace Nitra.ClientServer.Messages
       x.Text.CompareTo(y.Text)
     }
   }
-  
+
   [NitraMessage]
   public variant CompletionElem
   {
@@ -479,7 +479,7 @@ namespace Nitra.ClientServer.Messages
       }
     }
   }
-  
+
   public enum ReflectionKind
   {
     | Normal
@@ -487,7 +487,7 @@ namespace Nitra.ClientServer.Messages
     | Ambiguous
     | Deleted
   }
-  
+
   [NitraMessage]
   public class ReflectionInfo
   {
@@ -511,23 +511,23 @@ namespace Nitra.ClientServer.Messages
     public Kind        : ReflectionKind                   { get { kind        } }
     public Span        : NSpan                            { get { span        } }
     public Children    : ImmutableArray[ParseTreeReflectionStruct] { get { children    } }
-    
+
     public override ToString() : string{ Description + " Count=" + Children.Length  }
   }
-  
+
   [NitraMessage]
   public class GrammarDescriptor
   {
     public FullName: string;
     public AssemblyLocation: string;
   }
-  
+
   [NitraMessage]
   public class LibReference
   {
     public Name: string;
   }
-  
+
   public enum PropertyKind
   {
     | Simple
@@ -571,7 +571,7 @@ namespace Nitra.ClientServer.Messages
     | Double        { value : System.Double ; }
     | Boolean       { value : System.Boolean; }
     | Parsed        { span : NSpan; value : ObjectDescriptor; }
-    
+
     public IsObject   : bool { get { match (this) { | Ast | Symbol | Object => true | _ => false } } }
     public IsSeq      : bool { get { match (this) { | AstList | Seq => true | _ => false } } }
     public Properties : array[PropertyDescriptor]
@@ -622,7 +622,7 @@ namespace Nitra.ClientServer.Messages
           | Symbol        as x => x.id
           | Object        as x => x.id
           | AstList       as x => x.id
-          | Seq           as x => x.id         
+          | Seq           as x => x.id
           | _                  => -1
         }
       }
@@ -724,7 +724,7 @@ namespace Nitra.ClientServer.Messages
           | Seq     as x => x.items = items;
           | _            => assert(false);
         }
-        
+
       | AstItems(members, items) =>
         match (this)
         {
@@ -774,22 +774,22 @@ namespace Nitra.ClientServer.Messages
     public Open  : NSpan;
     public Close : NSpan;
   }
-  
+
   [Record]
   [StructuralEquality]
   public struct SolutionId
   {
     public static Invalid : SolutionId = SolutionId(-1);
-    
+
     public Value : int;
-    
+
     public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
     public static new Deserialize(reader : BinaryReader) : SolutionId { SolutionId(reader.ReadInt32()) }
-    
+
     public static @:(x : SolutionId) : int { x.Value }
     public static @>=(x : SolutionId, y : SolutionId) : bool { x.Value >= y.Value }
     public static @<=(x : SolutionId, y : SolutionId) : bool { x.Value <= y.Value }
-    
+
     public override ToString() : string { Value.ToString() }
   }
 
@@ -798,16 +798,16 @@ namespace Nitra.ClientServer.Messages
   public struct ProjectId
   {
     public static Invalid : ProjectId = ProjectId(-1);
-    
+
     public Value : int;
-    
+
     public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
     public static new Deserialize(reader : BinaryReader) : ProjectId { ProjectId(reader.ReadInt32()) }
-    
+
     public static @:(x : ProjectId) : int { x.Value }
     public static @>=(x : ProjectId, y : ProjectId) : bool { x.Value >= y.Value }
     public static @<=(x : ProjectId, y : ProjectId) : bool { x.Value <= y.Value }
-    
+
     public override ToString() : string { Value.ToString() }
   }
 
@@ -817,18 +817,18 @@ namespace Nitra.ClientServer.Messages
   public struct FileId
   {
     public static Invalid : FileId = FileId(-1);
-    
+
     public Value : int;
-    
+
     public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
     public static new Deserialize(reader : BinaryReader) : FileId { FileId(reader.ReadInt32()) }
-    
+
     public IsValid : bool { get { Value >= 0 } }
-    
+
     public static @:(x : FileId) : int { x.Value }
     public static @>=(x : FileId, y : FileId) : bool { x.Value >= y.Value }
     public static @<=(x : FileId, y : FileId) : bool { x.Value <= y.Value }
-    
+
     public override ToString() : string { Value.ToString() }
   }
 
@@ -838,30 +838,30 @@ namespace Nitra.ClientServer.Messages
   public struct FileVersion
   {
     public static Invalid : FileVersion = FileVersion(-1);
-    
+
     public Value : int;
-    
+
     public IsInvalid : bool { get { Value < 0 } }
-    
+
     public Serialize(writer : BinaryWriter) : void { writer.Write(Value); }
     public static new Deserialize(reader : BinaryReader) : FileVersion { FileVersion(reader.ReadInt32()) }
-    
+
     public static @:(x : FileVersion) : int { x.Value }
     public static @>=(x : FileVersion, y : FileVersion) : bool { x.Value >= y.Value }
     public static @<=(x : FileVersion, y : FileVersion) : bool { x.Value <= y.Value }
-    
+
     public override ToString() : string { Value.ToString() }
   }
-  
+
   [NitraMessage]
   [StructuralEquality]
   public struct VersionedPos
   {
     public static Invalid : VersionedPos = VersionedPos(-1, FileVersion(-1));
-    
+
     public Pos : int;
     public Version : FileVersion;
-    
+
     public IsInvalid : bool { get { Pos < 0 || Version.IsInvalid } }
 
     public override ToString() : string { if (IsInvalid) "<VersionedPos.Invalid>" else ("VersionedPos(" + Pos + ", " + Version + ")") }

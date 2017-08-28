@@ -51,8 +51,8 @@
     regex InterpolatedNotAllowedVerbatimStringLiteralChar = "\"" | "{" | "}";
 
     [SpanClass(Error)]
-    regex ErrorOpenBrace = "{"; // TODO: Report an error 
+    regex ErrorOpenBrace = "{"; // TODO: Report an error
     [SpanClass(Error)]
-    regex ErrorCloseBrace = "}"; // TODO: Report an error 
+    regex ErrorCloseBrace = "}"; // TODO: Report an error
   }
 }

@@ -15,13 +15,13 @@ namespace Nitra.ViewModels
   {
     public override Name     : string                       { get { Path.GetFileName(FullPath) }}
     public          Children : ObservableCollection[TChild] { get; protected set }
-        
+
     protected this(suite : SuiteVm, fullPath : string)
     {
       base(suite, fullPath);
       Children = ObservableCollection();
     }
-    
+
     public override ToString(): string { Name }
   }
 }

@@ -24,7 +24,7 @@ namespace Nitra.Internal.Recovery
 
     internal RecordsToComplete : SCG.Queue[int * ParseRecord * ParsedSequence] = SCG.Queue();
     mutable _isReferenceParsedInCompletionPos : bool;
-    
+
     public Parse() : void
     {
       def completeAll() : void
@@ -177,7 +177,7 @@ namespace Nitra.Internal.Recovery
             }
             else
               true;
-          when (continueParsing)  
+          when (continueParsing)
             foreach (prefixRule in state.RuleParser.PrefixRules)
               _ = StartParseSequence(record, textPos, prefixRule.ParsingSequence, tokenChanges);
 

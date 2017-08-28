@@ -23,19 +23,19 @@ namespace Nitra.ClientServer.Server
     /// Response from workers. Called in Messages from client. Called in Router thread.
     OnRouterAnswerMessage(serverMsg : RouterAnswerMessage) : void
     {
-      | FileParsed(projectId, fileId, parseResult) => 
+      | FileParsed(projectId, fileId, parseResult) =>
         when (parseResult.ParseSession.CancellationToken.IsCancellationRequested)
           return;
 
         assert2(parseResult != null);
 
         def file = _solution.GetFile(projectId, fileId);
-              
+
         when (file.IsActive)
           file.CreateVisualInfo(parseResult);
-              
+
         _parseQueue.Add(file.CreateAstMessage(parseResult));
-              
+
       | AstCreated(projectId, fileId, cancellationToken, ast, parseTree, completionPos, parseResultOpt) =>
         when (cancellationToken.IsCancellationRequested)
           return;

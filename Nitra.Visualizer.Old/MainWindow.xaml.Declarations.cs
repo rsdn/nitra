@@ -64,7 +64,7 @@ namespace Nitra.Visualizer
 
         if (props.Any(p => !IsIgnoredProperty(p)))
           tvi.Items.Add(obj);
-        
+
         return tvi;
       }
 
@@ -249,7 +249,7 @@ namespace Nitra.Visualizer
       {
         var color = "SlateBlue";
         var prefix = "";
-        
+
         var attr = (PropertyAttribute)prop.GetCustomAttributes(typeof(PropertyAttribute), false).FirstOrDefault();
         if (attr != null && attr.IsDependent)
         {

@@ -677,7 +677,7 @@ syntax module NitraSyntax : NitraLang
 
         [Cached] MakePropertyContainer(propertyContainer : PropertyContainerSymbol) : PropertyContainerSymbol = propertyContainer;
         override CollectGlobalSymbols
-        { 
+        {
           _ = MakePropertyContainer(owner);
           foreach (property in Properties) property.CollectGlobalSymbols(owner);
         }
@@ -919,7 +919,7 @@ syntax module NitraSyntax : NitraLang
         }
         override TypeSyntaxMappings    = foreach (decl in SyntaxModuleMembers) decl.TypeSyntaxMappings();
         override Typing
-        {          
+        {
           _ = MakeTokenLiteralNames();
           foreach (decl in SyntaxModuleMembers)
             decl.Typing();

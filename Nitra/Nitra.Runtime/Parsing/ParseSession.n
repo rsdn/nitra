@@ -71,7 +71,7 @@ namespace Nitra
     public DynamicExtensions   : Seq[GrammarDescriptor]   { get { _dynamicExtensions   } set { Check(); _dynamicExtensionsMap = value?.ToDictionary(d => d.FullName); _dynamicExtensions = value; } }
     public Statistics          : StatisticsTask.Container { get { _statistics          } set { Check();                        _statistics          = value; } }
     public CompilerMessages    : ICompilerMessages        { get { _compilerMessages    } set { Check();                        _compilerMessages    = value; } }
-    
+
     public CurrentGrammar      : CompositeGrammar         { get;                         set;                                                                  }
 
     Check() : void { assert(!_parsingInProgress, "The property can not be changed during parsing."); }
@@ -95,12 +95,12 @@ namespace Nitra
     public static SmartRecovery      : Action[IParseResult] = parseResult => RecoveryParser(parseResult).RecoveryFromAllErrors();
     public static PanicRecovery      : Action[IParseResult] = parseResult => RecoveryParser(parseResult).PanicRecovery();
     public static FirsrErrorRecovery : Action[IParseResult] = parseResult => RecoveryParser(parseResult).FirstErrorRecovery();
-    
+
     public Parse(sourceText : string) : IParseResult
     {
       Parse(SourceSnapshot(sourceText))
     }
-    
+
     public Parse(sourceSnapshot : SourceSnapshot) : IParseResult
       requires this.StartRuleDescriptor != null
     {

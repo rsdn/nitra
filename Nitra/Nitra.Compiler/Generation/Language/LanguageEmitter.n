@@ -52,7 +52,7 @@ namespace Nitra.Compiler
         ]>);
       });
     }
-    
+
     public DefineMembers() : void
     {
       assert(_tb : object != null);
@@ -75,7 +75,7 @@ namespace Nitra.Compiler
             public static $(Util.MakeStyleName(style) : usesite) : Nitra.Style { get { $(backingFieldName : usesite) } }
           ]>);
 
-          localStyles.Add(style, backingFieldName); 
+          localStyles.Add(style, backingFieldName);
         });
       }
 
@@ -155,7 +155,7 @@ namespace Nitra.Compiler
       else
         AttributesAndModifiers(NemerleAttributes.Public %| NemerleAttributes.Virtual, [])
     }
-    
+
     public Emit() : void
     {
       assert(_tb : object != null);
