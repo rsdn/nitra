@@ -71,7 +71,7 @@ namespace Nitra.ClientServer.Server
       | FindSymbolReferences (projectId, id, pos)        => FindSymbolReferences(projectId, id, pos);
       | FindSymbolDefinitions(projectId, id, pos)        => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos);
       | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
-      | GetObjectContent(sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectContent(sId, ver, parentId);
+      | GetObjectContent(sId, pId, fId, ver, parentId)   => GetObjectContent(sId, pId, fId, ver, parentId);
       | GetObjectGraph  (sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectGraph(sId, ver, parentId);
       | AttachDebugger                                   => _ = Debugger.Launch();
       | GetLibsMetadata(libs)                            => GetLibsMetadata(libs)

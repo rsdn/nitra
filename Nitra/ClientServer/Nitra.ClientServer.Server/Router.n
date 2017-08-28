@@ -243,5 +243,11 @@ namespace Nitra.ClientServer.Server
       try _solution[projectId].GetSymbolHint(symbolId)
       catch { e => SendResponse(ServerMessage.SubHint(e.ToString())); throw }
     }
-  }
-}
+
+    GetObjectContent(solutionId : SolutionId, projectId : ProjectId, fileId : FileId, fileVersion : FileVersion, objectId : int) : void
+    {
+      try _solution.GetFile(projectId, fileId).GetObjectGraph(solutionId, fileVersion, objectId);
+      catch { e => SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail("Exception: " + e))); }
+    }
+  } // class
+} // namespace
