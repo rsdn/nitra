@@ -270,7 +270,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("CreateKeywordsHighlighting", timer, 50);
 
       | CreateSymbolsHighlighting(solutionId, projectId, fileId, version, ast, completeWordPosOpt) =>
-        ServerUtils.Log("CreateSymbolsHighlighting " + fileId);
+        ServerUtils.Log($"CreateSymbolsHighlighting(solutionId=$solutionId, projectId=$projectId, fileId=$fileId, version=$version,  completeWordPosOpt=$completeWordPosOpt)");
         def timer   = Stopwatch.StartNew();
         def visitor = CollectSymbolsAstVisitor(_spanClassesManager, completeWordPosOpt);
         ast.Accept(visitor);

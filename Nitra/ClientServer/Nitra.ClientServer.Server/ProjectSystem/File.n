@@ -240,7 +240,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _parseTree = parseTree;
       _ast = ast;
 
-      TryHighlightSymbolReferences();
+      when (completionPos < 0)
+        TryHighlightSymbolReferences();
 
       if (_isCompleteWord && CanCompleteWord())
       {
@@ -819,7 +820,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       Parent.AddSemanticAction(action);
     }
 
-    public RenameFile(newId : FileId, newPath : string): void
+    public RenameFile(newId : FileId, newPath : string) : void
     {
       def newVersion = FileVersion(); // TODO: get from client
       def project = Parent;
