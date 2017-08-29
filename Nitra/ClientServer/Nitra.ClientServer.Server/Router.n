@@ -246,7 +246,7 @@ namespace Nitra.ClientServer.Server
 
     GetObjectContent(solutionId : SolutionId, projectId : ProjectId, fileId : FileId, fileVersion : FileVersion, objectId : int) : void
     {
-      try _solution.GetFile(projectId, fileId).GetObjectGraph(solutionId, fileVersion, objectId);
+      try _solution.GetFile(projectId, fileId).GetObjectContent(solutionId, fileVersion, objectId);
       catch { e => SendResponse(ServerMessage.ObjectContent(solutionId, ContentDescriptor.Fail("Exception: " + e))); }
     }
   } // class
