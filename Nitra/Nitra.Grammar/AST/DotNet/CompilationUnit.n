@@ -400,7 +400,8 @@ namespace DotNet
             unless (symbol.IsDeclaredInEvaluated)
               symbol.DeclaredIn = declaredIn;
             symbol.EvalProperties(context);
-            foreach (subNode in node.Children.Values.ToArray())
+            node.EnsureCached();
+            foreach (subNode in node.Children?.Values.ToArray())
               loadNsMemebers(subNode, symbol);
 
           | Cached(tycon) =>  addTopType(node, tycon);
