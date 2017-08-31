@@ -99,7 +99,7 @@ namespace Nitra.Declarations
     public GetSymbols() : ImmutableArray[TSymbol]
     {
       // TODO: Optimize for special cases
-      def symbolSet = HashSet(SymbolByNameComparer());
+      def symbolSet = HashSet();
       GetSymbols(symbolSet);
       symbolSet.ToImmutableArray()
     }
