@@ -559,6 +559,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         when (text == null)
           return <#«incorrect Source for AST»#>;
 
+        when (span.IsEmpty || text.Length == 0)
+          return "";
+
         def index  = text.IndexOfAny(array['\r', '\n'], span.StartPos, span.Length);
         def len    = if (index > 0) index - span.StartPos else Math.Min(maxLen, span.Length);
         if (len == span.Length)

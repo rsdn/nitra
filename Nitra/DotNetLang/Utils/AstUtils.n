@@ -105,10 +105,20 @@ namespace DotNet
 
     public MakeNamespaceFullName(parentFullName : string, name : string) : string
     {
-      MakeNamespaceFullName(parentFullName, name, default(ImmutableArray[TypeParameterSymbol]))
+      MakeNamespaceFullName(parentFullName, name, default(ImmutableArray[TypeSymbol]))
     }
 
-    public MakeNamespaceFullName(parentFullName : string, name : string, typeParameters : ImmutableArray[TypeParameterSymbol]) : string
+    public MakeNamespaceFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string, args : ImmutableArray[TTypeSymbol]) : string
+			where TTypeSymbol: TypeSymbol
+    {
+	    if (declaredInOpt is VSome(declaredIn))
+				MakeNamespaceFullName(declaredIn.FullName, name, args);
+			else
+				MakeNamespaceFullName(null, name, args);
+    }
+
+    public MakeNamespaceFullName[TTypeSymbol](parentFullName : string, name : string, args : ImmutableArray[TTypeSymbol]) : string
+			where TTypeSymbol: TypeSymbol
     {
       def result =
         if (string.IsNullOrEmpty(parentFullName))
@@ -116,10 +126,10 @@ namespace DotNet
         else
           parentFullName + "." + name;
 
-      if (typeParameters.IsDefaultOrEmpty)
+      if (args.IsDefaultOrEmpty)
         result
       else
-        $<#$result<..$(typeParameters; ", "; _.Name)>#>
+        $<#$result<..$(args; ", "; _.Name)>#>
     }
 
     public IsSameIdentity(typeParametersCount : int, candidate : Declaration) : bool

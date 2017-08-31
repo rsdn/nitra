@@ -420,6 +420,10 @@ namespace Nitra
     public ResolveStructuralPropertyType(candidates : Ref[DeclarationSymbol], context : DependentPropertyEvalContext) : Ref[TypeSymbol]
     {
       mutable candidates2 = candidates.Result;
+
+      def _x1 = candidates.Result.GetSymbols();
+      def _x2 = candidates.GetSymbols();
+
       when (candidates.IsAmbiguous)
       {
         when (candidates.Contains.[AstTypeSymbol]() && (candidates.Contains.[ClassSymbol]() || candidates.Contains.[InterfaceSymbol]()))
@@ -432,12 +436,8 @@ namespace Nitra
         | ast is AstTypeSymbol => VSome(ast)
         | typeSymbol is TypeSymbol =>
           when (parsedValueType == null)
-            parsedValueType = context.BindFullName(1, "Nitra", "ParsedValue");
-          def constructedType = TopConstructedTypeSymbol();
-          constructedType.TypeInfo = parsedValueType;
-          constructedType.Args = ImmutableArray.Create(typeSymbol);
-          constructedType.EvalProperties(context);
-          //constructedType.Scope = parsedValueType.Scope;
+            parsedValueType        = context.BindFullName(1, "Nitra", "ParsedValue");
+          def constructedType = TopConstructedTypeSymbol(context, parsedValueType, ImmutableArray.Create(typeSymbol));
           VSome(constructedType)
 
         | _ => VNone()

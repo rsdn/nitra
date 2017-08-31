@@ -126,6 +126,9 @@
     <Compile Include="Namespace\Namespace.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\ConstructedTypeDeclaration.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\ConstructedTypeSymbol.n">
       <SubType>Code</SubType>
     </Compile>

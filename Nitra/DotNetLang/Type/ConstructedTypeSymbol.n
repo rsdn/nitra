@@ -9,6 +9,7 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace DotNet
@@ -19,6 +20,16 @@ namespace DotNet
 
   public partial class TopConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
   {
+  	public this(context : DependentPropertyEvalContext, typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
+  	{
+      this.TypeInfo = typeInfo;
+      this.Args     = args;
+      foreach (d in typeInfo.GetDeclarationsUntyped())
+	      this.AddDeclaration(d);
+	    this.FullName = AstUtils.MakeNamespaceFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
+      this.EvalProperties(context);
+  	}
+
     public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
     {
       | TopConstructedTypeSymbol as other => this.TypeInfo.Equals(other.TypeInfo) && this.Args.Equals(other.Args)
@@ -35,6 +46,8 @@ namespace DotNet
         i
       }
     }
+
+		public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
   }
 
   public partial class NestedConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
@@ -57,4 +70,4 @@ namespace DotNet
       }
     }
   }
-}
+} //namespace
