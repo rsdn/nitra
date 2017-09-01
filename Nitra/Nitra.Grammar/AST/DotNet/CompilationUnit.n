@@ -401,8 +401,9 @@ namespace DotNet
               symbol.DeclaredIn = declaredIn;
             symbol.EvalProperties(context);
             node.EnsureCached();
-            foreach (subNode in node.Children?.Values?.ToArray())
-              loadNsMemebers(subNode, symbol);
+            when (node.Children != null)
+              foreach (subNode in node.Children.Values.ToArray())
+                loadNsMemebers(subNode, symbol);
 
           | Cached(tycon) =>  addTopType(node, tycon);
           | CachedAmbiguous(elems)       => foreach (e in elems) addTopType(node, e);
