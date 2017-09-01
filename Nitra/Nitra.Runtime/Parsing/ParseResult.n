@@ -443,8 +443,8 @@ namespace Nitra
 
     class Root : INitraReflection
     {
-      public FullName            : string { get { "Roor" } }
-      public ShortName           : string { get { "Roor" } }
+      public FullName            : string { get { "Root" } }
+      public ShortName           : string { get { "Root" } }
       public IsMarker            : bool   { get { false } }
       public CanParseEmptyString : bool   { get { false } }
     }
