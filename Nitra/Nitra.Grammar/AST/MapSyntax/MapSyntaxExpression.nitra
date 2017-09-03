@@ -185,7 +185,7 @@ namespace Nitra.Ast
     | DefineVariable
       {
       stage 1:
-        out TypeRef : Ref[TypeSymbol] = VariableType.Ref.Resolve();
+        out TypeRef : Ref[TypeSymbol] = AstUtils.ResolveStructuralPropertyType(VariableType.Ref, context);
 
         Variable.ContainingTable = TableScope("variables");
         Variable.Symbol.Type     = TypeRef.Symbol;
