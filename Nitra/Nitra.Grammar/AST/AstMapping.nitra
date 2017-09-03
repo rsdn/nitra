@@ -809,6 +809,7 @@ namespace Nitra.Ast
       | DynamicSyntaxExtender       {}
       | DynamicSyntaxExtentionPoint {}
       | SplitAtCompletionPosition   {}
+      | PreferIfConflictWith        {}
       | Arity                       { Number = ParsedValue(Number.Span, Number.Value()); }
       | SpanClass                   { Reference -> Name; }
     }

@@ -92,6 +92,7 @@ namespace Nitra
   {
     public sealed override IsStartRule : bool { get false }
     public abstract BaseRule : ExtensibleRuleDescriptor { get; }
+    public abstract PreferIfConflictWithList : list[ExtensionRuleDescriptor] { get; }
   }
 
   public abstract class PrefixRuleDescriptor : ExtensionRuleDescriptor

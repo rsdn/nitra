@@ -977,7 +977,7 @@ syntax module NitraSyntax : NitraLang
 
   syntax RuleAttribute
   {
-    Options(inOptions : RuleDefinitionOptions) : RuleDefinitionOptions = inOptions;
+    Options(inOptions : RuleDefinitionOptions, _symbol : RuleSymbol) : RuleDefinitionOptions = inOptions;
     [Cached] MakeContext(_parent : Context) : Context = _parent;
 
     | Start                       = AttributeName="StartRule"                   { override Options = inOptions.SetStart(this, true); }
@@ -997,6 +997,42 @@ syntax module NitraSyntax : NitraLang
     | DynamicSyntaxExtender       = AttributeName="DynamicSyntaxExtender"       { override Options = inOptions.SetDynamicSyntaxExtender(this, true); }
     | DynamicSyntaxExtentionPoint = AttributeName="DynamicSyntaxExtentionPoint" { override Options = inOptions.SetDynamicSyntaxExtentionPoint(this, true); }
     | SplitAtCompletionPosition   = AttributeName="SplitAtCompletionPosition"   { override Options = inOptions.SplitAtCompletionPosition(this, true); }
+    | PreferIfConflictWith        = AttributeName="PreferIfConflictWith" "(" QualifiedReference ")"
+      {
+        override Options
+        {
+          if (_symbol is ExtensionRuleSymbol as thisSymbol)
+          {
+            if (Context.Bind.[ExtensionRuleSymbol](QualifiedReference) is Some(symbol))
+            {
+              //TODO: implement error check.
+              //if (symbol.BaseRule == thisSymbol.BaseRule)
+              //{
+              //  if (symbol.ExtensionType is ExtensionRuleSymbol.ExtensionRuleType.Prefix)
+                  inOptions.AddPreferIfConflictWith(this, symbol);
+              //  else
+              //  {
+              //    Context.Error(this, "PreferIfConflictWith can be used for prefix rules only.");
+              //    inOptions
+              //  }
+              //}
+              //else
+              //{
+              //  Context.Error(this, "PreferIfConflictWith can be used only for extentions of same extensible rule.");
+              //  inOptions
+              //}
+            }
+            else
+              inOptions
+          }
+          else
+          {
+            Context.Error(this, "PreferIfConflictWith can be used only on extension rule.");
+            inOptions
+          }
+        }
+      }
+
     | SpanClass                   = AttributeName="SpanClass" "(" Reference ")"
       {
         override Options
@@ -1021,13 +1057,13 @@ syntax module NitraSyntax : NitraLang
 
   syntax RuleAttributeList = "[" (RuleAttribute; ","sm)+ "]" sm
   {
-    Options(inOptions : RuleDefinitionOptions) : RuleDefinitionOptions = FoldThrough(RuleAttributes.Item1, inOptions, _.Options(_));
+    Options(inOptions : RuleDefinitionOptions, symbol : RuleSymbol) : RuleDefinitionOptions = FoldThrough(RuleAttributes.Item1, inOptions, _.Options(_, symbol));
     MakeContext(parent : Context) : Context = FoldThrough(RuleAttributes.Item1, parent, _.MakeContext(_));
   }
 
   syntax RuleAttributes    = RuleAttributeList*
   {
-    [Cached] Options(inOptions : RuleDefinitionOptions) : RuleDefinitionOptions = FoldThrough(RuleAttributeLists, inOptions, _.Options(_));
+    [Cached] Options(inOptions : RuleDefinitionOptions, symbol : RuleSymbol) : RuleDefinitionOptions = FoldThrough(RuleAttributeLists, inOptions, _.Options(_, symbol));
     [Cached] MakeContext(parent : Context) : Context = FoldThrough(RuleAttributeLists, parent, _.MakeContext(_));
   }
 

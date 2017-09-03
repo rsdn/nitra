@@ -25,6 +25,7 @@ namespace Nitra
     internal      RuleParsers[ruleId : int]   : IParserInfo      { get { _allRules[ruleId] } }
     internal      ParsingStates[ruleId : int] : ParsingState     { get { _allStates[ruleId] } }
     public static Instance                    : ParserHost       { get; default ParserHost() }
+    public static MetadataGlobalSyncRoot      : object           { get; default object() }
 
     private this()
     {

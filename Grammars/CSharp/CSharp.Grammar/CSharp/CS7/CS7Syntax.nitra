@@ -45,7 +45,7 @@
       | Tuple = !("(" Expression ")") "(" (TupleArgument; "," sm)+ ")"
       | Ref = "ref" Expression
       | Throw = "throw" sm Expression
-      | RealLiteralWithSeparator
+      | [PreferIfConflictWith(Expression.RealLiteral)] RealLiteralWithSeparator
       | BinaryLiteralWithSeparator = Lit=BinaryLiteralWithSeparator
       | DecimalIntegerLiteralWithSeparator = Lit=DecimalIntegerLiteralWithSeparator
       | HexadecimalIntegerLiteralWithSeparator = Lit=HexadecimalIntegerLiteralWithSeparator

@@ -56,7 +56,7 @@ namespace Nitra.Typing
     public override Kind                : SimpleRuleKind              { get SimpleRuleKind.Normal }
     public override DeclarationSite     : IRuleDeclarationSite        { get; }
     public override Type                : RuleType                    { [Memoize] get { RuleType.Ref(this) } }
-    public override Options             : RuleDefinitionOptions       { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions()) } }
+    public override Options             : RuleDefinitionOptions       { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions(), this) } }
     public override Rule                : Rule.Sequence               {           get { _node.TypedRule } }
     public override LastLocation        : option[Location]            { [Memoize] get { Some(_node.RuleBody.GetLastLocation()) } }
     public override SyntaxMappings      : list[SyntaxMappingSymbol]   {           get { _syntaxMappings } }
@@ -84,7 +84,7 @@ namespace Nitra.Typing
     public override Kind                : SimpleRuleKind              { get SimpleRuleKind.Token }
     public override DeclarationSite     : IRuleDeclarationSite        { get; }
     public override Type                : RuleType                    { [Memoize] get { RuleType.Ref(this) } }
-    public override Options             : RuleDefinitionOptions       { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule()) } }
+    public override Options             : RuleDefinitionOptions       { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule(), this) } }
     public override Rule                : Rule.Sequence               {           get { _node.TypedRule } }
     public override LastLocation        : option[Location]            { [Memoize] get { Some(_node.RuleBody.GetLastLocation()) } }
     public override SyntaxMappings      : list[SyntaxMappingSymbol]   {           get { _syntaxMappings } }
@@ -111,7 +111,7 @@ namespace Nitra.Typing
     public override Kind                : SimpleRuleKind               {           get SimpleRuleKind.Void }
     public override DeclarationSite     : IRuleDeclarationSite         {           get; }
     public override Type                : RuleType                     {           get { RuleType.Void() } }
-    public override Options             : RuleDefinitionOptions        { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule()) } }
+    public override Options             : RuleDefinitionOptions        { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule(), this) } }
     public override Rule                : Rule.Sequence                {           get { _node.TypedRule } }
     public override SyntaxMappings      : list[SyntaxMappingSymbol]    {           get { [] } }
   }

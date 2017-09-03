@@ -149,6 +149,9 @@
     <Compile Include="Generation\Ast\SymbolEmitter.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Generation\Descriptors\ExtensionRuleDescriptorEmitter.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Generation\Language\LanguageEmitter.n">
       <SubType>Code</SubType>
     </Compile>

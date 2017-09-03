@@ -103,7 +103,7 @@ namespace Nitra.Typing
         when (_options == null)
         {
           def defaults = if (BaseRule is SymbolRef.Some(symbol)) symbol.Options.InheritedCopy() else RuleDefinitionOptions.Empty;
-          _options = _node.RuleAttributes.Options(defaults)
+          _options = _node.RuleAttributes.Options(defaults, this)
         }
         _options
       }

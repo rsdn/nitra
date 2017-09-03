@@ -78,6 +78,7 @@ namespace Nitra.Internal
         state.bestResult = 0;
         state.bestEndPos = -1;
         state.lastResult = 0;
+        state.ambiguous  = false;
         if (curTextPos < text.Length)
         {
           def c = text[curTextPos]; // временная переменная для отсечения правил по первой букве
@@ -95,6 +96,7 @@ namespace Nitra.Internal
         }
         else
         {
+          assert(curTextPos == text.Length);
           when (!CanParseEmptyString)
             return -1;
           for (mutable i = PrefixRules.Length - 1; i >= 0; --i)
@@ -105,6 +107,35 @@ namespace Nitra.Internal
             when (state.newResult > 0)
               state.Append();
           }
+        }
+
+        when (state.ambiguous)
+        {
+          def unfiltered = List();
+          mutable ptr = state.lastResult;
+          while (ptr > 0)
+          {
+            def parser = parseResult.GetRuleParser(ptr) :> PrefixRuleParser;
+            def flags = parseResult.rawTree[ptr] & ExtensibleRuleParser.RawTreeMask.Flags;
+            when (flags == ExtensibleRuleParser.RawTreeFlags.Equal)
+              unfiltered.Add(ptr, parser);
+            when (flags == ExtensibleRuleParser.RawTreeFlags.Best)
+            {
+              unfiltered.Add(ptr, parser);
+              break;
+            }
+            ptr = parseResult.rawTree[ptr + ExtensibleRuleParser.RawTreeOfs.Next];
+          }
+          def parsers = HashSet();
+          foreach ((_ptr, parser) in unfiltered)
+            _ = parsers.Add(parser);
+          state.lastResult = 0;
+          foreach ((ptr, parser) in unfiltered)
+            when (!parser.HiddenBy.Overlaps(parsers))
+            {
+              parseResult.rawTree[ptr + ExtensibleRuleParser.RawTreeOfs.Next] = state.lastResult;
+              state.lastResult = ptr;
+            }
         }
 
         parseResult.rawTree[prefixRawTreePtr + PrefixOfs.List] = state.lastResult;

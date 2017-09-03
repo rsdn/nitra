@@ -27,6 +27,8 @@ namespace Nitra.Compiler
       def baseRuleExpr = MakeRuleSelector(ruleSymbol => ruleSymbol.BaseRule.GetValue(Owner.Environment.Project), _.GetRuleDescriptorRef());
       DescriptorTb.DefineConditional(<[decl: public override BaseRule : Nitra.ExtensibleRuleDescriptor { get { $baseRuleExpr } } ]>);
 
+      DescriptorTb.DefineConditional(<[decl: public override PreferIfConflictWithList : list[ExtensionRuleDescriptor] { get { [] } } ]>);
+
       def bindingPowerExpr = MakeRuleSelector(ruleSymbol => <[ $((ruleSymbol.ExtensionType :> ExtensionRuleSymbol.ExtensionRuleType.Postfix).BindingPower.Name : string) ]>);
       DescriptorTb.DefineConditional(<[decl: public override BindingPower : string { get { $bindingPowerExpr } } ]>);
 

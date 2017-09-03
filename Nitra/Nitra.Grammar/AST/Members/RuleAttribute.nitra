@@ -21,6 +21,7 @@ namespace Nitra.Ast
     | DynamicSyntaxExtender
     | DynamicSyntaxExtentionPoint
     | SplitAtCompletionPosition
+    | PreferIfConflictWith
     | SpanClass { Name : Nitra.Declarations.Reference; }
   }
 }

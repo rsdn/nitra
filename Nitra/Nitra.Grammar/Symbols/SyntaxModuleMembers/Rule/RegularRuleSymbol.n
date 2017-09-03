@@ -40,7 +40,7 @@ namespace Nitra.Typing
     private _node                        : G.RegexRule;
 
     public override DeclarationSite     : IRuleDeclarationSite  { get; }
-    public override Options             : RuleDefinitionOptions { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions()) } }
+    public override Options             : RuleDefinitionOptions { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions(), this) } }
     public override Rule                : RegularRule           {           get { _node.Regex() } }
     public override LastLocation        : option[Location]      { [Memoize] get { Some(_node.RuleBody.GetLastLocation()) } }
     public override IdInGrammar         : int                   { [Memoize] get { DeclaringModule.GetNewRuleId() } }
