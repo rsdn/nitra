@@ -1,4 +1,5 @@
-﻿using Nitra;
+﻿using System.Text;
+using Nitra;
 using Nitra.Declarations;
 
 using Nemerle;
@@ -16,6 +17,39 @@ namespace DotNet
 {
   public partial interface ConstructedTypeSymbol : TypeSymbol, IEquatable[ConstructedTypeSymbol]
   {
+  }
+
+  module ConstructedTypeImpl
+  {
+    public MakeHint(symbol : ConstructedTypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        if (symbol.IsTypeInfoEvaluated)
+        {
+          def typeInfo = symbol.TypeInfo;
+          _ = builder.Append("<keyword>").HintMlEscape(typeInfo.Kind).Append("</keyword> ").SymbolToHintMlWithSubHint(typeInfo);
+        }
+        else
+          _ = builder.Append("«TypeInfo not evaluated»");
+
+        if (symbol.IsArgsEvaluated)
+          when (symbol.Args.Length > 0)
+          {
+            _ = builder.Append("&lt;");
+            foreach (arg in symbol.Args)
+              _ = builder.SymbolToHintMlWithSubHint(arg);
+            _ = builder.Append("&gt;");
+          }
+        else
+          _ = builder.Append("«Args not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
   }
 
   public partial class TopConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
@@ -69,5 +103,7 @@ namespace DotNet
         i
       }
     }
+
+    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
   }
 } //namespace

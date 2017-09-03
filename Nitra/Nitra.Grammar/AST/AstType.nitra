@@ -23,6 +23,8 @@ namespace Nitra.Ast
       in ElemType  : AstTypeSymbol;
 
       ToString = ElemType + "*";
+      MakeHint = AstUtils.ListAstTypeMakeHint(this);
+      Kind     = "ast list";
 
       DecomposeType =
         if (IsElemTypeEvaluated)
@@ -41,13 +43,15 @@ namespace Nitra.Ast
     Elem : QualifiedReference;
   }
 
-  declaration OptionAstType  : AstType
+  declaration OptionAstType : AstType
   {
     symbol
     {
       in ValueType : AstTypeSymbol;
 
-      ToString = "option(" + ValueType + ")";
+      ToString = ValueType + "?";
+      MakeHint = AstUtils.OptionAstTypeMakeHint(this);
+      Kind     = "ast option";
 
       DecomposeType =
         if (IsValueTypeEvaluated)
@@ -73,6 +77,8 @@ namespace Nitra.Ast
       in ValueType : TypeSymbol;
 
       ToString = "ValueAst[" + ValueType + "]";
+      MakeHint = AstUtils.ValueAstTypeMakeHint(this);
+      Kind     = "ast value";
     }
   }
 
@@ -84,6 +90,7 @@ namespace Nitra.Ast
       in ReturnType : TypeSymbol;
 
       ToString = $"..$(Parameters; \" * \") -> $ReturnType";
+      MakeHint = AstUtils.FunctionTypeMakeHint(this);
 
       DecomposeType =
         if (IsParametersEvaluated && IsReturnTypeEvaluated)

@@ -1,4 +1,5 @@
-﻿using DotNet;
+﻿using System.Text;
+using DotNet;
 
 using Nemerle;
 using Nemerle.Imperative;
@@ -503,6 +504,90 @@ namespace Nitra
 
         context.GetDeclaration()
       }
+    }
+
+    public ListAstTypeMakeHint(symbol : ListAstTypeSymbol) : string
+    {
+      MakeHintWithSuffix(symbol, "*", if (symbol.IsElemTypeEvaluated) symbol.ElemType else null, "ElemType")
+    }
+
+    public OptionAstTypeMakeHint(symbol : OptionAstTypeSymbol) : string
+    {
+      MakeHintWithSuffix(symbol, "?", if (symbol.IsValueTypeEvaluated) symbol.ValueType else null, "ValueType")
+    }
+
+    public ValueAstTypeMakeHint(symbol : ValueAstTypeSymbol) : string
+    {
+      MakeHintWithParam(symbol, if (symbol.IsValueTypeEvaluated) symbol.ValueType else null, "ValueType")
+    }
+
+    public MakeHintWithParam(symbol : DeclarationSymbol, paramOpt : DeclarationSymbol, paramName : string) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        _ = builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ").SymbolToHintMlWithSubHint(symbol);
+
+        if (paramOpt != null)
+        {
+          _ = builder.Append("&lt;");
+          _ = builder.SymbolToHintMlWithSubHint(paramOpt);
+          _ = builder.Append("&gt;");
+        }
+        else
+          _ = builder.Append("«").Append(paramName).Append(" not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public MakeHintWithSuffix(symbol : DeclarationSymbol, suffix : string, paramOpt : DeclarationSymbol, paramName : string) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        _ = builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ");
+
+        if (paramOpt != null)
+        {
+          _ = builder.SymbolToHintMlWithSubHint(paramOpt);
+          _ = builder.Append(suffix);
+        }
+        else
+          _ = builder.Append("«").Append(paramName).Append(" not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public FunctionTypeMakeHint(symbol : FunctionTypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        // $"..$(Parameters; \" * \") -> $ReturnType"
+        _ = builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ").SymbolToHintMlWithSubHint(symbol);
+
+        if (symbol.IsParametersEvaluated)
+          _ = builder.JoinAnd(symbol.Parameters, (b, p) => b.SymbolToHintMlWithSubHint(p)).Append(" * ");
+        else
+          _ = builder.Append("«Parameters not evaluated»");
+
+        _ = builder.Append(" -> ");
+
+        if (symbol.IsReturnTypeEvaluated)
+          _ = builder.SymbolToHintMlWithSubHint(symbol.ReturnType);
+        else
+          _ = builder.Append("«ReturnType not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
     }
   } // module
 } // namespace
