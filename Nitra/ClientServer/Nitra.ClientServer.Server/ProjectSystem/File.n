@@ -411,6 +411,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       def action(cancellationToken : CancellationToken, solutionId : SolutionId, mutable asts : ImmutableArray[IAst * bool]) : void
       { // execute when Parent.IsSemanticAvailable
+        try
+        {
         Log("action(FindSymbolReferences) started", ConsoleColor.DarkYellow);
         def router             = this.Parent.Router;
         def pos                = pos;
@@ -487,6 +489,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           router.SendResponse(ServerMessage.FindSymbolReferences(solutionId, refSpan, symbolsBiulder.MoveToImmutable()));
 
           Log("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
+        }
+        catch { | e => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty)); throw; }
       }
 
       Log("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
