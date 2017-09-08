@@ -124,6 +124,7 @@ namespace Nitra.Declarations
               _ = uniqSymbolSet.Add(symbol);
               
         | Hiding   as x =>
+          // TODO; Optimize it!
           def hidingUniqSymbolSet = HashSet();
           x.Result.GetSymbols(hidingUniqSymbolSet, hidingSymbolSet);
           def nestedHidingSymbolSet = HashSet(hidingSymbolSet.Comparer);
