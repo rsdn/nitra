@@ -98,21 +98,45 @@ namespace Nitra.Declarations
 
     public GetSymbols() : ImmutableArray[TSymbol]
     {
-      // TODO: Optimize for special cases
-      def symbolSet = HashSet();
-      GetSymbols(symbolSet);
-      symbolSet.ToImmutableArray()
+      GetSymbols(SymbolByNameComparer())
     }
 
-    GetSymbols(symbolSet : HashSet[TSymbol]) : void
+    public GetSymbols(comparer : IEqualityComparer[TSymbol]) : ImmutableArray[TSymbol]
+    {
+      // TODO: Optimize for special cases
+      def uniqSymbolSet   = HashSet();
+      def hidingSymbolSet = HashSet(comparer);
+      GetSymbols(uniqSymbolSet, hidingSymbolSet);
+      uniqSymbolSet.ToImmutableArray()
+    }
+
+    GetSymbols(uniqSymbolSet : HashSet[TSymbol], hidingSymbolSet : HashSet[TSymbol]) : void
     {
       match (this)
       {
-        | Single   as x => _ = symbolSet.Add(x.Symbol);
-        | Multiple as x => symbolSet.UnionWith(x.Symbols);
-        | Hiding   as x => x.Result.GetSymbols(symbolSet); x.Hidden.GetSymbols(symbolSet);
+        | Single   as x =>
+          when (!hidingSymbolSet.Contains(x.Symbol))
+            _ = uniqSymbolSet.Add(x.Symbol);
+            
+        | Multiple as x =>
+          foreach (symbol in x.Symbols)
+            when (!hidingSymbolSet.Contains(symbol))
+              _ = uniqSymbolSet.Add(symbol);
+              
+        | Hiding   as x =>
+          def hidingUniqSymbolSet = HashSet();
+          x.Result.GetSymbols(hidingUniqSymbolSet, hidingSymbolSet);
+          def nestedHidingSymbolSet = HashSet(hidingSymbolSet.Comparer);
+          nestedHidingSymbolSet.UnionWith(hidingSymbolSet);
+          nestedHidingSymbolSet.UnionWith(hidingUniqSymbolSet);
+          uniqSymbolSet.UnionWith(hidingUniqSymbolSet);          
+          x.Hidden.GetSymbols(uniqSymbolSet, nestedHidingSymbolSet);
+          
+        | Union    as x =>
+          foreach (r in x.Results)
+            r.GetSymbols(uniqSymbolSet, hidingSymbolSet);
+            
         | Nil           => ()
-        | Union    as x =>  foreach (r in x.Results) r.GetSymbols(symbolSet);
       }
     }
 
