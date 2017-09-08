@@ -122,7 +122,13 @@ namespace Nitra.Declarations
           foreach (symbol in x.Symbols)
             when (!hidingSymbolSet.Contains(symbol))
               _ = uniqSymbolSet.Add(symbol);
-              
+        
+        | Hiding(Result=Single(Symbol=resultSym), Hidden=Single(Symbol=hiddenSym)) =>
+          when (!hidingSymbolSet.Contains(resultSym))
+            _ = uniqSymbolSet.Add(resultSym);
+          when (!hidingSymbolSet.Contains(hiddenSym) && !hidingSymbolSet.Comparer.Equals(resultSym, hiddenSym))
+            _ = uniqSymbolSet.Add(hiddenSym);
+            
         | Hiding   as x =>
           // TODO; Optimize it!
           def hidingUniqSymbolSet = HashSet();
