@@ -1,0 +1,20 @@
+﻿using Nitra.Core;
+using Nitra.Declarations;
+
+ast A
+{
+  RF : Reference;
+}
+
+map syntax SM.R -> A
+{
+  N -> RF;
+}
+
+syntax module SM
+{
+  syntax R = N=Reference X="aa" "s";
+  token Reference = IdentifierBody;
+}
+
+map syntax SM.Reference -> Reference = Reference(this);

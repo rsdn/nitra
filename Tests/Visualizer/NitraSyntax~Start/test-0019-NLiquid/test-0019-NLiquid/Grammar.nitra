@@ -1,0 +1,129 @@
+﻿namespace NLiquid.Parser.Syntax
+{
+	[ExplicitSpaces]
+	syntax module Grammar
+	{
+		using Nitra.Core;
+		using Nitra.CStyleComments;
+
+		keyword regex ['a'..'z', '_']+ rule S;
+
+		[SpanClass(OpenBrace)]  regex OpenTag  = "{%";
+		[SpanClass(CloseBrace)] regex CloseTag = "%}";
+
+		[SpanClass(OpenBrace)]  regex OpenOutput  = "{{";
+		[SpanClass(CloseBrace)] regex CloseOutput = "}}";
+
+		[SpanClass(OpenBrace)]  regex OpenBrace  = "(";
+		[SpanClass(CloseBrace)] regex CloseBrace = ")";
+
+		regex DecimalDigit  = ['0'..'9'];
+		regex DecimalDigits = DecimalDigit+;
+		regex Keyword       = "true" | "false";
+
+		token Reference = !Keyword IdentifierBody;
+		token Name      = !Keyword IdentifierBody;
+		[SpanClass(String)]
+		token StringSingleQuoteLiteral = "'" Value=(!"'" Any)* "'";
+		[SpanClass(String)]
+		token StringDoubleQuoteLiteral = '"' Value=(!'"' Any)* '"';
+
+		literal Op      = "==", "!=", "<=", "<", ">=", ">", "or", "and", "contains";
+
+		extend token IgnoreToken
+		{
+			| SpaceToken = Spaces;
+		}
+
+		syntax Blocks = Block*;
+
+		syntax Block
+		{
+			| Plain = (!TagStart Any)+
+				{
+					regex TagStart = "{{" | "{%";
+				}
+			| Comment = MultiLineComment
+			| If      =
+				OpenTag s sm "if" s sm  Expr s sm CloseTag s sm
+					TrueBranch=Block* s sm
+				ElseIf* s sm
+				Else? s sm
+				OpenTag s sm "endif" s sm CloseTag
+
+			| Unless      = OpenTag s sm "unless" s sm  Expr s sm CloseTag s sm Body=Block* s sm OpenTag s sm "endunless" s sm CloseTag
+			| For         = OpenTag s sm "for"    s sm  Name s sm "in" s sm ForSourceExpr s sm CloseTag s sm Body=Block* s sm OpenTag s sm "endfor" s sm CloseTag
+			| Output      = OpenOutput s sm OutputExpr s sm  CloseOutput
+			| Assignment  = OpenTag s sm "assign" s sm Name s sm "=" s sm FilteredExpr s CloseTag
+			| Capture     = OpenTag s sm "capture" s sm  Name s sm CloseTag s sm Body=Block* s sm OpenTag s sm "endcapture" s sm CloseTag
+		}
+
+		syntax ElseIf = OpenTag s sm "elsif" s sm  AAa=Expr s sm CloseTag s sm ElseTrueBranch=Block*;
+		syntax Else   = OpenTag s sm "else"  s sm            CloseTag s sm ElseBranch=Block*;
+
+		[SpanClass(MultilineComment)]
+		syntax MultiLineComment  = OpenTag s sm "comment" s sm CloseTag s sm Body=(!OpenTag Any)* s sm OpenTag s sm "endcomment" s sm CloseTag;
+
+		syntax OutputExpr
+		{
+			| FilteredExpr
+			| Error = !(FilteredExpr s "}}") (!"}}" Any)+
+		}
+
+		syntax ForSourceExpr
+		{
+			| Expr = AttributedExpr
+			| Range = OpenBrace s sm From=Expr s sm ".." s sm To=Expr s sm CloseBrace;
+		}
+
+		syntax AttributedExpr
+		{
+			| Expr
+		precedence Attributes:
+			| Limit    = AttributedExpr s sm "limit"  s sm ":" s sm Expr
+			| Offset   = AttributedExpr s sm "offset" s sm ":" s sm Expr
+			| Reversed = AttributedExpr s sm "reversed"
+		}
+
+		syntax Expr
+		{
+			| "true"
+			| "false"
+			| [SpanClass(Number)]
+			  Double = Digits
+			{
+				regex Digits = ("+" | "-")? DecimalDigits "." DecimalDigits;
+			}
+			| [SpanClass(Number)]
+			  Int = Digits
+			{
+				regex Digits = ("+" | "-")? DecimalDigits;
+			}
+			| Reference
+			| [SpanClass(String)] SStr = "'" Value=(!"'" Any)* "'"
+			| [SpanClass(String)] DStr = '"' Value=(!'"' Any)* '"'
+
+		precedence Or:
+			| Or           = Expr s sm "or" s sm Expr
+		precedence And:
+			| And          = Expr s sm "and" s sm Expr
+		precedence Contains:
+			| Contains     = Expr s sm "contains" s sm Expr
+		precedence Equal:
+			| Equal        = Expr s sm "==" s sm Expr
+			| NotEqual     = Expr s sm "!=" s sm Expr
+		precedence Primary:
+			| MemberAccess =  Expr s "." s Reference
+			| ArrayAccess  = Reference s "[" s Expr s "]"
+		}
+
+		syntax FilteredExpr
+		{
+			| Expr
+		precedence Filters:
+			| FilterWithoutArgs = FilteredExpr s sm "|" s sm Reference
+			| FilterWithArgs    = FilteredExpr s sm "|" s sm Reference s ":" s sm Args=(Expr; s "," s sm; ?)*
+		}
+	}
+}
+

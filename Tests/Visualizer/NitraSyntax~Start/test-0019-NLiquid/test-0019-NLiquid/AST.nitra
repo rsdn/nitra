@@ -1,0 +1,316 @@
+﻿using Nitra;
+using Nitra.Declarations;
+using Nitra.Runtime;
+
+using NLiquid;
+
+using System.IO;
+using System.Collections.Immutable;
+
+namespace NLiquid.Parser.Ast
+{
+	ast CompilationUnit : BindableAst, LocalVariableScope
+	{
+		Statements.CurrentTable = LocalVariables;
+		Statements.Scope = Scope.HideWith(LocalVariables);
+
+		Statements : Statement*;
+	}
+
+	abstract ast LocalVariableScope
+	{
+		out LocalVariables : TableScope = TableScope("Local variables");
+	}
+
+	abstract ast Statement : BindableAst
+	{
+		in CurrentTable : TableScope;
+
+		| Plain  { }
+		| Comment { }
+		| Output
+		 {
+			Expr.Scope = Scope;
+
+			Expr : Expr;
+		 }
+		| If : LocalVariableScope
+		{
+			CurrentTable         = LocalVariables;
+			// протаскиваем текущую таблицу имен во вложенные блоки
+			Body.CurrentTable    = CurrentTable;
+			ElseIfs.CurrentTable = CurrentTable;
+			Else.CurrentTable    = CurrentTable;
+			Body.Scope           = Scope.HideWith(LocalVariables); // скрываем скопом локальных переменных скопы сформированные выше.
+			Condition.Scope      = Scope;
+			ElseIfs.Scope        = Scope;
+			Else.Scope           = Scope;
+
+			Condition : Expr;
+			Body      : Statement*;
+			ElseIfs   : ElseIf*;
+			Else      : Else?;
+		}
+		| Unless : LocalVariableScope
+		{
+			CurrentTable      = LocalVariables;
+			Body.CurrentTable = CurrentTable;
+			Body.Scope        = Scope.HideWith(LocalVariables);
+			Condition.Scope   = Scope;
+
+			Condition : Expr;
+			Body      : Statement*;
+		}
+	}
+
+	ast ElseIf : Statement, LocalVariableScope
+	{
+		CurrentTable      = LocalVariables;
+		Body.CurrentTable = CurrentTable;
+		Body.Scope        = Scope.HideWith(LocalVariables);
+		Condition.Scope   = Scope;
+
+		Condition : Expr;
+		Body      : Statement*;
+	}
+
+	ast Else : Statement, LocalVariableScope
+	{
+		CurrentTable      = LocalVariables;
+		Body.CurrentTable = CurrentTable;
+		Body.Scope        = Scope.HideWith(LocalVariables);
+
+		Body: Statement*;
+	}
+
+	abstract declaration LocalVariable : Statement
+	{
+		symbol
+		{
+			in Type : TypeSymbol;
+		}
+
+		| SimpleLocalVariable
+		{
+			ContainingTable   = CurrentTable;
+			  Symbol.Kind       = "assigment";
+			  Symbol.Type       = Initializer.Type;
+			  Initializer.Scope = Scope;
+
+			  Initializer : Expr;
+		}
+		| CaptureLocalVariable
+		{
+			ContainingTable   = CurrentTable;
+			Symbol.Kind       = "capture";
+			Symbol.Type       = context.GetGlobalTypes().String;
+			Body.Scope        = Scope;
+
+			Body: Statement*;
+		}
+		| For : LocalVariableScope
+		{
+			Symbol.Kind         = "for";
+			Symbol.Type         = context.GetGlobalTypes().GetArrayElemType(ForSource.Type);
+			ForSource.Scope     = Scope;
+			Body.Scope          = Scope.HideWith(LocalVariables);
+			ContainingTable     = LocalVariables;
+			CurrentTable        = LocalVariables;
+			Body.CurrentTable   = CurrentTable;
+
+			ForSource : Expr;
+			Body      : Statement*;
+		}
+	}
+
+	abstract ast Binary : Expr
+	{
+		Expr1.Scope = Scope;
+		Expr2.Scope = Scope;
+
+		Expr1 : Expr;
+		Expr2 : Expr;
+	}
+
+	abstract ast SameTypesExpr : Binary
+	{
+		unless (NLiquidTypeUnifier.Instance.TryUnify(Expr1.Type, Expr2.Type))
+			Expr2.Error(context, $"$(self.Expr2.Type) is not compatible with $(self.Expr1.Type).");
+	}
+
+	abstract ast EqualExpr : SameTypesExpr
+	{
+		Type = context.GetGlobalTypes().Boolean;
+	}
+
+	abstract ast OrAndExpr : SameTypesExpr
+	{
+		Type = context.GetGlobalTypes().Boolean;
+	}
+
+	abstract ast ContainsExpr : SameTypesExpr
+	{
+		Type = context.GetGlobalTypes().Boolean;
+
+		unless (NLiquidTypeUnifier.Instance.TryUnify(Expr1.Type, context.GetGlobalTypes().String))
+			Expr1.Error(context, $"Expected string expression but found $(self.Expr1.Type).");
+	}
+
+	abstract ast Expr : BindableAst
+	{
+		out Type        : TypeSymbol = context.GetGlobalTypes().Nil;
+		in ExpectedType : TypeSymbol = NLiquidTypeUnifier.Instance.CreateTypeVar();
+
+		unless (NLiquidTypeUnifier.Instance.TryUnify(Type, ExpectedType))
+			Error(context, $"Expected $(self.ExpectedType) but got $(self.Type)");
+
+		| True
+		{
+			Type = context.GetGlobalTypes().Boolean;
+			Value : bool;
+		}
+		| False
+		{
+			Type = context.GetGlobalTypes().Boolean;
+			Value : bool;
+		}
+		| Double
+		{
+			Type = context.GetGlobalTypes().Double;
+			Value : double;
+		}
+		| Int
+		{
+			Type = context.GetGlobalTypes().Int;
+			Value : int;
+		}
+		| SStr
+		{
+			Type = context.GetGlobalTypes().String;
+			Value : string;
+		}
+		| DStr
+		{
+			Type = context.GetGlobalTypes().String;
+			Value : string;
+		}
+		| LocalVariableRef
+		{
+			out Ref: Ref[LocalVariableSymbol] = Reference.Ref.Resolve();
+			Reference.Scope = Scope;
+			Type = Ref.Symbol.Type;
+			Reference2 : Reference;
+		}
+		| MemberAccess
+		{
+			Qualifier.Scope = Scope;
+			Reference.Scope = Scope;
+
+			Qualifier : Expr;
+			Reference : Reference;
+
+		}
+		| ArrayAccess
+		{
+			out Ref: Ref[LocalVariableSymbol] = Reference.Ref.Resolve();
+			Reference.Scope = Scope;
+			Index.Scope = Scope;
+			Index.ExpectedType = context.GetGlobalTypes().Int;
+			Type = context.GetGlobalTypes().GetArrayElemType(Ref.Symbol.Type);
+
+			Reference: Reference;
+			Index: Expr;
+
+			unless (NLiquidTypeUnifier.Instance.TryUnify(Index.Type, Index.ExpectedType))
+				Error(context, $"Expected $(Index.ExpectedType) type of index but got $(Index.Type)");
+		}
+		| Error        { Error(context, "Expected: Expr '}}'"); }
+		| Call
+		{
+			out Ref : Ref[FuncSymbol] = Helpers.ResolveCall(FuncName.Ref, Arg0.Type, Args.Type);
+
+			FuncName.Scope = Scope;
+			Arg0.Scope     = Scope;
+			Args.Scope     = Scope;
+			Type           = Ref.Symbol.Result;
+
+			FuncName : Reference;
+			Arg0    : Expr;
+			Args    : Expr*;
+		}
+		| Range
+		{
+			Type          = context.GetGlobalTypes().GetArrayType(context.GetGlobalTypes().Int);
+
+			From : Expr;
+			To   : Expr;
+
+			From.Scope = Scope;
+			To.Scope   = Scope;
+
+			unless (NLiquidTypeUnifier.Instance.TryUnify(From.Type, To.Type))
+				From.Error(context, $"$(From.Type) is not compatible with $(To.Type).");
+			unless (NLiquidTypeUnifier.Instance.TryUnify(From.Type, context.GetGlobalTypes().Int))
+				From.Error(context, $"Expected int expression but found $(From.Type).");
+		}
+		| Or           : OrAndExpr {}
+		| And          : OrAndExpr {}
+		| Contains     : ContainsExpr {}
+		| Equal        : EqualExpr{ }
+		| NotEqual     : EqualExpr{ }
+	}
+
+	abstract ast TypeReference
+	{
+		in Type : TypeSymbol;
+
+		| Nil        { Type = context.GetGlobalTypes().Nil;        }
+		| Double     { Type = context.GetGlobalTypes().Double;     }
+		| Int        { Type = context.GetGlobalTypes().Int;        }
+		| Boolean    { Type = context.GetGlobalTypes().Boolean;    }
+		| String     { Type = context.GetGlobalTypes().String;     }
+		| Object     { Type = context.GetGlobalTypes().Object;     }
+		| Array      { ElemType : TypeReference; Type = context.GetGlobalTypes().GetArrayType(ElemType.Type); }
+		| Dictionary { Type = context.GetGlobalTypes().Dictionary; }
+	}
+
+	declaration Root        : Container {}
+
+	declaration Nil         : Type {}
+	declaration Int         : Type {}
+	declaration Double      : Type {}
+	declaration Boolean     : Type {}
+	declaration String      : Type {}
+	declaration Dictionary  : Type {}
+	declaration Property
+	{
+		symbol
+		{
+			in Type : TypeSymbol;
+		}
+	}
+	declaration Object      : Type
+	{
+		symbol
+		{
+			in Properties : ImmutableArray[PropertySymbol];
+		}
+	}
+	declaration Array       : Type
+	{
+		symbol
+		{
+			in ElemType : TypeSymbol;
+		}
+	}
+	declaration Func		: Type
+	{
+		symbol
+		{
+			in Parameters : ImmutableArray[TypeSymbol];
+			in Result     : TypeSymbol;
+
+			Kind = "function type";
+		}
+	}
+}

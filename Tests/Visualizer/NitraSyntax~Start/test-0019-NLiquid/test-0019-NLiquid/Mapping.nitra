@@ -1,0 +1,149 @@
+﻿using Nitra;
+using Nitra.Declarations;
+using NLiquid.Parser.Syntax;
+using NLiquid.Parser.Ast;
+using System.Globalization;
+
+namespace NLiquid.Parser.Mapping
+{
+	map syntax Grammar.Expr -> Expr
+	{
+		| True         -> True   { Value = ParsedValue(KwTrue, true); }
+		| False        -> False  { Value = ParsedValue(KwFalse, false); }
+		| Double       -> Double { Value = ParsedValue(Digits, double.Parse(GetText(Digits), CultureInfo.InvariantCulture)); }
+		| Int          -> Int    { Value = ParsedValue(Digits, int.Parse(GetText(Digits))); }
+		| SStr         -> SStr   { Value = ParsedValue(Value, GetText(Value)); }
+		| DStr         -> DStr   { Value = ParsedValue(Value, GetText(Value)); }
+		| Reference    -> LocalVariableRef  { Reference -> Reference2; }
+		| MemberAccess -> MemberAccess { Expr -> Qualifier; Reference -> Reference; }
+		| ArrayAccess  -> ArrayAccess  { Expr -> Index; Reference -> Reference; }
+		| Or           { Expr1 -> Expr1; Expr2 -> Expr2; }
+		| And          { Expr1 -> Expr1; Expr2 -> Expr2; }
+		| Contains     { Expr1 -> Expr1; Expr2 -> Expr2; }
+		| Equal        { Expr1 -> Expr1; Expr2 -> Expr2; }
+		| NotEqual     { Expr1 -> Expr1; Expr2 -> Expr2; }
+	}
+	
+  map syntax Grammar.ElseIf -> ElseIf
+	{
+		AAa -> Condition;
+		ElseTrueBranch -> Body;
+	}
+
+	map syntax Grammar.Reference -> Reference = Reference(this);
+	map syntax Grammar.Name      -> Name      = Name(this);
+
+	map syntax Grammar.Blocks -> CompilationUnit
+	{
+		Blocks -> Statements;
+	}
+
+	map syntax Grammar.Block -> Statement
+	{
+		| Plain  -> Plain {}
+		| Comment -> Comment {}
+		| Output -> Output { OutputExpr -> Expr; }
+		| If -> If
+		{
+				Expr       -> Condition;
+				TrueBranch -> Body;
+				ElseIfs    -> ElseIfs;
+				ElseOpt    -> Else;
+		}
+		| Unless -> Unless
+		{
+			Expr -> Condition;
+			Body -> Body;
+		}
+		| Assignment -> LocalVariable.SimpleLocalVariable
+		{
+			Name -> Name;
+			FilteredExpr -> Initializer;
+		}
+		| Capture -> LocalVariable.CaptureLocalVariable
+		{
+			Name -> Name;
+			Body -> Body;
+		}
+		| For -> LocalVariable.For
+		{
+			Name -> Name;
+			ForSourceExpr -> ForSource;
+			Body -> Body;
+		}
+	}
+
+	map syntax Grammar.Else -> Else
+	{
+		ElseBranch -> Body;
+	}
+
+	map syntax Grammar.FilteredExpr -> Expr
+	{
+		| FilterWithoutArgs   -> Call { FilteredExpr -> Arg0; [] -> Args; Reference -> FuncName; }
+		| FilterWithArgs      ->
+			Call
+			{
+				FilteredExpr -> Arg0;
+				Args.Item1   -> Args;
+				Reference    -> FuncName;
+			}
+	}
+
+	map syntax Grammar.OutputExpr -> Expr
+	{
+		| Error -> Error { }
+	}
+
+	map syntax Grammar.FilteredExpr.Expr -> Expr
+	{
+		Expr // forwarding value through
+	}
+
+	map syntax Grammar.AttributedExpr.Expr -> Expr
+	{
+		Expr
+	}
+
+	map syntax Grammar.ForSourceExpr.Expr -> Expr
+	{
+		AttributedExpr
+	}
+
+	map syntax Grammar.AttributedExpr -> Expr
+	{
+		| Limit ->
+			Call
+			{
+				AttributedExpr -> Arg0;
+				[Expr]         -> Args;
+				FuncName = Reference(Location(this.Location.Source, KwLimit), "limit");
+			}
+		| Offset ->
+			Call
+			{
+				AttributedExpr -> Arg0;
+				[Expr]         -> Args;
+				FuncName = Reference(Location(this.Location.Source, KwOffset), "offset");
+			}
+		| Reversed ->
+			Call
+			{
+				AttributedExpr -> Arg0;
+				[]         -> Args;
+				FuncName = Reference(Location(this.Location.Source, KwReversed), "reversed");
+			}
+	}
+
+	map syntax Grammar.ForSourceExpr -> Expr
+	{
+		| Range -> Range { From -> From; To -> To; }
+	}
+
+	map syntax Grammar.OutputExpr.FilteredExpr -> Expr
+	{
+		FilteredExpr // forwarding value through
+	}
+
+
+}

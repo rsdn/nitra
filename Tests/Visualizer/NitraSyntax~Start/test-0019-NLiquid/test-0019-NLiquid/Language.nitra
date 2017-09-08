@@ -1,0 +1,4 @@
+﻿language Liquid
+{
+	syntax module NLiquid.Parser.Syntax.Grammar start rule Blocks;
+}
