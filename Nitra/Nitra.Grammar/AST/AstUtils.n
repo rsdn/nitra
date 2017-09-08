@@ -420,27 +420,33 @@ namespace Nitra
 
     public ResolveStructuralPropertyType(candidates : Ref[DeclarationSymbol], context : DependentPropertyEvalContext) : Ref[TypeSymbol]
     {
-      mutable candidates2 = candidates.Result;
-
-      when (candidates.IsAmbiguous)
+      def resolve(candidate) : ValueOption[TypeSymbol]
       {
-        when (candidates.Contains.[AstTypeSymbol]() && (candidates.Contains.[ClassSymbol]() || candidates.Contains.[InterfaceSymbol]()))
-          candidates2 = candidates.Result.Filter(s => !(s is ClassSymbol || s is InterfaceSymbol));
+        | ast is AstTypeSymbol => VSome(ast)
+        | typeSymbol is TypeSymbol => VSome(typeSymbol)
+        | _ => VNone()
       }
+
+      def candidates = candidates.CreateRevole(candidates.Result.Map(resolve));
+
+      if (candidates.IsAmbiguous)
+      {
+        when (candidates.Contains.[AstTypeSymbol]())// && (candidates.Contains.[ClassSymbol]() || candidates.Contains.[InterfaceSymbol]()))
+          return candidates.CreateRevole(candidates.Result.Filter(s => !(s is ClassSymbol || s is InterfaceSymbol))); // TODO: надо отследить, что у выбрасываемых символов тот же полное имя
+      }
+      else
+        when (candidates.Contains.[AstTypeSymbol]())
+          return candidates;
 
       mutable parsedValueType;
       def resolve(candidate) : ValueOption[TypeSymbol]
       {
-        | ast is AstTypeSymbol => VSome(ast)
-        | typeSymbol is TypeSymbol =>
-          when (parsedValueType == null)
-            parsedValueType        = context.BindFullName(1, "Nitra", "ParsedValue");
-          def constructedType = TopConstructedTypeSymbol(context, parsedValueType, ImmutableArray.Create(typeSymbol));
-          VSome(constructedType)
-
-        | _ => VNone()
+        when (parsedValueType == null)
+          parsedValueType = context.BindFullName(1, "Nitra", "ParsedValue");
+        def constructedType = TopConstructedTypeSymbol(context, parsedValueType, ImmutableArray.Create(candidate));
+        VSome(constructedType)
       }
-      def result = candidates2.Map(resolve);
+      def result = candidates.Result.Map(resolve);
       candidates.CreateRevole(result)
     }
 
