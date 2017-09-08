@@ -19,13 +19,12 @@ namespace Nitra.Ast
 
     | Identifier
       {
-      stage 1:
-        out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
-
       stage 2:
+        out TempScope : Scope = Scope;
+        out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
 
-        Reference.Scope = Scope;
+        Reference.Scope = TempScope;
         Type            = ImplicitCastRef.Symbol.ReturnType;
 
         Reference : Reference;
