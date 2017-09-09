@@ -328,15 +328,35 @@ namespace Nitra.Visualizer
       var items = ast.Items;
 
       if (items != null)
+      {
+        var results = new List<AstNodeViewModel>();
         foreach (AstNodeViewModel subItem in items)
         {
           var result = FindAstNode(subItem, pos, checkedSpans);
           if (result != null)
-          {
-            ast.IsExpanded = true;
-            return result;
-          }
+            results.Add(result);
         }
+        if (results.Count > 0)
+        {
+          var result = results[0];
+          // Looking for a node with the most nested Span
+          for (int i = 1; i < results.Count; i++)
+          {
+            var current = results[i];
+            var s1 = result.Span;
+            var s2 = current.Span;
+            if (s1 == s2)
+            {
+              if (current.Items.Count > result.Items.Count)
+                result = current;
+            }
+            else if (s2.StartPos >= s1.StartPos && s2.EndPos <= s1.EndPos)
+              result = current;
+          }
+          ast.IsExpanded = true;
+          return result;
+        }
+      }
 
       return ast;
     }
