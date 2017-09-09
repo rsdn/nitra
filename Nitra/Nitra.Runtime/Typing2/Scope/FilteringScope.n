@@ -42,6 +42,7 @@ namespace Nitra.Declarations
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def res = Scope.Bind(reference);
+      //TODO: optimize
       res.Filter(this.Predicate)
     }
 
@@ -66,7 +67,7 @@ namespace Nitra.Declarations
       if (this.Predicate == predicate)
         this
       else
-        base.FilterWith(predicate)
+        FilteringScope(this.Scope, symbol => this.Predicate(symbol) && predicate(symbol))
     }
 
     public override UnionWith(scope : Scope) : Scope

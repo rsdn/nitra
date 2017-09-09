@@ -34,8 +34,14 @@ namespace Nitra.Declarations
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
-      def res = this.Scopes.Select(s => s.Bind(isMatch)).Where(r => r.HasResult).ToImmutableArray();
-      res.ToBindResult()
+      def result = LightList();
+      foreach (scope in this.Scopes)
+      {
+        def br = scope.Bind(isMatch);
+        when (br.HasResult)
+          result.Add(br);
+      }
+      result.ToBindResult()
     }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
