@@ -1,4 +1,5 @@
-﻿using Nitra.Serialization2;
+﻿using System.Threading;
+using Nitra.Serialization2;
 
 using Nemerle;
 using Nemerle.Assertions;
@@ -97,16 +98,41 @@ namespace Nitra.Declarations
 
     public GetSymbols() : ImmutableArray[TSymbol]
     {
-      GetSymbols(SymbolByNameComparer())
+      GetSymbols(SymbolByNameComparer.Instance)
     }
 
     public GetSymbols(comparer : IEqualityComparer[TSymbol]) : ImmutableArray[TSymbol]
     {
-      // TODO: Optimize for special cases
-      def uniqSymbolSet   = HashSet();
-      def hidingSymbolSet = HashSet(comparer);
-      GetSymbols(uniqSymbolSet, hidingSymbolSet);
-      uniqSymbolSet.ToImmutableArray()
+      match (this)
+      {
+        | Nil           => ImmutableArray.Empty
+        | Single   as x => ImmutableArray.Create(x.Symbol)
+        | Multiple as x => x.Symbols
+
+        | Hiding(Result=Single(Symbol=resultSymbol), Hidden=Single(Symbol=hiddenSymbol)) =>
+          if (comparer.Equals(resultSymbol, hiddenSymbol) || resultSymbol.Equals(hiddenSymbol))
+            ImmutableArray.Create(resultSymbol)
+          else
+            ImmutableArray.Create(resultSymbol, hiddenSymbol)
+
+        | Hiding(Result=Single(Symbol=resultSymbol), Hidden=Multiple(Symbols=hiddenSymbols)) when hiddenSymbols.Length < 10 =>
+          def builder = ImmutableArray.CreateBuilder(1);
+          builder.Add(resultSymbol);
+          foreach (hiddenSymbol in hiddenSymbols)
+            when (!comparer.Equals(resultSymbol, hiddenSymbol) && !builder.Contains(hiddenSymbol))
+              builder.Add(hiddenSymbol);
+
+          if (builder.Capacity == builder.Count)
+            builder.MoveToImmutable();
+          else
+            builder.ToImmutable();
+
+        | _ =>
+          def uniqSymbolSet   = HashSet();
+          def hidingSymbolSet = HashSet(comparer);
+          GetSymbols(uniqSymbolSet, hidingSymbolSet);
+          uniqSymbolSet.ToImmutableArray()
+      }
     }
 
     GetSymbols(uniqSymbolSet : HashSet[TSymbol], hidingSymbolSet : HashSet[TSymbol]) : void

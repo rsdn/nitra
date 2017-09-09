@@ -20,5 +20,7 @@ namespace Nitra.Declarations
     {
       obj.NameId
     }
+
+    public static Instance : this { get; default SymbolByNameComparer() }
   }
 }
