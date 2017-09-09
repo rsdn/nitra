@@ -34,7 +34,7 @@ namespace Nitra.Declarations
       match (result)
       {
         | Nil => _symbols = ImmutableArray.Empty;
-        | _   => _symbols = result.Symbols;
+        | _   => _symbols = result.GetSymbols();
       }
     }
 

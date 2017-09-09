@@ -200,7 +200,7 @@ namespace Nitra.Serialization2
 
               def reference  = Reference(Location(Source, NSpan()), nameText);
               def res        = containingScope.Bind.[TSymbol](reference);
-              def candidates = res.Symbols;
+              def candidates = res.GetSymbols();
               match (candidates.Length)
               {
                 | 0 => assert(false, $"Failed to lookup reference to external symbol '$reference'");

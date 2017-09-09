@@ -260,7 +260,7 @@ namespace Nitra.BackEnd.Cci
       }
       def result = attrType.Scope.Bind(filter);
       when (result.HasResult)
-        customAttributeSymbol.Constructor = result.Symbols.First();
+        customAttributeSymbol.Constructor = result.GetSymbols().First();
 
       def cciArgToCustomAttributeExpression(cciExpr : IMetadataExpression) : CustomAttributeExpression
       {

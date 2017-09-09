@@ -21,7 +21,6 @@ namespace Nitra.Declarations
   {
     public          IsEmpty        : bool                               { get { this is Nil } }
     public          HasResult      : bool                               { get { !IsEmpty } }
-    public virtual  Symbols        : ImmutableArray[TSymbol]  { get { GetSymbols() } }
 
     | Single
       {
@@ -40,7 +39,7 @@ namespace Nitra.Declarations
 
     | Multiple
       {
-        public new Symbols : ImmutableArray[TSymbol] { get; }
+        public Symbols : ImmutableArray[TSymbol] { get; }
         public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
         {
           metadataWriter.WriteObjects(Symbols, writer);

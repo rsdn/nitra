@@ -405,7 +405,7 @@ namespace Nitra.ClientServer.Server
             }
             def br = scope.Bind(matcher);
 
-            foreach (symbol : DeclarationSymbol in br.Symbols)
+            foreach (symbol : DeclarationSymbol in br.GetSymbols())
             {
               def name = symbol.Name;
               when (StringPatternMatching.MatchPattern(name, pattern))
