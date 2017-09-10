@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using DotNet;
 
 using Nemerle;
@@ -282,7 +282,9 @@ namespace Nitra
 
     public CreateName(loc : Location, desiredName : ParsedValue[string * bool]) : Name
     {
-      Name(loc.WithSpan(desiredName.Span), desiredName.ValueOrDefault[0] ?? "")
+      def text = desiredName.ValueOrDefault[0] ?? "";
+      def name = if (text.StartsWith("Kw", StringComparison.Ordinal)) text.Substring(2) else text;
+      Name(loc.WithSpan(desiredName.Span), name)
     }
 
     public IsLooksLikeVariableName(text : string) : bool
