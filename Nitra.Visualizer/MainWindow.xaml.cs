@@ -116,6 +116,14 @@ namespace Nitra.Visualizer
             .Where(a => a.Key == Key.F12 && Keyboard.Modifiers == ModifierKeys.Shift)
             .InvokeCommand(ViewModel.FindSymbolReferences);
 
+      events.KeyDown
+            .Where(a => a.Key == Key.OemMinus && Keyboard.Modifiers == ModifierKeys.Control)
+            .InvokeCommand(ViewModel.NavigateBackward);
+
+      events.KeyDown
+            .Where(a => a.Key == Key.OemMinus && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift))
+            .InvokeCommand(ViewModel.NavigateForkward);
+
       _foldingManager = FoldingManager.Install(_textEditor.TextArea);
       _textMarkerService = new TextMarkerService(_textEditor.Document);
 
@@ -293,35 +301,49 @@ namespace Nitra.Visualizer
         ast.IsSelected = true;
     }
 
-    private AstNodeViewModel FindAstNode(AstNodeViewModel ast, int pos, List<NSpan> checkedSpans = null)
+    private AstNodeViewModel FindAstNode(AstNodeViewModel ast, int pos, List<NSpan> checkedSpans = null, Dictionary<AstNodeViewModel, AstNodeViewModel> cache = null)
     {
+      AstNodeViewModel result = null;
+      if (cache?.TryGetValue(ast, out result) == true)
+        return result;
+
+      cache = cache ?? new Dictionary<AstNodeViewModel, AstNodeViewModel>();
+
+      AstNodeViewModel cacheIt(AstNodeViewModel node)
+      {
+        cache[ast] = node;
+        return node;
+      }
+
+      cache[ast] = null; // temporary... to prevent cycles
+
       var span = ast.Span;
 
       if (!span.IntersectsWith(pos))
-        return null;
+        return cacheIt(null);
 
-      if (span == default(NSpan))
-        return null;
+      if (span == default)
+        return cacheIt(null);
 
-      checkedSpans = checkedSpans ?? new List<NSpan>();
-
-      // check for circular dependency
-      for (var i = 0; i < checkedSpans.Count; i++)
-      {
-        // if current span was previously checked
-        if (span == checkedSpans[i])
-        {
-          // and it's not a topmost span
-          for (var k = i; k < checkedSpans.Count; k++)
-            if (span != checkedSpans[k])
-              // Stop FindNode recursion
-              return null;
-          break;
-        }
-      }
-
-      if (span != default(NSpan))
-        checkedSpans.Add(span);
+      //checkedSpans = checkedSpans ?? new List<NSpan>();
+      //
+      //// check for circular dependency
+      //for (var i = 0; i < checkedSpans.Count; i++)
+      //{
+      //  // if current span was previously checked
+      //  if (span == checkedSpans[i])
+      //  {
+      //    // and it's not a topmost span
+      //    for (var k = i; k < checkedSpans.Count; k++)
+      //      if (span != checkedSpans[k])
+      //        // Stop FindNode recursion
+      //        return cacheIt(null);
+      //    break;
+      //  }
+      //}
+      //
+      //if (span != default(NSpan))
+      //  checkedSpans.Add(span);
 
       ast.LoadItems();
 
@@ -329,36 +351,38 @@ namespace Nitra.Visualizer
 
       if (items != null)
       {
-        var results = new List<AstNodeViewModel>();
+
         foreach (AstNodeViewModel subItem in items)
         {
-          var result = FindAstNode(subItem, pos, checkedSpans);
-          if (result != null)
-            results.Add(result);
-        }
-        if (results.Count > 0)
-        {
-          var result = results[0];
-          // Looking for a node with the most nested Span
-          for (int i = 1; i < results.Count; i++)
+          var current = FindAstNode(subItem, pos, checkedSpans, cache);
+          if (current != null)
           {
-            var current = results[i];
-            var s1 = result.Span;
-            var s2 = current.Span;
-            if (s1 == s2)
+            if (result == null)
+              result = current;
+            else
             {
-              if (current.Items.Count > result.Items.Count)
+              // Select node with the most nested Span
+              var s1 = result.Span;
+              var s2 = current.Span;
+              if (s1 == s2)
+              {
+                if (current.Items.Count > result.Items.Count)
+                  result = current;
+              }
+              else if (s2.StartPos >= s1.StartPos && s2.EndPos <= s1.EndPos)
                 result = current;
             }
-            else if (s2.StartPos >= s1.StartPos && s2.EndPos <= s1.EndPos)
-              result = current;
           }
+        }
+
+        if (result != null)
+        {
           ast.IsExpanded = true;
-          return result;
+          return cacheIt(result);
         }
       }
 
-      return ast;
+      return cacheIt(ast);
     }
 
     private void ShowParseTreeNodeForCaret(bool enforce = false)

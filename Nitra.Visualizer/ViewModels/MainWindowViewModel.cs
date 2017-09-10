@@ -27,6 +27,11 @@ namespace Nitra.Visualizer.ViewModels
 
     public IReactiveCommand<object> FindSymbolDefinitions { get; private set; }
     public IReactiveCommand<object> FindSymbolReferences  { get; private set; }
+    public IReactiveCommand<object> NavigateBackward      { get; private set; }
+    public IReactiveCommand<object> NavigateForkward      { get; private set; }
+
+    readonly List<(FileVm file, NSpan span)> _history = new List<(FileVm, NSpan)>();
+    int _historyIndex = -1;
 
     public MainWindowViewModel()
     {
@@ -40,6 +45,16 @@ namespace Nitra.Visualizer.ViewModels
       FindSymbolDefinitions.ThrownExceptions.Subscribe(e =>
         StatusText = "GOTO definition failed!");
       FindSymbolDefinitions.Subscribe(OnFindSymbolDefinitions);
+
+      NavigateBackward = ReactiveCommand.Create(canFindSymbolDefinitions);
+      NavigateBackward.ThrownExceptions.Subscribe(e =>
+        StatusText = "Navigate Backward!");
+      NavigateBackward.Subscribe(OnNavigateBackward);
+
+      NavigateForkward = ReactiveCommand.Create(canFindSymbolDefinitions);
+      NavigateForkward.ThrownExceptions.Subscribe(e =>
+        StatusText = "Navigate forkward!");
+      NavigateForkward.Subscribe(OnNavigateForkward);
 
       FindSymbolReferences = ReactiveCommand.Create(canFindSymbolDefinitions);
       FindSymbolReferences.ThrownExceptions.Subscribe(e =>
@@ -105,6 +120,11 @@ namespace Nitra.Visualizer.ViewModels
 
       var msg = client.Receive<ServerMessage.FindSymbolDefinitions>();
 
+      var currentLoc = (CurrentFile, new NSpan(Editor.CaretOffset, Editor.CaretOffset));
+      if (_historyIndex >= 0 && _historyIndex < _history.Count)
+        _history.RemoveRange(_historyIndex, _history.Count - _historyIndex);
+      _history.Add(currentLoc);
+      _historyIndex = _history.Count;
 
       if (msg.definitions.Length == 0)
         StatusText = "No symbols found!";
@@ -132,6 +152,35 @@ namespace Nitra.Visualizer.ViewModels
 
         Editor.IntelliSensePopup.IsVisible = true;
       }
+    }
+
+    int BackwardIndex => _historyIndex - 1;
+    int ForkwardIndex => _historyIndex;
+
+    private void OnNavigateBackward(object _)
+    {
+      if (BackwardIndex < 0 || BackwardIndex >= _history.Count)
+        return;
+
+      var (file, span) = _history[BackwardIndex];
+      Editor.SelectText(file, span);
+
+      if (BackwardIndex > 0)
+        _historyIndex--;
+    }
+
+    private void OnNavigateForkward(object _)
+    {
+      //Debug.Assert(ForkwardIndex >= 0 && ForkwardIndex <= _history.Count);
+
+      if (ForkwardIndex < 0 || ForkwardIndex >= _history.Count)
+        return;
+
+
+      var (file, span) = _history[ForkwardIndex];
+      Editor.SelectText(file, span);
+
+      _historyIndex++;
     }
 
     private void InitGotoList(IEnumerable<PopupItemViewModel> items)
