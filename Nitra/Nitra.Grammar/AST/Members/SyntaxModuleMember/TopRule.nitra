@@ -11,6 +11,7 @@ namespace Nitra.Ast
 
   declaration TopSimpleRule : SimpleRule, SyntaxModuleMemberDeclaration
   {
+    Fields.NameGenerator   = RuleFieldNameGenerator.Create(Fields.DesiredName);
   }
 
   declaration TopVoidRule : VoidRule, SyntaxModuleMemberDeclaration

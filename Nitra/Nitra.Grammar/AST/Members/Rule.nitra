@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.AstUtils;
 using Nitra.Declarations;
@@ -97,5 +97,9 @@ namespace Nitra.Ast
 
   abstract declaration ExtensibleRule : SyntaxRule, ExtensionContainer
   {
+    symbol
+    {
+      Scope = MemberTable.UnionWith(FieldsTable).HideWith(ExtensionsContainingTable);
+    }
   }
 }
