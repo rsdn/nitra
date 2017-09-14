@@ -27,7 +27,7 @@
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
