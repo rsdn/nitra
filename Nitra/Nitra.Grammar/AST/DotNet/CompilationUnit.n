@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -114,6 +114,10 @@ namespace DotNet
         evalHost.EvalProperties(context, "Type bodies binding", 2);
       }
       finally ManagerClass.Instance = oldManager;
+    }
+
+    public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+    {
     }
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]

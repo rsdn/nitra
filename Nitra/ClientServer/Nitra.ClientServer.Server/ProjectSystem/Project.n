@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -297,6 +297,20 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       when (cancellationToken.IsCancellationRequested)
         return;
+
+      def errorCount = 0; // TODO: посчитать число ошибок
+
+      when (errorCount == 0)
+      {
+        def projectSupport = this.GetProjectSupport();
+        def data           = this.Data;
+        def project        = this;
+        def action(cancellationToken : CancellationToken, _solutionId : SolutionId, mutable asts : ImmutableArray[IAst * bool]) : void
+        {
+      	  projectSupport.Postprocessing(cancellationToken, project, asts, data);
+        }
+        ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, cancellationToken, asts));
+      }
 
       Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisDone(FileId.Invalid, FileVersion.Invalid, Parent.Id, Id));
     }

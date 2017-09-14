@@ -1,4 +1,4 @@
-﻿using Nitra;
+using Nitra;
 using Nitra.BackEnd.Cci;
 using Nitra.Declarations;
 using Nitra.Internal;
@@ -115,6 +115,11 @@ namespace CSharp
       evalHost.EvalProperties(context, "SymbolHierarchy", 0);
       evalHost.EvalProperties(context, "Scopes", 1);
       evalHost.EvalProperties(context, "Type bodies binding", 2);
+    }
+
+    public Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+    {
+    	IgnoreParams();
     }
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
