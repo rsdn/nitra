@@ -594,5 +594,24 @@ namespace Nitra
       catch { e => _ = builder.HintMlException(e); }
       builder.ToString()
     }
+
+    [Memoize]
+    public RuleCallExpressionAlgorithm() : ResolutionAlgorithm[DeclarationSymbol, RuleTypeSymbol]
+    {
+    	def resolveRuleCallExpression(symbol : DeclarationSymbol) : ValueOption[RuleTypeSymbol]
+    	{
+    		| rule is RuleTypeSymbol => VSome(rule)
+    		| alias is RuleAliasSymbol when alias.IsReplacementEvaluated && !alias.Replacement.IsResolvedToEvaluated =>
+    		  def rule = alias.Replacement.Resolve();
+    		  if (rule.IsSymbolEvaluated && !rule.IsAmbiguous)
+    		    VSome(rule.Symbol)
+    		  else
+    		    VNone()
+
+    		| alias is RuleAliasSymbol when alias.IsReplacementEvaluated && alias.Replacement.IsSymbolEvaluated => VSome(alias.Replacement.Symbol :> RuleTypeSymbol)
+    		| _ => VNone()
+    	}
+    	resolveRuleCallExpression
+    }
   } // module
 } // namespace

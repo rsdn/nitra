@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nemerle.Collections;
 
@@ -93,7 +93,7 @@ namespace Nitra.Ast.RuleExpressions
 
     RuleReference.Scope = Scope;
     FieldName           = AstUtils.MakeCallFieldName(RuleReference.FieldNameId);
-    TypeRef             = RuleReference.Ref.Resolve(); // RuleCallExpressionAlgorithm
+    TypeRef             = RuleReference.Ref.Resolve(AstUtils.RuleCallExpressionAlgorithm());
     Type                = TypeRef.Symbol;
 
     RuleReference : NitraQualifiedReference;
