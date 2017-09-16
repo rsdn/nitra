@@ -304,12 +304,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       {
         def projectSupport = this.GetProjectSupport();
         def data           = this.Data;
-        def project        = this;
-        def action(cancellationToken : CancellationToken, _solutionId : SolutionId, mutable asts : ImmutableArray[IAst * bool]) : void
+        when (projectSupport != null && data != null)
         {
-      	  projectSupport.Postprocessing(cancellationToken, project, asts, data);
+          when (asts.IsDefault)
+            asts = GetAsts(files);
+          def project        = this;
+          def action(cancellationToken : CancellationToken, _solutionId : SolutionId, mutable asts : ImmutableArray[IAst * bool]) : void
+          {
+      	    projectSupport.Postprocessing(cancellationToken, project, asts, data);
+          }
+          ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, cancellationToken, asts));
         }
-        ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, cancellationToken, asts));
       }
 
       Router.SendAsyncResponse(AsyncServerMessage.SemanticAnalysisDone(FileId.Invalid, FileVersion.Invalid, Parent.Id, Id));
