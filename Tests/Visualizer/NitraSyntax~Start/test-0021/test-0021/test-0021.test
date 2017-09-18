@@ -12,6 +12,7 @@ namespace CSharp
     using TopDeclarations;
     extend syntax TypeMemberDeclaration
     {
+      | PropertyWithInitializer = ""
     }
   }
 

@@ -43,7 +43,7 @@ namespace Nitra.Ast
     {
       SpanClass = NitraLang.RuleSpanClass;
       Kind      = "extend syntax";
-      Scope     = MemberTable;
+      Scope     = MemberTable.HideWith(ExtensionsContainingTable);
 
       in ExtendedRule : ExtensibleRuleSymbol;
     }
