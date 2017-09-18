@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 using Nemerle.Collections;
 
 using Nitra.AstUtils;
@@ -45,13 +45,16 @@ namespace Nitra.Ast
       Kind      = "extend syntax";
       Scope     = MemberTable;
 
-      in ExtendedRule : Ref[ExtensibleRuleSymbol];
+      in ExtendedRule : ExtensibleRuleSymbol;
     }
+
+    in ExtendedRuleRef : Ref[ExtensibleRuleSymbol];
 
     BaseName.Scope          = Scope;
     Members.ContainingTable = Symbol.MemberTable;
     Members.Scope           = Scope;
-    Symbol.ExtendedRule     = BaseName.Ref.Resolve();
+    ExtendedRuleRef         = BaseName.Ref.Resolve();
+    Symbol.ExtendedRule     = ExtendedRuleRef.Symbol;
 
     BaseName : QualifiedReference;
     Members  : RuleBodyMember*;
