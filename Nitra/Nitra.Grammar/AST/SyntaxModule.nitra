@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 using Nitra.Declarations;
 using Nemerle.Collections;
 
@@ -10,7 +10,7 @@ namespace Nitra.Ast
     {
       Kind      = "syntax module";
       SpanClass = NitraLang.ModuleSpanClass; // NitraLang.SyntaxModuleSpanClass;
-      Scope     = MemberTable;
+      Scope     = MemberTable.UnionWith(ExtendsTable);
 
       table ExtendsTable;
       in Literals : Map[string, string];
