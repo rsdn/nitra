@@ -102,7 +102,7 @@ namespace DotNet
         def removeParsedSymbols(tableScope : TableScope)
         {
           tableScope.Undefine(_.IsParsed);
-          foreach (symbols in tableScope.Symbols)
+          foreach (symbols in tableScope.Symbols.ToArray())
           foreach (symbol is NamespaceSymbol in symbols)
             removeParsedSymbols(symbol.MemberTable);
         }
