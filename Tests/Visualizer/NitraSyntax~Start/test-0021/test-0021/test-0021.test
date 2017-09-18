@@ -1,0 +1,21 @@
+namespace CSharp
+{
+  syntax module TopDeclarations
+  {
+    syntax TypeMemberDeclaration
+    {
+    }
+  }
+
+  syntax module CS6
+  {
+    using TopDeclarations;
+    extend syntax TypeMemberDeclaration
+    {
+    }
+  }
+
+  map syntax CS6.TypeMemberDeclaration.PropertyWithInitializer -> TypeMember*
+  {
+  }
+}
