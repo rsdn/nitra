@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using Nitra.Serialization2;
 
 using Nemerle;
@@ -142,18 +142,18 @@ namespace Nitra.Declarations
         | Single   as x =>
           when (!hidingSymbolSet.Contains(x.Symbol))
             _ = uniqSymbolSet.Add(x.Symbol);
-            
+
         | Multiple as x =>
           foreach (symbol in x.Symbols)
             when (!hidingSymbolSet.Contains(symbol))
               _ = uniqSymbolSet.Add(symbol);
-        
+
         | Hiding(Result=Single(Symbol=resultSym), Hidden=Single(Symbol=hiddenSym)) =>
           when (!hidingSymbolSet.Contains(resultSym))
             _ = uniqSymbolSet.Add(resultSym);
           when (!hidingSymbolSet.Contains(hiddenSym) && !hidingSymbolSet.Comparer.Equals(resultSym, hiddenSym))
             _ = uniqSymbolSet.Add(hiddenSym);
-            
+
         | Hiding   as x =>
           // TODO; Optimize it!
           def hidingUniqSymbolSet = HashSet();
@@ -161,13 +161,13 @@ namespace Nitra.Declarations
           def nestedHidingSymbolSet = HashSet(hidingSymbolSet.Comparer);
           nestedHidingSymbolSet.UnionWith(hidingSymbolSet);
           nestedHidingSymbolSet.UnionWith(hidingUniqSymbolSet);
-          uniqSymbolSet.UnionWith(hidingUniqSymbolSet);          
+          uniqSymbolSet.UnionWith(hidingUniqSymbolSet);
           x.Hidden.GetSymbols(uniqSymbolSet, nestedHidingSymbolSet);
-          
+
         | Union    as x =>
           foreach (r in x.Results)
             r.GetSymbols(uniqSymbolSet, hidingSymbolSet);
-            
+
         | Nil           => ()
       }
     }
@@ -254,9 +254,9 @@ namespace Nitra.Declarations
             | _ => Multiple(res.ToImmutableArray())
           }
 
-        | Hiding as h =>
-          def r = h.Result.Map.[TConcreteSymbol](algorithm);
-          def h = h.Hidden.Map.[TConcreteSymbol](algorithm);
+        | Hiding as cur =>
+          def r = cur.Result.Map.[TConcreteSymbol](algorithm);
+          def h = cur.Hidden.Map.[TConcreteSymbol](algorithm);
 
           if (r.IsEmpty)
             h
