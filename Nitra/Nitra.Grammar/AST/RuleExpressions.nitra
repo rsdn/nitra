@@ -39,6 +39,7 @@ namespace Nitra.Ast.RuleExpressions
     Expression.Scope    = Scope;
     FieldName           = MakeName(this.Location, Expression.FieldName);
     Type                = Expression.Type;
+
     Expression : R.Expression;
   }
 
@@ -81,7 +82,7 @@ namespace Nitra.Ast.RuleExpressions
   ast String : R.Expression // CharLiteral
   {
     FieldName = NMakeLiteralName(Str, Literals);
-    Type      = context.Init(RuleLiteralTypeSymbol());
+    Type      = context.Init(RuleLiteralTypeSymbol(), "Chars");
 
     Str : string;
   }
@@ -93,8 +94,8 @@ namespace Nitra.Ast.RuleExpressions
 
     RuleReference.Scope = Scope;
     FieldName           = AstUtils.MakeCallFieldName(RuleReference.FieldNameId);
-    TypeRef             = RuleReference.Ref.Resolve(AstUtils.RuleCallExpressionAlgorithm());
-    Type                = TypeRef.Symbol;
+    TypeRef             = RuleReference.Ref.Resolve(); //AstUtils.RuleCallExpressionAlgorithm(RuleReference.Ref);
+    Type                = TypeRef.Symbol.TypeSubst :> RuleTypeSymbol;
 
     RuleReference : NitraQualifiedReference;
   }

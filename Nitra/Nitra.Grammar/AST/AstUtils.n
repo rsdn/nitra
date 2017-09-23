@@ -109,6 +109,16 @@ namespace Nitra
       symbol
     }
 
+    public static Init[T](this context : DependentPropertyEvalContext, symbol : T, name : string) : T
+      where T: DeclarationSymbol
+    {
+      def name        = Name(Location.Default, name);
+      def declaration = ExternalDeclaration.[T](name);
+    	symbol.AddDeclaration(declaration);
+      symbol.EvalProperties(context);
+      symbol
+    }
+
     public CanBeTupleElem(x : RuleTypeSymbol) : bool
     {
       !(x is RuleVoidTypeSymbol)
@@ -174,7 +184,10 @@ namespace Nitra
       unless (CanBeTupleElem(valueType))
         return WellKnownSymbols.VoidRuleType;
 
-      def symbol = RuleOptionTypeSymbol();
+      def symbol      = RuleOptionTypeSymbol();
+      def name        = Name(Location.Default, "Option");
+      def declaration = ExternalDeclaration.[RuleOptionTypeSymbol](name);
+    	symbol.AddDeclaration(declaration);
       symbol.ValueType = valueType;
       context.Init(symbol)
     }
@@ -595,23 +608,88 @@ namespace Nitra
       builder.ToString()
     }
 
-    [Memoize]
-    public RuleCallExpressionAlgorithm() : ResolutionAlgorithm[DeclarationSymbol, RuleTypeSymbol]
+    /// Prefer a TPrefer, if the candidate contains both symbols TPrefer and other symbol types.
+    public PreferSymbolType[TCandidate, TPrefer](candidates : Ref[TCandidate]) : Ref[TCandidate]
+      where TCandidate: DeclarationSymbol
+      where TPrefer: TCandidate
     {
-    	def resolveRuleCallExpression(symbol : DeclarationSymbol) : ValueOption[RuleTypeSymbol]
-    	{
-    		| rule is RuleTypeSymbol => VSome(rule)
-    		| alias is RuleAliasSymbol when alias.IsReplacementEvaluated && !alias.Replacement.IsResolvedToEvaluated =>
-    		  def rule = alias.Replacement.Resolve();
-    		  if (rule.IsSymbolEvaluated && !rule.IsAmbiguous)
-    		    VSome(rule.Symbol)
-    		  else
-    		    VNone()
+    	when (candidates.IsAmbiguous && candidates.Contains.[TPrefer]())
+        return candidates.CreateRevole(candidates.Result.Filter(s => s is TPrefer));
 
-    		| alias is RuleAliasSymbol when alias.IsReplacementEvaluated && alias.Replacement.IsSymbolEvaluated => VSome(alias.Replacement.Symbol :> RuleTypeSymbol)
-    		| _ => VNone()
-    	}
-    	resolveRuleCallExpression
+      candidates
+    }
+
+    public MakeHintForRuleType(this builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : StringBuilder
+    {
+      symbolCache.CacheSymbol(type);
+      match (type)
+      {
+        | _ is RuleCharsTypeSymbol => builder.Append("<keyword>chars</keyword>")
+        | _ is RuleLiteralTypeSymbol => builder.Append("<keyword>string</keyword>")
+        | _ is RuleVoidTypeSymbol => builder.Append("<keyword>void</keyword>")
+        | x is RuleListTypeSymbol =>
+          if (x.IsElemTypeEvaluated)
+            builder.Append("List[").MakeHintForRuleType(symbolCache, x.ElemType).Append("]")
+          else
+            builder.Append("<list type not evaluated>")
+
+        | x is RuleOptionTypeSymbol =>
+          if (x.IsValueTypeEvaluated)
+            builder.MakeHintForRuleType(symbolCache, x.ValueType).Append("?")
+          else
+            builder.Append("<option type not evaluated>")
+
+        | x is RuleTupleTypeSymbol =>
+          if (x.IsElemTypesEvaluated)
+            builder.Append("(").Join(x.ElemTypes, MakeHintForRuleType(_, symbolCache, _)).Append(")")
+          else
+            builder.Append("<tuple type not evaluated>")
+
+        | x => builder.SymbolToHintMlWithSubHint(x)
+      }
+    }
+
+    public RuleFieldMakeHint(symbolCache : ISymbolCache, symbol : RuleFieldSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" : ")
+          .MakeHintForRuleType(symbolCache, symbol.Type);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public RuleAliasMakeHint(symbolCache : ISymbolCache, symbol : RuleAliasSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+
+        symbolCache.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" expanded ");
+
+        if (symbol.IsTypeSubstEvaluated)
+        {
+          def replasmebtSymbol = symbol.TypeSubst;
+          _ = builder.Append("<keyword>").HintMlEscape(replasmebtSymbol.Kind).Append("</keyword> ")
+            .MakeHintForRuleType(symbolCache, replasmebtSymbol);
+        }
+        else
+          _ = builder.Append(<#<b><font color="Red">Replasment symbol not evaluated</b>.#>);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
     }
   } // module
 } // namespace

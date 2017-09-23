@@ -67,22 +67,29 @@ namespace Nitra.Ast
     Members.Parent     = this.Symbol;
   }
 
-  abstract declaration RuleAlias : Alias, BindableAst
+  abstract declaration RuleAlias : RuleType, BindableAst
   {
     symbol
     {
+      in Replacement : RuleTypeSymbol;
       SpanClass = NitraLang.AliasSpanClass;
       Kind      = "rule alias";
+      TypeSubst = Replacement;
     }
 
     Expression.Scope    = Scope;
-    Symbol.Replacement  = Ref.CreateBind(Expression.Location, Expression.Type);
+    Symbol.Replacement    = Expression.Type;
 
     Expression : R.Expression;
   }
 
   declaration TopRuleAlias : RuleAlias, SyntaxModuleMemberDeclaration
   {
+    symbol
+    {
+      MakeHint = AstUtils.RuleAliasMakeHint(symbolCache, this);
+    }
+
     ContainingTable = TableScope("alias");
     ScopeOut        = ScopeIn.HideWith(ContainingTable);
   }

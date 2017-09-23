@@ -1,9 +1,12 @@
 syntax module Expressions
 {
-  alias QualifiedName       = "sss";
+  alias Aaa       = "sss";
 
   syntax Expression
   {
-    | QualifiedName=QualifiedName; // simple-name || member-access
+    | QualifiedName=Aaa Bbb "ccc"; // simple-name || member-access
   }
+  
+  syntax Aaa       = "bbb";
+  syntax Bbb       = "bbb";
 }
