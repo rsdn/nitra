@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Imperative;
@@ -400,6 +400,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def ast      = _ast;
       def needHint = _needHint && forHighlighting;
       _needHint    = false;
+      def symbolCache = Parent : ISymbolCache;
 
       when (ast == null || ast.Location.Source.Version != pos.Version)
       {
@@ -440,7 +441,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           {
             when (index > 0)
               _ = hintBuilderOpt.AppendLine();
-            _ = hintBuilderOpt.AppendLine(symbol.MakeHint());
+            _ = hintBuilderOpt.AppendLine(symbol.MakeHint(symbolCache));
           }
 
           def decls = symbol.GetDeclarationsUntyped();
@@ -490,7 +491,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
           Log("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
         }
-        catch { | e => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty)); throw; }
+        catch { | _ => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty)); throw; }
       }
 
       Log("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
@@ -775,7 +776,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               };
             def objDesc =
               if (isEvalProp == null || isEvalProp.GetValue(obj, null) :> bool)
-                toObjectDescriptor(prop.GetValue(obj, null))
+                toObjectDescriptor(try prop.GetValue(obj, null) catch { e => e.Message })
               else
                 ObjectDescriptor.NotEvaluated();
 

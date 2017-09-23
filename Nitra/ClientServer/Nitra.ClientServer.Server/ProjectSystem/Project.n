@@ -23,7 +23,7 @@ using NCSSPS = Nitra.ClientServer.Server.ProjectSystem;
 
 namespace Nitra.ClientServer.Server.ProjectSystem
 {
-  internal class Project : NSP.Project, IDisposable
+  internal class Project : NSP.Project, ISymbolCache, IDisposable
   {
             _files                                   : Hashtable[int, File]   = Hashtable();
             _libMap                                  : Hashtable[string, int] = Hashtable();
@@ -46,6 +46,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
     public  IsCompleteWord                           : bool { get; set; }
+            _symbolsCache                            : ConcurrentDictionary[int, DeclarationSymbol] = ConcurrentDictionary();
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
@@ -229,6 +230,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _semanticResult = ImmutableArray.Empty;
           foreach (file in files)
             file.Ast.DeepResetProperties();
+
+          _symbolsCache.Clear();
 
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
           ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
@@ -450,12 +453,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def projectSupport = this.GetProjectSupport();
         when (projectSupport != null)
         {
-          def symbolOpt = projectSupport.GetSymbolById(this.Data, symbolId);
-
-          if (symbolOpt is VSome(symbol))
-            send("<hint>" + symbol.MakeHint() + "</hint>");
+        	def symbolOpt1 = this.TryGetSymbolById(symbolId);
+        	if (symbolOpt1 != null)
+            send("<hint>" + symbolOpt1.MakeHint(this) + "</hint>");
           else
-            send($"<hint>The symbol with symbolId=$symbolId not found.</hint>");
+          {
+            def symbolOpt2 = projectSupport.GetSymbolById(this.Data, symbolId);
+
+            if (symbolOpt2 is VSome(symbol))
+              send("<hint>" + symbol.MakeHint(this) + "</hint>");
+            else
+              send($"<hint>The symbol with symbolId=$symbolId not found.</hint>");
+          }
 
           return;
         }
@@ -565,5 +574,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public override UpdateProperties(cancellationToken : CancellationToken) : void { IgnoreParams(); throw System.NotImplementedException() }
     public override EvalProperties(context : DependentPropertyEvalContext, passName : string, stage : int) : void { IgnoreParams(); throw System.NotImplementedException() }
+
+    public CacheSymbol(symbol : DeclarationSymbol) : void { _symbolsCache[symbol.Id] = symbol; }
+    public TryGetSymbolById(id : int) : DeclarationSymbol
+    {
+    	mutable value;
+    	_ = _symbolsCache.TryGetValue(id, out value);
+    	value
+    }
   }
 }
