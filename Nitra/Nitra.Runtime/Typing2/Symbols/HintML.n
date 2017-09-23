@@ -1,4 +1,4 @@
-﻿using Nitra.Declarations;
+using Nitra.Declarations;
 
 using Nemerle;
 using Nemerle.Collections;
@@ -42,6 +42,14 @@ namespace Nitra
 
     public JoinAnd[T](this builder : StringBuilder, elems : Seq[T], converter : StringBuilder * T -> StringBuilder) : StringBuilder
     {
+      Join(builder, elems, converter, " and ", ", ")
+    }
+
+    public Join[T](this builder : StringBuilder, elems : Seq[T], converter : StringBuilder * T -> StringBuilder, mutable lastSeparator : string = null, separator : string = ", ") : StringBuilder
+    {
+      when (lastSeparator == null)
+        lastSeparator = separator;
+
       def ary             = elems.ToArray();
       def isPrevLastIndex = ary.Length - 2;
 
@@ -50,9 +58,9 @@ namespace Nitra
         _ = converter(builder, e);
 
         if (i == isPrevLastIndex)
-          _ = builder.Append(" and ");
+          _ = builder.Append(lastSeparator);
         else when (i < isPrevLastIndex)
-          _ = builder.Append(", ");
+          _ = builder.Append(separator);
       }
 
       builder
