@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nemerle.Collections;
 
@@ -41,7 +41,7 @@ namespace DotNet
   {
     symbol
     {
-      FullName  = AstUtils.MakeNamespaceFullName(DeclaredIn.FullName, this.Name, TypeParameters);
+      FullName  = AstUtils.MakeFullName(DeclaredIn.FullName, this.Name, TypeParameters);
     }
   }
 
@@ -53,7 +53,7 @@ namespace DotNet
   {
     symbol
     {
-      FullName  = AstUtils.MakeNamespaceFullName(DeclaredIn.FullName, this.Name, TypeParameters);
+      FullName  = AstUtils.MakeFullName(DeclaredIn.FullName, this.Name, TypeParameters);
       TypeSubst = AstUtils.CreateNestedConstructedTypeSymbol(this, this.DeclaredIn.TypeSubst, context);
     }
   }

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Nitra;
 using Nitra.Declarations;
 
@@ -60,7 +60,7 @@ namespace DotNet
       this.Args     = args;
       foreach (d in typeInfo.GetDeclarationsUntyped())
 	      this.AddDeclaration(d);
-	    this.FullName = AstUtils.MakeNamespaceFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
+	    this.FullName = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
       this.EvalProperties(context);
   	}
 

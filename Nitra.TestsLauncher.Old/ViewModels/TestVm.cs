@@ -1,4 +1,4 @@
-﻿using Nitra.Declarations;
+using Nitra.Declarations;
 using Nitra.ProjectSystem;
 using Nitra.Visualizer.Annotations;
 

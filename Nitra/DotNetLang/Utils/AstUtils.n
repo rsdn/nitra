@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Nitra;
 using Nitra.Declarations;
 using Nitra.ProjectSystem;
@@ -103,21 +103,28 @@ namespace DotNet
         arguments)
     }
 
-    public MakeNamespaceFullName(parentFullName : string, name : string) : string
+    public MakeFullName(parentFullName : string, name : string) : string
     {
-      MakeNamespaceFullName(parentFullName, name, default(ImmutableArray[TypeSymbol]))
+      MakeFullName(parentFullName, name, default(ImmutableArray[TypeSymbol]))
     }
 
-    public MakeNamespaceFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string, args : ImmutableArray[TTypeSymbol]) : string
+    public MakeFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string) : string
 			where TTypeSymbol: TypeSymbol
     {
-	    if (declaredInOpt is VSome(declaredIn))
-				MakeNamespaceFullName(declaredIn.FullName, name, args);
-			else
-				MakeNamespaceFullName(null, name, args);
+	    MakeFullName(declaredInOpt, name, default(ImmutableArray[TypeSymbol]))
     }
 
-    public MakeNamespaceFullName[TTypeSymbol](parentFullName : string, name : string, args : ImmutableArray[TTypeSymbol]) : string
+    public MakeFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string, args : ImmutableArray[TTypeSymbol]) : string
+			where TTypeSymbol: TypeSymbol
+    {
+	    when (declaredInOpt is VSome(declaredIn))
+	      when (declaredIn.IsFullNameEvaluated)
+				  return MakeFullName(declaredIn.FullName, name, args);
+
+			MakeFullName(null, name, args);
+    }
+
+    public MakeFullName[TTypeSymbol](parentFullName : string, name : string, args : ImmutableArray[TTypeSymbol]) : string
 			where TTypeSymbol: TypeSymbol
     {
       def result =
@@ -130,6 +137,12 @@ namespace DotNet
         result
       else
         $<#$result<..$(args; ", "; _.Name)>#>
+    }
+
+    public MakeFullName[TTypeSymbol](parentFullName : string, name : string) : string
+			where TTypeSymbol: TypeSymbol
+    {
+      MakeFullName(parentFullName, name, default(ImmutableArray[TypeSymbol]))
     }
 
     public IsSameIdentity(typeParametersCount : int, candidate : Declaration) : bool

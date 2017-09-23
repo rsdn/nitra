@@ -1,4 +1,4 @@
-﻿namespace CSharp
+namespace CSharp
 {
   syntax module TopDeclarations
   {
@@ -137,6 +137,5 @@
 
     //
     ////////////////////////////////////////////////////////////////////////////////////
-
   }
 }

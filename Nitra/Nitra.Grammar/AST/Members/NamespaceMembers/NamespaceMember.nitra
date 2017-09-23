@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.Declarations;
 
@@ -29,7 +29,7 @@ namespace Nitra.Ast
     sealed symbol
     {
       in AssociatedDeclaration : TopAstSymbol;
-      FullName = AstUtils.MakeNamespaceFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
+      FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
     }
 
     in AssociatedDeclaration : ValueOption[TopAstSymbol];
