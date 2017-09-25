@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.Declarations;
 using System.Collections.Generic;
@@ -41,9 +41,9 @@ namespace Nitra.Ast
     Symbol.ParameterTypes      = Parameters.Type;
     Symbol.ReturnType          = AstTypeRef.Symbol;
     Symbol.ThisType            = RuleRef.Symbol;
-    AstName.Scope              = Scope;
+    AstName.Scope              = Scope.FilterWithAstTypeSymbol();
     AstTypeRef                 = this.AstName.Ref.Resolve();
-    Body.AstScope              = Scope.HideWith(AstTypeRef.Scope);
+    Body.AstScope              = Scope.HideWith(AstTypeRef.Scope).FilterWithAstTypeSymbol();
     Body.Scope                 = Scope.HideWith(ParameterScope).HideWith(RuleRef.Scope);
     Body.This.Symbol.Type      = Symbol.ThisType;
     Parameters.ContainingTable = ParameterScope;

@@ -675,7 +675,7 @@ namespace Nitra
         symbolCache.CacheSymbol(symbol);
         _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
           .SymbolToHintMlWithSubHint(symbol)
-          .Append(" expanded ");
+          .Append(" <b>expanded to</b> ");
 
         if (symbol.IsTypeSubstEvaluated)
         {
@@ -690,6 +690,17 @@ namespace Nitra
       }
       catch { e => _ = builder.HintMlException(e); }
       builder.ToString()
+    }
+
+    public FilterWithAstTypeSymbol(this scope : Scope) : Scope
+    {
+      def filter(symbol : DeclarationSymbol) : bool
+      {
+        | _ is AstTypeSymbol => true
+        | _ is NamespaceSymbol => true
+        | _ => false
+      }
+      scope.FilterWith(filter)
     }
   } // module
 } // namespace

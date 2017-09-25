@@ -1,0 +1,39 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+using DotNet;
+
+namespace CSharp
+{
+  map syntax CS6.TypeMemberDeclaration.PropertyWithInitializer -> TypeMember*
+  {
+    [Member.Property
+    {
+      Name -> Name;
+    }]
+  }
+
+  syntax module CS6
+  {
+    using TopDeclarations;
+    token Name
+    {
+      | Normal   = "ss"
+    }    
+    extend syntax TypeMemberDeclaration
+    {
+      | PropertyWithInitializer  = "aa" Name
+    }
+  }
+  syntax module TopDeclarations
+  {
+    syntax TypeMemberDeclaration
+    {
+    }
+  }
+
+  map syntax CS6.Name -> Nitra.Declarations.Name
+  {
+    | Normal   = Nitra.Declarations.Name(this);
+  }
+}
