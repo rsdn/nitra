@@ -698,6 +698,7 @@ namespace Nitra
       {
         | _ is AstTypeSymbol => true
         | _ is NamespaceSymbol => true
+        | u is UsingAliasDirectiveSymbol when u.IsReplacementEvaluated && u.Replacement.IsSymbolEvaluated => filter(u.Replacement.Symbol)
         | _ => false
       }
       scope.FilterWith(filter)
