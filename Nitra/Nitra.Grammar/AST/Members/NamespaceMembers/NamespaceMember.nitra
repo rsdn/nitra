@@ -11,6 +11,7 @@ namespace Nitra.Ast
     symbol
     {
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
 
       //in AssociatedSymbol : ValueOption[SymbolDeclarationSymbol];
     }
@@ -30,6 +31,7 @@ namespace Nitra.Ast
     {
       in AssociatedDeclaration : TopAstSymbol;
       FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
 
     in AssociatedDeclaration : ValueOption[TopAstSymbol];

@@ -31,6 +31,7 @@ namespace Nitra.Ast.AstMembers
     {
       SpanClass = NitraLang.PropertySpanClass;
       Kind = "structural property";
+      MakeHint = AstUtils.StructuralPropertyMakeHint(symbolCache, this);
     }
 
   stage 1:
@@ -48,6 +49,10 @@ namespace Nitra.Ast.AstMembers
 
   declaration ChildAst : Nitra.Ast.Ast, AstMemberDeclaration
   {
+    symbol
+    {
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
     EmitSymbol(Symbol, context);
   }
 
@@ -77,6 +82,10 @@ namespace Nitra.Ast.AstMembers
 
   declaration NestedAst : Nitra.Ast.Ast, AstMember
   {
+    symbol
+    {
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
     Symbol.BaseTypeSet |= (Parent, TypeBase.Ref)[0]; // tuple adds dependency to TypeBase.Ref property
     Members.Parent = Symbol;
   }

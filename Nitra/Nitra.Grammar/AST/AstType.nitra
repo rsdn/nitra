@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra;
 using Nitra.Declarations;
@@ -90,7 +90,7 @@ namespace Nitra.Ast
       in ReturnType : TypeSymbol;
 
       ToString = $"..$(Parameters; \" * \") -> $ReturnType";
-      MakeHint = AstUtils.FunctionTypeMakeHint(this);
+      MakeHint = AstUtils.FunctionTypeMakeHint(symbolCache, this);
 
       DecomposeType =
         if (IsParametersEvaluated && IsReturnTypeEvaluated)
