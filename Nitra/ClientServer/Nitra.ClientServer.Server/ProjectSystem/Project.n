@@ -23,7 +23,7 @@ using NCSSPS = Nitra.ClientServer.Server.ProjectSystem;
 
 namespace Nitra.ClientServer.Server.ProjectSystem
 {
-  internal class Project : NSP.Project, ISymbolCache, IDisposable
+  internal class Project : NSP.Project, IDisposable
   {
             _files                                   : Hashtable[int, File]   = Hashtable();
             _libMap                                  : Hashtable[string, int] = Hashtable();
@@ -46,7 +46,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
     public  IsCompleteWord                           : bool { get; set; }
-            _symbolsCache                            : ConcurrentDictionary[int, DeclarationSymbol] = ConcurrentDictionary();
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
@@ -574,13 +573,5 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public override UpdateProperties(cancellationToken : CancellationToken) : void { IgnoreParams(); throw System.NotImplementedException() }
     public override EvalProperties(context : DependentPropertyEvalContext, passName : string, stage : int) : void { IgnoreParams(); throw System.NotImplementedException() }
-
-    public CacheSymbol(symbol : DeclarationSymbol) : void { _symbolsCache[symbol.Id] = symbol; }
-    public TryGetSymbolById(id : int) : DeclarationSymbol
-    {
-    	mutable value;
-    	_ = _symbolsCache.TryGetValue(id, out value);
-    	value
-    }
   }
 }

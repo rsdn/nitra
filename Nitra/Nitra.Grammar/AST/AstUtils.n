@@ -619,9 +619,14 @@ namespace Nitra
       candidates
     }
 
+    public ToHint(this symbol : TypeSymbol, context : DependentPropertyEvalContext) : string
+    {
+      StringBuilder().MakeHintForRuleType(context.SymbolCache, symbol).ToString()
+    }
+
     public MakeHintForRuleType(this builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : StringBuilder
     {
-      symbolCache.CacheSymbol(type);
+      symbolCache?.CacheSymbol(type);
       match (type)
       {
         | _ is RuleCharsTypeSymbol => builder.Append("<keyword>chars</keyword>")
@@ -645,8 +650,36 @@ namespace Nitra
           else
             builder.Append("<tuple type not evaluated>")
 
+        | x is TypeVarSymbol =>
+          if (x.IsTypeEvaluated)
+            builder.MakeHintForRuleType(symbolCache, x.Type)
+          else match (x.IsBaseTypeConstraintEvaluated, x.IsDerivedTypeConstraintEvaluated)
+          {
+            | (false, false) => builder.Append("<keyword>unbound</keyword>")
+            | (true,  false) => builder.MakeHintForRuleType(symbolCache, x.BaseTypeConstraint).Append("+")
+            | (false,  true) => builder.MakeHintForRuleType(symbolCache, x.DerivedTypeConstraint).Append("-")
+            | (true,   true) => builder.MakeHintForRuleType(symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForRuleType(symbolCache, x.DerivedTypeConstraint)
+          }
+
         | x => builder.SymbolToHintMlWithSubHint(x)
       }
+    }
+
+    public TypedDeclarationMakeHint(symbolCache : ISymbolCache, symbol : TypedDeclarationSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" : ")
+          .MakeHintForRuleType(symbolCache, symbol.Type);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
     }
 
     public RuleFieldMakeHint(symbolCache : ISymbolCache, symbol : RuleFieldSymbol) : string
@@ -654,7 +687,7 @@ namespace Nitra
       def builder = StringBuilder();
       try
       {
-        symbolCache.CacheSymbol(symbol);
+        symbolCache?.CacheSymbol(symbol);
         _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
           .SymbolToHintMlWithSubHint(symbol)
           .Append(" : ")
@@ -672,7 +705,7 @@ namespace Nitra
       try
       {
 
-        symbolCache.CacheSymbol(symbol);
+        symbolCache?.CacheSymbol(symbol);
         _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
           .SymbolToHintMlWithSubHint(symbol)
           .Append(" <b>expanded to</b> ");

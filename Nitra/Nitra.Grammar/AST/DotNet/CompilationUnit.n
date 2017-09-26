@@ -45,7 +45,7 @@ namespace DotNet
       {
         project.OnSymbolAssemblyResolve += OnSymbolAssemblyResolve;
 
-        def context = DependentPropertyEvalContextEx();
+        def context = DependentPropertyEvalContextEx(project);
         def manager : ManagerClass =
           if (project is NitraProject(Manager = manager) as p)
           {

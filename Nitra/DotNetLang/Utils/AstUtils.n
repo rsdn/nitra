@@ -109,23 +109,23 @@ namespace DotNet
     }
 
     public MakeFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string) : string
-			where TTypeSymbol: TypeSymbol
+      where TTypeSymbol: TypeSymbol
     {
-	    MakeFullName(declaredInOpt, name, default(ImmutableArray[TypeSymbol]))
+      MakeFullName(declaredInOpt, name, default(ImmutableArray[TypeSymbol]))
     }
 
     public MakeFullName[TTypeSymbol](declaredInOpt : ValueOption[DeclarationSymbol], name : string, args : ImmutableArray[TTypeSymbol]) : string
-			where TTypeSymbol: TypeSymbol
+      where TTypeSymbol: TypeSymbol
     {
-	    when (declaredInOpt is VSome(declaredIn))
-	      when (declaredIn.IsFullNameEvaluated)
-				  return MakeFullName(declaredIn.FullName, name, args);
+      when (declaredInOpt is VSome(declaredIn))
+        when (declaredIn.IsFullNameEvaluated)
+          return MakeFullName(declaredIn.FullName, name, args);
 
-			MakeFullName(null, name, args);
+      MakeFullName(null, name, args);
     }
 
     public MakeFullName[TTypeSymbol](parentFullName : string, name : string, args : ImmutableArray[TTypeSymbol]) : string
-			where TTypeSymbol: TypeSymbol
+      where TTypeSymbol: TypeSymbol
     {
       def result =
         if (string.IsNullOrEmpty(parentFullName))
@@ -140,7 +140,7 @@ namespace DotNet
     }
 
     public MakeFullName[TTypeSymbol](parentFullName : string, name : string) : string
-			where TTypeSymbol: TypeSymbol
+      where TTypeSymbol: TypeSymbol
     {
       MakeFullName(parentFullName, name, default(ImmutableArray[TypeSymbol]))
     }

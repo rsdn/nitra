@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Microsoft.Cci;
 
@@ -28,7 +28,7 @@ namespace Nitra.BackEnd.Cci
     {
       def count = _cciAttributeHost.Attributes.Count();
       def builder = ImmutableArray.CreateBuilder.[CustomAttributeSymbol](count);
-      def context = DependentPropertyEvalContext();
+      def context = DependentPropertyEvalContext(null);
 
 
       foreach (attr in _cciAttributeHost.Attributes)

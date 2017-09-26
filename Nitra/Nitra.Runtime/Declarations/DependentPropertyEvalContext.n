@@ -1,4 +1,4 @@
-﻿using Nemerle.Assertions;
+using Nemerle.Assertions;
 
 using System;
 using System.Collections.Generic;
@@ -15,8 +15,14 @@ namespace Nitra.Declarations
     public Pass                   : int               { get { _pass } }
     public CollectorsCreatedCount : int               { get { _collectorsCreated } }
     public CancellationToken      : CancellationToken { get; set; }
+    public SymbolCache            : ISymbolCache      { get; }
     mutable _files                : ImmutableArray[FileEvalPropertiesData];
             _fileMap              : Dictionary[int, FileEvalPropertiesData] = Dictionary();
+
+    public this(symbolCache : ISymbolCache)
+    {
+      SymbolCache = symbolCache;
+    }
 
     public GetFileData(fileId : int) : FileEvalPropertiesData
     {

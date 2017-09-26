@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -27,6 +27,8 @@ namespace DotNet
   {
     private class DependentPropertyEvalContextEx : DependentPropertyEvalContext
     {
+      public this(symbolCache : ISymbolCache) { base(symbolCache) }
+
       public RootNamespace : NamespaceSymbol   { get; set; }
       public Language      : LanguageSymbol    { get; set; }
       public Declaration   : DeclarationSymbol { get; set; }

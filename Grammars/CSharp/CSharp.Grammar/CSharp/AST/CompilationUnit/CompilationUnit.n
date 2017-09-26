@@ -65,7 +65,7 @@ namespace CSharp
 
       def backEnd = CciBackEnd();
       backEnd.CancellationToken = cancellationToken;
-      def context = DependentPropertyEvalContext();
+      def context = DependentPropertyEvalContext(project);
       def rootNamespace = backEnd.LoadExternalSymbols(project.Libs, project.ProjectDir, project.CompilerMessages, context);
       def systemNsRef = bindNs(rootNamespace.Scope, "System");
       when (systemNsRef.IsSymbolEvaluated)

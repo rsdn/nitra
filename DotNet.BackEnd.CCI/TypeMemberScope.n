@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Microsoft.Cci;
 
@@ -31,7 +31,7 @@ namespace Nitra.BackEnd.Cci
     Load() : void
     {
       _isLoaded = true;
-      def context = DependentPropertyEvalContext();
+      def context = DependentPropertyEvalContext(null);
       def owner = Owner :> ContainerSymbol;
       def type = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
       def props = List();

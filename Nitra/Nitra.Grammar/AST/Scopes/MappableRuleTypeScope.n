@@ -1,4 +1,4 @@
-﻿using Nitra;
+using Nitra;
 using Nitra.Declarations;
 using Nitra.Serialization2;
 
@@ -46,7 +46,7 @@ namespace Nitra.Ast
         | SyntaxRuleSymbol(IsScopeEvaluated = true, Scope = scope) =>
           def bindResult = scope.Bind.[MapSyntaxSymbol](s => s.IsNameValid && s.IsReturnTypeEvaluated && s.IsParametersEvaluated);
 
-          def context = DependentPropertyEvalContext();
+          def context = DependentPropertyEvalContext(null);
           def toMem(candidate : MapSyntaxSymbol) : ValueOption[DeclarationSymbol]
           {
             def mapSyntaxSymbol = TryCreateMapSyntaxSymbol(candidate, context);

@@ -173,7 +173,7 @@ namespace Nitra.ViewModels
                                             "' type must implement IProjectSupport, to be used in a multi-file test.");
       else
       {
-        var context = new DependentPropertyEvalContext();
+        var context = new DependentPropertyEvalContext(project);
         var evalHost = new ProjectEvalPropertiesHost(filesData);
         evalHost.EvalProperties(context);
       }
