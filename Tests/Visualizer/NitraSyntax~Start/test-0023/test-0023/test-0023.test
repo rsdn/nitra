@@ -1,0 +1,14 @@
+﻿abstract declaration A { }
+abstract declaration B : A { }
+abstract declaration C : B { }
+declaration D { symbol { } }
+declaration E : D, C, A { }
+
+abstract declaration SealedDecl : C
+{
+  sealed symbol { }
+}
+
+declaration ASealedDecl : SealedDecl { }
+declaration BSealedDecl : SealedDecl { }
+

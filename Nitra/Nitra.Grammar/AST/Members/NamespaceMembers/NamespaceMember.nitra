@@ -13,7 +13,7 @@ namespace Nitra.Ast
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
 
-      //in AssociatedSymbol : ValueOption[SymbolDeclarationSymbol];
+      in AssociatedSymbol : SymbolDeclarationSymbol;
     }
 
     Members.Parent = Symbol;
@@ -35,6 +35,9 @@ namespace Nitra.Ast
     }
 
     in AssociatedDeclaration : ValueOption[TopAstSymbol];
+
+    Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
+    Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
 
     ContainingTable = AssociatedDeclaration.Value.DeclaredIn.MemberTable;
     Symbol.AssociatedDeclaration = AssociatedDeclaration.Value;

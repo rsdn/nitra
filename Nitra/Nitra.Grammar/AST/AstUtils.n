@@ -500,6 +500,17 @@ namespace Nitra
       lst
     }
 
+    public SymbolDeclarationBaseTypeSet(parents : Seq[TypeSymbol]) : Seq[SymbolDeclarationSymbol]
+    {
+      def lst = List();
+
+      foreach (parent is TopAstSymbol in parents)
+        when (parent.IsAssociatedSymbolEvaluated)
+          lst.Add(parent.AssociatedSymbol);
+
+      lst
+    }
+
     public GetImplicitBaseTypeForDeclaration(context : DependentPropertyEvalContext, symbol : AstSymbol, _for_dependency : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseDeclaration(symbol)
