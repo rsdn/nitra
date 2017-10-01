@@ -225,7 +225,12 @@ namespace Nitra.Declarations
       }
     }
 
-    internal UpdateName(newId : int) : void
+    public UpdateName(name : string) : void
+    {
+      UpdateName(StringIndex.GetId(name));
+    }
+    
+    public UpdateName(newId : int) : void
     {
       when (_nameId != newId)
       {
