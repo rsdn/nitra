@@ -1,4 +1,4 @@
-﻿using Nitra.ProjectSystem;
+using Nitra.ProjectSystem;
 using Nitra.Declarations;
 using Nitra.Staging;
 
@@ -196,7 +196,12 @@ namespace Nitra.Serialization2
               declaration.DefineSymbol(containingScope)
 
             | External =>
-              assert3(containingScope : object != null, $"External symbol '$nameText' has no owner scope.");
+              when (containingScope : object == null)
+              {
+                def msg = $"External symbol '$nameText' ($(typeof(TSymbol).FullName)) has no owner scope. This may be caused by adding a fake declaration to a symbol not added to the name table.";
+                assert2(containingScope : object != null, msg);
+                assert(containingScope : object != null, msg);
+              }
 
               def reference  = Reference(Location(Source, NSpan()), nameText);
               def res        = containingScope.Bind.[TSymbol](reference);
