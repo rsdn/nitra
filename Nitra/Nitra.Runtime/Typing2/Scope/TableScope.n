@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Nitra.ProjectSystem;
 using Nitra.Serialization2;
 using Nitra.Internal;
@@ -187,7 +187,7 @@ namespace Nitra.Declarations
       _ = builder.Append(
 $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
 <tr>
-	<td colspan="$cols" align="center" bgcolor="WhiteSmoke" border='1'>TableScope: '<B>$(AstUtils.XmlEscape(_name))</B>' $owner</td>
+  <td colspan="$cols" align="center" bgcolor="WhiteSmoke" border='1'>TableScope: '<B>$(AstUtils.XmlEscape(_name))</B>' $owner</td>
 </tr>
 #>);
       for (mutable row = 0; row < rows; row++)

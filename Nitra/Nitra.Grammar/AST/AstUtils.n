@@ -113,9 +113,7 @@ namespace Nitra
     public static Init[T](this context : DependentPropertyEvalContext, symbol : T, name : string) : T
       where T: DeclarationSymbol
     {
-      def name        = Name(Location.Default, name);
-      def declaration = ExternalDeclaration.[T](name);
-    	symbol.AddDeclaration(declaration);
+      (symbol :> SymbolBase).UpdateName(name);
       symbol.EvalProperties(context);
       symbol
     }
@@ -186,9 +184,6 @@ namespace Nitra
         return WellKnownSymbols.VoidRuleType;
 
       def symbol      = RuleOptionTypeSymbol();
-      def name        = Name(Location.Default, "Option");
-      def declaration = ExternalDeclaration.[RuleOptionTypeSymbol](name);
-    	symbol.AddDeclaration(declaration);
       symbol.ValueType = valueType;
       context.Init(symbol)
     }
@@ -219,11 +214,7 @@ namespace Nitra
 
     public CreateListAstType(loc : ILocated, elemType : AstTypeSymbol, context : DependentPropertyEvalContext) : ListAstTypeSymbol
     {
-      def name       = Name(loc.Location, "#List");
-      def decl       = ListAstType(loc.Location, name);
       def listSymbol = ListAstTypeSymbol();
-      listSymbol.AddDeclaration(decl);
-      name.Symbol    = listSymbol;
       listSymbol.ElemType = elemType;
       listSymbol.EvalProperties(context);
       listSymbol
@@ -241,11 +232,7 @@ namespace Nitra
 
     public CreateOptionAstType(loc : ILocated, valueType : AstTypeSymbol, context : DependentPropertyEvalContext) : OptionAstTypeSymbol
     {
-      def name         = Name(loc.Location, "#Option");
-      def decl         = OptionAstType(loc.Location, name);
       def optionSymbol = OptionAstTypeSymbol();
-      optionSymbol.AddDeclaration(decl);
-      name.Symbol      = optionSymbol;
       optionSymbol.ValueType = valueType;
       optionSymbol.EvalProperties(context);
       optionSymbol
@@ -261,11 +248,7 @@ namespace Nitra
 
     public CreateFunctionType(loc : ILocated, parameters : IList[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
     {
-      def name = Name(loc.Location, "#Func");
-      def decl = FunctionType(loc.Location, name);
       def funcSymbol = FunctionTypeSymbol();
-      funcSymbol.AddDeclaration(decl);
-      name.Symbol = funcSymbol;
       funcSymbol.Parameters = parameters;
       funcSymbol.ReturnType = returnType;
       funcSymbol.EvalProperties(context);

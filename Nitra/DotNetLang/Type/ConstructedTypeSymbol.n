@@ -54,15 +54,13 @@ namespace DotNet
 
   public partial class TopConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
   {
-  	public this(context : DependentPropertyEvalContext, typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
-  	{
+    public this(context : DependentPropertyEvalContext, typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
+    {
       this.TypeInfo = typeInfo;
       this.Args     = args;
-      foreach (d in typeInfo.GetDeclarationsUntyped())
-	      this.AddDeclaration(d);
-	    this.FullName = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
+      this.FullName = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
       this.EvalProperties(context);
-  	}
+    }
 
     public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
     {
@@ -81,7 +79,7 @@ namespace DotNet
       }
     }
 
-		public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
+    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
   }
 
   public partial class NestedConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
