@@ -21,13 +21,13 @@
     <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\..\Common</CommonFilesPath>
     <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
     <NuspecFile>Nitra.Compiler.nuspec</NuspecFile>
-  </PropertyGroup>
+    <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
+</PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>DEBUG;TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -36,7 +36,6 @@
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Release\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>

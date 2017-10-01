@@ -8,7 +8,6 @@
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
     <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <!--CustomArguments>-debugger</CustomArguments-->
   </PropertyGroup>
   <Import Project="..\Nitra.Runtime\Nitra.Runtime.nproj" />
 </Project>

@@ -25,29 +25,27 @@
     <NuspecFile>Nitra.Runtime.nuspec</NuspecFile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <DefineConstants>TRACE;NITRA_RUNTIME;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>DEBUG;TRACE;NITRA_RUNTIME</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunDebugger>false</RunDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Release\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);NITRA_RUNTIME</DefineConstants>
     <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
