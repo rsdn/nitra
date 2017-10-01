@@ -1,4 +1,4 @@
-﻿using Nitra;
+using Nitra;
 using Nitra.Runtime;
 using Nitra.Declarations;
 using Nitra.Internal;
@@ -42,14 +42,15 @@ module Program
 
 public partial class Top : AstBase, IProjectSupport
 {
-  public RefreshReferences(_cancellationToken : CancellationToken, _project : Project) : object
+  public RefreshReferences(_cancellationToken : CancellationToken, project : Project) : object
   {
-    null
+    project
   }
 
-  public RefreshProject(_cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], _data : object) : void
+  public RefreshProject(_cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
   {
-    def context  = DependentPropertyEvalContext();
+    def project = data :> Project;
+    def context  = DependentPropertyEvalContext(project);
     def scope    = TableScope("Variables");
     def evalHost = SampleProjectEvalPropertiesHost(files, scope);
     evalHost.EvalProperties(context, "Collect variables", 0);
@@ -66,6 +67,12 @@ public partial class Top : AstBase, IProjectSupport
 
   public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
   {
+    IgnoreParams();
+  }
+
+  public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+  {
+    IgnoreParams();
   }
 }
 

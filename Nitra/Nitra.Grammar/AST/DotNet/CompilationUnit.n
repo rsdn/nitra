@@ -118,6 +118,7 @@ namespace DotNet
 
     public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
     {
+      IgnoreParams();
     }
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
