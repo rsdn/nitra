@@ -1,0 +1,159 @@
+using Nitra.Declarations;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+namespace Nitra
+{
+  /// <summary>Utility methods for Hint Markup language.</summary>
+  public module HintML
+  {
+    public GetSymbolId(symbol : DeclarationSymbol) : int
+    {
+      symbol.Id
+    }
+
+    public XmlEscape(text : string) : string
+    {
+      text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("'", "&#39;").Replace("\"", "&#34;");
+    }
+
+    public HintMlEscape(this builder : StringBuilder, text : object) : StringBuilder
+    {
+      builder.Append(XmlEscape(text.ToString()))
+    }
+
+    public HintMlQuote(this builder : StringBuilder, text : string) : StringBuilder
+    {
+      builder
+        .Append(<#"#>)
+        .Append(XmlEscape(text))
+        .Append(<#"#>)
+    }
+
+    public JoinAnd[T](this builder : StringBuilder, elems : Seq[T], converter : StringBuilder * T -> StringBuilder) : StringBuilder
+    {
+      Join(builder, elems, converter, " and ", ", ")
+    }
+
+    public Join[T](this builder : StringBuilder, elems : Seq[T], converter : StringBuilder * T -> StringBuilder, mutable lastSeparator : string = null, separator : string = ", ") : StringBuilder
+    {
+      when (lastSeparator == null)
+        lastSeparator = separator;
+
+      def ary             = elems.ToArray();
+      def isPrevLastIndex = ary.Length - 2;
+
+      foreach (e in ary with i)
+      {
+        _ = converter(builder, e);
+
+        if (i == isPrevLastIndex)
+          _ = builder.Append(lastSeparator);
+        else when (i < isPrevLastIndex)
+          _ = builder.Append(separator);
+      }
+
+      builder
+    }
+
+    public HintMlAttr(this builder : StringBuilder, name : string, text : string) : StringBuilder
+    {
+      builder
+        .Append(" ")
+        .Append(XmlEscape(name))
+        .Append("=")
+        .HintMlQuote(text)
+    }
+
+    public SymbolToHintMlWithSubHint(this builder : StringBuilder, symbol : DeclarationSymbol) : StringBuilder
+    {
+      builder
+        .Append("<symbol")
+        .HintMlAttr("span-class", symbol.SpanClass.FullName)
+        .HintMlAttr("id", GetSymbolId(symbol).ToString())
+        .Append(">")
+        .Append(XmlEscape(symbol.Name))
+        .Append("</symbol>")
+    }
+
+    public SymbolToHintMl(this builder : StringBuilder, symbol : DeclarationSymbol) : StringBuilder
+    {
+      builder
+        .Append("<symbol")
+        .HintMlAttr("span-class", symbol.SpanClass.FullName)
+        .Append(">")
+        .Append(XmlEscape(symbol.Name))
+        .Append("</symbol>")
+    }
+
+    public IsRoot(symbol : DeclarationSymbol) : bool { symbol.DeclaredInOpt.IsNone }
+
+    public MakeHintMlPath(this builder : StringBuilder, symbol : DeclarationSymbol, separator : string, needSubhint : bool) : StringBuilder
+    {
+      unless (symbol.IsDeclaredInOptEvaluated)
+        return builder.Append($"'$(symbol.InitialName).DeclaredInOpt' dependent property is not Evaluated");
+
+      def declaredIn = symbol.DeclaredInOpt;
+
+      when (declaredIn is VSome(declaredIn))
+      when (!IsRoot(declaredIn))
+        _ = MakeHintMlPath(builder, declaredIn, separator, needSubhint=true).Append(separator);
+
+      if (needSubhint)
+        SymbolToHintMlWithSubHint(builder, symbol)
+      else
+        SymbolToHintMl(builder, symbol)
+    }
+
+    public MakeLocations(this builder : StringBuilder, symbol : DeclarationSymbol) : StringBuilder
+    {
+      def decls = symbol.GetDeclarationsUntyped().ToArray();
+
+      when (decls.Length > 0)
+        _ = builder.Append("<br/>");
+
+      foreach (decl in decls with i)
+      {
+        when (i > 5)
+        {
+          _ = builder.Append("<br/><ref handler='find:declarations:").Append(symbol.Id).Append("'>Find all declarations...</ref>");
+          break;
+        }
+
+        def loc         = decl.Location;
+        def lineCol = if (loc.IsTextAvailable) "(" + loc.StartLineColumn + ")" else "";
+        def file = loc.Source.File;
+        if (file.IsFake)
+          _ = builder.Append("<br/>Location: not present");
+        else
+        {
+          def path = file.FullName;
+          def text = if (file.IsFake) "<no file>" else (Path.GetFileName(path) + lineCol);
+          def goto = "goto:" + path + "[" + loc.StartPos + "," + loc.Length + "]";
+          def hint = path + lineCol;
+          _ = builder.Append("<br/>Location: <ref").HintMlAttr("handler", goto).HintMlAttr("hint", hint).Append(">").HintMlEscape(text).Append("</ref>");
+        }
+      }
+
+      builder
+    }
+
+    public HintMlException(this builder : StringBuilder, exception : Exception) : StringBuilder
+    {
+      def text = exception.ToString();
+      def rx   = RegularExpressions.Regex(<# in (.+):line (\d+)#>);
+      def res  = rx.Replace(text, <# <keyword>in</keyword> <ref handler="goto line:$1($2,1)">$1($2,1)</ref>#>);
+      builder.Append("<b><font color='Red'>Exception</font></b>: ").Append(res)
+    }
+  }
+}

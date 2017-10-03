@@ -511,7 +511,7 @@ namespace Nitra.Runtime.Errors
       def compilerMessages = parseResult.ParseSession.CompilerMessages;
       foreach (error in errors)
         compilerMessages.Error(error.Location, error.Message);
-        
+
       ErrorCount = errors.Count;
     }
 

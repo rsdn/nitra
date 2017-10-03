@@ -38,7 +38,7 @@ namespace Nitra.Compiler.PatternMatching
         | Neg(cons) =>
           assert(cons.Length + 1 < Math.Max(int.MaxValue, con.Span));
           Termd.Neg(con :: cons);
- 
+
         | Pos => assert(false)
       }
     }

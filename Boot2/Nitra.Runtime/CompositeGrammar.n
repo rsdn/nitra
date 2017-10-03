@@ -5,6 +5,7 @@ using Nitra.Runtime.GraphUtils;
 using Nitra.Runtime.Reflection;
 
 using Nemerle;
+using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -27,7 +28,7 @@ namespace Nitra
   {
     private static mutable _idCounter : int = 0;
 
-    internal RuntimeId               : int { get; }
+    internal RuntimeId               : int { get; default Interlocked.Increment(ref _idCounter); }
 
     public  Grammars                 : Set[GrammarDescriptor];
     public  ParserHost               : ParserHost;
@@ -46,22 +47,15 @@ namespace Nitra
       this.ParserHost.AddGrammar(this, grammarDescriptor)
     }
 
-    private this()
+    internal this([NotNull] parserHost : ParserHost)
     {
-      RuntimeId = Interlocked.Increment(ref _idCounter)
-    }
-
-    internal this(parserHost : ParserHost)
-    {
-      this();
       Grammars = Set();
       SimpleRuleParsers = Hashtable();
       ParserHost = parserHost;
     }
 
-    internal this(parserHost : ParserHost, grammars : Set[GrammarDescriptor], ruleIdBuilder : RuleIdBuilder)
+    internal this([NotNull] parserHost : ParserHost, [NotNull] grammars : Set[GrammarDescriptor], [NotNull] ruleIdBuilder : RuleIdBuilder)
     {
-      this();
       Grammars = grammars;
       ParserHost = parserHost;
 
@@ -382,6 +376,9 @@ namespace Nitra
             def cur = ruleParser.SequenceInfo.MandatoryTokenCount;
             min = minT(min, cur);
           }
+          otherwise
+            min = 100; // TODO: Fixme WolfHound. // We use 100 when int.MaxValue can lead to overflow exception
+
           updated = updated || min != ruleParserData.MandatoryTokenCount;
           ruleParserData.MandatoryTokenCount = min;
         }
@@ -457,15 +454,15 @@ namespace Nitra
         foreach (state in parsingSequence.States)
         {
           | Predicate                  => ()
-          | Simple               (ruleParser)
-          | Extensible           (ruleParser)
+          | Simple               (ruleParser, _)
+          | Extensible           (ruleParser, _)
           | DynamicExtensibleItem(ruleParser) =>
             def tokenParser = GetTokenParser(state.SubruleInfo);
             if (tokenParser == null)
               state.FirstTokens.UnionWith(ruleParser.ParsingSequence.FirstTokens);
             else
               _ = state.FirstTokens.Add(tokenParser);
-          
+
           | ListWithSeparator(seq)
           | Subsequence      (seq, _)
           | List             (seq)
@@ -598,7 +595,7 @@ namespace Nitra
         | _ => null
       }
     }
-    
+
     public GetExtensibleRuleParser(rd : ExtensibleRuleDescriptor, bindingPower : string) : ExtensibleRuleParser
     {
       ExtensibleRules[rd].GetParser(bindingPower)
@@ -639,6 +636,11 @@ namespace Nitra
         _ = results.Add(token.Parse(pos, text, parseResult));
 
       results
+    }
+
+    public Literals : Seq[string]
+    {
+      get { Tokens.Values.OfType.[TokenParser.TokenString]().Select(t => t.Str) }
     }
 
     public ParseAllGrammarTokens(pos : int, parseResult : ParseResult) : SCG.HashSet[int]

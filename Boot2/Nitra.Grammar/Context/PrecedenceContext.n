@@ -47,7 +47,7 @@ namespace Nitra.Typing
       def contexts = List();
       def collectContexts(_)
       {
-        | context is PrecedenceStartContext => contexts.Add(context); 
+        | context is PrecedenceStartContext => contexts.Add(context);
         | context is PrecedenceContext      => contexts.Add(context); collectContexts(context.Parent);
         | context                           =>                        collectContexts(context.Parent);
       }
@@ -150,7 +150,7 @@ namespace Nitra.Typing
           def symbols = Owner.Node.BindMany.[PrecedenceSymbol](identifier.Value);
           def symbols = match (symbols)
           {
-            | []      => 
+            | []      =>
               if (Owner is ExtendSyntaxSymbol(Extend = SymbolRef.Some(extendRule)))
                 extendRule.Node.BindMany.[PrecedenceSymbol](identifier.Value);
               else

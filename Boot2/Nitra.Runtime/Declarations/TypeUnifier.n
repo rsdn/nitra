@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Imperative;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -12,7 +12,7 @@ namespace Nitra.Declarations
 {
   public abstract class TypeUnifier
   {
-    private _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext();
+    private _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
     protected abstract IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
 

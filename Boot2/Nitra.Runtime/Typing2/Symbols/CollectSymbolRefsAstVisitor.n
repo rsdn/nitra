@@ -1,4 +1,5 @@
-﻿using Nemerle;
+﻿using System.Threading;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -13,12 +14,17 @@ namespace Nitra.Declarations
   [Record]
   public class CollectSymbolRefsAstVisitor : IAstVisitor
   {
-    public Symbol       : DeclarationSymbol { get; }
-    [RecordIgnore]
-    public FoundSymbols : List[IRef] { get; default List(); }
+    _cancellationToken    : CancellationToken;
+    _projectSupport       : IProjectSupport { get; }
+    public Symbol         : DeclarationSymbol { get; }
+
+    [RecordIgnore] public FoundSymbols : List[IRef] { get; default List(); }
 
     public Visit(parseTree : IAst) : void
     {
+      when (_cancellationToken.IsCancellationRequested)
+        return;
+
       parseTree.Accept(this);
     }
 
@@ -27,12 +33,35 @@ namespace Nitra.Declarations
       unless (reference.IsRefEvaluated)
         return;
 
-      mutable r = reference.Ref : IRef;
-      while (r.IsResolvedToEvaluated)
-        r = r.ResolvedTo;
+      def loop(r : IRef) : void
+      {
+        if (r.IsSymbolEvaluated)
+        {
+          if (r.Symbol.Equals(Symbol))
+            FoundSymbols.Add(r);
+          else if (r.IsResolvedToEvaluated)
+            loop(r.ResolvedTo);
+          else
+          {
+            mutable type;
+            mutable typeArgs;
 
-      when (r.IsSymbolEvaluated && r.Symbol : object == Symbol)
-        FoundSymbols.Add(r);
+            when (_projectSupport.DeconstructType(r.Symbol, out type, out typeArgs))
+              when (type.Equals(Symbol))
+                FoundSymbols.Add(r);
+          }
+        }
+        else when (r.IsAmbiguous)
+        {
+          foreach (a when a.Equals(Symbol) in r.Ambiguities)
+          {
+            FoundSymbols.Add(r);
+            return;
+          }
+        }
+      }
+
+      loop(reference.Ref)
     }
 
     public Visit(r : IRef) : void

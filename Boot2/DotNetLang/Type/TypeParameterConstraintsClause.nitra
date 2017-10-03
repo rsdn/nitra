@@ -42,6 +42,6 @@ namespace DotNet
       Error(context, $"A constraint clause has already been specified for type parameter '$(Ref.Name)'. All of the constraints for a type parameter must be specified in a single where clause.");
 
     // constraint  Class && !Struct || Struct && !Class || !Struct && !Class
-    // constraint  Ctor && !Struct 
+    // constraint  Ctor && !Struct
   }
 }

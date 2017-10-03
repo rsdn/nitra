@@ -35,7 +35,7 @@ namespace Nitra.Typing
     private _node                    : G.ExtensibleRule;
 
     public override DeclarationSite : IRuleDeclarationSite            { get; }
-    public override Options         : RuleDefinitionOptions           { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions()) } }
+    public override Options         : RuleDefinitionOptions           { [Memoize] get { _node.RuleAttributes.Options(DeclarationSite.GetDefaultRuleDefinitionOptions(), this) } }
     public override LastLocation    : option[Location]                {           get { Some(_node.RuleBody.GetLastLocation()) } }
     public override SyntaxMappings  : list[SyntaxMappingSymbol]       {           get { _syntaxMappings } }
 
@@ -59,7 +59,7 @@ namespace Nitra.Typing
     private _node                        : G.ExtensibleRule;
 
     public override DeclarationSite     : IRuleDeclarationSite            {           get; }
-    public override Options             : RuleDefinitionOptions           { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule()) } }
+    public override Options             : RuleDefinitionOptions           { [Memoize] get { _node.RuleAttributes.Options(RuleDefinitionOptions.CreateTokenRule(), this) } }
     public override LastLocation        : option[Location]                {           get { Some(_node.RuleBody.GetLastLocation()) } }
     public override SyntaxMappings      : list[SyntaxMappingSymbol]       {           get { _syntaxMappings } }
 

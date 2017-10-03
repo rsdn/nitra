@@ -18,28 +18,43 @@ namespace Nitra.Declarations
   public sealed class FilteringScope : Scope
   {
     public Scope     : Scope                         { get; }
-    public Predicate : Func[DeclarationSymbol, bool] { get; }
+    public Predicate : Predicate[DeclarationSymbol] { get; }
 
-    public override FindMany[TSymbol](predicate : Predicate[TSymbol], results : ref LightList[TSymbol]) : void
+    public override AllSymbols : Seq[DeclarationSymbol]
     {
-      this.Scope.FindMany(fun(symbol : TSymbol) { Predicate.Invoke(symbol) && predicate(symbol) }, ref results);
+      get
+      {
+        foreach (symbol when this.Predicate(symbol) in this.Scope.AllSymbols)
+          yield symbol;
+      }
     }
 
-    public override BindMany[TSymbol](reference : Reference, results : ref LightList[TSymbol]) : void
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
-      mutable notFilteredResults = LightList();
-      Scope.BindMany(reference, ref notFilteredResults);
-
-      // 'foreach' causes invalid IL
-      def e = notFilteredResults.GetEnumerator();
-      while (e.MoveNext())
-        when (Predicate.Invoke(e.Current))
-          results.Add(e.Current);
+      def compositePredicate(symbol)
+      {
+        this.Predicate(symbol) && isMatch(symbol)
+      }
+      def res = Scope.Bind(compositePredicate);
+      res
     }
 
-    public override MakeCompletionList(prefix : string) : Seq[DeclarationSymbol]
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
-      Scope.MakeCompletionList(prefix).Where(Predicate)
+      def res = Scope.Bind(reference);
+      //TODO: optimize
+      res.Filter(this.Predicate)
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
+    {
+      def id            = nodeToIdMap.GetObjectId(this);
+      def idScope       = nodeToIdMap.GetObjectId(this.Scope);
+
+      nodes.Add($<#Obj_$id [label="FilteringScope"]#>);
+      edges.Add($<#Obj_$id -> Obj_$idScope#>);
+
+      this.Scope.ToDot(nodeToIdMap, nodes, edges);
     }
 
     public override ToString() : string
@@ -47,19 +62,19 @@ namespace Nitra.Declarations
       "Filter"
     }
 
-    public override FilterWith(predicate : Func[DeclarationSymbol, bool]) : Scope
+    public override FilterWith(predicate : Predicate[DeclarationSymbol]) : Scope
     {
-      if (Predicate == predicate)
+      if (this.Predicate == predicate)
         this
       else
-        base.FilterWith(predicate)
+        FilteringScope(this.Scope, symbol => this.Predicate(symbol) && predicate(symbol))
     }
 
     public override UnionWith(scope : Scope) : Scope
     {
       // filter(s1, p) + filter(s2, p) -> filter(s1 + s2, p)
-      if (scope is FilteringScope(Scope = otherScope, Predicate = otherPred) when Predicate == otherPred)
-        Scope.UnionWith(otherScope).FilterWith(Predicate)
+      if (scope is FilteringScope(Scope = otherScope, Predicate = otherPred) when this.Predicate == otherPred)
+        Scope.UnionWith(otherScope).FilterWith(this.Predicate)
       else
         base.UnionWith(scope)
     }
@@ -68,16 +83,16 @@ namespace Nitra.Declarations
     {
       metadataWriter.WriteObject(Scope, writer);
 
-      def method = Predicate.Method;
+      def method = this.Predicate.Method;
       metadataWriter.WriteType(method.DeclaringType, writer);
       writer.Write(method.Name);
 
       if (method.IsStatic)
         metadataWriter.WriteObject(null, writer);
-      else if (Predicate.Target is ISerializable as target)
+      else if (this.Predicate.Target is ISerializable as target)
         metadataWriter.WriteObject(target, writer);
       else
-        assert(false, $"Cannot serialize predicate '$(Predicate)': method must be static or target must implement interface 'Nitra.Serlialization2.ISerializable'.")
+        assert(false, $"Cannot serialize predicate '$(this.Predicate)': method must be static or target must implement interface 'Nitra.Serlialization2.ISerializable'.")
     }
 
     public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
@@ -88,7 +103,7 @@ namespace Nitra.Declarations
       def target     = metadataReader.ReadObject(reader);
       def methodInfo = type.GetMethod(name, array[typeof(DeclarationSymbol)]);
       assert(methodInfo : object != null, $"Method '$(name)' not found in type '$(type)'.");
-      def predicate  = Delegate.CreateDelegate(typeof(Func[DeclarationSymbol, bool]), target, methodInfo) :> Func[DeclarationSymbol, bool];
+      def predicate  = Delegate.CreateDelegate(typeof(Predicate[DeclarationSymbol]), target, methodInfo) :> Predicate[DeclarationSymbol];
       FilteringScope(scope, predicate)
     }
   }

@@ -9,7 +9,7 @@ namespace Nitra.Ast
     This : ThisDeclaration;
 
     in  Owner     : MapSyntaxSymbol;
-    out BodyScope : TableScope = TableScope("body", null);
+    out BodyScope : TableScope = TableScope("body");
     This.ContainingTable       = BodyScope;
 
   stage 1:
@@ -45,6 +45,8 @@ namespace Nitra.Ast
 
     | Extensions
       {
+        Members.DeclaredIn    = Owner.ThisType :> ExtensionContainerSymbol;
+
         Members.Prototype      = Owner;
         Members.AstScope       = AstScope;
         Members.Scope          = Scope;    // don't pass 'this' variable

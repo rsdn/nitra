@@ -23,6 +23,7 @@ namespace Nitra.Runtime.Internal
     public mutable lastResult : int;
     public mutable curTextPos : int;
     public mutable parseResult : ParseResult;
+    public mutable ambiguous : bool;
 
     public Append() : void
     {
@@ -54,11 +55,13 @@ namespace Nitra.Runtime.Internal
       }
 
     label equal;//АСТ равен лучшему. Неоднозначность.
+      ambiguous = true;
       parseResult.rawTree[newResult] = parseResult.rawTree[newResult] | ExtensibleRuleParser.RawTreeFlags.Equal;
       assert(bestEndPos == newEndPos);
       return;
 
     label new_better;//Новый АСТ лучше
+      ambiguous = false;
       bestEndPos = newEndPos;
       bestResult = newResult;
       parseResult.rawTree[newResult] = parseResult.rawTree[newResult] | ExtensibleRuleParser.RawTreeFlags.Best;

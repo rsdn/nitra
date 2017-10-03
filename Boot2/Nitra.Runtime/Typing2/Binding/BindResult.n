@@ -1,0 +1,295 @@
+using System.Threading;
+using Nitra.Serialization2;
+
+using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Extensions;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace Nitra.Declarations
+{
+  public variant BindResult[TSymbol] : ISerializable
+    where TSymbol : DeclarationSymbol
+  {
+    public          IsEmpty        : bool                               { get { this is Nil } }
+    public          HasResult      : bool                               { get { !IsEmpty } }
+
+    | Single
+      {
+        public Symbol : TSymbol { get; }
+
+        public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+        {
+          metadataWriter.WriteObject(Symbol, writer);
+        }
+        public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+        {
+          def symbol = metadataReader.ReadObject(reader);
+          Single(symbol)
+        }
+      }
+
+    | Multiple
+      {
+        public Symbols : ImmutableArray[TSymbol] { get; }
+        public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+        {
+          metadataWriter.WriteObjects(Symbols, writer);
+        }
+        public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+        {
+          def symbols = metadataReader.ReadObjects(reader);
+          Multiple(symbols.ToImmutableArray())
+        }
+      }
+
+    | Hiding
+      {
+        public Result : BindResult[TSymbol] { get; }
+        public Hidden : BindResult[TSymbol] { get; }
+
+        public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+        {
+          metadataWriter.WriteObject(Result, writer);
+          metadataWriter.WriteObject(Hidden, writer);
+        }
+        public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+        {
+          def result = metadataReader.ReadObject(reader);
+          def hidden = metadataReader.ReadObject(reader);
+          Hiding(result, hidden)
+        }
+      }
+
+    | Union
+      {
+        public Results : ImmutableArray[BindResult[TSymbol]] { get; }
+
+        public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+        {
+          metadataWriter.WriteObjects(Results, writer);
+        }
+        public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+        {
+          def results = metadataReader.ReadObjects(reader);
+          NitraUtils.MakeUnion(results.ToImmutableArray()) :> this
+        }
+      }
+
+    | Nil
+      {
+        public override Serialize(_writer : BinaryWriter, _metadataWriter : MetadataWriter) : void { }
+        public static Deserialize(_reader : BinaryReader, _metadataReader : MetadataReader) : this
+        {
+          Nil()
+        }
+      }
+
+    public abstract Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void;
+
+    public GetSymbols() : ImmutableArray[TSymbol]
+    {
+      GetSymbols(SymbolByNameComparer.Instance)
+    }
+
+    public GetSymbols(comparer : IEqualityComparer[TSymbol]) : ImmutableArray[TSymbol]
+    {
+      match (this)
+      {
+        | Nil           => ImmutableArray.Empty
+        | Single   as x => ImmutableArray.Create(x.Symbol)
+        | Multiple as x => x.Symbols
+
+        | Hiding(Result=Single(Symbol=resultSymbol), Hidden=Single(Symbol=hiddenSymbol)) =>
+          if (comparer.Equals(resultSymbol, hiddenSymbol) || resultSymbol.Equals(hiddenSymbol))
+            ImmutableArray.Create(resultSymbol)
+          else
+            ImmutableArray.Create(resultSymbol, hiddenSymbol)
+
+        | Hiding(Result=Single(Symbol=resultSymbol), Hidden=Multiple(Symbols=hiddenSymbols)) when hiddenSymbols.Length < 10 =>
+          def builder = ImmutableArray.CreateBuilder(1);
+          builder.Add(resultSymbol);
+          foreach (hiddenSymbol in hiddenSymbols)
+            when (!comparer.Equals(resultSymbol, hiddenSymbol) && !builder.Contains(hiddenSymbol))
+              builder.Add(hiddenSymbol);
+
+          if (builder.Capacity == builder.Count)
+            builder.MoveToImmutable();
+          else
+            builder.ToImmutable();
+
+        | _ =>
+          def uniqSymbolSet   = HashSet();
+          def hidingSymbolSet = HashSet(comparer);
+          GetSymbols(uniqSymbolSet, hidingSymbolSet);
+          uniqSymbolSet.ToImmutableArray()
+      }
+    }
+
+    GetSymbols(uniqSymbolSet : HashSet[TSymbol], hidingSymbolSet : HashSet[TSymbol]) : void
+    {
+      match (this)
+      {
+        | Single   as x =>
+          when (!hidingSymbolSet.Contains(x.Symbol))
+            _ = uniqSymbolSet.Add(x.Symbol);
+
+        | Multiple as x =>
+          foreach (symbol in x.Symbols)
+            when (!hidingSymbolSet.Contains(symbol))
+              _ = uniqSymbolSet.Add(symbol);
+
+        | Hiding(Result=Single(Symbol=resultSym), Hidden=Single(Symbol=hiddenSym)) =>
+          when (!hidingSymbolSet.Contains(resultSym))
+            _ = uniqSymbolSet.Add(resultSym);
+          when (!hidingSymbolSet.Contains(hiddenSym) && !hidingSymbolSet.Comparer.Equals(resultSym, hiddenSym))
+            _ = uniqSymbolSet.Add(hiddenSym);
+
+        | Hiding   as x =>
+          // TODO; Optimize it!
+          def hidingUniqSymbolSet = HashSet();
+          x.Result.GetSymbols(hidingUniqSymbolSet, hidingSymbolSet);
+          def nestedHidingSymbolSet = HashSet(hidingSymbolSet.Comparer);
+          nestedHidingSymbolSet.UnionWith(hidingSymbolSet);
+          nestedHidingSymbolSet.UnionWith(hidingUniqSymbolSet);
+          uniqSymbolSet.UnionWith(hidingUniqSymbolSet);
+          x.Hidden.GetSymbols(uniqSymbolSet, nestedHidingSymbolSet);
+
+        | Union    as x =>
+          foreach (r in x.Results)
+            r.GetSymbols(uniqSymbolSet, hidingSymbolSet);
+
+        | Nil           => ()
+      }
+    }
+
+    public Filter[TConcreteSymbol]() : BindResult[TConcreteSymbol]
+      where TConcreteSymbol : DeclarationSymbol
+    {
+      Filter.[TConcreteSymbol](null)
+    }
+
+    /// Filter by predicate. Filter by TConcreteSymbol If predicate is null.
+    public Filter[TConcreteSymbol](predicate : Predicate[TConcreteSymbol]) : BindResult[TConcreteSymbol]
+      //where TConcreteSymbol : TSymbol
+      // TODO: FIXMY
+      where TConcreteSymbol : DeclarationSymbol
+    {
+      match (this)
+      {
+        | Single(Symbol=sym is TConcreteSymbol) => if (predicate == null || predicate(sym)) Single(sym) else Nil()
+        | Single => Nil()
+        | Multiple as m =>
+          def res = LightList.[TConcreteSymbol]();
+          if (predicate == null)
+            foreach(sym is TConcreteSymbol in m.Symbols)
+              res.Add(sym);
+          else
+            foreach(sym is TConcreteSymbol when predicate(sym) in m.Symbols)
+              res.Add(sym);
+
+          match (res.Count)
+          {
+            | 0 => Nil()
+            | 1 => Single(res[0])
+            | _ => Multiple(res.ToImmutableArray())
+          }
+
+        | Hiding as h =>
+          def r = h.Result.Filter.[TConcreteSymbol](predicate);
+          def h = h.Hidden.Filter.[TConcreteSymbol](predicate);
+
+          if (r.IsEmpty)
+            h
+          else if (h.IsEmpty)
+            r
+          else
+            Hiding(r, h)
+
+        | Union as u =>
+          def results = LightList();
+          foreach (res in u.Results)
+          {
+            def res2 = res.Filter.[TConcreteSymbol](predicate);
+            when (res2.HasResult)
+              results.Add(res2);
+          }
+
+          match (results.Count)
+          {
+            | 0 => Nil()
+            | 1 => results[0]
+            | _ => NitraUtils.MakeUnion(results.ToImmutableArray())
+          }
+
+        | Nil => Nil()
+      }
+    }
+
+    public Map[TConcreteSymbol](algorithm : ResolutionAlgorithm[TSymbol, TConcreteSymbol]) : BindResult[TConcreteSymbol]
+      where TConcreteSymbol : DeclarationSymbol
+    {
+      match (this)
+      {
+        | Single(Symbol=sym) => if (algorithm(sym) is VSome(resSym)) Single(resSym : TConcreteSymbol) else Nil()
+        | Multiple as m =>
+          def res = LightList.[TConcreteSymbol]();
+            foreach(sym in m.Symbols)
+              when (algorithm(sym) is VSome(resSym))
+                res.Add(resSym);
+
+          match (res.Count)
+          {
+            | 0 => Nil()
+            | 1 => Single(res[0])
+            | _ => Multiple(res.ToImmutableArray())
+          }
+
+        | Hiding as cur =>
+          def r = cur.Result.Map.[TConcreteSymbol](algorithm);
+          def h = cur.Hidden.Map.[TConcreteSymbol](algorithm);
+
+          if (r.IsEmpty)
+            h
+          else if (h.IsEmpty)
+            r
+          else
+            Hiding(r, h)
+
+        | Union as u =>
+          def results = LightList();
+          foreach (res in u.Results)
+          {
+            def res2 = res.Map.[TConcreteSymbol](algorithm);
+            when (res2.HasResult)
+              results.Add(res2);
+          }
+
+          match (results.Count)
+          {
+            | 0 => Nil()
+            | 1 => results[0]
+            | _ => NitraUtils.MakeUnion(results.ToImmutableArray())
+          }
+
+        | Nil => Nil()
+      }
+    }
+
+    public override ToString() : string
+    {
+      def displayCount = 5;
+      def symbols = GetSymbols();
+      if (symbols.Length > displayCount) $"..$(symbols.Take(displayCount))..." else $"..$symbols"
+    }
+  }
+}

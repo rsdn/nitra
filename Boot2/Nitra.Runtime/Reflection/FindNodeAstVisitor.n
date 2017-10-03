@@ -22,7 +22,7 @@ namespace Nitra.Runtime.Reflection
     private _span : NSpan;
     private mutable _isMissingReferenceFound : bool;
     public Stack : SCG.Stack[IAst]= SCG.Stack();
-    
+
     public isMissingReferenceFound : bool { get { _isMissingReferenceFound } }
 
     public this(span : NSpan) { _span = span; }
@@ -31,7 +31,7 @@ namespace Nitra.Runtime.Reflection
     {
       when (_isMissingReferenceFound)
         return;
-          
+
       when (parseTree.Span.IntersectsWith(_span))
       {
         Stack.Push(parseTree);
@@ -48,7 +48,7 @@ namespace Nitra.Runtime.Reflection
       {
         when (reference.IsMissing)
           _isMissingReferenceFound = true;
-          
+
         Stack.Push(reference);
       }
     }

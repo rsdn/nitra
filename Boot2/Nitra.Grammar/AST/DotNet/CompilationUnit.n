@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -15,6 +15,7 @@ using Nitra.ProjectSystem;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 
 using System.Threading;
@@ -26,6 +27,17 @@ namespace DotNet
 {
   public partial class CompilationUnit : AstBase, IProjectSupport, NamespaceBody
   {
+    [Record]
+    private class ProjectData
+    {
+      public Context       : DependentPropertyEvalContext;
+      public RootNamespace : NamespaceSymbol;
+      public RootScope     : Scope;
+      public Manager       : ManagerClass;
+    }
+
+    // IProjectSupport
+
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       def oldManager = ManagerClass.Instance;
@@ -33,7 +45,7 @@ namespace DotNet
       {
         project.OnSymbolAssemblyResolve += OnSymbolAssemblyResolve;
 
-        def context = DependentPropertyEvalContext();
+        def context = DependentPropertyEvalContextEx(project);
         def manager : ManagerClass =
           if (project is NitraProject(Manager = manager) as p)
           {
@@ -47,8 +59,6 @@ namespace DotNet
 
         context.CancellationToken = cancellationToken;
         def rootNamespace = NamespaceSymbol();
-
-        rootNamespace.MemberTable = TableScope("<root namespace>", rootNamespace);
         rootNamespace.DeclaredIn  = null;
         rootNamespace.FullName    = "";
 
@@ -60,15 +70,16 @@ namespace DotNet
         unless (manager.IsIntelliSenseMode)
           manager.BeforeSaveAssembly += writeMetadataCallback;
 
-        //def rootScope = CreateNemerleSymbols(cancellationToken, manager, rootNamespace, context);
-        def rootScope = rootNamespace.MemberTable;
+        def rootScope = CreateNemerleSymbols(cancellationToken, manager, rootNamespace, context);
         rootNamespace.EvalProperties(context);
+        context.RootNamespace = rootNamespace;
 
         // ensure static symbols are created
         _ = WellKnownSymbols.GetSymbolsToEvaluate();
 
         LoadNitraMetadata(cancellationToken, project, manager, rootNamespace);
-        (context, rootNamespace, rootScope, manager)
+        CreatePredefinedSymbols(rootNamespace.MemberTable, context);
+        ProjectData(context, rootNamespace, rootScope, manager)
       }
       finally
       {
@@ -80,10 +91,10 @@ namespace DotNet
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
       def oldManager = ManagerClass.Instance;
-      def (context, rootNamespace, rootScope, manager) = DecomposeData(data);
+      def (context, rootNamespace, rootScope, manager) = data :> ProjectData;
 
       context.CancellationToken = cancellationToken;
-      
+
       try
       {
         ManagerClass.Instance = manager;
@@ -91,12 +102,12 @@ namespace DotNet
         def removeParsedSymbols(tableScope : TableScope)
         {
           tableScope.Undefine(_.IsParsed);
-          foreach (symbols in tableScope.Symbols)
+          foreach (symbols in tableScope.Symbols.ToArray())
           foreach (symbol is NamespaceSymbol in symbols)
             removeParsedSymbols(symbol.MemberTable);
         }
         removeParsedSymbols(rootNamespace.MemberTable);
-        
+
         def evalHost = NitraProjectEvalPropertiesHost(files, rootNamespace, rootScope);
         evalHost.EvalProperties(context, "SymbolHierarchy", 0);
         evalHost.EvalProperties(context, "Scopes", 1);
@@ -105,33 +116,37 @@ namespace DotNet
       finally ManagerClass.Instance = oldManager;
     }
 
+    public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+    {
+      IgnoreParams();
+    }
+
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
     {
-      def (_, rootNamespace, _, _) = DecomposeData(data);
+      def rootNamespace = (data :> ProjectData).RootNamespace;
       // TODO: cache symbols an use it cache to find symbol by id
       def findSymbol(tableScope : TableScope) : ValueOption[DeclarationSymbol]
       {
         foreach (symbols in tableScope.Symbols)
-        foreach (symbol is NamespaceSymbol in symbols)
+        foreach (symbol in symbols)
         {
           when (symbol.Id == symbolId)
             return ValueOption.Some(symbol);
-            
-          when (symbol.IsMemberTableEvaluated)
+
+          when (symbol is NamespaceSymbol as ns)
           {
-            def result = findSymbol(symbol.MemberTable);
-          
+            def result = findSymbol(ns.MemberTable);
             when (result.IsSome)
               return result;
           }
         }
-        
+
         ValueOption.None()
       }
-      
+
       findSymbol(rootNamespace.MemberTable)
     }
-    
+
     public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
     {
       match (symbol)
@@ -141,29 +156,35 @@ namespace DotNet
         | _ => type = null; typeArgs = ImmutableArray.Empty; false
       }
     }
-    
-    public DecomposeData(data : object) : DependentPropertyEvalContext * NamespaceSymbol * TableScope * ManagerClass
+
+    public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
     {
-      data :> (DependentPropertyEvalContext * NamespaceSymbol * TableScope * ManagerClass)
+      def rootNamespace = (data :> ProjectData).RootNamespace;
+      _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
     }
-    
+
+    // end of IProjectSupport implementation
+
     class StubCompiler : ManagerClass
     {
       public this(project : Project)
       {
         base (CompilationOptions());
         _isIntelliSenseMode = true;
+        this.Options.ColorMessages = false;
         def libs            = project.Libs;
         def localPath       = IO.Path.GetFullPath(Uri(typeof(ManagerClass).Assembly.CodeBase).LocalPath);
         def macroLibPath    = project.ProjectDir;
         def compilerDir     = IO.Path.GetDirectoryName(localPath);
         this.Options.DoNotLoadMacros = true;
-        this.Options.MacrosToLoad ::= macroLibPath;
+        unless (string.IsNullOrEmpty(macroLibPath))
+          this.Options.MacrosToLoad ::= macroLibPath;
         this.Options.LibraryPaths ::= compilerDir;
         foreach (lib in libs)
         {
           | FullNameLibReference     => this.Options.ReferencedLibraries ::= lib.ToString();
           | FileLibReference as file => this.Options.ReferencedLibraries ::= IO.Path.GetFullPath(IO.Path.Combine(project.ProjectDir, file.Path));
+          | ProjectReference as prj  => this.Options.ReferencedLibraries ::= prj.Path;
           | _ => assert2(false, "Not supported LibReference");
         }
         InitCompiler ();
@@ -232,6 +253,56 @@ namespace DotNet
       }
     }
 
+    private static CreatePredefinedSymbols(rootScope : TableScope, context : DependentPropertyEvalContextEx) : void
+    {
+      def nitraNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](rootScope, Location.Default, "Nitra", context, () => NamespaceSymbol());
+
+      context.Language = GetOrCreatePredefinedSymbol.[LanguageSymbol](nitraNs.MemberTable, Location.Default, "Language", context,
+        fun()
+        {
+          def symbol = LanguageSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+
+      def declarationsNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](nitraNs.MemberTable, Location.Default, "Declarations", context, () => NamespaceSymbol());
+
+      def scopedAstSymbol = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "ScopedAst", context,
+        fun()
+        {
+          def symbol = TopAstSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+
+      context.Declaration = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "Declaration", context,
+        fun()
+        {
+          def symbol = TopAstSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol.BaseTypeSet.AddParent(scopedAstSymbol);
+          symbol
+        });
+      //assert2(context.Declaration != null);
+    }
+
+    private static GetOrCreatePredefinedSymbol[TSymbol](scope : TableScope, loc : Nitra.Location, name : string, context : DependentPropertyEvalContext, symbolFactory : Func[DeclarationSymbol]) : TSymbol
+      where TSymbol : DeclarationSymbol
+    {
+      def result = Reference(loc, name).Bind(scope);
+      if (result.IsSymbolEvaluated)
+      {
+        result.Symbol
+      }
+      else
+      {
+        def decl   = PredefinedDeclaration(Name(loc, name), symbolFactory);
+        def symbol = decl.DefineSymbol(scope) :> TSymbol;
+        symbol.EvalProperties(context);
+        symbol
+      }
+    }
+
     private static SaveNitraMetadata(project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
     {
       def metadataFileName = manager.Options.OutputFileName + ".nitrametadata2";
@@ -248,25 +319,25 @@ namespace DotNet
       def nodeToSymbolMap   = Hashtable.[TypeInfo, TypeSymbol]();
       def aliases           = List();
 
-      def createTypeParameters(tycon : TypeInfo) : array[TypeParameterSymbol]
+      def createTypeParameters(tycon : TypeInfo) : ImmutableArray[TypeParameterSymbol]
       {
         def count = tycon.TyparmsCount;
         if (count == 0)
-          AstUtils.NoTypeParameters
+          ImmutableArray.Empty
         else
         {
-          def result = array(count);
+          def result = ImmutableArray.CreateBuilder(count);
           mutable typarms = tycon.Typarms;
-          for (mutable i = 0; i < result.Length; ++i)
+          for (mutable i = 0; i < count; ++i)
           {
             def tp    = typarms.Head;
             def name  = NRB.Name(loc, tp.Name);
             def tps   = TypeParameterDeclaration(name, tp).DefineSymbol();
             tps.EvalProperties(context);
-            result[i] = tps;
+            result.Add(tps);
             typarms   = typarms.Tail;
           }
-          result
+          result.MoveToImmutable()
         }
       }
       def makeTypeParameters(symbol : GenericTypeSymbol, tycon : TypeInfo) : void
@@ -285,9 +356,11 @@ namespace DotNet
           match (kind)
           {
             | Interface
+            | Variant      // temporary treat Variants as class
+            | VariantOption
             | Class =>
               def symbol : TopGenericTypeSymbol =
-                        if (tycon.IsDelegate) ExternalTypeDeclaration.[TopDelegateSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable) 
+                        if (tycon.IsDelegate) ExternalTypeDeclaration.[TopDelegateSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else if (tycon.IsInterface) ExternalTypeDeclaration.[TopInterfaceSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else if (tycon.IsValueType) ExternalTypeDeclaration.[TopStructSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable)
                   else                        ExternalTypeDeclaration.[TopClassSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
@@ -297,7 +370,7 @@ namespace DotNet
               nodeToSymbolMap[tycon] = symbol;
               symbol.Scope = EmptyScope.Instance; // temp
               symbol.EvalProperties(context);
-                
+
             | Alias         =>
               def symbol = ExternalTypeDeclaration.[TypeAliasSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
               makeTypeParameters(symbol, tycon);
@@ -307,9 +380,7 @@ namespace DotNet
 
               nodeToSymbolMap[tycon] = symbol;
               symbol.EvalProperties(context);
-          
-            | Variant       => ()
-            | VariantOption => ()
+
             | Enum          =>
               def symbol = ExternalTypeDeclaration.[TopEnumSymbol](name, tycon).DefineSymbol(declaredIn.MemberTable);
               nodeToSymbolMap[tycon] = symbol;
@@ -319,35 +390,42 @@ namespace DotNet
           }
         }
         node.EnsureCached();
-   
+
         match (node.Value)
         {
           | No                               => ()
           | MacroCall                        => ()
           | null                             => ()
-          | NamespaceReference               => 
+          | NamespaceReference               =>
             when (cancellationToken.IsCancellationRequested)
               return;
             def name   = NRB.Name(loc, node.PartName);
+            //assert2(!(node.FullName is ["Nemerle", "Core"]));
             def symbol = ExternalNamespaceDeclaration(name, node).DefineSymbol(declaredIn.MemberTable);
             unless (symbol.IsDeclaredInEvaluated)
               symbol.DeclaredIn = declaredIn;
             symbol.EvalProperties(context);
-            foreach (subNode in node.Children.Values.ToArray())
-              loadNsMemebers(subNode, symbol);
-            
+            node.EnsureCached();
+            if (node.Children != null)
+              foreach (subNode in node.Children.Values.ToArray())
+                loadNsMemebers(subNode, symbol);
+            else
+            {
+              assert2(true);
+            }
+
           | Cached(tycon) =>  addTopType(node, tycon);
           | CachedAmbiguous(elems)       => foreach (e in elems) addTopType(node, e);
           | NotLoaded(_externalType)     => assert2(false)
           | NotLoadedList(_externalType) => assert2(false)
         }
       }
-      
+
       rootNamespace.EvalProperties(context);
-      
+
       foreach (node in nemerleNsRoot.Children.Values.ToArray())
         loadNsMemebers(node, rootNamespace);
-      
+
       def nodeToSymbolMap = nodeToSymbolMap;
 
       foreach (alias in aliases)
@@ -355,11 +433,21 @@ namespace DotNet
         def decl     = alias.FirstDeclarationOrDefault :> IExternalTypeDeclaration;
         def a        = decl.NemerleTypeInfo.GetTydecl() :> Typedtree.TypeDeclaration.Alias;
         def typeInfo = a.ty.TypeInfo;
+        def fullName = a.ty.ToString();
         alias.Replacement =
           if (typeInfo != null)
-            Ref.Some(loc, nodeToSymbolMap[typeInfo])
+          {
+            mutable value;
+            if (nodeToSymbolMap.TryGetValue(typeInfo, out value))
+              Ref.CreateBind(loc, value)
+            else
+            {
+              assert2(false);
+              Ref.CreateBind(loc, fullName, BindResult.Nil())
+            }
+          }
           else
-            Ref.Unresolved(loc, a.ty.ToString(), ResolutionSource.Unknown());
+            Ref.CreateBind(loc, fullName, BindResult.Nil())
       }
 
       def setParents(ns : NamespaceSymbol) : void
@@ -386,9 +474,9 @@ namespace DotNet
           }
         }
       }
-      
+
       setParents(rootNamespace);
-      
+
       def bindTuple(scope : Scope, typeParameterCoiunt : int) : Ref[GenericContainerTypeSymbol]
       {
         def alg(symbol : GenericContainerTypeSymbol) : ValueOption[GenericContainerTypeSymbol]
@@ -399,13 +487,13 @@ namespace DotNet
             ValueOption.None()
         }
 
-        scope.Bind(Reference(loc, "Tuple")).Resolve.[GenericContainerTypeSymbol](alg)
+        Reference(loc, "Tuple").Bind(scope).Resolve.[GenericContainerTypeSymbol](alg)
       }
       def bind(scope : Scope, name : string) : Ref[NamespaceSymbol]
       {
-        scope.Bind(Reference(loc, name))
+        Reference(loc, name).Bind(scope)
       }
-      
+
       def makeTuples() : void
       {
         def nemerleNs = bind(rootNamespace.MemberTable, "Nemerle");
@@ -430,12 +518,12 @@ namespace DotNet
           symbol.EvalProperties(context);
         }
       }
-      
-      
+
+
       makeTuples();
-      
+
       def res1 = bind(rootNamespace.MemberTable, "Nemerle");
-      
+
       when (res1.IsSymbolEvaluated)
       {
         def res2 = bind(res1.Symbol.MemberTable, "Core");
@@ -445,15 +533,15 @@ namespace DotNet
 
       rootNamespace.MemberTable
     }
-  
+
     static FixedTypeToTypeRef(ti : TypeInfo, typeMap : Hashtable[TypeInfo, TypeSymbol], loc : Nitra.Location, t : Nemerle.Compiler.TypeVar, context : DependentPropertyEvalContext, pos : int = -1) : TypeSymbol
     {
       match (t)
       {
-        | FixedType.Class(ti, []) => 
+        | FixedType.Class(ti, []) =>
           def sym = typeMap[ti];
           sym
-          
+
         //| FixedType.Class(ti, args) =>
         //  def constructedType = AstUtils.CreateConstructedTypeSymbol(file, span);
         //  def sym = typeMap[ti] :> GenericTypeSymbol;
@@ -461,7 +549,7 @@ namespace DotNet
         //  def resultArgs = array(args.Length);
         //  constructedType
 
-        | FixedType.StaticTypeVarRef(staticTypeVar) => 
+        | FixedType.StaticTypeVarRef(staticTypeVar) =>
           null
 
         | _ => null
@@ -541,7 +629,6 @@ namespace DotNet
       FullName = fullName;
     }
 
-    private         _fullName : string;
     private mutable _source   : SourceSnapshot;
 
     public override Project     : Project        { get; }

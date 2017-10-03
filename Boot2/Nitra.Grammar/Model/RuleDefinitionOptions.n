@@ -42,6 +42,14 @@ namespace Nitra.Model
     public Arity                         : int             { get; private set; }
     public IsDynamicSyntaxExtender       : bool            { get; private set; }
     public IsDynamicSyntaxExtentionPoint : bool            { get; private set; }
+    public IsSplitAtCompletionPosition   : bool            { get; private set; }
+    public PreferIfConflictWithList      : list[ExtensionRuleSymbol] { get; private set; default []; }
+
+    public AddPreferIfConflictWith(_loc : Located, symbol : ExtensionRuleSymbol) : RuleDefinitionOptions
+    {
+      surroundwith(newOptions)
+        newOptions.PreferIfConflictWithList = symbol :: newOptions.PreferIfConflictWithList;
+    }
 
     public SetDynamicSyntaxExtentionPoint(_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsDynamicSyntaxExtentionPoint  = value }
     public SetArity                      (_loc : Located, value : int)             : RuleDefinitionOptions { surroundwith(newOptions) newOptions.Arity                          = value }
@@ -70,8 +78,9 @@ namespace Nitra.Model
         newOptions.IsKeyword  = value;
       }
     }
-    public SetReference             (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsReference             = value }
-    public SetName                  (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsName                  = value }
+    public SetReference             (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsReference                 = value }
+    public SplitAtCompletionPosition(_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsSplitAtCompletionPosition = value }
+    public SetName                  (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsName                      = value }
 
     public this() { }
 
@@ -91,7 +100,9 @@ namespace Nitra.Model
           , arity                          = original.Arity
           , isDynamicSyntaxExtender        = original.IsDynamicSyntaxExtender
           , isDynamicSyntaxExtentionPoint  = original.IsDynamicSyntaxExtentionPoint
-          )
+          , isSplitAtCompletionPosition    = original.IsSplitAtCompletionPosition
+          , preferIfConflictWithList       = original.PreferIfConflictWithList
+          );
     }
 
     public static CreateTokenRule()          : RuleDefinitionOptions
@@ -111,7 +122,9 @@ namespace Nitra.Model
           , arity                         = 0
           , isDynamicSyntaxExtender       = false
           , isDynamicSyntaxExtentionPoint = false
-          )
+          , isSplitAtCompletionPosition   = false
+          , preferIfConflictWithList      = []
+          );
       }
 
 

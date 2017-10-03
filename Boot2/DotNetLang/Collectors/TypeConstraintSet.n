@@ -33,7 +33,14 @@ namespace DotNet
 
     public this(context : DependentPropertyEvalContext)
     {
-      context.NotifyCollectorCreated(out CreatedOnStage, out CreatedOnPass);
+      if (context != null)
+        context.NotifyCollectorCreated(out CreatedOnStage, out CreatedOnPass);
+      else
+      {
+        CreatedOnStage = -1;
+        CreatedOnPass = -1;
+      }
+
       _baseTypes    = HashSet();
     }
 
@@ -43,9 +50,9 @@ namespace DotNet
 
     private         _baseTypes : HashSet[TypeSymbol];
     private mutable _flags     : TypeConstraint;
-    
+
     public SpecialConstraintMask : TypeConstraint { get { _flags } }
-    
+
     public BaseTypes : Seq[TypeSymbol] { get { _baseTypes } }
 
     [Collect]

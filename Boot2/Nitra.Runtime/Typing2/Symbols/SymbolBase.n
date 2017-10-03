@@ -1,4 +1,4 @@
-﻿using Nitra.Internal;
+using Nitra.Internal;
 
 using Nemerle;
 using Nemerle.Assertions;
@@ -31,6 +31,7 @@ namespace Nitra.Declarations
 
     public Id          : int    { get { _id } }
     public IsNameValid : bool   { get { _nameId > 0 } }
+    public NameId      : int    { get { _nameId } }
     public Name        : string { get { if (_nameId > 0) StringIndex.GetText(_nameId) else "<invalid name>" } }
     public InitialName : string { get { if (_nameId < 0) StringIndex.GetText(~_nameId) else Name } }
 
@@ -51,7 +52,7 @@ namespace Nitra.Declarations
 
     /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
     /// If return value is 0 the name of symbol is not set.
-    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous). 
+    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
     ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
     ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
     public TryGetNameId() : int { _nameId }
@@ -139,6 +140,40 @@ namespace Nitra.Declarations
       }
     }
 
+    public IsParsed : bool
+    {
+      get
+      {
+        match (_declarations)
+        {
+          | null                     => false
+          | d   is Declaration       => d.IsParsed
+          | lst is list[Declaration] =>
+            foreach (decl when decl.IsParsed in lst)
+              return true;
+            false
+
+          | _ => assert(false)
+        }
+      }
+    }
+
+    /// <summary>Call the callback for symbol and each nested symbol.</summary>
+    /// <param name="getNestedSymbol">Returns nested symbol for a symbol.</param>
+    /// <param name="callback">Call for each found symbol. If 'callback' returns true, the symbols visiting will be stopped..</param>
+    /// <returns>True if visiting was stopped by 'callback'.</returns>
+    public VisitChildrenAndSelf(getNestedSymbol : Func[DeclarationSymbol, Seq[DeclarationSymbol]], callback : Predicate[DeclarationSymbol]) : bool
+    {
+      def symbol = this :> DeclarationSymbol;
+      when (symbol.IsParsed && callback(symbol))
+        return true;
+
+      foreach (childSymbol when childSymbol.VisitChildrenAndSelf(getNestedSymbol, callback) in getNestedSymbol(symbol))
+        return true;
+
+      false
+    }
+
     public AddDeclaration([NotNull] newDeclaration : Declaration) : void
     {
       _declarations =
@@ -190,7 +225,12 @@ namespace Nitra.Declarations
       }
     }
 
-    internal UpdateName(newId : int) : void
+    public UpdateName(name : string) : void
+    {
+      UpdateName(StringIndex.GetId(name));
+    }
+    
+    public UpdateName(newId : int) : void
     {
       when (_nameId != newId)
       {
@@ -223,13 +263,24 @@ namespace Nitra.Declarations
       VNone()
     }
 
-    public virtual ToXaml() : string
+    public virtual MakeHint(symbolCache : ISymbolCache) : string
     {
-      def symbol  = this :> DeclarationSymbol;
-      def builder = StringBuilder(symbol.Name);
-      when (symbol.IsKindEvaluated)
-        _ = builder.Append(" <Span Foreground = 'blue'>").Append(symbol.Kind).Append("</Span>");
-      builder.ToString();
+      def builder = StringBuilder();
+      try
+      {
+        def symbol  = this :> DeclarationSymbol;
+        symbolCache.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ").MakeHintMlPath(symbol, ".", needSubhint=false)
+            .MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public virtual GetTable(tableName : string) : ValueOption[TableScope]
+    {
+      _ = tableName;
+      VNone()
     }
 
     public override ToString() : string

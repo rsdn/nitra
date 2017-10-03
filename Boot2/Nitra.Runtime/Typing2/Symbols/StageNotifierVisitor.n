@@ -15,7 +15,7 @@ namespace Nitra
   {
     mutable        _stage          : int;
     [RecordIgnore] _visitedSymbols : HashSet[DeclarationSymbol] = HashSet();
-    
+
     public Notify(ast : IAst, stage : int) : void
     {
       _stage = stage;

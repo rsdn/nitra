@@ -1,4 +1,4 @@
-﻿using Nitra.Declarations;
+using Nitra.Declarations;
 using Nitra.Serialization2;
 
 using System;
@@ -23,25 +23,39 @@ namespace Nitra.Declarations
     Name                      : string      { get; }
     InitialName               : string      { get; }
     IsNameValid               : bool        { get; }
+    NameId                    : int         { get; }
     Owner                     : TableScope  { get; }
     FirstDeclarationOrDefault : Declaration { get; }
     DeclarationsCount         : int         { get; }
     HasDeclarations           : bool        { get; }
     HasParsedDeclarations     : bool        { get; }
+    IsParsed                  : bool        { get; }
 
     GetDeclarationsUntyped() : Seq[Declaration];
+    VisitChildrenAndSelf(getCildren : Func[DeclarationSymbol, Seq[DeclarationSymbol]], callback : Predicate[DeclarationSymbol]) : bool;
+
     AddDeclaration(newDeclaration : Declaration) : void;             // TODO: remove from public interface
     RemoveDeclarations(shouldRemove : Predicate[Declaration]) : int; // TODO: remove from public interface
-	/// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
-	/// If return value is 0 the name of symbol is not set.
-	/// If return value is less then 0 the name of symbol set more then one time (is ambiguous). 
-	///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
-	///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
-	TryGetNameId() : int;
+    /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
+    /// If return value is 0 the name of symbol is not set.
+    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
+    ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
+    ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
+    TryGetNameId() : int;
     CanMerge(candidate : Declaration) : bool;
     IsSameIdentity(candidate : Declaration) : bool;
     AfterStage(stage : int) : void;
     DecomposeType() : ValueOption[TypeStructure];
-    ToXaml() : string;
+    MakeHint(symbolCache : ISymbolCache) : string;
+    GetTable(tableName : string) : ValueOption[TableScope]
+  }
+
+  public module DeclarationExtensions
+  {
+    public EmitSymbol(this declaration : Declaration, symbol : DeclarationSymbol, context : DependentPropertyEvalContext) : void
+    {
+      _ = declaration;
+      context.EmitSymbol(symbol)
+    }
   }
 }

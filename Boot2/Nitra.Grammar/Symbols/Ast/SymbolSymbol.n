@@ -1,4 +1,4 @@
-using Nitra.Model;
+﻿using Nitra.Model;
 using Nitra.ProjectSystem;
 using Nitra.Serialization;
 

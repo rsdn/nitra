@@ -3,6 +3,8 @@ using Nitra.Declarations;
 
 using Nemerle.Collections;
 
+using System.Collections.Immutable;
+
 using SCG = System.Collections.Generic;
 
 namespace DotNet
@@ -12,14 +14,16 @@ namespace DotNet
     symbol
     {
       in TypeInfo : GenericTypeSymbol;
-      in Args     : SCG.IList[TypeSymbol];
+      in Args     : ImmutableArray[TypeSymbol];
     }
   }
-  
+
   declaration TopConstructedType : ConstructedType
   {
     symbol
     {
+      MakeHint = ConstructedTypeImpl.MakeHint(this);
+
       Scope = TopSubstScope(TypeInfo, TypeInfo.Scope, Args);
     }
   }
@@ -30,6 +34,7 @@ namespace DotNet
     {
       in Parent : TypeSymbol; //TODO: excude TypeParameterSymbol
 
+      MakeHint = ConstructedTypeImpl.MakeHint(this);
       Scope = NestedSubstScope(TypeInfo, TypeInfo.Scope, Args, Parent);
     }
   }

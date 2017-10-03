@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra;
 using Nitra.Declarations;
@@ -21,8 +21,7 @@ namespace Nitra.Ast
   {
     symbol
     {
-      ToString = "Void";
-      ToXaml = ToString();
+      ToString = "void";
     }
   }
   declaration RuleListType    : RuleType
@@ -31,8 +30,7 @@ namespace Nitra.Ast
     {
       in ElemType  : RuleTypeSymbol;
       Scope    = ListRuleTypeScope(this);
-      ToString = "List[" + ElemType + "]";
-      ToXaml   = ToString();
+      ToString = ElemType + "*";
 
       DecomposeType =
         if (IsElemTypeEvaluated)
@@ -47,8 +45,7 @@ namespace Nitra.Ast
     {
       in ElemTypes : IList[RuleTypeSymbol];
       Scope    = TupleRuleTypeScope(this);
-      ToString = string.Join(" * ", ElemTypes);
-      ToXaml   = ToString();
+      ToString = "(" + string.Join(", ", ElemTypes) + ")";
 
       DecomposeType =
         if (IsElemTypesEvaluated)
@@ -63,8 +60,7 @@ namespace Nitra.Ast
     {
       in ValueType : RuleTypeSymbol;
       Scope    = OptionRuleTypeScope(this);
-      ToString = "option(" + ValueType + ")";
-      ToXaml   = ToString();
+      ToString = ValueType + "?";
 
       DecomposeType =
         if (IsValueTypeEvaluated)
@@ -76,10 +72,6 @@ namespace Nitra.Ast
   abstract declaration RuleCharsType : RuleType { }
   declaration RuleLiteralType : RuleCharsType
   {
-    symbol
-    {
-      ToString = "Literal";
-      ToXaml = ToString();
-    }
+    symbol { ToString = "chars"; }
   }
 }

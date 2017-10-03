@@ -1,24 +1,63 @@
 ﻿using DotNet;
-
 using Nitra.Declarations;
+using System.Collections.Immutable;
 
 namespace Nitra.Ast
 {
-  declaration Language : NamespaceMemberDeclaration, Container
+  declaration Language : NamespaceMemberDeclaration, SupportsInheritanceType
   {
     symbol
     {
       Kind      = "language";
       SpanClass = NitraLang.LanguageSpanClass;
-      Scope     = MemberTable;
+      Scope     = BaseTypeSet.ParentFullScope.HideWith(MemberTable);
+
+      in Company                  : string;
+      in Authors                  : string;
+      in Description              : string;
+      in Copyright                : string;
+      in LicenseUrl               : string;
+      in RequireLicenseAcceptance : bool;
+      in FileExtensions           : ImmutableArray[string];
+      in SyntaxModules            : ImmutableArray[SyntaxModuleSymbol];
+      in StartRule                : ValueOption[SyntaxRuleSymbol];
+
+      CanMerge = candidate is Language && FirstDeclarationOrDefault is PredefinedDeclaration;
     }
 
-    Parent.Scope = Scope;
+    Symbol.BaseTypeSet |= AstUtils.FilterResolvedLanguage(TypeBase.Ref);
+    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForLanguage(context, Symbol);
+    TypeBase.Scope = Scope;
 
-    Members.ContainingTable = Symbol.MemberTable;
-    Members.Scope = Scope.HideWith(Symbol.MemberTable);
+    Members.ContainingTable   = Symbol.MemberTable;
+    Members.Scope             = Scope.HideWith(Symbol.MemberTable);
+    Members.ExtensionSetIn    = FileExtensionCollector();
+    Members.SyntaxModuleSetIn = SyntaxModuleCollector();
+    Members.DeclaringLanguage = Symbol;
 
-    Parent  : QualifiedReference?;
+    Symbol.Company                  = if (Company.HasValue)     Company.Value.Name.ValueOrDefault     else "";
+    Symbol.Authors                  = if (Authors.HasValue)     Authors.Value.Text.ValueOrDefault     else "";
+    Symbol.Description              = if (Description.HasValue) Description.Value.Text.ValueOrDefault else "";
+    Symbol.Copyright                = if (Copyright.HasValue)   Copyright.Value.Text.ValueOrDefault   else "";
+    Symbol.LicenseUrl               = if (LicenseUrl.HasValue)  LicenseUrl.Value.Text.ValueOrDefault  else "";
+    Symbol.RequireLicenseAcceptance = RequireLicenseAcceptance.HasValue;
+    Symbol.FileExtensions           = Members.ExtensionSetOut.ToImmutable();
+    Symbol.SyntaxModules            = Members.SyntaxModuleSetOut.ToImmutable();
+    Symbol.StartRule                = StartSyntaxModuleReference.RuleSymbol;
+
     Members : LanguageMember*;
+
+    decompose Members
+    {
+      Company                    : Company?;
+      Authors                    : Authors?;
+      Description                : Description?;
+      Copyright                  : Copyright?;
+      LicenseUrl                 : LicenseUrl?;
+      RequireLicenseAcceptance   : RequireLicenseAcceptance?;
+      StartSyntaxModuleReference : StartSyntaxModuleReference?;
+    }
+
+    EmitSymbol(Symbol, context);
   }
 }

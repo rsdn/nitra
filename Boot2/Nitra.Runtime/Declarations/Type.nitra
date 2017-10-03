@@ -1,9 +1,10 @@
-﻿namespace Nitra.Declarations
+namespace Nitra.Declarations
 {
   abstract declaration Type : BindableAst
   {
     symbol
     {
+    stage 1:
       out TypeSubst : TypeSymbol = this;
       SpanClass = Language.TypeSpanClass;
       Kind = "type";

@@ -1,4 +1,6 @@
-﻿using DotNet;
+using Nitra.Ast.AstMembers;
+using System.Text;
+using DotNet;
 
 using Nemerle;
 using Nemerle.Imperative;
@@ -18,7 +20,7 @@ using System.Linq;
 
 namespace Nitra
 {
-  module AstUtils
+  public module AstUtils
   {
     public static GetAstId : int = StringIndex.GetId("GetAst");
 
@@ -37,21 +39,45 @@ namespace Nitra
       inMap.ReplaceRange(xs)
     }
 
-    public MakePlural(parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    public MakeName(loc : Location, value : string, userDefined : bool) : ParsedValue[string * bool]
     {
-      if (parsedValue.HasValue)
-        ParsedValue(parsedValue.Span, (JetBrains.Util.NounUtil.GetPlural(parsedValue.Value[0]), parsedValue.Value[1]))
-      else
-        parsedValue
+      def text  = loc.GetText().TrimEnd();
+      def start = loc.Span.StartPos;
+      ParsedValue(NSpan(start, start + text.Length), (value, userDefined))
+    }
+
+    public MakeName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    {
+      unless (parsedValue.HasValue)
+        return parsedValue;
+
+      def (value, userDefined) = parsedValue.Value;
+      MakeName(loc, value, userDefined)
+    }
+
+    public MakeOptionalName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    {
+      unless (parsedValue.HasValue)
+        return parsedValue;
+
+      MakeName(loc, parsedValue.Value[0] + "Opt", parsedValue.Value[1])
+    }
+
+    public MakePlural(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    {
+      unless (parsedValue.HasValue)
+        return parsedValue;
+
+      MakeName(loc, JetBrains.Util.NounUtil.GetPlural(parsedValue.Value[0]), parsedValue.Value[1])
     }
 
     public NMakeLiteralName(parsedValue : ParsedValue[string], literals : Map[string, string]) : ParsedValue[string * bool]
     {
       unless (parsedValue.HasValue)
         return ParsedValue(parsedValue.Span.StartPos);
-        
+
       def value = parsedValue.ValueOrDefault;
-      
+
       if (literals.Find(value) is Some(name))
         ParsedValue(parsedValue.Span, (name, true))
       else if (Utils.IsIdentifier(value))
@@ -73,13 +99,21 @@ namespace Nitra
       when (reference.IsSymbolEvaluated)
       when (reference.Symbol is SyntaxModuleSymbol/*(IsLiteralsEvaluated = true)*/ as m)
         return literals.ReplaceRange(m.Literals);
-        
+
       literals
     }
-    
+
     public static Init[T](this context : DependentPropertyEvalContext, symbol : T) : T
       where T: DeclarationSymbol
     {
+      symbol.EvalProperties(context);
+      symbol
+    }
+
+    public static Init[T](this context : DependentPropertyEvalContext, symbol : T, name : string) : T
+      where T: DeclarationSymbol
+    {
+      (symbol :> SymbolBase).UpdateName(name);
       symbol.EvalProperties(context);
       symbol
     }
@@ -98,12 +132,12 @@ namespace Nitra
         else
           return WellKnownSymbols.VoidRuleType;
       }
-        
+
       def args = List();
-      
+
       when (CanBeTupleElem(arg1))
         args.Add(arg1);
-        
+
       foreach (arg when CanBeTupleElem(arg) in restArgs)
         args.Add(arg);
 
@@ -149,7 +183,7 @@ namespace Nitra
       unless (CanBeTupleElem(valueType))
         return WellKnownSymbols.VoidRuleType;
 
-      def symbol = RuleOptionTypeSymbol();
+      def symbol      = RuleOptionTypeSymbol();
       symbol.ValueType = valueType;
       context.Init(symbol)
     }
@@ -180,11 +214,7 @@ namespace Nitra
 
     public CreateListAstType(loc : ILocated, elemType : AstTypeSymbol, context : DependentPropertyEvalContext) : ListAstTypeSymbol
     {
-      def name       = Name(loc.Location, "#List");
-      def decl       = ListAstType(loc.Location, name);
       def listSymbol = ListAstTypeSymbol();
-      listSymbol.AddDeclaration(decl);
-      name.Symbol    = listSymbol;
       listSymbol.ElemType = elemType;
       listSymbol.EvalProperties(context);
       listSymbol
@@ -202,11 +232,7 @@ namespace Nitra
 
     public CreateOptionAstType(loc : ILocated, valueType : AstTypeSymbol, context : DependentPropertyEvalContext) : OptionAstTypeSymbol
     {
-      def name         = Name(loc.Location, "#Option");
-      def decl         = OptionAstType(loc.Location, name);
       def optionSymbol = OptionAstTypeSymbol();
-      optionSymbol.AddDeclaration(decl);
-      name.Symbol      = optionSymbol;
       optionSymbol.ValueType = valueType;
       optionSymbol.EvalProperties(context);
       optionSymbol
@@ -222,11 +248,7 @@ namespace Nitra
 
     public CreateFunctionType(loc : ILocated, parameters : IList[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
     {
-      def name = Name(loc.Location, "#Func");
-      def decl = FunctionType(loc.Location, name);
       def funcSymbol = FunctionTypeSymbol();
-      funcSymbol.AddDeclaration(decl);
-      name.Symbol = funcSymbol;
       funcSymbol.Parameters = parameters;
       funcSymbol.ReturnType = returnType;
       funcSymbol.EvalProperties(context);
@@ -235,14 +257,12 @@ namespace Nitra
 
     public BindAstExtension(name : Reference, scope : Scope, defaultReturnType : AstTypeSymbol) : Ref[AstTypeSymbol]
     {
-      mutable candidates = LightList();
-      scope.BindMany(name, ref candidates);
-      match (candidates.Count)
-      {
-        | 0 => Ref.Some(name.Location, defaultReturnType)
-        | 1 => Ref.Some(name.Location, candidates.FirstItem)
-        | _ => Ref.Ambiguous(name.Location, candidates.ToNList(), ResolutionSource.Bind(scope))
-      }
+      def bindRes = scope.Bind(name);
+
+      if (bindRes.IsEmpty)
+        Ref.CreateBind(name.Location, BindResult.Single(defaultReturnType))
+      else
+        Ref.CreateBind(name.Location, bindRes)
     }
 
     public CreateRuleField(parseTree : NitraSyntaxParseTree.RuleExpression) : RuleField
@@ -259,7 +279,9 @@ namespace Nitra
 
     public CreateName(loc : Location, desiredName : ParsedValue[string * bool]) : Name
     {
-      Name(loc.WithSpan(desiredName.Span), desiredName.ValueOrDefault[0] ?? "")
+      def text = desiredName.ValueOrDefault[0] ?? "";
+      def name = if (text.StartsWith("Kw", StringComparison.Ordinal)) text.Substring(2) else text;
+      Name(loc.WithSpan(desiredName.Span), name)
     }
 
     public IsLooksLikeVariableName(text : string) : bool
@@ -273,6 +295,11 @@ namespace Nitra
       ThisDeclaration(loc, Name(loc, "this"))
     }
 
+    public CreateSymbolName(astName : Name) : Name
+    {
+      Name(astName.Location, astName.Text + "Symbol")
+    }
+
     public CreateMapSyntaxName(parseTree : ParseTree) : Name
     {
       Name(parseTree.Location.FromStart(), GetAstId)
@@ -280,44 +307,27 @@ namespace Nitra
 
     public CreateMapSyntaxRef(loc : Location, scope : Scope, argumentTypes : ImmutableArray[TypeSymbol]) : Ref[MapSyntaxSymbol]
     {
-      def r = scope.Bind(Reference(loc, GetAstId));
-      r.ResolveMany(ResolveGetAstOverloads(argumentTypes))
-    }
-
-    public ResolveGetAstOverloads(argumentTypes : ImmutableArray[TypeSymbol]) : ResolveManyAlgorithm[DeclarationSymbol, MapSyntaxSymbol]
-    {
-      fun (candidates : LightList[DeclarationSymbol]) : LightList[MapSyntaxSymbol]
+      def getAstIdRef = Reference(loc, GetAstId);
+      def len = argumentTypes.Length;
+      def r = getAstIdRef.Bind(scope);
+      def isMatch(symbol : MapSyntaxSymbol) : bool
       {
-        mutable filteredByParametersCount : LightList[MapSyntaxSymbol];
+        def parms = symbol.Parameters;
+        when (parms.Count != len)
+          return false;
 
-        def e = candidates.GetEnumerator();
-        while (e.MoveNext())
+        for (mutable i = 0; i < argumentTypes.Length; ++i)
         {
-          when (e.Current is MapSyntaxSymbol as symbol)
-          when (symbol.Parameters.Count == argumentTypes.Length)
-            filteredByParametersCount.Add(symbol);
+          def p = parms[i];
+          def t = argumentTypes[i];
+          unless (p.IsTypeEvaluated)
+            return false;
+          unless (AstTypeUnifier.Instance.TryRequire(t, p.Type))
+            return false;
         }
-
-        mutable filteredByParameterTypes : LightList[MapSyntaxSymbol];
-
-        def e = filteredByParametersCount.GetEnumerator();
-        while (e.MoveNext())
-        {
-          def parms = e.Current.Parameters;
-          for (mutable i = 0; i < argumentTypes.Length; ++i)
-          {
-            def p = parms[i];
-            def t = argumentTypes[i];
-            unless (p.IsTypeEvaluated)
-              break;
-            unless (AstTypeUnifier.Instance.TryRequire(t, p.Type))
-              break;
-            filteredByParameterTypes.Add(e.Current);
-          }
-        }
-
-        filteredByParameterTypes
+        true
       }
+      r.Resolve(isMatch)
     }
 
     public TypeParseTreePatternTuple(loc : IAst, expectedType : TypeSymbol, members : Nitra.Ast.ParseTreePattern.IAstList, context : DependentPropertyEvalContext) : TypeSymbol
@@ -359,11 +369,6 @@ namespace Nitra
       returnType
     }
 
-    public IsSubtypeOf(this symbol1 : TypeSymbol, symbol2 : TypeSymbol) : bool
-    {
-      AstTypeUnifier.Instance.Require(symbol1, symbol2)
-    }
-
     public TypeOptionExpression(loc : ILocated, expectedType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
       def t = CreateOptionAstType(loc, CreateAstTypeVar(context), context);
@@ -379,7 +384,7 @@ namespace Nitra
 
     public CreateImplicitRuleTypeCast(loc : ILocated, thisType : TypeSymbol, expectedType : TypeSymbol, context : DependentPropertyEvalContext) : Ref[FunctionTypeSymbol]
     {
-      mutable validCasts = LightList();
+      mutable validCasts = BindResult.Nil();
 
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
@@ -389,20 +394,419 @@ namespace Nitra
           mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
         }
         def scope = if (thisType.IsScopeEvaluated) thisType.Scope else EmptyScope.Instance;
-        scope.FindMany.[MapSyntaxSymbol](canBeImplicitCast, ref validCasts);
+        validCasts = scope.Bind.[MapSyntaxSymbol](canBeImplicitCast);
       }
 
-      match (validCasts.Count)
+      if (validCasts.IsEmpty)
+        Ref.CreateBind(loc.Location, CreateFunctionType(loc, array[thisType], thisType, context))
+      else
+        Ref.CreateBind(loc.Location, "MapSyntaxCast", validCasts.Map(m => VSome(m.Type :> FunctionTypeSymbol)));
+    }
+
+    public FilterResolvedLanguage(refs : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[LanguageSymbol]
+    {
+      def lst = List(refs.Length);
+
+      foreach (r in refs)
       {
-        | 0 => Ref.Some(loc.Location, CreateFunctionType(loc, array[thisType], thisType, context)) // return identity function
-        | 1 => Ref.Some(loc.Location, validCasts.FirstItem.Type :> FunctionTypeSymbol)             // return type cast function
-        | _ =>
-          mutable functionTypes = [];
-          def e = validCasts.GetEnumerator();
-          while(e.MoveNext())
-            functionTypes ::= e.Current.Type :> FunctionTypeSymbol;
-          Ref.Ambiguous(loc.Location, functionTypes, ResolutionSource.Unknown())
+        def r2 = r.Resolve.[LanguageSymbol]();
+        when (r2.IsSymbolEvaluated)
+          lst.Add(r2.Symbol);
       }
+
+      lst
+    }
+
+    public ResolveStructuralPropertyType(candidates : Ref[DeclarationSymbol], context : DependentPropertyEvalContext) : Ref[TypeSymbol]
+    {
+      def resolve(candidate) : ValueOption[TypeSymbol]
+      {
+        | ast is AstTypeSymbol => VSome(ast)
+        | typeSymbol is TypeSymbol => VSome(typeSymbol)
+        | _ => VNone()
+      }
+
+      def candidates = candidates.CreateRevole(candidates.Result.Map(resolve));
+
+      if (candidates.IsAmbiguous)
+      {
+        when (candidates.Contains.[AstTypeSymbol]())// && (candidates.Contains.[ClassSymbol]() || candidates.Contains.[InterfaceSymbol]()))
+          return candidates.CreateRevole(candidates.Result.Filter(s => !(s is ClassSymbol || s is InterfaceSymbol))); // TODO: надо отследить, что у выбрасываемых символов тот же полное имя
+      }
+      else
+        when (candidates.Contains.[AstTypeSymbol]())
+          return candidates;
+
+      mutable parsedValueType;
+      def resolve(candidate) : ValueOption[TypeSymbol]
+      {
+        when (parsedValueType == null)
+          parsedValueType = context.BindFullName(1, "Nitra", "ParsedValue");
+        def constructedType = TopConstructedTypeSymbol(context, parsedValueType, ImmutableArray.Create(candidate));
+        VSome(constructedType)
+      }
+      def result = candidates.Result.Map(resolve);
+      candidates.CreateRevole(result)
+    }
+
+    public GetImplicitBaseTypeForLanguage(context : DependentPropertyEvalContext, symbol : LanguageSymbol) : Seq[TypeSymbol] -> TypeSymbol
+    {
+      def isBaseLanguage(symbol)
+      {
+        symbol.Name == "Language" && symbol.FullName == "Nitra.Language"
+      }
+
+      when (isBaseLanguage(symbol))
+        return null;
+
+      fun (parentTypes)
+      {
+        foreach (parent in parentTypes)
+          when (parent is LanguageSymbol)
+            return null;
+
+        context.GetLanguage()
+      }
+    }
+
+    public FilterResolvedAstType(refs : ImmutableArray[Ref[DeclarationSymbol]], _for_dependency : AstSymbol) : Seq[AstTypeSymbol]
+    {
+      def lst = List(refs.Length);
+
+      foreach (r in refs)
+      {
+        def r2 = r.Resolve.[AstTypeSymbol]();
+        when (r2.IsSymbolEvaluated)
+          lst.Add(r2.Symbol);
+      }
+
+      lst
+    }
+
+    public SymbolDeclarationBaseTypeSet(parents : Seq[TypeSymbol]) : Seq[SymbolDeclarationSymbol]
+    {
+      def lst = List();
+
+      foreach (parent is TopAstSymbol in parents)
+        when (parent.IsAssociatedSymbolEvaluated)
+          lst.Add(parent.AssociatedSymbol);
+
+      lst
+    }
+
+    public GetImplicitBaseTypeForDeclaration(context : DependentPropertyEvalContext, symbol : AstSymbol, _for_dependency : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[TypeSymbol] -> TypeSymbol
+    {
+      def isBaseDeclaration(symbol)
+      {
+        symbol.Name == "Declaration" && symbol.FullName == "Nitra.Declarations.Declaration"
+      }
+
+      def isDeclaration(symbol : AstSymbol)
+      {
+        symbol.IsIsDeclarationEvaluated && symbol.IsDeclaration
+      }
+
+      when (isBaseDeclaration(symbol) || !isDeclaration(symbol))
+        return null;
+
+      fun (parentTypes : Seq[TypeSymbol]) : TypeSymbol
+      {
+        foreach (parent is AstSymbol in parentTypes)
+          when (isDeclaration(parent))
+            return null;
+
+        context.GetDeclaration()
+      }
+    }
+
+    public ListAstTypeMakeHint(symbol : ListAstTypeSymbol) : string
+    {
+      MakeHintWithSuffix(symbol, "*", if (symbol.IsElemTypeEvaluated) symbol.ElemType else null, "ElemType")
+    }
+
+    public OptionAstTypeMakeHint(symbol : OptionAstTypeSymbol) : string
+    {
+      MakeHintWithSuffix(symbol, "?", if (symbol.IsValueTypeEvaluated) symbol.ValueType else null, "ValueType")
+    }
+
+    public ValueAstTypeMakeHint(symbol : ValueAstTypeSymbol) : string
+    {
+      MakeHintWithParam(symbol, if (symbol.IsValueTypeEvaluated) symbol.ValueType else null, "ValueType")
+    }
+
+    public MakeHintWithParam(symbol : DeclarationSymbol, paramOpt : DeclarationSymbol, paramName : string) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        _ = builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ").SymbolToHintMlWithSubHint(symbol);
+
+        if (paramOpt != null)
+        {
+          _ = builder.Append("&lt;");
+          _ = builder.SymbolToHintMlWithSubHint(paramOpt);
+          _ = builder.Append("&gt;");
+        }
+        else
+          _ = builder.Append("«").Append(paramName).Append(" not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public MakeHintWithSuffix(symbol : DeclarationSymbol, suffix : string, paramOpt : DeclarationSymbol, paramName : string) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        _ = builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ");
+
+        if (paramOpt != null)
+        {
+          _ = builder.SymbolToHintMlWithSubHint(paramOpt);
+          _ = builder.Append(suffix);
+        }
+        else
+          _ = builder.Append("«").Append(paramName).Append(" not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public FunctionTypeMakeHint(this builder : StringBuilder, symbolCache : ISymbolCache, symbol : FunctionTypeSymbol) : StringBuilder
+    {
+      try
+      {
+        // $"..$(Parameters; \" * \") -> $ReturnType"
+        if (symbol.IsParametersEvaluated)
+          _ = builder.JoinAnd(symbol.Parameters, (b, p) => b.MakeHintForType(symbolCache, p)).Append(" * ");
+        else
+          _ = builder.Append("«Parameters not evaluated»");
+
+        _ = builder.Append(" -> ");
+
+        if (symbol.IsReturnTypeEvaluated)
+          _ = builder.MakeHintForType(symbolCache, symbol.ReturnType);
+        else
+          _ = builder.Append("«ReturnType not evaluated»");
+
+        builder
+      }
+      catch { e => builder.HintMlException(e) }
+    }
+
+    public FunctionTypeMakeHint(symbolCache : ISymbolCache, symbol : FunctionTypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ")
+        .FunctionTypeMakeHint(symbolCache, symbol)
+        .MakeLocations(symbol)
+        .ToString()
+    }
+
+    /// Prefer a TPrefer, if the candidate contains both symbols TPrefer and other symbol types.
+    public PreferSymbolType[TCandidate, TPrefer](candidates : Ref[TCandidate]) : Ref[TCandidate]
+      where TCandidate: DeclarationSymbol
+      where TPrefer: TCandidate
+    {
+    	when (candidates.IsAmbiguous && candidates.Contains.[TPrefer]())
+        return candidates.CreateRevole(candidates.Result.Filter(s => s is TPrefer));
+
+      candidates
+    }
+
+    public ToHint(this symbol : TypeSymbol, context : DependentPropertyEvalContext) : string
+    {
+      StringBuilder().MakeHintForType(context.SymbolCache, symbol).ToString()
+    }
+
+    public MakeHintForType(this builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : StringBuilder
+    {
+      symbolCache?.CacheSymbol(type);
+      match (type)
+      {
+        | x is ListAstTypeSymbol =>
+          if (x.IsElemTypeEvaluated)
+            builder.MakeHintForType(symbolCache, x.ElemType).Append("*")
+          else
+            builder.Append("«list type not evaluated»")
+
+        | x is OptionAstTypeSymbol =>
+          if (x.IsValueTypeEvaluated)
+            builder.MakeHintForType(symbolCache, x.ValueType).Append("?")
+          else
+            builder.Append("«option type not evaluated»")
+
+        | x is ValueAstTypeSymbol =>
+          if (x.IsValueTypeEvaluated)
+            builder.Append("ValueAst[").MakeHintForType(symbolCache, x.ValueType).Append("]")
+          else
+            builder.Append("«option type not evaluated»")
+
+        | x is FunctionTypeSymbol => builder.FunctionTypeMakeHint(symbolCache, x)
+        | _ is RuleCharsTypeSymbol => builder.Append("<keyword>chars</keyword>")
+        | _ is RuleLiteralTypeSymbol => builder.Append("<keyword>string</keyword>")
+        | _ is RuleVoidTypeSymbol => builder.Append("<keyword>void</keyword>")
+        | x is RuleListTypeSymbol =>
+          if (x.IsElemTypeEvaluated)
+            builder.MakeHintForType(symbolCache, x.ElemType).Append("*")
+          else
+            builder.Append("«list type not evaluated»")
+
+        | x is RuleOptionTypeSymbol =>
+          if (x.IsValueTypeEvaluated)
+            builder.MakeHintForType(symbolCache, x.ValueType).Append("?")
+          else
+            builder.Append("«option type not evaluated»")
+
+        | x is RuleTupleTypeSymbol =>
+          if (x.IsElemTypesEvaluated)
+            builder.Append("(").Join(x.ElemTypes, MakeHintForType(_, symbolCache, _)).Append(")")
+          else
+            builder.Append("«tuple type not evaluated»")
+
+        | x is TypeVarSymbol =>
+          if (x.IsTypeEvaluated)
+            builder.MakeHintForType(symbolCache, x.Type)
+          else match (x.IsBaseTypeConstraintEvaluated, x.IsDerivedTypeConstraintEvaluated)
+          {
+            | (false, false) => builder.Append("<keyword>unbound</keyword>")
+            | (true,  false) => builder.MakeHintForType(symbolCache, x.BaseTypeConstraint).Append("+")
+            | (false,  true) => builder.MakeHintForType(symbolCache, x.DerivedTypeConstraint).Append("-")
+            | (true,   true) => builder.MakeHintForType(symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForType(symbolCache, x.DerivedTypeConstraint)
+          }
+
+        | x => builder.SymbolToHintMlWithSubHint(x)
+      }
+    }
+
+    public TypedDeclarationMakeHint(symbolCache : ISymbolCache, symbol : TypedDeclarationSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" : ")
+          .MakeHintForType(symbolCache, symbol.Type);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public RuleFieldMakeHint(symbolCache : ISymbolCache, symbol : RuleFieldSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache?.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" : ")
+          .MakeHintForType(symbolCache, symbol.Type);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public RuleAliasMakeHint(symbolCache : ISymbolCache, symbol : RuleAliasSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+
+        symbolCache?.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" <b>expanded to</b> ");
+
+        if (symbol.IsTypeSubstEvaluated)
+        {
+          def replasmebtSymbol = symbol.TypeSubst;
+          _ = builder.Append("<keyword>").HintMlEscape(replasmebtSymbol.Kind).Append("</keyword> ")
+            .MakeHintForType(symbolCache, replasmebtSymbol);
+        }
+        else
+          _ = builder.Append(<# <b><font color="Red">TypeSubst symbol not evaluated</font></b>.#>);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public StructuralPropertyMakeHint(symbolCache : ISymbolCache, symbol : StructuralPropertySymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache?.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" : ");
+
+        if (symbol.IsTypeEvaluated)
+          _ = builder.MakeHintForType(symbolCache, symbol.Type);
+        else
+          _ = builder.Append(<# <b><font color="Red">Type symbol not evaluated</font></b>.#>);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public SupportsInheritanceTypeMakeHint(symbolCache : ISymbolCache, symbol : SupportsInheritanceTypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache?.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol);
+
+        if (symbol.IsBaseTypeSetEvaluated)
+        {
+          def set = symbol.BaseTypeSet;
+          def parents = set.ParentTypes.ToArray();
+          def ancestorTypes = set.AncestorTypes.ToArray();
+          when (parents.Length > 0)
+          {
+            _ = builder.Append(" : ")
+              .Join(parents, MakeHintForType(_, symbolCache, _))
+              .Append("<br/><br/><hint value='Ancestors'>")
+              .Join(ancestorTypes, MakeHintForType(_, symbolCache, _))
+              .Append("</hint>");
+          }
+        }
+        else
+          _ = builder.Append(<# <b><font color="Red">BaseTypeSet not evaluated</font></b>.#>);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+
+    public FilterWithAstTypeSymbol(this scope : Scope) : Scope
+    {
+      def filter(symbol : DeclarationSymbol) : bool
+      {
+        | _ is AstTypeSymbol => true
+        | _ is NamespaceSymbol => true
+        | u is UsingAliasDirectiveSymbol when u.IsReplacementEvaluated && u.Replacement.IsSymbolEvaluated => filter(u.Replacement.Symbol)
+        | _ => false
+      }
+      scope.FilterWith(filter)
     }
   } // module
 } // namespace

@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using System.Text;
 using SCG = System.Collections.Generic;
 
 namespace Nitra
@@ -20,7 +21,7 @@ namespace Nitra
   public class CollectSymbolErrorsVisitor : IAstVisitor
   {
     public CompilerMessages : CompilerMessageList;
-    
+
     public this()
     {
       this(CompilerMessageList())
@@ -40,25 +41,23 @@ namespace Nitra
     {
       when (reference.IsRefEvaluated)
       {
-        
+
         def processRef(r : IRef)
         {
           if (r.IsResolvedToEvaluated)
             processRef(r.ResolvedTo);
           else if (r.IsUnresolved)
             CompilerMessages.Error(reference, $"Unresolved reference '$reference'");
-          else when (r.IsAmbiguous)
+          else when (r.IsAmbiguous && !r.IgnoreAmbiguities)
           {
-            using (err = CompilerMessages.RootError(reference, $<#Symbol '$reference' is ambiguous.#>))
-              foreach (ambiguous in r.Ambiguities with i)
-              {
-                def head = ambiguous.FirstDeclarationOrDefault;
-                when (head : object != null)
-                  err.Hint(head.Name, $<#Declaration $i#>);
-              }
+            def builder = StringBuilder(64)
+              .Append("<hint>'").HintMlEscape(reference).Append("' is an ambiguous reference between ")
+              .JoinAnd(r.Ambiguities, HintML.MakeHintMlPath(_, _, ".", true)).Append("</hint>");
+
+            CompilerMessages.Error(reference, builder.ToString());
           }
         }
-        
+
         processRef(reference.Ref)
       }
     }

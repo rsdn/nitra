@@ -6,6 +6,9 @@ using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
+using System.Collections.Immutable;
+
+using System.Diagnostics;
 using SCG = System.Collections.Generic;
 
 namespace DotNet
@@ -14,10 +17,23 @@ namespace DotNet
   {
     private _parent : TypeSymbol;
 
-    public this(typeInfo : GenericTypeSymbol, scope : Scope, args : SCG.IList[TypeSymbol], parent : TypeSymbol)
+    public this(typeInfo : GenericTypeSymbol, scope : Scope, args : ImmutableArray[TypeSymbol], parent : TypeSymbol)
     {
       base(typeInfo, scope, args);
       _parent = parent;
+    }
+
+    public override Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
+    {
+      base.Serialize(writer, metadataWriter);
+      metadataWriter.WriteObject(_parent, writer);
+    }
+
+    new public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : this
+    {
+      def (typeInfo, args) = Read(reader, metadataReader);
+      def parent   = metadataReader.ReadObject(reader);
+      NestedSubstScope(typeInfo, null, ImmutableArray.Create(args), parent)
     }
   }
 }

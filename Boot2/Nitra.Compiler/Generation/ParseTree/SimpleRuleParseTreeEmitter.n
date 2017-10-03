@@ -147,7 +147,7 @@ namespace Nitra.Compiler
         public static CreateParseTree(startPos : int, endPos : int, parseResult : Nitra.ParseResult, grammar : Nitra.CompositeGrammar) : $(_baseTb.GetMemType() : typed)
         {
           def ruleParser = grammar.GetSimpleRuleParser($(this.RuleSymbol.GetRuleDescriptorRef()));
-          if (startPos < endPos || ruleParser.CanParseEmptyString)
+          if (startPos < endPos || ruleParser.CanParseEmptyString || startPos == parseResult.CompletionPos)
           {
             match (parseResult.TryGetRecoveredSequence(startPos, endPos, ruleParser.ParsingSequence))
             {

@@ -1,4 +1,5 @@
-﻿using Nitra.ProjectSystem;
+using System.Text;
+using Nitra.ProjectSystem;
 using Nitra.Serialization2;
 using Nitra.Internal;
 
@@ -11,37 +12,44 @@ using Nemerle.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Nitra.Declarations
 {
   public class TableScope : Scope
   {
-    private this(title : string)
+    public this(name : string)
     {
-      this(title, null);
+      this(null, name);
     }
 
-    public this(title : string, owner : DeclarationSymbol)
+    public this(owner : DeclarationSymbol, name : string)
     {
-      _title     = title;
       _owner     = owner;
+      _name      = name;
       _nameTable = Hashtable();
     }
 
-    private         _title     : string;
-    private mutable _owner     : DeclarationSymbol;
-    private         _nameTable : Hashtable[int, list[DeclarationSymbol]]; //TODO: replace with LightList[DeclarationSymbol]?
+    private _owner     : DeclarationSymbol;
+    private _name      : string;
+    private _nameTable : Hashtable[int, list[DeclarationSymbol]]; //TODO: replace with LightList[DeclarationSymbol]?
 
     public Owner   : DeclarationSymbol { get { _owner } }
+    public Name    : string            { get { _name } }
+
+    public override AllSymbols : Seq[DeclarationSymbol]
+    {
+      get { _nameTable.Values.SelectMany(symbols => symbols).OrderBy(x => x.Name, StringComparer.Ordinal).ToArray() }
+    }
     public virtual Symbols : Hashtable[int, list[DeclarationSymbol]].ValueCollection { get { _nameTable.Values } }
 
-    public Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext, name : Name = null) : TSymbol
+    public virtual Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext, name : Name = null) : TSymbol
       where TSymbol : DeclarationSymbol
     {
       when (name != null)
         (declaration :> DeclarationBase).UpdateName(name);
-        
+
       def     name2            = declaration.Name;
       def     candidateSymbols = LightList();
       mutable ambiguousSymbols : HashSet[DeclarationSymbol];
@@ -94,14 +102,7 @@ namespace Nitra.Declarations
       concreteSymbol
     }
 
-    public override FindMany[TSymbol](predicate : Predicate[TSymbol], results : ref LightList[TSymbol]) : void
-    {
-      foreach (symbols in _nameTable.Values)
-        foreach (symbol is TSymbol when predicate(symbol) in symbols)
-          results.Add(symbol);
-    }
-    
-    public Undefine(shouldRemove : Predicate[Declaration]) : void
+    public virtual Undefine(shouldRemove : Predicate[Declaration]) : void
     {
       def undefine(lst : list[DeclarationSymbol]) : list[DeclarationSymbol]
       {
@@ -137,27 +138,85 @@ namespace Nitra.Declarations
       }
     }
 
-    public override BindMany[TSymbol](reference : Reference, results : ref LightList[TSymbol]) : void
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      def res = LightList();
+
+      foreach (symbols in _nameTable.Values)
+      foreach (symbol is TSymbol when isMatch(symbol) in symbols)
+        res.Add(symbol);
+
+      res.ToBindResult()
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       mutable lookupResult;
-      when (_nameTable.TryGetValue(reference.Id, out lookupResult))
+      if (_nameTable.TryGetValue(reference.Id, out lookupResult))
       {
-        foreach (result is TSymbol in lookupResult)
-          results.Add(result);
+        def res = LightList();
+        foreach (x is TSymbol in lookupResult)
+          res.Add(x);
+        res.ToBindResult()
       }
-    }
-    
-    public override MakeCompletionList(prefix : string) : Seq[DeclarationSymbol]
-    {
-      if (string.IsNullOrEmpty(prefix))
-        _nameTable.Values.SelectMany(s => s)
       else
-        _nameTable.Where(pair => StringIndex.GetText(pair.Key).StartsWith(prefix, StringComparison.InvariantCultureIgnoreCase)).SelectMany(pair => pair.Value)
+        BindResult.Nil()
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
+    {
+      def id = nodeToIdMap.GetObjectId(this);
+      def symbols = AllSymbols.ToArray();
+
+      // make DOT HTML table for symbols
+
+      def maxCols = 6;
+      def last = symbols.Length - 1;
+      mutable cols = Math.Min(maxCols, symbols.Length);
+      mutable rows = symbols.Length / cols;
+      when (symbols.Length % cols != 0)
+        rows++;
+
+      def builder = StringBuilder();
+      def owner = if (Owner == null) ""
+                  else
+                  {
+                    "Owner: " + (if (Owner.IsKindEvaluated) " <FONT COLOR='blue'>" + Owner.Kind + "</FONT>&nbsp;" else "")
+                    + AstUtils.XmlEscape(if (Owner.IsFullNameEvaluated) Owner.FullName else Owner.InitialName);
+                  };
+      _ = builder.Append(
+$<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
+<tr>
+  <td colspan="$cols" align="center" bgcolor="WhiteSmoke" border='1'>TableScope: '<B>$(AstUtils.XmlEscape(_name))</B>' $owner</td>
+</tr>
+#>);
+      for (mutable row = 0; row < rows; row++)
+      {
+        _ = builder.Append("  <tr>\r\n");
+        for (mutable col = 0; col < cols; col++)
+        {
+          def i = row * cols + col;
+          if (i > last)
+            _ = builder.Append("    <td border='1'></td>\r\n");
+          else
+          {
+            def symbol  = symbols[i];
+            def content = if (symbol.IsKindEvaluated) "<FONT COLOR='blue'>" + symbol.Kind + "</FONT><BR/>" + AstUtils.XmlEscape(symbol.InitialName) else AstUtils.XmlEscape(symbol.InitialName);
+            _ = builder.Append($"    <td border='1'>$content</td>\r\n");
+          }
+        }
+        _ = builder.Append("  </tr>\r\n");
+      }
+
+      _ = builder.Append(<#
+</table>#>);
+
+      nodes.Add($<#Obj_$id [shape=none label=<$builder>]#>);
     }
 
     public override ToString() : string
     {
-      $<#$_title[..$(_nameTable.Keys; ", "; StringIndex.GetText)]#>
+      $<#TableScope($(AllSymbols.Count()))]#>
     }
 
     internal EnqueueSymbols(metadataWriter : MetadataWriter) : void
@@ -169,26 +228,37 @@ namespace Nitra.Declarations
 
     public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
     {
+      metadataWriter.WriteObject(_owner, writer);
       when (metadataWriter.BeginWriteObject(this, writer))
       {
-        writer.Write(_title : string);
-        metadataWriter.WriteObject(_owner, writer);
+        writer.Write(_name : string);
         EnqueueSymbols(metadataWriter);
       }
     }
 
     public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
     {
+      // TODO: сделать более эффективной десериализацию
+      def owner = metadataReader.ReadObject.[DeclarationSymbol](reader);
       mutable scope;
-      when (metadataReader.BeginReadObject(reader, out scope, _tableScopeFactory))
-        scope._owner = metadataReader.ReadObject(reader);
+      _ = metadataReader.BeginReadObject(reader, out scope, GetTableScope(owner));
       scope
     }
 
-    private static _tableScopeFactory : Func[BinaryReader, MetadataReader, TableScope] = fun (reader, _metadataReader)
+    private static GetTableScope(owner : DeclarationSymbol) : Func[BinaryReader, MetadataReader, TableScope]
     {
-      def title = reader.ReadString();
-      TableScope(title)
-    };
+      fun (reader, _metadataReader)
+      {
+        def name  = reader.ReadString();
+        if (owner == null)
+          TableScope(name)
+        else
+        {
+          def result = owner.GetTable(name);
+          assert(result.HasValue, $"Table '$name' not found in symbol '$owner'");
+          result.GetValueOrDefault()
+        }
+      }
+    }
   }
 }

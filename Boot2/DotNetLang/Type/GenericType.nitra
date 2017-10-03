@@ -5,6 +5,7 @@ using Nitra.Declarations;
 using Nitra.Internal;
 
 using System.Linq;
+using System.Collections.Immutable;
 using SCG = System.Collections.Generic;
 
 namespace DotNet
@@ -15,12 +16,12 @@ namespace DotNet
     symbol
     {
       out TypeParametersCount : int = AstUtils.GetTypeParametersCount(this.FirstDeclarationOrDefault);
-      out TypeParameters      : SCG.IList[TypeParameterSymbol] = AstUtils.CreateTypeParameters(TypeParametersCount);
+      out TypeParameters      : ImmutableArray[TypeParameterSymbol] = AstUtils.CreateTypeParameters(TypeParametersCount);
     }
 
 
     // Local scope. Type parameters can have different names. We should use alias to reflect it.
-    out TypeParameterAliasesScope : TableScope = TableScope("type parameters", null);
+    out TypeParameterAliasesScope : TableScope = TableScope("type parameters");
 
     TypeParameterAliases.TypeParameterSymbols  = Symbol.TypeParameters;
     TypeParameterAliases.IndexIn               = 0;

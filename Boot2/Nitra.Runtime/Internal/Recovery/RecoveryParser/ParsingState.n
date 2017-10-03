@@ -27,11 +27,11 @@ namespace Nitra.Internal.Recovery
 
     [RecordIgnore]
     public FirstTokens : SCG.HashSet[TokenParser] = SCG.HashSet();
-    
-    | Simple                { RuleParser    : SimpleRuleParser; }
+
+    | Simple                { RuleParser    : SimpleRuleParser;     IsReference : bool; }
     | DynamicExtensible     { Sequence      : ParsingSequence; }
     | DynamicExtensibleItem { RuleParser    : ExtensibleRuleParser; }
-    | Extensible            { RuleParser    : ExtensibleRuleParser; }
+    | Extensible            { RuleParser    : ExtensibleRuleParser; IsReference : bool; }
     | ExtensionPrefix       { RuleParser    : ExtensibleRuleParser; }
     | ExtensionPostfix      { RuleParser    : ExtensibleRuleParser; }
     | Subsequence           { Sequence      : ParsingSequence; SequenceInfo : SequenceInfo; }

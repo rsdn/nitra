@@ -11,6 +11,7 @@ using Nemerle.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Nitra.Declarations
@@ -27,35 +28,70 @@ namespace Nitra.Declarations
       Scope  = scope;
     }
 
-    public override FindMany[TSymbol](predicate : Predicate[TSymbol], results : ref LightList[TSymbol]) : void
+    public override AllSymbols : Seq[DeclarationSymbol]
     {
-      this.Scope.FindMany(predicate, ref results);
-      this.Hidden.FindMany(predicate, ref results);
-    }
-
-    public override BindMany[TSymbol](reference : Reference, results : ref LightList[TSymbol]) : void
-    {
-      def binded = results.Count;
-      Scope.BindMany(reference, ref results);
-      when (binded == results.Count)
-        Hidden.BindMany(reference, ref results);
-    }
-
-    public override MakeCompletionList(prefix : string) : Seq[DeclarationSymbol]
-    {
-      def hiding = Scope.MakeCompletionList(prefix).ToDictionary(_.Id);
-      def result = List(hiding.Values);
-
-      foreach (symbol in Hidden.MakeCompletionList(prefix))
-        when (!hiding.ContainsKey(symbol.Id))
+      get
+      {
+        def enumerated = HashSet();
+        def result = List();
+        foreach (symbol in this.Scope.AllSymbols)
+        {
+          _ = enumerated.Add(symbol);
           result.Add(symbol);
+        }
+        foreach (symbol in this.Hidden.AllSymbols)
+        {
+          unless (enumerated.Contains(symbol))
+            result.Add(symbol);
+        }
 
-      result
+        result.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
+      }
+    }
+
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      def result       = this.Scope.Bind(isMatch);
+      def resultHidden = this.Hidden.Bind(isMatch);
+
+      if (result.IsEmpty)
+        resultHidden
+      else if (resultHidden.IsEmpty)
+        result
+      else
+        BindResult.Hiding(result, resultHidden)
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      def result       = this.Scope.Bind(reference);
+      def resultHidden = this.Hidden.Bind(reference);
+
+      if (result.IsEmpty)
+        resultHidden
+      else if (resultHidden.IsEmpty)
+        result
+      else
+        BindResult.Hiding(result, resultHidden)
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
+    {
+      def id            = nodeToIdMap.GetObjectId(this);
+      def idScope       = nodeToIdMap.GetObjectId(this.Scope);
+      def idHidingScope = nodeToIdMap.GetObjectId(this.Hidden);
+
+      nodes.Add($<#Obj_$id [label="HidingScope"]#>);
+      edges.Add($<#Obj_$id -> Obj_$idScope#>);
+      edges.Add($<#Obj_$id -> Obj_$idHidingScope  [color=darkgray]#>);
+
+      this.Scope.ToDot(nodeToIdMap, nodes, edges);
+      this.Hidden.ToDot(nodeToIdMap, nodes, edges);
     }
 
     public override ToString() : string
     {
-      $<#$Scope hides $Hidden#>
+      <#HidingScope#>
     }
 
     public override HideWith(scope : Scope) : Scope

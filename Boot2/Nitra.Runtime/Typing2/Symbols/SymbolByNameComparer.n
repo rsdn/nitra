@@ -1,0 +1,26 @@
+﻿using System.Collections.Generic;
+
+namespace Nitra.Declarations
+{
+  public class SymbolByNameComparer[TSymbol] : IEqualityComparer[TSymbol], IComparer[TSymbol]
+    where TSymbol : DeclarationSymbol
+  {
+    public Compare(x : TSymbol, y : TSymbol) : int
+    {
+      x.Name.CompareTo(y.Name)
+    }
+
+    public Equals(x : TSymbol, y : TSymbol) : bool
+    {
+      def xId = x.NameId;
+      xId == y.NameId && xId >= 0
+    }
+
+    public GetHashCode(obj : TSymbol) : int
+    {
+      obj.NameId
+    }
+
+    public static Instance : this { get; default SymbolByNameComparer() }
+  }
+}

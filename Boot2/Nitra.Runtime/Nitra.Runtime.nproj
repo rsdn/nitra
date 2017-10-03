@@ -90,6 +90,9 @@
           <SpecificVersion>False</SpecificVersion>
           <HintPath>..\..\Boot2\$(NemerleVersion)\Nitra.Compiler.dll</HintPath>
         </MacroReference>
+        <EmbeddedResource Include="Nitra.Runtime.Stage2.dll.nitrametadata2">
+          <LogicalName>Nitra.Metadata2</LogicalName>
+        </EmbeddedResource>
       </ItemGroup>
     </When>
     <When Condition=" '$(Stage)' == 'Stage2' ">
@@ -145,7 +148,13 @@
     <Compile Include="Declarations\IAst.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Declarations\INamespace.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Declarations\IProjectSupport.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Declarations\IQualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Declarations\Name.n">
@@ -153,6 +162,9 @@
       <DependentUpon>Declarations\Name.nitra</DependentUpon>
     </Compile>
     <Compile Include="Declarations\Name.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Declarations\PredefinedDeclaration.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Declarations\Reference.n">
@@ -276,6 +288,9 @@
     <Compile Include="Parsing\IParseResult.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Parsing\KeywordCompletionInfo.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Parsing\ParseResult.n">
       <SubType>Code</SubType>
     </Compile>
@@ -310,6 +325,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ProjectSystem\LibReference.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProjectSystem\ProjectSupportAttribute.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ProjectSystem\TextCompilerMessages.n">
@@ -351,6 +369,9 @@
     <Compile Include="Statistics.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Typing2\Binding\BindResult.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Typing2\Binding\StringIndex.n">
       <SubType>Code</SubType>
     </Compile>
@@ -384,6 +405,15 @@
     <Compile Include="Typing2\Symbols\CollectSymbolsAndRefsInSpanAstVisitor.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Typing2\Symbols\HintML.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Typing2\Symbols\IRef.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Typing2\Symbols\ISymbolCache.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Typing2\Symbols\Ref.n">
       <SubType>Code</SubType>
     </Compile>
@@ -397,6 +427,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Typing2\Symbols\SymbolBase.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Typing2\Symbols\SymbolByNameComparer.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Typing2\Symbols\TypeStructure.n">

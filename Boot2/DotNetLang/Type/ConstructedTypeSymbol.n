@@ -1,0 +1,107 @@
+using System.Text;
+using Nitra;
+using Nitra.Declarations;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace DotNet
+{
+  public partial interface ConstructedTypeSymbol : TypeSymbol, IEquatable[ConstructedTypeSymbol]
+  {
+  }
+
+  module ConstructedTypeImpl
+  {
+    public MakeHint(symbol : ConstructedTypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        if (symbol.IsTypeInfoEvaluated)
+        {
+          def typeInfo = symbol.TypeInfo;
+          _ = builder.Append("<keyword>").HintMlEscape(typeInfo.Kind).Append("</keyword> ").SymbolToHintMlWithSubHint(typeInfo);
+        }
+        else
+          _ = builder.Append("«TypeInfo not evaluated»");
+
+        if (symbol.IsArgsEvaluated)
+          when (symbol.Args.Length > 0)
+          {
+            _ = builder.Append("&lt;");
+            foreach (arg in symbol.Args)
+              _ = builder.SymbolToHintMlWithSubHint(arg);
+            _ = builder.Append("&gt;");
+          }
+        else
+          _ = builder.Append("«Args not evaluated»");
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+  }
+
+  public partial class TopConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
+  {
+    public this(context : DependentPropertyEvalContext, typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
+    {
+      this.TypeInfo = typeInfo;
+      this.Args     = args;
+      this.FullName = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
+      this.EvalProperties(context);
+    }
+
+    public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
+    {
+      | TopConstructedTypeSymbol as other => this.TypeInfo.Equals(other.TypeInfo) && this.Args.Equals(other.Args)
+      | _ => false
+    }
+
+    public override GetHashCode() : int
+    {
+      unchecked
+      {
+        mutable i = TypeInfo.GetHashCode();
+        foreach (arg in Args with index)
+          i ^= arg.GetHashCode() << index;
+        i
+      }
+    }
+
+    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
+  }
+
+  public partial class NestedConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
+  {
+    public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
+    {
+      | NestedConstructedTypeSymbol as other => this.TypeInfo.Equals(other.TypeInfo) && this.Args.Equals(other.Args) && this.Parent.Equals(other.Parent)
+      | _ => false
+    }
+
+    public override GetHashCode() : int
+    {
+      unchecked
+      {
+        mutable i = TypeInfo.GetHashCode();
+        i ^= Parent.GetHashCode();
+        foreach (arg in Args with index)
+          i ^= arg.GetHashCode() << index;
+        i
+      }
+    }
+
+    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
+  }
+} //namespace

@@ -26,6 +26,8 @@ namespace Nitra
     public          Infix        : bool              { get { this.OperatorInfo %&& OperatorInfo.Infix } }
     public abstract Arity        : int               { get; }
     public abstract SpanClass    : SpanClass         { get; }
+    public virtual  IsReference  : bool              { get { false } }
+    public          IsSplitAtCompletionPosition : bool { get; protected set; }
     public override ToString()   : string
     {
       $"$(Grammar.FullName)::$Name"
@@ -90,6 +92,7 @@ namespace Nitra
   {
     public sealed override IsStartRule : bool { get false }
     public abstract BaseRule : ExtensibleRuleDescriptor { get; }
+    public abstract PreferIfConflictWithList : list[ExtensionRuleDescriptor] { get; }
   }
 
   public abstract class PrefixRuleDescriptor : ExtensionRuleDescriptor

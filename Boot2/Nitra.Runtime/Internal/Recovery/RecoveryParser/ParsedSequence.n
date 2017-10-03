@@ -63,7 +63,7 @@ namespace Nitra.Internal.Recovery
     public GetSequencesForSubrule(parsedSubrule : ParsedSubrule) : Seq[ParsedSequence]
     {
       //this.ParsingSequence.GetSequencesForSubrule(parsedSubrule, this.RecoveryParser);
-      when (parsedSubrule.IsEmpty)
+      when (parsedSubrule.IsEmpty && !{ def cp = this.RecoveryParser.CompletionPos; cp >=0 && parsedSubrule.Begin == cp })
         return;
 
       def begin = parsedSubrule.Begin;

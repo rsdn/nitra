@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 using Nitra;
 using Nitra.Declarations;
 
@@ -11,7 +11,7 @@ namespace Nitra.Ast
     out Type         : TypeSymbol;
 
     unless (Type.IsSubtypeOf(ExpectedType))
-      Error(context, $"Pattern type '$(self.Type)' is not subtype of expected type '$(self.ExpectedType)'.");
+      Error(context, $"<hint>Pattern type '$(AstUtils.ToHint(self.Type, context))' is not subtype of expected type '$(AstUtils.ToHint(self.ExpectedType, context))'.</hint>");
 
     | Wildcard
       {
@@ -73,7 +73,8 @@ namespace Nitra.Ast
   {
     symbol
     {
-      Kind = "pattern variable";
+      Kind     = "pattern variable";
+      MakeHint = AstUtils.TypedDeclarationMakeHint(symbolCache, this);
     }
 
     Type        = ExpectedType;

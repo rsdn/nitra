@@ -116,7 +116,7 @@ namespace Nitra.Compiler
               {
                 | FixedType.Class(ti, _) as pathType =>
                   unless (pathType.TryRequire(Environment.CollectorTypeVar))
-                    Message.Error(statement.NLocation(), $"Type '$pathType' does not implement '$(Environment.StringTypeInfo.FullName)' interface.");
+                    Message.Error(statement.NLocation(), $"Type '$pathType' does not implement '$(Environment.CollectorTypeInfo.FullName)' interface.");
 
                   match (ti.GetMembers().Find(m => m is IMethod && m.IsCustomAttributeDefined(CollectAttribute)))
                   {
@@ -206,7 +206,7 @@ namespace Nitra.Compiler
 
       def removeDelayed(expr : TExpr) : TExpr
       {
-        | PropertyMember as e => 
+        | PropertyMember as e =>
           def newObj = e.obj.Walk(removeDelayed);
           if (newObj : object != e.obj)
           {
@@ -676,7 +676,7 @@ namespace Nitra.Compiler
         _ = collectorProperties.RemoveAll(x => x.Equals(call.Path));
         def bit   = tb.GetBitFieldManager().Allocate();
         def expr1 = <[ $(compileCode(call.DeclaredIn, call.Code)); $(bit.Set()); ]>;
-        def expr2 = 
+        def expr2 =
           match (call)
           {
             | Normal => expr1

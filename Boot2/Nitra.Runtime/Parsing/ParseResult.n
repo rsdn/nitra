@@ -16,6 +16,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections.ObjectModel;
+using System.Collections.Immutable;
 
 using System.Text;
 using System.Threading;
@@ -28,7 +29,7 @@ namespace Nitra
     public static RawTreeParsedState = ~int.MaxValue;//TODO:Move to Nitre.Internal.Constants
 
     public          Text             : string          { get; }
-    public         ParseEnd         : int             { get; private set; }
+    public          ParseEnd         : int             { get; private set; }
     public mutable  rawTree          : array[int];
     public mutable  memoize          : array[int];
     public mutable  allocated        : int;
@@ -40,6 +41,8 @@ namespace Nitra
     public mutable  LastParseEnd     : int;
     public          ParseSession     : ParseSession    { get; }
     public          MainParserFail   : bool { get; private set; }
+    public          CompletionPos    : int;
+    public          Keywords         : ImmutableArray[KeywordCompletionInfo] { get; internal set; }
     private mutable _maxFailPos      : int;
 
     internal this([NotNull] parseSession : ParseSession, [NotNull] sourceSnapshot : SourceSnapshot, oldParseResult : ParseResult, head : int, tail : int)
@@ -58,6 +61,7 @@ namespace Nitra
       this.ParserHost       = parseSession.CompositeGrammar.ParserHost;
       this.MaxFailPos       = 0;
       this.RuleParser       = parseSession.CompositeGrammar.GetStartRuleParser(parseSession.StartRuleDescriptor);
+      this.CompletionPos    = parseSession.CompletionPos;
 
       //Array.Copy(oldParseResult.memoize, 0, memoize, 0, head);
       Array.Copy(oldParseResult.memoize, oldParseResult.memoize.Length - (tail + 1), memoize, memoize.Length - (tail + 1), tail + 1);
@@ -82,7 +86,7 @@ namespace Nitra
     //      else
     //        0
     //  }
-      
+
     //}
 
     public this([NotNull] parseSession : ParseSession, [NotNull] sourceSnapshot : SourceSnapshot)
@@ -101,6 +105,7 @@ namespace Nitra
       this.ParserHost       = parseSession.CompositeGrammar.ParserHost;
       this.MaxFailPos       = 0;
       this.RuleParser       = parseSession.CompositeGrammar.GetStartRuleParser(parseSession.StartRuleDescriptor);
+      this.CompletionPos    = parseSession.CompletionPos;
     }
 
     internal Parse() : void
@@ -120,20 +125,20 @@ namespace Nitra
 
       when (statistics != null)
         parseStatistics.Stop();
-      
+
       def parsedToEnd = res == Text.Length;
-      
+
       def isMainParserSuccess =
         if (this.ParseSession.ParseToEndOfString)
           parsedToEnd;
         else
           res > 0;
-      
+
       def maxFailPos = MaxFailPos;
-      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || ParseSession.CompletionStartPos >= 0)
+      if (res < 0 || !(this.ParseSession.ParseToEndOfString && parsedToEnd) || CompletionPos >= 0)
       {
         MainParserFail = true;
-        
+
         when (statistics != null)
           recoveryStatistics.Start();
         try
@@ -327,31 +332,17 @@ namespace Nitra
       null
     }
 
-    public TryGetPrefix(pos : int, prefixRawTreePtr : ref int) : int
+    public GetPrefix(prefixRawTreePtr : int) : int
     {
       mutable bestResult = rawTree[prefixRawTreePtr + ExtensibleRuleParser.PrefixOfs.List];
-      when (bestResult < 0)
-      {
-        prefixRawTreePtr = GetRawTree(pos, rawTree[prefixRawTreePtr + ExtensibleRuleParser.PrefixOfs.Id] & ExtensibleRuleParser.RawTreeMask.Id);
-        bestResult = rawTree[prefixRawTreePtr + ExtensibleRuleParser.PrefixOfs.List]; // исходная ссылка на дерево разбора
-        assert3(bestResult >= 0);
-        when (bestResult == 0)
-          bestResult = -1;
-      }
+      assert3(bestResult >= 0);
       bestResult;
     }
 
-    public TryGetPostfix(pos : int, postfixRawTreePtr : ref int) : int
+    public GetPostfix(postfixRawTreePtr : int) : int
     {
-      mutable bestResult = rawTree[postfixRawTreePtr + ExtensibleRuleParser.PostfixOfs.List];
-      when (bestResult < 0)
-      {
-        postfixRawTreePtr = GetRawTree(pos, rawTree[postfixRawTreePtr + ExtensibleRuleParser.PostfixOfs.Id] & ExtensibleRuleParser.RawTreeMask.Id);
-        bestResult = rawTree[postfixRawTreePtr + ExtensibleRuleParser.PostfixOfs.List]; // исходная ссылка на дерево разбора
-        assert3(bestResult >= 0);
-        when (bestResult == 0)
-          bestResult = -1;
-      }
+      def bestResult = rawTree[postfixRawTreePtr + ExtensibleRuleParser.PostfixOfs.List];
+      assert3(bestResult >= 0);
       bestResult;
     }
 
@@ -411,7 +402,7 @@ namespace Nitra
         catch { e is AmbiguousException => Some(e) }
       }
     }
-    
+
     public Trivia : array[SCG.KeyValuePair[NSpan, int]]
     {
       mutable volatile _trivia : array[SCG.KeyValuePair[NSpan, int]] = null;
@@ -452,8 +443,8 @@ namespace Nitra
 
     class Root : INitraReflection
     {
-      public FullName            : string { get { "Roor" } }
-      public ShortName           : string { get { "Roor" } }
+      public FullName            : string { get { "Root" } }
+      public ShortName           : string { get { "Root" } }
       public IsMarker            : bool   { get { false } }
       public CanParseEmptyString : bool   { get { false } }
     }
@@ -509,7 +500,7 @@ namespace Nitra
     {
       SourceSnapshot
     }
-    
+
     public TryGetDynamicSyntaxExtension(syntaxModuleFullName : string) : GrammarDescriptor
     {
       mutable descriptor;
@@ -520,5 +511,10 @@ namespace Nitra
     }
 
     public CompilerMessages : ICompilerMessages { get { this.ParseSession.CompilerMessages } }
+
+    CompletionPosImpl : int implements Nitra.IParseResult.CompletionPos
+    {
+      get { CompletionPos }
+    }
   }
 }

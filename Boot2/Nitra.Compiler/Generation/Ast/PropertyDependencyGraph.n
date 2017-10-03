@@ -131,7 +131,7 @@ namespace Nitra.Compiler
       {
         def loc  = c.NLocation();
         def code = PropertyDependencyCode.Compiled(loc, c.CompiledMethodName);
-        calls[i] = 
+        calls[i] =
           match (c)
           {
             | Normal     => PropertyDependencyCall.Normal   (c.Id, c.DeclaredIn, loc, c.Path, code)

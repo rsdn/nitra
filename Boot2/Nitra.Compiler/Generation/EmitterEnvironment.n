@@ -139,7 +139,7 @@ namespace Nitra.Compiler
     {
       BindFixedType(symbol.Node.FullNameParts)
     }
-    
+
     [Memoize]
     public GetLanguageType(symbol : LanguageSymbol) : FixedType
     {

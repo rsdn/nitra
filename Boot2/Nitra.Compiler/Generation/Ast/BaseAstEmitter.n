@@ -215,7 +215,7 @@ namespace Nitra.Compiler
 
       def defineAmbiguousMethod(body)
       {
-        ambiguousTb.Define(<[ decl: 
+        ambiguousTb.Define(<[ decl:
           ..$(GetDependentEvaluationModifiers()) IsAllPropertiesEvaluated : bool
           {
             get
@@ -257,7 +257,7 @@ namespace Nitra.Compiler
 
       def defineAmbiguousMethod(body)
       {
-        ambiguousTb.Define(<[ decl: 
+        ambiguousTb.Define(<[ decl:
           ..$(GetDependentEvaluationModifiers()) PropertiesEvalState : int
           {
             get

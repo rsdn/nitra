@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nemerle.Collections;
 
@@ -16,14 +16,21 @@ namespace Nitra.Ast
   {
     symbol
     {
-      Kind      = "rule field";
-      SpanClass = DotNetLang.FieldSpanClass;
+      in DeclaredIn : SyntaxRuleSymbol;
+
+      Kind          = "rule field";
+      SpanClass     = DotNetLang.FieldSpanClass;
+      DeclaredInOpt = VSome(DeclaredIn);
+      FullName      = AstUtils.MakeFullName(DeclaredIn.FullName, Name);
+      MakeHint      = AstUtils.RuleFieldMakeHint(symbolCache, this);
     }
 
     in  NameGenerator : RuleFieldNameGenerator;
     in  Literals      : Map[string, string];
+    in  DeclaredIn    : SyntaxRuleSymbol;
     out DesiredName   : ParsedValue[string * bool] = Expression.FieldName;
 
+    Symbol.DeclaredIn   = DeclaredIn;
     Symbol              = ContainingTable.Define(this, context, NameGenerator.GetName(Location, DesiredName));
     Symbol.Type         = Expression.Type;
     Expression.Scope    = Scope;

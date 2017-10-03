@@ -14,6 +14,8 @@ namespace DotNet
 
       IsSameIdentity = AstUtils.IsSameIdentity(0, candidate);
       CanMerge       = candidate is Namespace || candidate is ExternalDeclaration[NamespaceSymbol];
+      //MakeHint       = "<keyword>namespace</keyword> " + AstUtils.Combine(DeclaredIn, this);
+      DeclaredInOpt = if (DeclaredIn == null) VNone() else VSome(DeclaredIn);
     }
   }
 
@@ -33,7 +35,7 @@ namespace DotNet
     out EnteredScope : Scope;
 
     Members.OpeningIn         = EmptyScope.Instance;
-    Members.UsingAliasesScope = TableScope("aliases", null);
+    Members.UsingAliasesScope = TableScope("aliases");
     Members.CurrentScope      = this.Scope;
     Members.Scope             = MakeMembersScope(EnteredScope, Members.OpeningOut, Members.UsingAliasesScope);
 

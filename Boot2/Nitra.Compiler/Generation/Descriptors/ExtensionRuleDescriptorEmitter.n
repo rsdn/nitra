@@ -1,0 +1,50 @@
+﻿using Nitra.Typing;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.Compiler
+{
+  [Record]
+  internal abstract class ExtensionRuleDescriptorEmitter : RuleDescriptorEmitter[ExtensionRuleSymbol]
+  {
+    public override DefineDescriptor() : void
+    {
+      base.DefineDescriptor();
+
+      def baseRuleExpr = MakeRuleSelector(ruleSymbol => ruleSymbol.BaseRule.GetValue(Owner.Environment.Project), _.GetRuleDescriptorRef());
+      DescriptorTb.DefineConditional(<[decl: public override BaseRule : Nitra.ExtensibleRuleDescriptor { get { $baseRuleExpr } } ]>);
+
+      DescriptorTb.DefineConditional(<[decl: private mutable volatile _PreferIfConflictWithListCache : list[ExtensionRuleDescriptor] = null ]>);
+      def preferIfConflictWithListExpr =
+        if (RuleSymbols.Any(ruleSymbol => ruleSymbol.Options.PreferIfConflictWithList.Length > 0))
+        {
+          def mapRuleSymbol(ruleSymbol)
+          {
+            if (ruleSymbol.Options.PreferIfConflictWithList.Length > 0)
+              <[ [..$(ruleSymbol.Options.PreferIfConflictWithList.Map(_.GetRuleDescriptorRef()))] ]>
+            else
+              <[ [] ]>
+          }
+          <[
+            when (_PreferIfConflictWithListCache == null)
+              lock (Nitra.ParserHost.MetadataGlobalSyncRoot)
+                when (_PreferIfConflictWithListCache == null)
+                  _PreferIfConflictWithListCache = $(MakeRuleSelector(mapRuleSymbol));
+            _PreferIfConflictWithListCache
+          ]>
+        }
+        else
+          <[ [] ]>;
+      DescriptorTb.DefineConditional(<[decl: public override PreferIfConflictWithList : list[ExtensionRuleDescriptor] { get { $preferIfConflictWithListExpr } } ]>);
+    }
+  }
+}

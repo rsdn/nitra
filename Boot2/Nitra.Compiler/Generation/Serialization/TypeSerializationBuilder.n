@@ -23,7 +23,7 @@ namespace Nitra.Serialization
     public abstract Write(obj : PExpr) : PExpr;
     public abstract Read(memberName : PExpr, typeTag : PExpr) : PExpr;
     protected virtual EmitImpl() : void {}
-    
+
     [RecordIgnore] private mutable _isEmitted : bool;
 
     public Emit() : void

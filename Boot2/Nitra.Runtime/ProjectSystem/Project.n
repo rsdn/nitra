@@ -1,4 +1,5 @@
-﻿using System.Threading;
+using System.Collections.Concurrent;
+using System.Threading;
 using Nitra.Declarations;
 using Nitra.Typing;
 using Nitra.Internal;
@@ -19,9 +20,10 @@ using System.Linq;
 
 namespace Nitra.ProjectSystem
 {
-  public abstract class Project : ICompilerMessages
+  public abstract class Project : ICompilerMessages, ISymbolCache
   {
-    private mutable _assemblies : List[AssemblyName];
+    private _assemblies : List[AssemblyName] = List();
+    protected _symbolsCache : ConcurrentDictionary[int, DeclarationSymbol] = ConcurrentDictionary();
     public CompilerMessages : ICompilerMessages { get; }
     public RootNamespace : NamespaceSymbol { get; private set; }
     public Data : object { get; set; }
@@ -29,7 +31,7 @@ namespace Nitra.ProjectSystem
     public virtual Solution : Solution { get; protected set; }
     public virtual Libs : Seq[LibReference] { get; protected set; }
     public ProjectDir : string { get; protected set; }
-    
+    public event OnSymbolAssemblyResolve : Func[Project, AssemblyName, Assembly];
 
     protected this()
     {
@@ -43,18 +45,31 @@ namespace Nitra.ProjectSystem
 
     public virtual Init(referencedAssemblies : Seq[AssemblyName]) : void
     {
-      def assemblies = List();
+      _assemblies.Clear();
 
       repeat(AssemblyIds.ReservedIdsCount)
-        assemblies.Add(null);
+        _assemblies.Add(null);
 
-      assemblies.AddRange(referencedAssemblies);
-      _assemblies = assemblies;
+      _assemblies.AddRange(referencedAssemblies);
 
       def root = HierarchyNode(this);
       def rootNamespace = NamespaceSymbol(null : string);
       root.SetRootNamespaceSymbol(rootNamespace);
       RootNamespace = rootNamespace;
+    }
+
+    internal ResolveSymbolAssembly(fullName : string) : Assembly
+    {
+      def targetName = AssemblyName(fullName);
+      foreach (assembly in AppDomain.CurrentDomain.GetAssemblies())
+      {
+        def currentName = assembly.GetName();
+        when (StringComparer.OrdinalIgnoreCase.Equals(targetName.Name, currentName.Name))
+        when (currentName.Version >= targetName.Version)
+          return assembly;
+      }
+
+      OnSymbolAssemblyResolve?.Invoke(this, targetName) ?? Assembly.Load(targetName)
     }
 
     public GetAssemblyName(assemblyId : byte) : AssemblyName
@@ -96,17 +111,22 @@ namespace Nitra.ProjectSystem
       result
     }
 
-    public GetProjectSupport() : IProjectSupport
+    public virtual GetProjectSupport() : IProjectSupport
     {
       def files = Files.ToArray();
 
       when (files.Length == 0)
         return null;
-        
-      match (files[0].Ast)
+
+      def fileWithAst = files.FirstOrDefault(f => f.Ast != null);
+
+      when (fileWithAst == null)
+        return null;
+
+      match (fileWithAst.Ast)
       {
         | x is IProjectSupport => x
-        | x => 
+        | x =>
           Trace.WriteLine($"The $(x.GetType().FullName) not support IProjectSupport.");
           null
       }
@@ -158,5 +178,13 @@ namespace Nitra.ProjectSystem
 
     public SetFutureMessagesKind(kind : Guid) : void { CompilerMessages.SetFutureMessagesKind(kind); }
     public Remove(predicate : Func[Guid, Location, bool]) : void { CompilerMessages.Remove(predicate); }
-  }
-}
+
+    public CacheSymbol(symbol : DeclarationSymbol) : void { _symbolsCache[symbol.Id] = symbol; }
+    public TryGetSymbolById(id : int) : DeclarationSymbol
+    {
+    	mutable value;
+    	_ = _symbolsCache.TryGetValue(id, out value);
+    	value
+    }
+  } // class
+} // namespace

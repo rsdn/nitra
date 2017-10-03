@@ -1,7 +1,12 @@
-﻿//TODO: remove suffix 'Lang': plain name 'Nitra' conflicts with top namespace Nitra and breaks binding
+﻿//TODO: remove suffix 'Lang': plain name 'DotNet' conflicts with top namespace Nitra and breaks binding
 
 language DotNetLang
 {
+  company     = NitraTeam;
+  description = Nitra Common .Net languages support;
+  authors     = Vlad Chistyakov, Stanislav Matveev;
+  copyright   = NitraTeam;
+
   span class Namespace        { ForegroundColor=Chocolate;      }
   span class Constant         { ForegroundColor=Goldenrod;      }
   span class Field            { ForegroundColor=Goldenrod;      }

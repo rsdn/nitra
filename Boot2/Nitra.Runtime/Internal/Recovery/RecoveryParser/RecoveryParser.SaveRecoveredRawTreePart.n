@@ -88,7 +88,7 @@ namespace Nitra.Internal.Recovery
         }
         else
           foreach ((nextSubrule, _) in subrules with nextIndex)
-            when (subrule.End == nextSubrule.Begin && state.Next.Contains(nextSubrule.State))
+            when (subrule.End == nextSubrule.Begin && state.Next.Contains(nextSubrule.State) && index != nextIndex)
             {
               walk(nextIndex);
               walkCalled = true;
@@ -152,9 +152,23 @@ namespace Nitra.Internal.Recovery
             def sequences = seq.GetSequencesForSubrule(subrule).ToArray();
             if (sequences.Length > 0)
             {
-              assert3(sequences.Length == 1);
-              assert(sequences[0].Ends[subrule.End] == changes);
-              SequencesToRecover.Enqueue(sequences[0], subrule.End);
+              assert(sequences.Length == 1);
+              def sequence = sequences[0];
+              assert(sequence.Ends[subrule.End] == changes);
+              def subruleInfo = ParseResult.ParserHost.ParsingStates[subrule.State].SubruleInfo;
+              //TODO:hardcase
+              //failed test-0014 in C# and test-0002 in extensible C#
+              //remove || subruleInfo is SubruleInfo.Option || subruleInfo is SubruleInfo.List || subruleInfo is SubruleInfo.ListWithSeparator
+              //implement throw NotImplementedException("Fallback to standard parse tree reading");
+              when ((CompletionPos >= 0 && subrule.Begin <= CompletionPos && CompletionPos < subrule.End)
+                || changes.HasChanges
+                || subruleInfo is SubruleInfo.ListItem
+                || subruleInfo is SubruleInfo.Option
+                || subruleInfo is SubruleInfo.List
+                || subruleInfo is SubruleInfo.ListWithSeparator
+                || subruleInfo.Parse(subrule.Begin, ParseResult.Text, ParseResult) != subrule.End
+                )
+                SequencesToRecover.Enqueue(sequence, subrule.End);
             }
             else when (IsDeletedSubrule(subrule))
             {
@@ -267,7 +281,7 @@ namespace Nitra.Internal.Recovery
           when (startChanges + subruleChanges == endChanges)
           {
             def state = host.ParsingStates[subrule.State];
-            when (!subrule.IsEmpty || record.ParsingState.MandatoryTokenCount > 0)
+            when (!subrule.IsEmpty || record.ParsingState.MandatoryTokenCount > 0 || record.ParsingState is ParsingState.Predicate)
               subrules.Add(subrule, subruleChanges);
             if (dynamicExtensibleStates == null)
               foreach (prevState in state.Prev)

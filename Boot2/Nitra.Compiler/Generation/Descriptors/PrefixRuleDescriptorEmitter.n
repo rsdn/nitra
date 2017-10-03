@@ -14,7 +14,7 @@ using System.Linq;
 namespace Nitra.Compiler
 {
   [Record]
-  internal sealed class PrefixRuleDescriptorEmitter : RuleDescriptorEmitter[ExtensionRuleSymbol]
+  internal sealed class PrefixRuleDescriptorEmitter : ExtensionRuleDescriptorEmitter
   {
     protected override BaseType  : PExpr  { get <[ Nitra.PrefixRuleDescriptor ]> }
     protected override ClassName : string { get "_N_PrefixRuleDescriptor_#" }
@@ -23,11 +23,6 @@ namespace Nitra.Compiler
     {
       base.DefineDescriptor();
       DefineNewParserMethod(<[ Nitra.Internal.PrefixRuleParser ]>, [<[parameter: parserData : Nitra.Internal.ExtensibleRuleParserData ]>]);
-
-      def baseRuleExpr = MakeRuleSelector(ruleSymbol => ruleSymbol.BaseRule.GetValue(Owner.Environment.Project), _.GetRuleDescriptorRef());
-      DescriptorTb.DefineConditional(<[decl: public override BaseRule : Nitra.ExtensibleRuleDescriptor { get { $baseRuleExpr } } ]>);
-
-      DescriptorTb.DefineConditional(<[decl: public override PreferIfConflictWithList : list[ExtensionRuleDescriptor] { get { [] } } ]>);
 
       def createParseTreeExpr1 = MakeRuleSelectorForParseTree(ruleSymbol =>
         <[

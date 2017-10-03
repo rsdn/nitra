@@ -26,11 +26,20 @@ namespace Nitra.Ast
         NamespaceBody.NamespaceMembers -> Members;
       }
 
-    | Ast -> Nitra.Ast.TopAst          // Header Name AstInheritanceOpt Body
+    | Ast ->  // Header Name AstInheritanceOpt Body
+      let astName : Name = Name in
+      let astHeader : AstHeader = Header in
+      Nitra.Ast.TopAst
       {
-        Name -> Name;
+        astName -> Name;
+        astHeader -> Header;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        Body.Members -> Members;
+        Body.Members(astHeader) -> Members;
+        match (Body.SymbolDefinitionOpt)
+        {
+          | Some(value) -> value(astName)
+          | None() -> ImplicitSymbolDeclaration { Name = AstUtils.CreateSymbolName(astName); [] -> TypeBase; }
+        } -> AssociatedSymbol;
       }
 
     | MapSyntax -> TopMapSyntax // "map" "syntax" RuleName=QualifiedReference ParametersOpt=MapSyntaxParameters? "->" AstName=NitraType /*AstType*/ MapSyntaxBody
@@ -42,7 +51,7 @@ namespace Nitra.Ast
         MapSyntaxBody -> Body;
       }
 
-    | SyntaxModule -> SyntaxModule // SyntaxModuleAttributes Name LanguageOpt SyntaxModuleMembers 
+    | SyntaxModule -> SyntaxModule // SyntaxModuleAttributes Name LanguageOpt SyntaxModuleMembers
       {
         Name -> Name;
         match (LanguageOpt)
@@ -62,7 +71,11 @@ namespace Nitra.Ast
     | Language -> Nitra.Ast.Language   // Name ParentOpt Members
       {
         Name -> Name;
-        ParentOpt -> Parent;
+        match (ParentOpt)
+        {
+          | Some(value) -> [value]
+          | None -> []
+        } -> TypeBase;
         Members -> Members;
       }
 
@@ -115,50 +128,64 @@ namespace Nitra.Ast
     }
   }
 
+  map syntax NitraSyntax.NamespaceMember.Ast.Header -> AstHeader
+  {
+    | Ast
+      {
+        IsDeclaration = ParsedValue(KwAst, false);
+        AstModifiers -> Modifiers;
+      }
+
+    | Declaration
+      {
+        IsDeclaration = ParsedValue(KwDeclaration, true);
+        AstModifiers -> Modifiers;
+      }
+  }
+
+  map syntax NitraSyntax.AstModifier -> AstModifier
+  {
+    | Abstract {}
+    | Optional {}
+    | Multiple {}
+  }
+
   map syntax NitraSyntax.StyleProperty -> StyleProperty
   {
     | ForegroundColor { Color = ParsedValue(Color.Span, Color.Value(Nitra.Declarations.AstContext.CompilerMessages)); }
   }
 
-  map syntax NitraSyntax.LanguageMember -> LanguageMember
+  map syntax NitraSyntax.LanguageMember -> LanguageMember*
   {
-    | Style -> Style // "style" sm Name sm StyleBody
+    | Style -> [Style // "style" sm Name sm StyleBody
       {
         Name -> Name;
         StyleBody.Properties -> Properties;
-      }
+      }]
 
     | SpanClass -> StyleReference(Name) // "span" sm "class" sm Name sm MatchTokensOpt=("regex" sm RegexExpression sm)? StyleReference
     | SyntaxModule ->
-      match (this)
+      [match (RuleOpt)
       {
-        // "syntax" sm "module" sm Module=QualifiedReference RuleOpt=(sm "start" sm "rule" sm QualifiedReference)? ";"
-        | (_, _, m, Some((_, _, r)), _) -> StartSyntaxModuleReference
-          {
-            m -> Module;
-            r -> Rule;
-          }
+        | Some((_, _, r)) -> StartSyntaxModuleReference    { Module -> Module; r -> Rule; }
+        | None            -> AdditionSyntaxModuleReference { Module -> Module; }
+      }]
 
-        // "syntax" sm "module" sm Module=QualifiedReference RuleOpt=(sm "start" sm "rule" sm QualifiedReference)? ";"
-        | (_, _, m, None, _) -> AdditionSyntaxModuleReference
-          {
-            m -> Module;
-          }
-      }
-
-    | FileExtension -> FileExtension { Extension = ParsedValue(Ext, GetText(Ext)); }
-    | Company       -> Company       { Name = ParsedValue(Name, GetText(Name)); }
-    | Description   -> Description   { Text = ParsedValue(Text, GetText(Text)); }
-    | Authors       -> Authors       { Text = ParsedValue(Text, GetText(Text)); }
-    | Copyright     -> Copyright     { Text = ParsedValue(Text, GetText(Text)); }
-    | LicenseUrl    -> LicenseUrl    { Text = ParsedValue(Text, GetText(Text)); }
-    | RequireLicenseAcceptance -> RequireLicenseAcceptance { }
+    | FileExtension -> [FileExtension { Extension = ParsedValue(Ext, GetText(Ext)); }]
+    | Company       -> [Company       { Name = ParsedValue(Name, GetText(Name)); }]
+    | Description   -> [Description   { Text = ParsedValue(Text, GetText(Text)); }]
+    | Authors       -> [Authors       { Text = ParsedValue(Text, GetText(Text)); }]
+    | Copyright     -> [Copyright     { Text = ParsedValue(Text, GetText(Text)); }]
+    | LicenseUrl    -> [LicenseUrl    { Text = ParsedValue(Text, GetText(Text)); }]
+    | RequireLicenseAcceptance -> [RequireLicenseAcceptance { }]
   }
 
-  map syntax NitraSyntax.LanguageMember.SpanClass.StyleReference(name : Name) -> SpanClass
+  map syntax NitraSyntax.LanguageMember.SpanClass.StyleReference(name : Name) -> LanguageMember*
   {
-    | Reference -> StyledSpanClass { name -> Name; QualifiedReference -> StyleReference; } //= "=" sm QualifiedReference ";"
-    | StyleBody -> InlineSpanClass { name -> Name; StyleBody.Properties -> Properties; } 
+    | Reference -> [SpanClass { name -> Name; QualifiedReference -> StyleReference; }] //= "=" sm QualifiedReference ";"
+    | StyleBody ->
+      [Style     { Name = Name(name.Location, name.Id); StyleBody.Properties -> Properties; },
+       SpanClass { name -> Name; QualifiedReference.Simple { Name = Nitra.Declarations.Reference(name.Location, name.Id); } -> StyleReference; }]
   }
 
   map syntax NitraSyntax.SyntaxModuleMember -> Nitra.Ast.SyntaxModuleMember
@@ -166,7 +193,7 @@ namespace Nitra.Ast
     | RegexRule      -> this.RegexRule
     | SimpleRule     -> this.SimpleRule
     | ExtensibleRule -> this.ExtensibleRule
-    | Marker         -> Marker { Name -> Name; [] -> Members; }
+    | Marker         -> Marker { Name -> Name; [] -> Members; [] -> Attributes; }
     | RuleAlias      -> this.RuleAlias
     | ExtendRule     -> TopExtendRule
       {
@@ -190,6 +217,12 @@ namespace Nitra.Ast
     | KeywordRegex -> KeywordRegex {} //    = "keyword" sm "regex"  sm MatchTokens=RegexExpression sm "rule" sm QualifiedReference ";"nl
   }
 
+  map syntax NitraSyntax.SymbolDefinition(astName : Name) -> Nitra.Ast.ExplicitSymbolDeclaration
+  {
+    Name = AstUtils.CreateSymbolName(astName);
+    [] -> TypeBase;
+  }
+
   map syntax NitraLiterals.StringLiteral -> StringLiteral
   {
     Value = ParsedValue(this.Span, this.Value());
@@ -204,10 +237,14 @@ namespace Nitra.Ast
 
   map syntax NitraSyntax.RuleAlias -> TopRuleAlias
   {
+    Name -> Name;
+    RuleExpression -> Expression;
   }
 
   map syntax NitraSyntax.RuleAlias(_ : NestedTag) -> NestedRuleAlias
   {
+    Name -> Name;
+    RuleExpression -> Expression;
   }
 
   map syntax NitraSyntax.RegexRule -> TopRegexRule
@@ -215,6 +252,17 @@ namespace Nitra.Ast
     Name -> Name;
     RegexExpression -> Expression;
     RuleBody -> Members;
+    RuleAttributes -> Attributes;
+  }
+
+  map syntax NitraSyntax.RuleAttributes -> RuleAttribute*
+  {
+    RuleAttributeLists
+  }
+
+  map syntax NitraSyntax.RuleAttributeList -> RuleAttribute*
+  {
+    RuleAttributes.Item1
   }
 
   map syntax NitraSyntax.RegexRule(_ : NestedTag) -> NestedRegexRule
@@ -222,42 +270,47 @@ namespace Nitra.Ast
     Name -> Name;
     RegexExpression -> Expression;
     RuleBody -> Members;
+    RuleAttributes -> Attributes;
   }
 
   map syntax NitraSyntax.SimpleRule -> SyntaxModuleMember
   {
-    Header(Name, Expression(RuleFieldTag{}), RuleBody)
+    Header(Name, Expression(RuleFieldTag{}), RuleAttributes, RuleBody)
   }
 
-  map syntax NitraSyntax.SimpleRule.Header(name : Name, fields : RuleField*, members : RuleBodyMember*) -> SyntaxModuleMember
+  map syntax NitraSyntax.SimpleRule.Header(name : Name, fields : RuleField*, attribute : RuleAttribute*, members : RuleBodyMember*) -> SyntaxModuleMember
   {
-    | Syntax -> TopSimpleRule { name -> Name; fields -> Fields; members -> Members; }
-    | Token  -> TopTokenRule  { name -> Name; fields -> Fields; members -> Members; }
-    | Void   -> TopVoidRule   { name -> Name; fields -> Fields; members -> Members; }
+    | Syntax -> TopSimpleRule { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
+    | Token  -> TopTokenRule  { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
+    | Void   -> TopVoidRule   { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
   }
 
-  map syntax NitraSyntax.SimpleRule.Header(_ : NestedTag, name : Name, fields : RuleField*, members : RuleBodyMember*) -> RuleBodyMemberDeclaration
+  map syntax NitraSyntax.SimpleRule.Header(_ : NestedTag, name : Name, fields : RuleField*, attribute : RuleAttribute*, members : RuleBodyMember*) -> RuleBodyMemberDeclaration
   {
-    | Syntax -> NestedSimpleRule { name -> Name; fields -> Fields; members -> Members; }
-    | Token  -> NestedTokenRule  { name -> Name; fields -> Fields; members -> Members; }
-    | Void   -> NestedVoidRule   { name -> Name; fields -> Fields; members -> Members; }
+    | Syntax -> NestedSimpleRule { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
+    | Token  -> NestedTokenRule  { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
+    | Void   -> NestedVoidRule   { name -> Name; fields -> Fields; attribute -> Attributes; members -> Members; }
   }
 
   map syntax NitraSyntax.SimpleRule(tag : NestedTag) -> RuleBodyMemberDeclaration
   {
-    Header(tag, Name, Expression(RuleFieldTag{}), RuleBody)
+    Header(tag, Name, Expression(RuleFieldTag{}), RuleAttributes, RuleBody)
   }
 
   map syntax NitraSyntax.ExtensibleRule -> TopExtensibleRule
   {
     Name -> Name;
     RuleBody -> Members;
+    RuleAttributes -> Attributes;
+    [] -> Fields;
   }
 
   map syntax NitraSyntax.ExtensibleRule(_ : NestedTag) -> NestedExtensibleRule
   {
     Name -> Name;
     RuleBody -> Members;
+    RuleAttributes -> Attributes;
+    [] -> Fields;
   }
 
   map syntax NitraSyntax.RuleBody -> RuleBodyMember*
@@ -284,6 +337,7 @@ namespace Nitra.Ast
               | Some(ruleBody) -> ruleBody
               | None()         -> []
             } -> Members;
+            RuleAttributes -> Attributes;
           }
 
         | (_, _, None, ruleExpression, rightAssociativeOpt, ruleBodyOpt) -> ExtensionRuleWithInferredName
@@ -295,7 +349,7 @@ namespace Nitra.Ast
               | Some(ruleBody) -> ruleBody
               | None()         -> []
             } -> Members;
-            
+            RuleAttributes -> Attributes;
           }
       }
 
@@ -325,9 +379,11 @@ namespace Nitra.Ast
     | Rounds              -> RuleExpression(_tag)
     | Sequence =
       {
+        assert2(!this.LeftRule.IsAmbiguous);
         def buffer = SCG.List();
         buffer.Add(AstUtils.CreateRuleField(this.LeftRule));
         // TODO: rewrite without foreach!
+        assert2(!RightRules.IsAmbiguous);
         foreach (item in RightRules)
           buffer.Add(AstUtils.CreateRuleField(item));
         RuleField.AstList(Location, buffer.ToArray())
@@ -424,11 +480,6 @@ namespace Nitra.Ast
         RegexExpression -> Expression;
       }
 
-    | Invert -> RX.Invert
-      {
-        RegexExpression -> Expression;
-      }
-
     | Range -> RX.Range
       {
       }
@@ -458,7 +509,7 @@ namespace Nitra.Ast
       }
   }
 
-  map syntax NitraSyntax.AstMember -> AM.AstMember
+  map syntax NitraSyntax.AstMember(parentHeader : AstHeader) -> AM.AstMember
   {
     | StructuralProperty       -> AM.StructuralProperty { Name -> Name; NitraType /*AstType*/ -> TypeName; }
     | DependentProperty        -> this.DependentProperty
@@ -467,11 +518,14 @@ namespace Nitra.Ast
     | DependentAddStatement    -> this.DependentAddStatement
     | Decompose                -> AM.Decompose {}
     | StageScope               -> this.StageScope
-    | ChildAst                 -> AM.NestedAst
+    | ChildAst                 ->
+      let header : AstHeader = AstHeader { IsDeclaration = parentHeader.IsDeclaration; [] -> Modifiers; } in
+      AM.NestedAst
       {
         Name -> Name;
+        header -> Header;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        match(Body) { Some(value) -> value.Members | None() -> [] } -> Members;
+        match(Body) { Some(value) -> value.Members(header) | None() -> [] } -> Members;
       }
   }
 
@@ -518,7 +572,7 @@ namespace Nitra.Ast
 
     | Braces -> NitraType
     | Tuple = AstUtils.CreateTupleQualifiedReference(Location, NitraType2.GetAst(QualifiedReference.AstList(Location, NitraType1.GetAst())));
-    | Func  = AstUtils.CreateFuncQualifiedReference(Location, NitraType1.GetAst(), NitraType2.GetAst()); 
+    | Func  = AstUtils.CreateFuncQualifiedReference(Location, NitraType1.GetAst(), NitraType2.GetAst());
     | OptionList -> ListAstReference   { NitraType -> Elem; }
     | List       -> ListAstReference   { NitraType -> Elem; }
     | Option     -> OptionAstReference { NitraType -> Value; }
@@ -736,4 +790,27 @@ namespace Nitra.Ast
         Expr -> Expression;
       }
   }
+
+    map syntax NitraSyntax.RuleAttribute -> RuleAttribute
+    {
+      | Start                       {}
+      | Prefix                      {}
+      | Postfix                     {}
+      | Infix                       {}
+      | ExplicitSpaces              {}
+      | ImplicitSpaces              {}
+      | SuppressTrailingSpaces      {}
+      | AllowTrailingSpaces         {}
+      | NoParseTree                 {}
+      | KeyToken                    {}
+      | Keyword                     {}
+      | Reference                   {}
+      | Name                        {}
+      | DynamicSyntaxExtender       {}
+      | DynamicSyntaxExtentionPoint {}
+      | SplitAtCompletionPosition   {}
+      | PreferIfConflictWith        {}
+      | Arity                       { Number = ParsedValue(Number.Span, Number.Value()); }
+      | SpanClass                   { Reference -> Name; }
+    }
 }

@@ -25,7 +25,9 @@ namespace Nitra.Ast
   {
   }
 
-  ast NestedRuleAlias : RuleAlias, RuleBodyMember
+  declaration NestedRuleAlias : RuleAlias, RuleBodyMemberDeclaration
   {
+    ContainingTable = TableScope("alias");
+    ScopeOut        = ScopeIn.HideWith(ContainingTable);
   }
 }

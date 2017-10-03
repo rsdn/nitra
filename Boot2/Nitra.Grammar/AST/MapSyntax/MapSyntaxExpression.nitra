@@ -1,7 +1,9 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.Declarations;
 using Nitra.Ast.AstMembers;
+
+using System.Text;
 
 namespace Nitra.Ast
 {
@@ -14,18 +16,17 @@ namespace Nitra.Ast
     in  ExpectedType : TypeSymbol;
     out Type         : TypeSymbol;
 
-    unless (Type.IsSubtypeOf(ExpectedType))
-      Error(context, $"Expression type '$(self.Type)' is not subtype of expected type '$(self.ExpectedType)'.");
+    unless (ExpectedType : object == WellKnownSymbols.AnyType || Type.IsSubtypeOf(ExpectedType))
+      Error(context, $"<hint>Expression type '$(AstUtils.ToHint(self.Type, context))' is not subtype of expected type '$(AstUtils.ToHint(self.ExpectedType, context))'.</hint>");
 
     | Identifier
       {
-      stage 1:
-        out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
-
       stage 2:
+        out TempScope : Scope = Scope;
+        out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
 
-        Reference.Scope = Scope;
+        Reference.Scope = TempScope;
         Type            = ImplicitCastRef.Symbol.ReturnType;
 
         Reference : Reference;
@@ -90,7 +91,7 @@ namespace Nitra.Ast
           Error(context, "Type inference is not supported, please specify type with ':' operator.");
 
         unless (Expression.Type is RuleTypeSymbol)
-          Expression.Error(context, $"Expression type '$(this.Expression.Type)' is not a parse tree type.");
+          Expression.Error(context, $"<hint>Expression type '$(AstUtils.ToHint(this.Expression.Type, context))' is not a parse tree type.</hint>");
 
         Expression : MapSyntaxExpression;
         Cases      : MapSyntaxMatchCase*;
@@ -100,7 +101,7 @@ namespace Nitra.Ast
       {
         out ItemTypeVar  : RuleTypeSymbol = AstUtils.CreateRuleTypeVar(context);
 
-        Item.ContainingTable        = TableScope("variables", null);
+        Item.ContainingTable        = TableScope("variables");
         Item.Symbol.Type            = ItemTypeVar;
         ItemExpression.ExpectedType = AstUtils.InitList(context, ItemTypeVar);
         ItemExpression.AstScope     = AstScope;
@@ -108,7 +109,7 @@ namespace Nitra.Ast
         InitExpression.ExpectedType = AstUtils.Wait(ItemExpression.Type, ExpectedType);
         InitExpression.AstScope     = AstScope;
         InitExpression.Scope        = Scope.HideWith(Item.ContainingTable);
-        Accumulator.ContainingTable = TableScope("variables", null);
+        Accumulator.ContainingTable = TableScope("variables");
         Accumulator.Symbol.Type     = ExpectedType;
         AccumulatorRef.Scope        = Accumulator.ContainingTable;
         EachExpression.ExpectedType = ExpectedType;
@@ -156,9 +157,9 @@ namespace Nitra.Ast
 
         // TODO: move error handling to IRef
         when (MapSyntaxRef.IsUnresolved)
-          Error(context, $"Syntax mapping not found for type '$(this.Expression.Type)'.");
+          Error(context, $"<hint>Syntax mapping not found for type '$(AstUtils.ToHint(this.Expression.Type, context))'.</hint>");
         when (MapSyntaxRef.IsAmbiguous)
-          Error(context, "Syntax mapping for type '$(this.Expression.Type)' is ambiguous, try specify type of arguments explicitly.");
+          Error(context, "<hint>Syntax mapping for type '$(AstUtils.ToHint(this.Expression.Type, context))' is ambiguous, try specify type of arguments explicitly.</hint>");
 
         Expression : MapSyntaxExpression;
         Arguments  : MapSyntaxExpression*;
@@ -172,7 +173,7 @@ namespace Nitra.Ast
       stage 2:
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
 
-        Expression.ExpectedType = WellKnownSymbols.AnyType;
+        Expression.ExpectedType = AstUtils.CreateRuleTypeVar(context);
         Expression.AstScope     = AstScope;
         Expression.Scope        = Scope;
         Reference.Scope         = Expression.Type.Scope;
@@ -185,9 +186,9 @@ namespace Nitra.Ast
     | DefineVariable
       {
       stage 1:
-        out TypeRef : Ref[TypeSymbol] = VariableType.Ref.Resolve();
+        out TypeRef : Ref[TypeSymbol] = AstUtils.ResolveStructuralPropertyType(VariableType.Ref, context);
 
-        Variable.ContainingTable = TableScope("variables", null);
+        Variable.ContainingTable = TableScope("variables");
         Variable.Symbol.Type     = TypeRef.Symbol;
         VariableType.Scope       = Scope;
         Expression.AstScope      = AstScope;

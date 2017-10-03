@@ -38,7 +38,12 @@
     marker inl; // i + nl
     marker sm;  // optional spacer and prefer to print space while pretty printing
 
-    regex Any = ['\u0000'..'\uFFFF'];
+    regex Any = HighSurrogates LowSurrogates | NonSurrogates
+    {
+      regex HighSurrogates = ['\uD800'..'\uDBFF'];
+      regex LowSurrogates = ['\uDC00'..'\uDFFF'];
+      regex NonSurrogates = ['\u0000'..'\uD7FF', '\uE000'..'\uFFFD'];
+    }
 
     regex UnicodeLineSeparator      = '\u2028';
     regex UnicodeParagraphSeparator = '\u2029';
@@ -50,13 +55,12 @@
 
     token IgnoreToken
     {
-      | SpaceToken = Spaces;
     }
 
     void s = IgnoreToken*;                // optional spacer
     void S = !IdentifierPartCharacters s; // identifier break spacer
 
-    regex LetterCharacter           = [Lu, Ll, Lt, Lm, Lo, Nl];
+    regex LetterCharacter           = [Lu, Ll, Lt, Lm, Lo, Nl] | '\uFFFE';
     regex CombiningCharacter        = [Mn, Mc];
     regex DecimalDigitCharacter     = [Nd];
     regex ConnectingCharacter       = [Pc];

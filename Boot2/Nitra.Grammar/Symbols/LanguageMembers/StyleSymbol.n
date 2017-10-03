@@ -39,7 +39,7 @@ namespace Nitra.Typing
       _properties       = PropertyBag(this);
     }
 
-    public override DeclaringLanguage : LanguageSymbol { get; }    
+    public override DeclaringLanguage : LanguageSymbol { get; }
     public override ForegroundColor   : int { get { _properties.GetProperty("ForegroundColor", Color.Empty.ToArgb()) } }
 
     internal SetForegroundColor(loc : Location, value : Color) : void

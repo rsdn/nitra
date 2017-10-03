@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.AstUtils;
 using Nitra.Declarations;
@@ -19,7 +19,7 @@ namespace Nitra.Ast.AstMembers
     symbol
     {
       in Parent : AstSymbol;
-      FullName = AstUtils.MakeNamespaceFullName(this.Parent.FullName, this.Name);
+      FullName = AstUtils.MakeFullName(this.Parent.FullName, this.Name);
     }
 
     Symbol.Parent = Parent;
@@ -29,11 +29,13 @@ namespace Nitra.Ast.AstMembers
   {
     symbol
     {
+      SpanClass = NitraLang.PropertySpanClass;
       Kind = "structural property";
+      MakeHint = AstUtils.StructuralPropertyMakeHint(symbolCache, this);
     }
 
   stage 1:
-    out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve(); //TODO: wrap non AstTypeSymbol types with ParsedValue[_]
+    out TypeRef : Ref[TypeSymbol] = AstUtils.ResolveStructuralPropertyType(TypeName.Ref, context);
 
     TypeName.Scope = Scope;
     Symbol.Type    = TypeRef.Symbol;
@@ -45,8 +47,13 @@ namespace Nitra.Ast.AstMembers
   {
   }
 
-  declaration ChildAst : AstMemberDeclaration
+  declaration ChildAst : Nitra.Ast.Ast, AstMemberDeclaration
   {
+    symbol
+    {
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
+    EmitSymbol(Symbol, context);
   }
 
   ast StageScope : AstMember
@@ -75,6 +82,10 @@ namespace Nitra.Ast.AstMembers
 
   declaration NestedAst : Nitra.Ast.Ast, AstMember
   {
+    symbol
+    {
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
     Symbol.BaseTypeSet |= (Parent, TypeBase.Ref)[0]; // tuple adds dependency to TypeBase.Ref property
     Members.Parent = Symbol;
   }

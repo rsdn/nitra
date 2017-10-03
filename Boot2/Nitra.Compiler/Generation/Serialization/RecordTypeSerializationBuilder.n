@@ -19,7 +19,7 @@ namespace Nitra.Serialization
     public override Tag : TypeTag { get { TypeTag.Object } }
 
     [RecordIgnore] private mutable _members : SCG.List[RecordMemberInfo];
-    
+
     protected override CollectTypeData() : void
     {
       assert(_members : object == null);

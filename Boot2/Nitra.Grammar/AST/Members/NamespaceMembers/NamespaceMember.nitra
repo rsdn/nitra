@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.Declarations;
 
@@ -8,6 +8,46 @@ namespace Nitra.Ast
 {
   declaration TopAst : Nitra.Ast.Ast, NamespaceMemberDeclaration
   {
+    symbol
+    {
+      CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+
+      in AssociatedSymbol : SymbolDeclarationSymbol;
+    }
+
     Members.Parent = Symbol;
+    AssociatedSymbol.AssociatedDeclaration = if (Symbol.IsDeclaration) VSome(Symbol) else VNone();
+    AssociatedSymbol.Scope = Scope;
+
+    AssociatedSymbol : SymbolDeclaration;
+
+    EmitSymbol(Symbol, context);
+  }
+
+  abstract declaration SymbolDeclaration : SupportsInheritanceType
+  {
+    sealed symbol
+    {
+      in AssociatedDeclaration : TopAstSymbol;
+      FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
+
+    in AssociatedDeclaration : ValueOption[TopAstSymbol];
+
+    Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
+    Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
+
+    ContainingTable = AssociatedDeclaration.Value.DeclaredIn.MemberTable;
+    Symbol.AssociatedDeclaration = AssociatedDeclaration.Value;
+  }
+
+  declaration ExplicitSymbolDeclaration : SymbolDeclaration
+  {
+  }
+
+  declaration ImplicitSymbolDeclaration : SymbolDeclaration
+  {
   }
 }

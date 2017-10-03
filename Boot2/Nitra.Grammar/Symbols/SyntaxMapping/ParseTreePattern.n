@@ -41,7 +41,7 @@ namespace Nitra.Typing
         | Ctor(ctor, args) => buffer.Append(ctor.Name).Append('(').AppendList(args, AppendPattern, ", ").Append(')')
       }
     }
- 
+
     public override ToString() : string
     {
       StringBuilder().AppendPattern(this).ToString()

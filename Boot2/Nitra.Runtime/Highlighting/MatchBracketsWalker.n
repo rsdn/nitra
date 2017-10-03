@@ -87,7 +87,7 @@ namespace Nitra.Runtime.Highlighting
     {
       OnToken(ruleInfo.SpanClass, startPos, endPos, parseResult, context);
     }
-    
+
     public override OnTokenString(ruleInfo : SubruleInfo.TokenString, startPos : int, endPos : int, parseResult : IParseResult, context : Context) : void
     {
       OnToken(ruleInfo.SpanClass, startPos, endPos, parseResult, context);

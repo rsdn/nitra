@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.Declarations;
 using System.Collections.Generic;
@@ -32,7 +32,7 @@ namespace Nitra.Ast
 
   abstract declaration MapSyntaxWithParameters : MapSyntax
   {
-    out ParameterScope : TableScope = TableScope("parameters", null);
+    out ParameterScope : TableScope = TableScope("parameters");
 
   stage 1:
     out RuleRef : Ref[RuleSymbol];
@@ -41,9 +41,9 @@ namespace Nitra.Ast
     Symbol.ParameterTypes      = Parameters.Type;
     Symbol.ReturnType          = AstTypeRef.Symbol;
     Symbol.ThisType            = RuleRef.Symbol;
-    AstName.Scope              = Scope;
+    AstName.Scope              = Scope.FilterWithAstTypeSymbol();
     AstTypeRef                 = this.AstName.Ref.Resolve();
-    Body.AstScope              = Scope.HideWith(AstTypeRef.Scope);
+    Body.AstScope              = Scope.HideWith(AstTypeRef.Scope).FilterWithAstTypeSymbol();
     Body.Scope                 = Scope.HideWith(ParameterScope).HideWith(RuleRef.Scope);
     Body.This.Symbol.Type      = Symbol.ThisType;
     Parameters.ContainingTable = ParameterScope;
@@ -64,7 +64,7 @@ namespace Nitra.Ast
 
   declaration InlineMapSyntax : MapSyntaxWithParameters, RuleBodyMember
   {
-    RuleRef = Ref.Some(Location.FromStart(), Parent).Resolve();
+    RuleRef = Ref.CreateBind(Location.FromStart(), BindResult.Single(Parent)).Resolve();
   }
 
   declaration ExtensionMapSyntax : MapSyntax
@@ -72,11 +72,12 @@ namespace Nitra.Ast
     in Prototype : MapSyntaxSymbol;
 
   stage 1:
+    in  DeclaredIn     : ExtensionContainerSymbol;
     in  AstScope       : Scope;
     in  DefaultAstType : AstTypeSymbol;
     out RuleRef        : Ref[ExtensionRuleSymbol] = this.RuleName.Ref.Resolve();
 
-    RuleName.Scope        = Scope;
+    RuleName.Scope        = DeclaredIn.ExtensionsContainingTable;
     Symbol.Parameters     = Prototype.Parameters;
     Symbol.ParameterTypes = Prototype.ParameterTypes;
     Symbol.ReturnType     = Prototype.ReturnType;

@@ -9,10 +9,16 @@ namespace Nitra.Ast
   {
     symbol
     {
-      Kind = "dependent property";
+      in Type : TypeSymbol;
+
+      SpanClass = NitraLang.DependentPropertySpanClass;
+      Kind      = "dependent property";
     }
 
+    in TypeRef : Ref[TypeSymbol] = Type.Ref.Resolve();
+
     Type.Scope = Scope;
+    Symbol.Type = TypeRef.Symbol;
 
     Type : QualifiedReference;
   }

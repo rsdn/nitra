@@ -48,6 +48,8 @@ namespace Nitra.Internal
   [Record]
   public abstract class PrefixRuleParser : ExtensionRuleParser
   {
+    [RecordIgnore]
+    internal HiddenBy : HashSet[PrefixRuleParser] = HashSet();
   }
 
   [Record]

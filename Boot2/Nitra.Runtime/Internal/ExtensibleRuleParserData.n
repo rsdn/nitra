@@ -3,7 +3,9 @@ using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
 using Nemerle.Imperative;
+using Nemerle.Extensions;
 
+using Nitra.Runtime.GraphUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +27,13 @@ namespace Nitra.Internal
     internal MandatoryTokenCount : int { get; set; }
     internal IsDynamicExtensible : bool { get { Descriptor.IsDynamicExtensible } }
 
+    [Record, StructuralEquality]
+    private struct PreferIfConflictWithGraphNode : IGraphNode[PreferIfConflictWithGraphNode]
+    {
+      public RuleDescriptor : ExtensionRuleDescriptor { get; }
+      public Connections : IEnumerable[PreferIfConflictWithGraphNode] { get { RuleDescriptor.PreferIfConflictWithList.Select(PreferIfConflictWithGraphNode(_)) } }
+    }
+
     internal this(grammar : CompositeGrammar, rd : ExtensibleRuleDescriptor, prefixDescriptors : array[PrefixRuleDescriptor], postfixDescriptors : array[PostfixRuleDescriptor], ruleIdBuilder : RuleIdBuilder)
     {
       Grammar             = grammar;
@@ -41,6 +50,39 @@ namespace Nitra.Internal
       }
       PrefixParsers       = PrefixDescriptors.Map(rd => rd.NewParser(Grammar, ruleIdBuilder, this));
       PostfixParsers      = PostfixDescriptors.Map(newPostfix);
+
+      when (PrefixDescriptors.Any(d => !d.PreferIfConflictWithList.IsEmpty()))
+      {
+        foreach (prefix in PrefixDescriptors)
+          foreach (prefer in prefix.PreferIfConflictWithList)
+            assert(PrefixDescriptors.Contains(prefer));
+        assert(GraphAlgorithms.FindMaximalDistanceToLeafInDAG(PrefixDescriptors.Map(PreferIfConflictWithGraphNode(_))).Count() == PrefixDescriptors.Length);
+
+        def d2p = Hashtable();
+        for (mutable i = 0; i < PrefixDescriptors.Length; ++i)
+          d2p.Add(PrefixDescriptors[i], PrefixParsers[i]);
+        foreach (descryptor in PrefixDescriptors)
+          foreach (preferIfConflictWith in descryptor.PreferIfConflictWithList)
+            _ = d2p[preferIfConflictWith].HiddenBy.Add(d2p[descryptor]);
+        mutable updated = true;
+        while (updated)
+        {
+          updated = false;
+          foreach (parser in PrefixParsers)
+          {
+            def newHiddenBy = HashSet(parser.HiddenBy);
+            foreach (hiddenByParser in parser.HiddenBy)
+              foreach (h in hiddenByParser.HiddenBy)
+                _ = newHiddenBy.Add(h);
+            when (newHiddenBy.Count != parser.HiddenBy.Count)
+            {
+              updated = true;
+              foreach (n in newHiddenBy)
+                _ = parser.HiddenBy.Add(n);
+            }
+          }
+        }
+      }
     }
 
     internal GetParser(bindingPowerName : string) : ExtensibleRuleParser

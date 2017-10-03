@@ -14,9 +14,9 @@ namespace Nitra.Compiler.PatternMatching
   {
     | Pos { Con : ParseTreeCtor; Args : list[Termd] }
     | Neg { Cons : list[ParseTreeCtor] }
- 
+
     public static Any : Neg = Neg([]);
- 
+
     [Memoize]
     public static MakeAnyList(length : int) : list[Termd]
     {
@@ -27,7 +27,7 @@ namespace Nitra.Compiler.PatternMatching
       else
         assert(false)
     }
- 
+
     public static AppendTermd(this buffer : StringBuilder, termd : Termd) : StringBuilder
     {
       match (termd)
@@ -37,7 +37,7 @@ namespace Nitra.Compiler.PatternMatching
         | Neg(nonset)    => buffer.Append('!').Append('{').AppendList(nonset, ParseTreeCtor.AppendCtor, ", ").Append('}')
       }
     }
- 
+
     public override ToString() : string
     {
       StringBuilder().AppendTermd(this).ToString()

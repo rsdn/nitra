@@ -16,7 +16,7 @@ namespace DotNet
     public NameId     : int;
     public Name       : string { get { StringIndex.GetText(NameId) } }
     public Expression : CustomAttributeExpression;
-    
+
     public override ToString() : string
     {
       Name + " = " + Expression

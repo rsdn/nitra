@@ -1,4 +1,5 @@
-﻿using Nitra.Declarations;
+﻿using Nitra;
+using Nitra.Declarations;
 using Nitra.Serialization2;
 
 using Nemerle;
@@ -9,6 +10,7 @@ using Nemerle.Utility;
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace DotNet
@@ -21,24 +23,38 @@ namespace DotNet
     }
 
     private _scope : Scope;
-    
-    public override FindMany[TSymbol](predicate : Predicate[TSymbol], results : ref LightList[TSymbol]) : void
-    {
-      _scope.FindMany(predicate, ref results)
-    }
 
-    public override BindMany[TSymbol](reference : Reference, results : ref LightList[TSymbol]) : void
-    {
-      _scope.BindMany(reference, ref results);
+    // TODO: add type subst
+    public override AllSymbols : Seq[DeclarationSymbol] { get { _scope.AllSymbols } }
 
-      // TODO: do not perform speculative binding on @-prefixed names
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      def res = _scope.Bind.[TSymbol](reference);
       def reference2 = Reference(reference.Location, reference.Text + "Attribute");
-      _scope.BindMany(reference2, ref results);
+      def res2 = _scope.Bind.[TSymbol](reference2);
+      match (res, res2)
+      {
+        | (BindResult.Nil, BindResult.Nil) => res
+        | (_, BindResult.Nil) => res
+        | (BindResult.Nil, _) => res2
+        | _ => NitraUtils.MakeUnion(ImmutableArray.Create(res, res2))
+      }
     }
 
-    public override MakeCompletionList(prefix : string) : Seq[DeclarationSymbol]
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
-      _scope.MakeCompletionList(prefix)
+      _scope.Bind.[TSymbol](isMatch)
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
+    {
+      def id            = nodeToIdMap.GetObjectId(this);
+      def idScope       = nodeToIdMap.GetObjectId(_scope);
+
+      nodes.Add($<#Obj_$id [label="CustomAttributeLookupScope $id"]#>);
+      edges.Add($<#Obj_$id -> Obj_$idScope#>);
+
+      _scope.ToDot(nodeToIdMap, nodes, edges);
     }
 
     public override ToString() : string

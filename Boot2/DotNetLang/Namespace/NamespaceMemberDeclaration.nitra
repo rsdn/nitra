@@ -1,4 +1,4 @@
-﻿using Nitra.Declarations;
+using Nitra.Declarations;
 
 using System.Linq;
 
@@ -8,8 +8,10 @@ namespace DotNet
   {
     symbol
     {
+      DeclaredInOpt = if (DeclaredIn == null) VNone() else VSome(DeclaredIn);
+
       in DeclaredIn : NamespaceSymbol;
-      FullName = AstUtils.MakeNamespaceFullName(this.DeclaredIn.FullName, this.Name);
+      FullName = AstUtils.MakeFullName(this.DeclaredIn.FullName, this.Name);
     }
 
     Symbol.DeclaredIn = DeclaredIn;

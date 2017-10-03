@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+using Nemerle.Assertions;
+
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
 
@@ -12,14 +15,20 @@ namespace Nitra.Declarations
     public Pass                   : int               { get { _pass } }
     public CollectorsCreatedCount : int               { get { _collectorsCreated } }
     public CancellationToken      : CancellationToken { get; set; }
+    public SymbolCache            : ISymbolCache      { get; }
     mutable _files                : ImmutableArray[FileEvalPropertiesData];
             _fileMap              : Dictionary[int, FileEvalPropertiesData] = Dictionary();
-            
+
+    public this(symbolCache : ISymbolCache)
+    {
+      SymbolCache = symbolCache;
+    }
+
     public GetFileData(fileId : int) : FileEvalPropertiesData
     {
       _fileMap[fileId]
     }
-    
+
     public Files : ImmutableArray[FileEvalPropertiesData]
     {
       get { _files }
@@ -56,5 +65,12 @@ namespace Nitra.Declarations
       createdOnPass  = _pass;
       ++_collectorsCreated;
     }
+
+    public EmitSymbol([NotNull] symbol : DeclarationSymbol) : void
+    {
+      OnEmitSymbol?.Invoke(symbol, this);
+    }
+
+    public event OnEmitSymbol : Action[DeclarationSymbol, DependentPropertyEvalContext];
   }
 }

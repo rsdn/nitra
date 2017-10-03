@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 using Nemerle.Collections;
 
 using Nitra.AstUtils;
@@ -6,12 +6,17 @@ using Nitra.Declarations;
 
 using System.Collections.Generic;
 
+using R  = Nitra.Ast.RuleExpressions;
+
 namespace Nitra.Ast
 {
   abstract ast SyntaxElementContainer : BindableAst, ScopedAst
   {
-    inout Literals : Map[string, string];
+    inout Literals         : Map[string, string];
     inout ExportedLiterals : Map[string, string];
+    inout Scope            : Scope;
+
+    Scope = ScopeIn;
   }
 
   abstract ast SyntaxModuleMember : SyntaxElementContainer
@@ -32,35 +37,61 @@ namespace Nitra.Ast
     Symbol.Parent   = Parent;
   }
 
-  abstract declaration ExtendRule : Container, BindableAst
+  abstract declaration ExtendRule : ExtensionContainer, Container, BindableAst
   {
     symbol
     {
       SpanClass = NitraLang.RuleSpanClass;
       Kind      = "extend syntax";
-      Scope     = MemberTable;
+      Scope     = MemberTable.HideWith(ExtensionsContainingTable);
+
+      in ExtendedRule : ExtensibleRuleSymbol;
     }
+
+    in ExtendedRuleRef : Ref[ExtensibleRuleSymbol];
 
     BaseName.Scope          = Scope;
     Members.ContainingTable = Symbol.MemberTable;
     Members.Scope           = Scope;
+    ExtendedRuleRef         = BaseName.Ref.Resolve();
+    Symbol.ExtendedRule     = ExtendedRuleRef.Symbol;
 
     BaseName : QualifiedReference;
     Members  : RuleBodyMember*;
   }
-  
+
   declaration TopExtendRule : ExtendRule, SyntaxModuleMemberDeclaration
   {
+    Symbol             = Parent.ExtendsTable.Define(this, context);
     Members.LiteralsIn = LiteralsIn;
     Members.Parent     = this.Symbol;
   }
 
-  abstract ast RuleAlias
+  abstract declaration RuleAlias : RuleType, BindableAst
   {
+    symbol
+    {
+      in Replacement : RuleTypeSymbol;
+      SpanClass = NitraLang.AliasSpanClass;
+      Kind      = "rule alias";
+      TypeSubst = Replacement;
+    }
+
+    Expression.Scope    = Scope;
+    Symbol.Replacement    = Expression.Type;
+
+    Expression : R.Expression;
   }
 
-  ast TopRuleAlias : RuleAlias, SyntaxModuleMember
+  declaration TopRuleAlias : RuleAlias, SyntaxModuleMemberDeclaration
   {
+    symbol
+    {
+      MakeHint = AstUtils.RuleAliasMakeHint(symbolCache, this);
+    }
+
+    ContainingTable = TableScope("alias");
+    ScopeOut        = ScopeIn.HideWith(ContainingTable);
   }
 
   ast TokenLiteral : SyntaxModuleMember

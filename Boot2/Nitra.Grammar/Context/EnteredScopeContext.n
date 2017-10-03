@@ -170,7 +170,7 @@ namespace Nitra.Typing
         | symbols =>
           match (bindManyTails(symbols, nameTail))
           {
-            | []     => 
+            | []     =>
               def path = name :: nameTail;
               when (this.Parent == null)
                 return bindByOpenedNamespace(loc, name, nameTail);
@@ -180,7 +180,7 @@ namespace Nitra.Typing
                 bindByOpenedNamespace(loc, name, nameTail)
               else
                 result
-              
+
             | result => BindingUtils.MakeBindingResult(loc, result)
           }
       }

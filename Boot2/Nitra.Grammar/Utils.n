@@ -1,4 +1,4 @@
-﻿using Nitra.Model;
+using Nitra.Model;
 using Nitra.ProjectSystem;
 using Nitra.Runtime;
 using Nitra.Typing;
@@ -97,6 +97,12 @@ namespace Nitra
         Compiler.Location(index, startLine, startCol, endLine, endCol)
       else
         Compiler.Location.Default
+    }
+
+    [DebuggerStepThroughAttribute]
+    public NLocation(this symbol : Nitra.Declarations.DeclarationSymbol) : Compiler.Location
+    {
+      symbol.FirstDeclarationOrDefault.Location.NLocation()
     }
 
     public Identifiers(this parseTree : ListParseTree[G.Reference]) : list[Identifier]
@@ -387,7 +393,7 @@ namespace Nitra
     {
       BindByHierarchyImpl(symbol, name, compilerMessages)
     }
-    
+
     BindByHierarchyImpl[T](symbol : Symbol, name : Located, compilerMessages : ICompilerMessages) : SymbolRef[T]
       where T: Symbol
     {
@@ -444,7 +450,6 @@ namespace Nitra
         | Chars(chars)                             => FSMBuilder.Seq(chars)
         | Repeat(min, max, rule)                   => FSMBuilder.Repeat(min, max, convert(rule))
         | RepeatWithSeparator(min, max, rule, sep) => FSMBuilder.RepeatWithSeparator(min, max, convert(rule), convert(sep))
-        | Invert(rule)                             => FSMTransform.Invert(convert(rule))
         | Subtract(rule1, rule2)                   => FSMTransform.Sub(convert(rule1), convert(rule2))
         | Call(RuleRef.Some(symbol) as ruleRef) =>
           if (visitedRules.Add(symbol))

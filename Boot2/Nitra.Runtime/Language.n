@@ -2,6 +2,7 @@
 
 using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Imperative;
 
 using System;
 using System.Collections.Generic;
@@ -53,12 +54,36 @@ namespace Nitra
       }
     }
 
-    public static GetLanguages(assembly : Assembly) : array[Language]
+    public static LoadAssembly(path : string) : Assembly
     {
+      def assembly =
+        if (path.Contains(", Version="))
+          Assembly.Load(path)
+        else
+          Assembly.LoadFrom(path);
+      assembly
+    }
+
+    public static GetLanguages(path : string) : array[Language]
+    {
+      def assembly  = LoadAssembly(path);
       def languages = List();
       def assemblyAttributes = CustomAttributeData.GetCustomAttributes(assembly);
-      foreach (attr when attr.Constructor.DeclaringType.Equals(typeof(LanguagesAttribute)) in assemblyAttributes)
+      def attrTypeToSearch = typeof(LanguagesAttribute);
+      foreach (attr in assemblyAttributes)
       {
+        def attrType = attr.Constructor.DeclaringType;
+        unless (attrType.Equals(attrTypeToSearch))
+        {
+          when (attrType.FullName == attrTypeToSearch.FullName)
+          {
+            def supportedVersion = attrTypeToSearch.Assembly.GetName().Version;
+            def asmVersion = attrType.Assembly.GetName().Version;
+            throw ApplicationException($"The language assembly '$path' was build with old version of Nitra.Runtime.dll. Assembly build with $asmVersion version. Supported versionis $supportedVersion.");
+          }
+          continue;
+        }
+
         def languageTypes = attr.ConstructorArguments[0].Value :> Seq[CustomAttributeTypedArgument];
         foreach (languageTypeArgument in languageTypes)
         {
