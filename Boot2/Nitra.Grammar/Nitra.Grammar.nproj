@@ -1,69 +1,80 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
+    <Name>Nitra.Grammar</Name>
+    <RootNamespace>Nitra.Grammar</RootNamespace>
+    <NuspecFile>Nitra.Grammar.nuspec</NuspecFile>
+    <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{792f6159-9ff0-4352-8323-591a9bad3472}</ProjectGuid>
+    <NeedAddVersionToAssemblyName>False</NeedAddVersionToAssemblyName>
+    <CustomArguments>$(CustomArguments) -nowarn:114</CustomArguments>
+  </PropertyGroup>
+  <PropertyGroup> <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
-    <ProjectGuid Condition=" '$(Stage)' == 'Stage1' ">{792f6159-9ff0-4352-8323-591a9bad3472}</ProjectGuid>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <Name Condition=" '$(Stage)' == 'Stage1' ">Nitra.Grammar</Name>
+    <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
+    <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
+    <AssemblyName>$(Name)$(NameSuffix2)</AssemblyName>
+    <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\..\Common</CommonFilesPath>
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
+    <NemerleLibs Condition=" '$(NemerleLibs)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</NemerleLibs>
     <Nemerle Condition=" '$(Stage)' == 'Boot' ">$(MSBuildProjectDirectory)\..\..\Boot1\$(NemerleVersion)</Nemerle>
-    <Nemerle Condition=" '$(Stage)' == 'Stage1' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <Nemerle Condition=" '$(Stage)' == 'Stage2' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <Nemerle Condition=" '$(Stage)' != 'Boot' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
     <OutputType>Library</OutputType>
-    <NoStdLib>true</NoStdLib>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Nitra.Grammar</RootNamespace>
-    <AssemblyName>Nitra.Grammar</AssemblyName>
+    <NoStdLib>true</NoStdLib>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <CustomArguments>$(CustomArguments) -nowarn:114</CustomArguments>
-    <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\..\Common</CommonFilesPath>
-    <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
-    <NuspecFile>Nitra.Grammar.nuspec</NuspecFile>
+    <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
+    <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(AdditionalDefineConstants)' != '' ">$(AdditionalDefineConstants);$(DefineConstants)</DefineConstants>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\$(Stage)\</OutputPath>
+    <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\$(Stage)\</OutputPath>
+    <OutputPath>..\..\bin\Release\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Release\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NemerleBinPathRoot)\$(NemerleVersion)\Nemerle.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>$(NemerleLibs)\Nemerle.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="Nemerle.Compiler">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NemerleBinPathRoot)\$(NemerleVersion)\Nemerle.Compiler.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>$(NemerleLibs)\Nemerle.Compiler.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Name>System.Collections.Immutable</Name>
+      <AssemblyName>System.Collections.Immutable.dll</AssemblyName>
+      <HintPath>..\..\packages\System.Collections.Immutable.1.1.37\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Drawing" />
   </ItemGroup>
   <Choose>
     <When Condition=" '$(Stage)' == 'Boot' ">

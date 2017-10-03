@@ -1,83 +1,75 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <Name>Nitra.Runtime</Name>
+    <RootNamespace>Nitra.Runtime</RootNamespace>
+    <NuspecFile>Nitra.Runtime.nuspec</NuspecFile>
+    <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}</ProjectGuid>
+    <NeedAddVersionToAssemblyName>True</NeedAddVersionToAssemblyName>
+    <AdditionalDefineConstants>NITRA_RUNTIME</AdditionalDefineConstants>
+  </PropertyGroup>
+  <PropertyGroup> <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
+    <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
+    <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
+    <AssemblyName>$(Name)$(NameSuffix2)</AssemblyName>
     <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\..\Common</CommonFilesPath>
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
+    <NemerleLibs Condition=" '$(NemerleLibs)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</NemerleLibs>
     <Nemerle Condition=" '$(Stage)' == 'Boot' ">$(MSBuildProjectDirectory)\..\..\Boot1\$(NemerleVersion)</Nemerle>
     <Nemerle Condition=" '$(Stage)' != 'Boot' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <Name Condition="'$(Name)' == ''">Nitra.Runtime</Name>
     <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <NoStdLib>true</NoStdLib>
-    <RootNamespace>Nitra.Runtime</RootNamespace>
-    <AssemblyName>$(Name)</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <DocumentationFile />
-    <NuspecFile>Nitra.Runtime.nuspec</NuspecFile>
+    <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
+    <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(AdditionalDefineConstants)' != '' ">$(AdditionalDefineConstants);$(DefineConstants)</DefineConstants>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
     <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>DEBUG;TRACE;NITRA_RUNTIME</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunDebugger>false</RunDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
     <Optimize>true</Optimize>
     <OutputPath>..\..\bin\Release\$(Stage)\</OutputPath>
     <IntermediateOutputPath>obj\Release\$(Stage)\</IntermediateOutputPath>
-    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);NITRA_RUNTIME</DefineConstants>
-    <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="mscorlib">
-      <Private>False</Private>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Nemerle">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NemerleLibs)\Nemerle.dll</HintPath>
     </Reference>
-    <Reference Include="System">
-      <Private>False</Private>
-    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Name>System.Collections.Immutable</Name>
       <AssemblyName>System.Collections.Immutable.dll</AssemblyName>
       <HintPath>..\..\packages\System.Collections.Immutable.1.1.37\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
-    <Reference Include="System.Core">
-      <Private>False</Private>
-      <RequiredTargetFramework>4.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml">
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <Private>False</Private>
-      <RequiredTargetFramework>4.0</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="Nemerle">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(NemerleBinPathRoot)\$(NemerleVersion)\Nemerle.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <Choose>
     <When Condition=" '$(Stage)' == 'Boot' ">

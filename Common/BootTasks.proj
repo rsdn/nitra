@@ -60,10 +60,17 @@
   </ItemGroup>
 
   <Target Name="BuildBoot">
+    <PropertyGroup>
+      <BootVersion>$([System.Xml.Linq.XDocument]::Load('$(Boot1)\version.xml').Root.Value)</BootVersion>
+    </PropertyGroup>
+    
+    <!--Message Text="BootVersion=$(BootVersion)" Importance="High" /-->
+    
     <RemoveDir Directories="$(Boot2)\$(_NemerleVersion)" />
     <MakeDir Directories="$(Boot2)\$(_NemerleVersion)"/>
-
-    <MSBuild Projects="@(BootProject)" Targets="$(BuildTarget)" Properties="Configuration=$(Configuration);Platform=$(Platform);CommonFilesPath=$(_CommonFilesPath);OutputPath=$(Boot2)\$(_NemerleVersion);Stage=Boot;BuildConstant=BOOT"/>
+    
+    <MSBuild Projects="@(BootProject)" Targets="$(BuildTarget)" 
+      Properties='Configuration=$(Configuration);Platform=$(Platform);CommonFilesPath=$(_CommonFilesPath);OutputPath=$(Boot2)\$(_NemerleVersion);Stage=Boot;NameSuffix=Boot$(BootVersion);BuildConstant=BOOT'/>
   </Target>
 
   <Target Name="ShiftBoot">

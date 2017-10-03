@@ -3,11 +3,12 @@
   <PropertyGroup>
     <Stage>Stage2</Stage>
     <ProjectGuid>{be6dfd78-ed34-4f74-9185-7dd20f52d068}</ProjectGuid>
-    <Name>Nitra.Grammar.Stage2</Name>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <NameSuffix>$(Stage)</NameSuffix>
+
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
-    <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <Nemerle>$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
   </PropertyGroup>
   <Import Project="..\Nitra.Grammar\Nitra.Grammar.nproj" />
 </Project>
