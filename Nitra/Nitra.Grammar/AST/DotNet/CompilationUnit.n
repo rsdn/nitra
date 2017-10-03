@@ -194,12 +194,16 @@ namespace DotNet
 
     private static OnSymbolAssemblyResolve(_ : Project, fullName : System.Reflection.AssemblyName) : System.Reflection.Assembly
     {
-      match (fullName.Name)
-      {
-        | "Boot.DotNetLang"    => typeof(DotNet.ClassSymbol).Assembly;
-        | "Boot.Nitra.Runtime" => typeof(Nitra.Location).Assembly;
-        | _ => null
-      }
+      def name = fullName.Name;
+
+      if (name.StartsWith("DotNetLang", StringComparison.Ordinal))
+        typeof(DotNet.ClassSymbol).Assembly
+      else if (name.StartsWith("Nitra.Runtime", StringComparison.Ordinal))
+        typeof(Nitra.Location).Assembly
+      else if (name.StartsWith("Nitra.Grammar", StringComparison.Ordinal))
+        typeof(CompilationUnit).Assembly
+      else
+        null
     }
 
     private static NitraMetadataStreamName = "Nitra.Metadata2";
@@ -239,7 +243,8 @@ namespace DotNet
 
             def source = SingleLineSourceSnapshot("Fake source: " + file.Name, file);
             def reader = Nitra.Serialization2.MetadataReader(project, source);
-            reader.ReadRoot(rootNamespace, metadataStream);
+            try reader.ReadRoot(rootNamespace, metadataStream)
+            catch { e => throw ApplicationException($"Load symbols from '$file' failed. Exception: $(e.Message)", e); }
           }
         }
       }

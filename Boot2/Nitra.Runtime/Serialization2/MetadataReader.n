@@ -82,7 +82,10 @@ namespace Nitra.Serialization2
         for (mutable assemblyIndex = 0; assemblyIndex < assemblyCount; ++assemblyIndex)
         {
           def fullName = reader.ReadString();
-          def assembly = Project.ResolveSymbolAssembly(fullName);
+          def assembly =
+            try Project.ResolveSymbolAssembly(fullName)
+            catch { e => throw ApplicationException($"Nitra MetadataReader v2.0 failed to load symbols from assembly '$fullName'. Exception: $(e.Message)", e); };
+
           def typeCount = reader.ReadInt32();
           for (mutable typeIndex = 0; typeIndex < typeCount; ++typeIndex)
           {
