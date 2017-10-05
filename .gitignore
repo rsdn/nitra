@@ -76,3 +76,4 @@ Ide/Nitra.LanguageVsPackage/
 *.~vsdx
 
 .vs/
+*.binlog
