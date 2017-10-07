@@ -288,6 +288,8 @@ namespace Nitra.Internal.Recovery
       def finalizeSequence(startRecord : ParseRecord) : void
       {
         def pos = startRecord.ParsePos;
+        when (pos != CompletionPos)
+          return;
         def toProcess = SCG.Queue();
         toProcess.Enqueue(startRecord);
         while (toProcess.Count > 0)

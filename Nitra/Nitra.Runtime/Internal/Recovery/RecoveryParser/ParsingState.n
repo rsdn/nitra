@@ -50,7 +50,7 @@ namespace Nitra.Internal.Recovery
           | Extensible                     => false
           | ExtensionPrefix                => false
           | ExtensionPostfix               => true
-          | Subsequence           as state => state.Sequence.IsNullable
+          | Subsequence           as state => state.SubruleInfo.CanParseEmptyString
           | List                  as state => state.SubruleInfo.MandatoryTokenCount == 0
           | ListWithSeparator     as state => state.SubruleInfo.MandatoryTokenCount == 0
           | Scan                  as state => if (state.SubruleInfo == null) false else state.SubruleInfo.CanParseEmptyString
