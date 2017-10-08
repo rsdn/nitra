@@ -1,4 +1,4 @@
-﻿using Nitra.Typing;
+using Nitra.Typing;
 using Nitra.Model;
 
 using Nemerle;
@@ -132,6 +132,13 @@ namespace Nitra.Compiler
         ..$isEvaluatedMods $(isEvaluatedName : usesite) : bool
         {
           get { this.Ambiguities[0].$(isEvaluatedName : usesite) }
+        }
+      ]>);
+
+      tb.Define(<[ decl:
+        ..$isEvaluatedMods $(symbol.Name + "_Location" : usesite) : string * int * int
+        {
+          get; set;
         }
       ]>);
     }

@@ -1,4 +1,4 @@
-﻿using Nitra.Runtime.GraphUtils;
+using Nitra.Runtime.GraphUtils;
 using Nitra.Typing;
 using Nitra.Model;
 
@@ -13,6 +13,7 @@ using Nemerle.Utility;
 using Nemerle.Surround;
 
 using System;
+using System.IO;
 using System.Linq;
 using SCG = System.Collections.Generic;
 
@@ -651,7 +652,16 @@ namespace Nitra.Compiler
         | Assign(code) =>
           def (predicate, checkedPaths)         = makeIsEvaluatedCheck(node.Path, dependentProperties);
           def (properties, collectorProperties) = collectDependendOn(node, checkedPaths);
-          def expr1 = Util.locate(code.Location, <[ $(CompilePath(node.Path)) = $(compileCode(node.DeclaredIn, code)); context.CalculatedCountInc(); ]>);
+          def file = Path.Combine(Path.GetDirectoryName(tb.Manager.Options.ProjectPath), code.Location.File);
+          when (Path.GetExtension(file).Equals(".dll",  StringComparison.OrdinalIgnoreCase))
+          {
+            assert2(true);
+          }
+          def line = code.Location.Line;
+          def col = code.Location.Column;
+          def locCode = Util.locate(code.Location, <[ $(CompileLocationPath(node.Path)) = ($file, $line, $col); ]>);
+          //def locCode = <[ () ]>;
+          def expr1 = Util.locate(code.Location, <[ $(CompilePath(node.Path)) = $(compileCode(node.DeclaredIn, code)); context.CalculatedCountInc(); $locCode; ]>);
           def expr2 = makeCondition(properties, collectorProperties, expr1, <[ context.DeferredCountInc() ]>);
           def expr3 = TryAddStageCheck(node.Path, expr2);
           def expr4 = <[ when ($predicate) $expr3; ]>;

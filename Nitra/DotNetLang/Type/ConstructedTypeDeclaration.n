@@ -1,4 +1,4 @@
-﻿using Nitra.ProjectSystem;
+using Nitra.ProjectSystem;
 using Nitra.Declarations;
 
 using Nemerle;
@@ -46,6 +46,9 @@ namespace Nitra.Declarations
       get { throw NotImplementedException() }
       set { IgnoreParams(); throw NotImplementedException() }
     }
+
+    public ContainingTable_Location : string * int * int { get; set; }
+    public Symbol_Location : string * int * int { get; set; }
 
     public override IsParsed : bool { get { true } } // ???
 

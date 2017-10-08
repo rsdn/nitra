@@ -1,4 +1,4 @@
-﻿using Nitra.Model;
+using Nitra.Model;
 using Nitra.Typing;
 
 using Nemerle;
@@ -196,6 +196,13 @@ namespace Nitra.Compiler
           }
         }
       ]>);
+
+      _ambiguousTb.Define(<[ decl:
+          public $(symbol.Name + "_Location" : usesite) : string * int * int
+          {
+            get; set;
+          }
+        ]>);
 
       DefineDependenPropertyOverrideSetter(_ambiguousTb, symbol);
     }

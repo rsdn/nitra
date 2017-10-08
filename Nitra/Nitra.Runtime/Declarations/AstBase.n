@@ -1,4 +1,4 @@
-﻿using Nitra.ProjectSystem;
+using Nitra.ProjectSystem;
 using Nitra.Internal;
 
 using Nemerle;

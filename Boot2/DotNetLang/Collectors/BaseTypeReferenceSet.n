@@ -1,4 +1,4 @@
-﻿using Nitra;
+using Nitra;
 using Nitra.Declarations;
 using Nitra.Serialization2;
 using Nitra.Staging;
@@ -117,8 +117,8 @@ namespace DotNet
 
         foreach (type in _parentTypes)
         {
-          | SupportsInheritanceTypeSymbol(BaseTypeSet = parentTypeSet, MemberTable = symbolScope) as symbol
-          | ConstructedTypeSymbol(IsTypeInfoEvaluated = true, TypeInfo = GenericContainerTypeSymbol(BaseTypeSet = parentTypeSet, MemberTable = symbolScope) as symbol) =>
+          | SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol
+          | ConstructedTypeSymbol(IsTypeInfoEvaluated=true, TypeInfo=GenericContainerTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol) =>
             // TODO: need subst of type parameters
             ancestorTypes.UnionWith(parentTypeSet.AncestorTypes);
 

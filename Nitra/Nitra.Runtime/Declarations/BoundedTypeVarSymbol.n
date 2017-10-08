@@ -1,4 +1,4 @@
-﻿using Nitra.Internal;
+using Nitra.Internal;
 using Nitra.Serialization2;
 
 using Nemerle;
@@ -182,11 +182,20 @@ namespace Nitra.Declarations
       }
     }
 
+    public BaseTypeConstraint_Location : string * int * int { get; set; }
+    public DerivedTypeConstraint_Location : string * int * int { get; set; }
+    public Type_Location : string * int * int { get; set; }
+    public TypeSubst_Location : string * int * int { get; set; }
+    public DeclaredInOpt_Location : string * int * int { get; set; }
+    public FullName_Location : string * int * int { get; set; }
+    public Kind_Location : string * int * int { get; set; }
+    public Scope_Location : string * int * int { get; set; }
+    public SpanClass_Location : string * int * int { get; set; }
+
     get_Declarations1() : Seq[TypeVar] implements TypeVarSymbol.get_Declarations
     {
       GetDeclarationsOfType()
     }
-
     get_Declarations2() : Seq[Type] implements TypeSymbol.get_Declarations
     {
       GetDeclarationsOfType()

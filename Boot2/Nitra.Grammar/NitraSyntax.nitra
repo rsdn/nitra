@@ -1,4 +1,4 @@
-﻿using Nitra;
+using Nitra;
 using Nitra.Utils;
 using Nitra.Model;
 using Nitra.ProjectSystem;
@@ -53,7 +53,7 @@ syntax module NitraSyntax : NitraLang
 
   extend token IgnoreToken
   {
-    | SpaceToken = Spaces;
+    | [SplitAtCompletionPosition] SpaceToken = Spaces;
   }
 
   token Text  = !Keyword At="@"? IdentifierBody

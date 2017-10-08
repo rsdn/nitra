@@ -1,4 +1,4 @@
-﻿using Nitra.Model;
+using Nitra.Model;
 using Nitra.Typing;
 
 using Nemerle;
@@ -275,6 +275,13 @@ namespace Nitra.Compiler
             else
               base.$(isEvaluatedName : usesite)
           }
+        }
+      ]>);
+
+      tb.Define(<[ decl:
+        ..$isEvaluatedMods $(symbol.Name + "_Location" : usesite) : string * int * int
+        {
+          get; set;
         }
       ]>);
     }

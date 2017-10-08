@@ -1,4 +1,4 @@
-﻿using Nitra.Typing;
+using Nitra.Typing;
 using Nitra.Model;
 
 using Nemerle;
@@ -34,12 +34,24 @@ namespace Nitra.Compiler
 
     protected DefineInterfaceDependentProperty(propertySymbol : DependentPropertySymbol, tb : TypeBuilder, isOverride : bool) : void
     {
+      when (propertySymbol.FullName == "DotNet.QualifiedReference.Scope")
+      {
+        assert2(true);
+      }
+
+      when (propertySymbol.FullName == "Nitra.Declarations.BindableAst.Scope")
+      {
+        assert2(true);
+      }
+
       def propertyType = TypeCompiler.CompileDependentPropertyType(propertySymbol);
       def attribute    = MakePropertyAttribute(propertySymbol);
       def mods         = AttributesAndModifiers(if (isOverride) NemerleModifiers.New else NemerleModifiers.None, [attribute]);
       tb.Define(<[ decl: ..$mods $(propertySymbol.Name : usesite) : $(propertyType : typed) { get; set; } ]>);
       unless (isOverride)
         tb.Define(<[ decl: $(GetIsEvaluatedPropertyName(propertySymbol) : usesite) : bool { get; } ]>);
+      unless (isOverride)
+        tb.Define(<[ decl: $(propertySymbol.Name + "_Location" : usesite) : string * int * int { get; set; } ]>);
     }
 
     protected DefineDependentProperty(tb : TypeBuilder, symbol : DependentPropertySymbol, bit : BitField, mask : int, modifiers : NemerleModifiers, acceptVisitorBody : SCG.List[PExpr], overrideSetter : bool = true) : void
@@ -79,6 +91,13 @@ namespace Nitra.Compiler
           ..$isEvaluatedMods $(isEvaluatedName : usesite) : bool
           {
             get { $(bit.Read()) }
+          }
+        ]>);
+
+        tb.Define(<[ decl:
+          ..$isEvaluatedMods $(symbol.Name + "_Location" : usesite) : string * int * int
+          {
+            get; set;
           }
         ]>);
 
@@ -356,6 +375,15 @@ namespace Nitra.Compiler
       | DeclaredProperty(path, symbol, _) with name = symbol.Name
       | DependentProperty(path, name, _)
       | SimpleProperty(path, name) => <[ $(CompilePath(path)).$(name : usesite) ]>
+    }
+
+    public static CompileLocationPath(path : DependencyPath) : PExpr
+    {
+      match (CompilePath(path))
+      {
+        | <[ $parent.$(prop : name) ]> => <[ $parent.$(prop.Id + "_Location" : usesite) ]>
+        | x => assert2(false); x
+      }
     }
 
     protected static TryAddStageCheck(path : DependencyPath, expr : PExpr) : PExpr
