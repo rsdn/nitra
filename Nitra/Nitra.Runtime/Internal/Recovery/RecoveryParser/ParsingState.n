@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -39,6 +39,24 @@ namespace Nitra.Internal.Recovery
     | ListWithSeparator     { Sequence      : ParsingSequence; }
     | Scan                  { }
     | Predicate             { HeadPredicate : SubruleInfo.PredicateDelegate; }
+
+    public Parse(pos : int, text : string, parseResult : ParseResult) : int
+    {
+      match (this)
+      {
+        | Simple                as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | DynamicExtensible     as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | DynamicExtensibleItem as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | Extensible            as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | ExtensionPrefix       as rule => rule.RuleParser.ParsePrefix(pos, text, parseResult)
+        | ExtensionPostfix      as rule => rule.RuleParser.ParsePostfix(pos, text, parseResult)
+        | Subsequence           as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | List                  as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | ListWithSeparator     as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | Scan                  as rule => rule.SubruleInfo.Parse(pos, text, parseResult)
+        | Predicate             as rule => if (rule.HeadPredicate(pos, text, parseResult)) pos else -1
+      }
+    }
 
     public IsNullable : bool
     {

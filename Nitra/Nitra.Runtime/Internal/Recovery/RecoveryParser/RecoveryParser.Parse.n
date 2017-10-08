@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -292,20 +292,33 @@ namespace Nitra.Internal.Recovery
           return;
         def toProcess = SCG.Queue();
         toProcess.Enqueue(startRecord);
+        mutable parsed = false;
         while (toProcess.Count > 0)
         {
           def record = toProcess.Dequeue();
-          when (!visited.Add(record.State) || record.State < 0 || record.ParsingState.IsNullable)
+          when (!visited.Add(record.State) || record.State < 0)
+            continue;
+          def newPos = record.ParsingState.Parse(pos, ParseResult.Text, ParseResult);
+          when (newPos > pos)
+          {
+            parsed = true;
+            SubruleParsed(pos, newPos, record, tokenChanges, TokenChanges.None);
+            continue;
+          }
+          when (record.ParsingState.IsNullable)
             continue;
           _ = FakeRecords.Add(record);
           SubruleParsed(pos, pos, record, tokenChanges, TokenChanges.None);
           foreach (next in record.ParsingState.Next)
             toProcess.Enqueue(record.Next(next, pos));
         }
-        startRecord.Sequence.AddEnd(pos, tokenChanges);
-        foreach (caller in startRecord.Sequence.Callers)
-          when (!caller.Sequence.Ends.Contains(pos))
-            finalizeSequence(caller);
+        when (!parsed)
+        {
+          startRecord.Sequence.AddEnd(pos, tokenChanges);
+          foreach (caller in startRecord.Sequence.Callers)
+            when (!caller.Sequence.Ends.Contains(pos))
+              finalizeSequence(caller);
+        }
       }
       finalizeSequence(record);
       foreach (startState in referenceSequence.ParsingSequence.StartStates)
