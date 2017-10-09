@@ -18,6 +18,11 @@ namespace Nitra.Serialization
 {
   public sealed class MetadataReader : IMetadataReader, IDisposable
   {
+    private _reader                       : BinaryReader;
+    private _symbolConstructorRegistry    : ExternalSymbolConstructorRegistry;
+    private _externalSymbolPropertyReader : IExternalSymbolPropertyReader;
+    private _root                         : NamespaceSymbol;
+
     public this(stream : Stream, symbolConstructorRegistry : ExternalSymbolConstructorRegistry, externalSymbolPropertyReader : IExternalSymbolPropertyReader, project : Project, assemblyId : byte, symbolLocation : Location)
     {
       this(stream, symbolConstructorRegistry, externalSymbolPropertyReader, project, project.RootNamespace, assemblyId, symbolLocation)
@@ -33,11 +38,6 @@ namespace Nitra.Serialization
       SymbolLocation                = symbolLocation;
       Project                       = project;
     }
-
-    private _reader                       : BinaryReader;
-    private _symbolConstructorRegistry    : ExternalSymbolConstructorRegistry;
-    private _externalSymbolPropertyReader : IExternalSymbolPropertyReader;
-    private _root                         : NamespaceSymbol;
 
     public Dispose() : void
     {
