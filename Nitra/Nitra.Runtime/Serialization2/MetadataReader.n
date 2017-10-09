@@ -20,13 +20,6 @@ namespace Nitra.Serialization2
   {
     private delegate DeserializationHandler(reader : BinaryReader, metadataReader : MetadataReader) : ISerializable;
 
-    public this(project : Project, source : SourceSnapshot)
-    {
-      Project       = project;
-      Source        = source;
-      ErrorLocation = Location(source, 0);
-    }
-
     public Project       : Project                  { get; }
     public Source        : SourceSnapshot           { get; }
     public ErrorLocation : Location                 { get; }
@@ -34,6 +27,13 @@ namespace Nitra.Serialization2
     private _typeDescriptors         : Dictionary[int, MetadataTypeDescriptor] = Dictionary();
     private _deserializationHandlers : Dictionary[int, DeserializationHandler] = Dictionary();
     private _objects                 : Dictionary[int, ISerializable]          = Dictionary();
+
+    public this(project : Project, source : SourceSnapshot)
+    {
+      Project       = project;
+      Source        = source;
+      ErrorLocation = Location(source, 0);
+    }
 
     public ReadObject[T](reader : BinaryReader) : T
       where T: ISerializable
