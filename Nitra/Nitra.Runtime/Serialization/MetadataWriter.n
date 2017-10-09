@@ -71,6 +71,9 @@ namespace Nitra.Serialization
     private WriteStringsTableToSream() : void
     {
       def writer = BinaryWriter(_stream, Text.Encoding.UTF8, leaveOpen=true);
+
+      writer.Write(NitraUtils.StringTableCheckData);
+
       // sorting...
       def strings = array(_stringTable.Count);
       foreach (kv in _stringTable)

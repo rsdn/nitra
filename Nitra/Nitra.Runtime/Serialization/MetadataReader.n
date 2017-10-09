@@ -35,6 +35,7 @@ namespace Nitra.Serialization
       def reader                    = BinaryReader(stream, Text.Encoding.UTF8);
       _reader                       = reader;
       _stringTable                  = ReadStringTable(reader);
+      _stringTableSourceSnapshot    = if (_stringTable == null) null else array(_stringTable.Length);
       _symbolConstructorRegistry    = symbolConstructorRegistry;
       _externalSymbolPropertyReader = externalSymbolPropertyReader ?? DefaultExternalSymbolPropertyReader();
       _root                         = root;
@@ -91,6 +92,15 @@ namespace Nitra.Serialization
 
     private static ReadStringTable(reader : BinaryReader) : array[string]
     {
+      def currPos = reader.BaseStream.Position;
+      def checkData = reader.ReadBytes(NitraUtils.StringTableCheckData.Length);
+
+      unless (NitraUtils.StringTableCheckData.SequenceEqual(checkData))
+      {
+        reader.BaseStream.Position = currPos;
+        return null;
+      }
+
       def stringTable = array(reader.ReadInt32());
 
       for (mutable i = 0; i < stringTable.Length; i++)
@@ -208,6 +218,9 @@ namespace Nitra.Serialization
 
     private ReadLocation(reader : BinaryReader) : Location implements IMetadataReader.ReadLocation
     {
+      when (_stringTable == null)
+        return SymbolLocation;
+
       def id         = reader.ReadInt32();
       def filePath   = _stringTable[id];
       mutable source = _stringTableSourceSnapshot[id];
