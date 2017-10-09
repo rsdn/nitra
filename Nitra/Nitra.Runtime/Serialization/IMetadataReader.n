@@ -1,4 +1,4 @@
-﻿using Nitra.ProjectSystem;
+using Nitra.ProjectSystem;
 using Nitra.Typing;
 
 using System.IO;
@@ -15,5 +15,6 @@ namespace Nitra.Serialization
     GetNode(nodeId : int) : HierarchyNode;
     ReadSymbolRef(buffer : BinaryReader) : ISymbol;
     ReadLocation(buffer : BinaryReader) : Location;
+    ReadString(reader : BinaryReader) : string;
   }
 }

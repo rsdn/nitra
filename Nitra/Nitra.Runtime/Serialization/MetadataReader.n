@@ -22,6 +22,8 @@ namespace Nitra.Serialization
     private _symbolConstructorRegistry    : ExternalSymbolConstructorRegistry;
     private _externalSymbolPropertyReader : IExternalSymbolPropertyReader;
     private _root                         : NamespaceSymbol;
+    private _stringTable                  : array[string];
+    private _stringTableSourceSnapshot    : array[SourceSnapshot];
 
     public this(stream : Stream, symbolConstructorRegistry : ExternalSymbolConstructorRegistry, externalSymbolPropertyReader : IExternalSymbolPropertyReader, project : Project, assemblyId : byte, symbolLocation : Location)
     {
@@ -30,7 +32,9 @@ namespace Nitra.Serialization
 
     public this(stream : Stream, symbolConstructorRegistry : ExternalSymbolConstructorRegistry, externalSymbolPropertyReader : IExternalSymbolPropertyReader, project : Project, root : NamespaceSymbol, assemblyId : byte, symbolLocation : Location)
     {
-      _reader                       = BinaryReader(stream, Text.Encoding.UTF8);
+      def reader                    = BinaryReader(stream, Text.Encoding.UTF8);
+      _reader                       = reader;
+      _stringTable                  = ReadStringTable(reader);
       _symbolConstructorRegistry    = symbolConstructorRegistry;
       _externalSymbolPropertyReader = externalSymbolPropertyReader ?? DefaultExternalSymbolPropertyReader();
       _root                         = root;
@@ -83,6 +87,20 @@ namespace Nitra.Serialization
     public ReferencedAssemblies : Seq[AssemblyName]
     {
       get { _referencedAssemblies.Values }
+    }
+
+    private static ReadStringTable(reader : BinaryReader) : array[string]
+    {
+      def stringTable = array(reader.ReadInt32());
+
+      for (mutable i = 0; i < stringTable.Length; i++)
+        stringTable[i] = reader.ReadString();
+
+      def checkString = reader.ReadString();
+
+      assert2(checkString == NitraUtils.StringTableCheckString);
+
+      stringTable
     }
 
     private ReadNameTree() : void
@@ -190,8 +208,23 @@ namespace Nitra.Serialization
 
     private ReadLocation(reader : BinaryReader) : Location implements IMetadataReader.ReadLocation
     {
-      ignore(reader);
-      SymbolLocation //TODO: implement location reading
+      def id         = reader.ReadInt32();
+      def filePath   = _stringTable[id];
+      mutable source = _stringTableSourceSnapshot[id];
+      when (source == null)
+      {
+        source = SingleLineSourceSnapshot("", filePath);
+        _stringTableSourceSnapshot[id] = source;
+      }
+      def span = NSpan(reader.ReadInt32(), reader.ReadInt32());
+      Location(SingleLineSourceSnapshot("", filePath), span)
+    }
+
+    private ReadString(reader : BinaryReader) : string implements IMetadataReader.ReadString
+    {
+      def id  = reader.ReadInt32();
+      def str = _stringTable[id];
+      str
     }
 
     private RegisterSymbol(symbolId : int, symbol : IImportableSymbol) : void implements IMetadataReader.Register
