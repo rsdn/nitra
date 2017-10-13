@@ -1,4 +1,4 @@
-﻿using Nitra.Internal;
+using Nitra.Internal;
 using Nitra.Internal.Recovery;
 
 using Nemerle;
@@ -97,7 +97,7 @@ namespace Nitra.Runtime.Reflection
         public ListItemSeparator : SubruleInfo.ListItem { get; internal set; }
       }
 
-    | ListItem                   { ParsingSequence : ParsingSequence; IsItem : bool; }
+    | ListItem                   { ParsingSequence : ParsingSequence; IsItem : bool; ParseRule : (int * string * Nitra.ParseResult) -> int; }
     | TokenString                { Str : string; IsKeyToken : bool; SpanClass : SpanClass; }
     | Marker                     { Name : string; }
 
@@ -121,7 +121,7 @@ namespace Nitra.Runtime.Reflection
         return -1;
       match (this)
       {
-        | ListItem                  => assert(false)
+        | ListItem          as rule => rule.ParseRule(pos, text, parseResult)
         | Empty                     => if (pos <= text.Length) pos else -1
         | Marker                    => if (pos <= text.Length) pos else -1
         | RegularCall       as rule => rule.Descriptor.Parse(pos, text);

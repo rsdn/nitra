@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Text;
@@ -12,15 +12,19 @@ using Nitra.ProjectSystem;
 using System;
 using System.Reflection;
 using SCG = System.Collections.Generic;
+using Path = System.IO.Path;
 
 namespace Nitra.Compiler
 {
   public sealed partial class CompilingNitraProject : NitraProject
   {
+    static DebugStop : bool = false;
+
     private this(manager : ManagerClass)
     {
       base(NemerleCompilerMessages());
       Manager = manager;
+      ProjectDir = Path.GetDirectoryName(manager.Options.ProjectPath);
     }
 
     public ErrorCount : int { get { (CompilerMessages :> NemerleCompilerMessages).ErrorCount } }
@@ -76,13 +80,23 @@ namespace Nitra.Compiler
 
     public override MakeNitraLocation(location : Nemerle.Compiler.Location) : Nitra.Location
     {
+      assert2(!DebugStop);
       mutable file;
       if (_allFiles.TryGetValue(location.FileIndex, out file))
       {
         def source   = file.GetSource();
-        def startPos = source.LineColumnToPosition(LineColumn(location.Line,    location.Column));
-        def endPos   = source.LineColumnToPosition(LineColumn(location.EndLine, location.EndColumn));
-        Nitra.Location(source, startPos, endPos)
+        try
+        {
+          if (location.Line == 0)
+            Nitra.Location(file, 0)
+          else
+          {
+            def startPos = source.LineColumnToPosition(LineColumn(location.Line,    location.Column));
+            def endPos   = source.LineColumnToPosition(LineColumn(location.EndLine, location.EndColumn));
+            Nitra.Location(source, startPos, endPos)
+          }
+        }
+        catch { | _e => assert2(false); Nitra.Location(file, 0) }
       }
       else
         MakeFakeNitraLocation(location)

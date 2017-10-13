@@ -1,6 +1,7 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Extensions;
+using Nemerle.Internal;
 using Nemerle.Text;
 using Nemerle.Utility;
 
@@ -14,6 +15,8 @@ namespace Nitra.Typing
   [Record]
   public variant PropertyDependencyNodeData : Located
   {
+    static mutable DebugStop : bool = false;
+    
     public override Location    : Location                { get; }
     public          DeclaredIn  : PropertyContainerSymbol { get; }
     public          Path        : DependencyPath          { get; }
@@ -31,7 +34,18 @@ namespace Nitra.Typing
       + Location.GetText()
     }
 
-    | Assign { CompiledMethodName : string }
+    | Assign
+      {
+        [RecordCtor]
+        public new this([MappedMember("Location")] location : Location, [MappedMember("DeclaredIn")] declaredIn : PropertyContainerSymbol, [MappedMember("Path")] path : DependencyPath, [MappedMember("DependendOn")] dependendOn : list[int], [MappedMember("IsCollector")] isCollector : bool, [MappedMember("CompiledMethodName")] compiledMethodName : string)
+        {
+          assert2(!DebugStop || !location.IsEmpty);
+          base(location, declaredIn, path, dependendOn, isCollector);
+          this.CompiledMethodName = compiledMethodName;
+        }
+        
+        CompiledMethodName : string;
+      }
     | Use
   }
 }

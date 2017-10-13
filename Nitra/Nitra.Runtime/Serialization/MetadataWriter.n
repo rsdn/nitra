@@ -231,13 +231,13 @@ namespace Nitra.Serialization
 
     private WriteString(str : string, writer : BinaryWriter) : void implements IMetadataWriter.WriteString
     {
-      mutable id : int;
-      when (!_stringTable.TryGetValue(str, out id))
+      mutable index : int;
+      when (!_stringTable.TryGetValue(str, out index))
       {
-        id = _stringTable.Count();
-        _stringTable.Add(str, id);
+        index = _stringTable.Count();
+        _stringTable.Add(str, index);
       }
-      writer.Write(id);
+      writer.Write(index);
     }
 
     private CollectExportableSymbols() : List[IExportableSymbol]

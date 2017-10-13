@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Utility;
 
 using Nitra.Runtime;
@@ -22,13 +22,16 @@ namespace Nitra.Serialization
 
     public this(stream : Stream, project : Project, root : NamespaceSymbol)
     {
-      _writer           = BinaryWriter(stream, Text.Encoding.UTF8);
-      _symbolBodyWriter = BinaryWriter(MemoryStream(), Text.Encoding.UTF8);
-      _root             = root;
-      Project           = project;
+      _stream             = stream;
+      def encoding        = Text.Encoding.UTF8;
+      _intermediateWriter = BinaryWriter(MemoryStream(), encoding);
+      _symbolBodyWriter   = BinaryWriter(MemoryStream(), encoding);
+      _root               = root;
+      Project             = project;
     }
 
-    private _writer             : BinaryWriter;
+    private _stream             : Stream;
+    private _intermediateWriter : BinaryWriter;
     private _symbolBodyWriter   : BinaryWriter;
     private _root               : NamespaceSymbol;
     private _namespaceNodes     : HashSet[HierarchyNode]              = HashSet();
@@ -38,13 +41,15 @@ namespace Nitra.Serialization
     private _symbolIds          : Dictionary[IExportableSymbol, int]  = Dictionary();
     private _assemblyIds        : Dictionary[AssemblyName,      byte] = Dictionary();
     private _serializationQueue : Queue[IExportableSymbol]            = Queue();
+    private _stringTable        : Dictionary[string, int] = Dictionary();
 
     public Project : Project { get; }
 
     public Dispose() : void
     {
-      _writer.Dispose();
+      _intermediateWriter.Dispose();
       _symbolBodyWriter.Dispose();
+      _stream.Dispose();
     }
 
     public WriteSymbols() : void
@@ -55,8 +60,37 @@ namespace Nitra.Serialization
       WriteReferencedAssemblies();
       WriteNameTree(_externalSymbols.Select(_.Node));
       WriteExternalSymbolInfo();
-      WriteSymbolBodies();
-      _writer.Flush();
+
+      WriteStringsTableToSream();
+      WriteBinaryWriterToSream(_intermediateWriter, _stream);
+      WriteBinaryWriterToSream(_symbolBodyWriter, _stream);
+
+      _stream.Flush();
+    }
+
+    private WriteStringsTableToSream() : void
+    {
+      def writer = BinaryWriter(_stream, Text.Encoding.UTF8, leaveOpen=true);
+
+      writer.Write(NitraUtils.StringTableCheckData);
+
+      // sorting...
+      def strings = array(_stringTable.Count);
+      foreach (kv in _stringTable)
+        strings[kv.Value] = kv.Key;
+
+      writer.Write(_stringTable.Count());
+
+      foreach (str in strings)
+        writer.Write(str);
+
+      writer.Write(NitraUtils.StringTableCheckString);
+    }
+
+    private static WriteBinaryWriterToSream(writer : BinaryWriter, stream : Stream) : void
+    {
+      (writer.BaseStream :> MemoryStream).WriteTo(stream);
+      writer.Dispose();
     }
 
     private WriteNameTree(nodes : IEnumerable[HierarchyNode]) : void
@@ -72,16 +106,16 @@ namespace Nitra.Serialization
           id = _nodeIds.Count + 1;
           def hasNamespaceSymbol = _namespaceNodes.Contains(node);
           _nodeIds.Add(node, id);
-          _writer.Write(id);
-          _writer.Write(parentId);
-          _writer.Write(node.PartName);
-          _writer.Write(hasNamespaceSymbol);
+          _intermediateWriter.Write(id);
+          _intermediateWriter.Write(parentId);
+          _intermediateWriter.Write(node.PartName);
+          _intermediateWriter.Write(hasNamespaceSymbol);
         }
         id
       }
       foreach (node in nodes)
         _ = write(node);
-      _writer.Write(0 : int);
+      _intermediateWriter.Write(0 : int);
     }
 
     private WriteSymbolHeadersAndSerializeSymbols(symbols : IEnumerable[IExportableSymbol]) : void
@@ -89,16 +123,16 @@ namespace Nitra.Serialization
       // tree symbols
       foreach (group in symbols.GroupBy(_.SymbolTypeId))
       {
-        _writer.Write(group.Key);
+        _intermediateWriter.Write(group.Key);
         foreach (symbol in group)
         {
           def symbolId = GetSymbolId(symbol);
           def nodeId   = GetNodeId(symbol);
-          _writer.Write(symbolId);
-          _writer.Write(nodeId);
+          _intermediateWriter.Write(symbolId);
+          _intermediateWriter.Write(nodeId);
           _serializationQueue.Enqueue(symbol);
         }
-        _writer.Write(0 : int);
+        _intermediateWriter.Write(0 : int);
       }
 
       // serialization of all symbols
@@ -110,22 +144,24 @@ namespace Nitra.Serialization
         symbol.Serialize(_symbolBodyWriter, this);
       }
 
+      _symbolBodyWriter.Write(0 : int);
+
       // non tree symbols fully populated only after actual serialization
       foreach (group in _nonTreeSymbols.GroupBy(_.SymbolTypeId))
       {
-        _writer.Write(group.Key);
+        _intermediateWriter.Write(group.Key);
         foreach (symbol in group)
         {
           def symbolId = GetSymbolId(symbol);
           def name     = symbol.Name;
-          _writer.Write(symbolId);
-          _writer.Write(0 : int);
-          _writer.Write(name);
+          _intermediateWriter.Write(symbolId);
+          _intermediateWriter.Write(0 : int);
+          _intermediateWriter.Write(name);
         }
-        _writer.Write(0 : int);
+        _intermediateWriter.Write(0 : int);
       }
 
-      _writer.Write("");
+      _intermediateWriter.Write("");
     }
 
     private WriteReferencedAssemblies() : void
@@ -134,36 +170,29 @@ namespace Nitra.Serialization
       {
         def assemblyId   = pair.Value;
         def assemblyName = pair.Key;
-        _writer.Write(assemblyId);
-        _writer.Write(assemblyName.FullName);
+        _intermediateWriter.Write(assemblyId);
+        _intermediateWriter.Write(assemblyName.FullName);
       }
-      _writer.Write(0 : byte);
+      _intermediateWriter.Write(0 : byte);
     }
 
     private WriteExternalSymbolInfo() : void
     {
       foreach (group in _externalSymbols.GroupBy(_.SymbolTypeId))
       {
-        _writer.Write(group.Key);
+        _intermediateWriter.Write(group.Key);
         foreach (symbol in group)
         {
           def symbolId   = GetSymbolId(symbol);
           def nodeId     = GetNodeId(symbol);
           def assemblyId = GetAssemblyId(symbol);
-          _writer.Write(symbolId);
-          _writer.Write(nodeId);
-          _writer.Write(assemblyId);
+          _intermediateWriter.Write(symbolId);
+          _intermediateWriter.Write(nodeId);
+          _intermediateWriter.Write(assemblyId);
         }
-        _writer.Write(0 : int);
+        _intermediateWriter.Write(0 : int);
       }
-      _writer.Write("");
-    }
-
-    private WriteSymbolBodies() : void
-    {
-      // symbol bodies already written
-      (_symbolBodyWriter.BaseStream :> MemoryStream).WriteTo(_writer.BaseStream);
-      _writer.Write(0 : int);
+      _intermediateWriter.Write("");
     }
 
     private WriteSymbolRef(symbol : IExportableSymbol, writer : BinaryWriter) : void implements IMetadataWriter.WriteSymbolRef
@@ -194,7 +223,21 @@ namespace Nitra.Serialization
 
     private WriteLocation(location : Location, writer : BinaryWriter) : void implements IMetadataWriter.WriteLocation
     {
-      ignore(location, writer); //TODO: implement location writing
+      def span = location.Span;
+      WriteString(location.Source.File.FullName, writer);
+      writer.Write(span.StartPos);
+      writer.Write(span.EndPos);
+    }
+
+    private WriteString(str : string, writer : BinaryWriter) : void implements IMetadataWriter.WriteString
+    {
+      mutable index : int;
+      when (!_stringTable.TryGetValue(str, out index))
+      {
+        index = _stringTable.Count();
+        _stringTable.Add(str, index);
+      }
+      writer.Write(index);
     }
 
     private CollectExportableSymbols() : List[IExportableSymbol]

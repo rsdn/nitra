@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Compiler;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -6,7 +6,9 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Nitra.ProjectSystem
 {
@@ -20,7 +22,17 @@ namespace Nitra.ProjectSystem
     }
 
     public override Project  : Project  { get; }
-    public override FullName : string   { get { Location.GetFileName(Index) } }
+    public override FullName : string
+    {
+      get
+      {
+        def filePath = Location.GetFileName(Index);
+        if (Path.IsPathRooted(filePath))
+          filePath
+        else
+          Path.Combine(Project.ProjectDir, filePath)
+      }
+    }
     public override Language : Language { get { NitraLang.Instance } }
     public          Index    : int      { get; }
     public override Id       : int      { get { Index } }
@@ -53,7 +65,15 @@ namespace Nitra.ProjectSystem
     public this (project : Project, index : int)
     {
       base(project, index);
-      _source = SingleLineSourceSnapshot("", this);
+      def fullName     = FullName;
+      def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
+      if (!isExecutable && File.Exists(fullName))
+      {
+        def text = File.ReadAllText(FullName, Encoding.UTF8);
+        _source = SourceSnapshot(text, this, 0);
+      }
+      else
+        _source = SingleLineSourceSnapshot("", this);
     }
 
     private _source : SourceSnapshot;

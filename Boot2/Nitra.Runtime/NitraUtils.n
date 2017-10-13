@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -18,6 +18,18 @@ namespace Nitra
 {
   public module NitraUtils
   {
+    internal static StringTableCheckString : string = "String table - OK!";
+    internal static StringTableCheckData : array[byte] = ToByteArray("String table");
+
+    static ToByteArray(str : string) : array[byte]
+    {
+      def ary = array(str.Length);
+      foreach (ch in str with i)
+        ary[i] = ch :> byte;
+
+      ary
+    }
+
     public ToImmutableArray[T](this @list : LightList[T]) : ImmutableArray[T]
     {
       match (@list.Count)

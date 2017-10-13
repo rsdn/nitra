@@ -11,8 +11,9 @@ using Nitra.Typing;
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Nitra.Serialization
 {
@@ -216,21 +217,36 @@ namespace Nitra.Serialization
       }
     }
 
+    private static LoadSource(filePath : string) : SourceSnapshot
+    {
+      def isExecutable = filePath.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
+      def source =
+        if (!isExecutable && File.Exists(filePath))
+        {
+          def text = File.ReadAllText(filePath, Encoding.UTF8);
+          SourceSnapshot(text, filePath)
+        }
+        else
+          SingleLineSourceSnapshot("", filePath);
+
+      source
+    }
+
     private ReadLocation(reader : BinaryReader) : Location implements IMetadataReader.ReadLocation
     {
       when (_stringTable == null)
         return SymbolLocation;
 
-      def id         = reader.ReadInt32();
-      def filePath   = _stringTable[id];
-      mutable source = _stringTableSourceSnapshot[id];
+      def index      = reader.ReadInt32();
+      mutable source = _stringTableSourceSnapshot[index];
       when (source == null)
       {
-        source = SingleLineSourceSnapshot("", filePath);
-        _stringTableSourceSnapshot[id] = source;
+        source = LoadSource(_stringTable[index]);
+        _stringTableSourceSnapshot[index] = source;
       }
+
       def span = NSpan(reader.ReadInt32(), reader.ReadInt32());
-      Location(SingleLineSourceSnapshot("", filePath), span)
+      Location(source, span)
     }
 
     private ReadString(reader : BinaryReader) : string implements IMetadataReader.ReadString
