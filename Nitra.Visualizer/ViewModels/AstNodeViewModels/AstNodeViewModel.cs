@@ -1,4 +1,4 @@
-﻿using Nitra.ClientServer.Client;
+using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
 
 using ReactiveUI;
@@ -11,6 +11,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using JetBrains.Util;
+using System.Diagnostics;
 
 namespace Nitra.Visualizer.ViewModels
 {
@@ -101,16 +102,35 @@ namespace Nitra.Visualizer.ViewModels
 
     private IEnumerable<AstNodeViewModel> ToAstList(PropertyDescriptor[] propertyDescriptors, ObjectDescriptor[] objectDescriptors)
     {
-      foreach (var propertyDescriptor in propertyDescriptors)
-        yield return new PropertyAstNodeViewModel(Context, propertyDescriptor);
+      foreach (var propertyModel in ToProperties(propertyDescriptors))
+        yield return propertyModel;
+
       for (int i = 0; i < objectDescriptors.Length; i++)
         yield return new ItemAstNodeViewModel(Context, objectDescriptors[i], i);
     }
 
     private IEnumerable<AstNodeViewModel> ToProperties(PropertyDescriptor[] propertyDescriptors)
     {
+      const string LocationSuffix = "_Location";
+
+      var locationMap = new Dictionary<string, PropertyDescriptor>();
+      // load locationMap
       foreach (var propertyDescriptor in propertyDescriptors)
-        yield return new PropertyAstNodeViewModel(Context, propertyDescriptor);
+      {
+        var name = propertyDescriptor.Name;
+        if (name.EndsWith(LocationSuffix, StringComparison.InvariantCulture))
+          locationMap.Add(name.Substring(0, name.Length - LocationSuffix.Length), propertyDescriptor);
+      }
+
+      foreach (var propertyDescriptor in propertyDescriptors)
+      {
+        var name = propertyDescriptor.Name;
+        if (!name.EndsWith(LocationSuffix, StringComparison.InvariantCulture))
+          if (locationMap.TryGetValue(name, out var locationProp))
+            yield return new PropertyAstNodeViewModel(Context, propertyDescriptor, locationProp);
+          else
+            yield return new PropertyAstNodeViewModel(Context, propertyDescriptor);
+      }
     }
   }
 }

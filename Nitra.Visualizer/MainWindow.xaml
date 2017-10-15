@@ -1,4 +1,4 @@
-﻿<Window x:Class="Nitra.Visualizer.MainWindow"
+<Window x:Class="Nitra.Visualizer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:viz="clr-namespace:Nitra.Visualizer"
@@ -243,6 +243,7 @@
               <StackPanel Orientation="Horizontal">
                 <StackPanel.ContextMenu>
                   <ContextMenu>
+                    <MenuItem Header="{Binding AssignLocationText}" IsEnabled="{Binding IsAssignLocationAvalable}" Name="_gotoSource" Click="OnGotoSource"/>
                     <MenuItem Header="_Copy" Click="OnAstItemCopy"/>
                     <MenuItem Header="Show _graph" Click="ShowGraph_Click"/>
                   </ContextMenu>
@@ -267,7 +268,7 @@
       </TabItem>
 
       <TabItem Header="Parse Tree" Name="_reflectionTabItem">
-        <ui:TreeGridView Name="_reflectionTreeView" ItemsSource="{Binding (messages:ParseTreeReflectionStruct.Children)}" AllowColumnResize="True" 
+        <ui:TreeGridView Name="_reflectionTreeView" ItemsSource="{Binding (messages:ParseTreeReflectionStruct.Children)}" AllowColumnResize="True"
                          SelectedItemChanged="_reflectionTreeView_SelectedItemChanged" FontSize="16" ShowColumnHeaders="False" KeyDown="_control_KeyDown_resize" Margin="10,0,-10,0">
           <ui:TreeGridView.Resources>
             <viz:ParseTreeReflectionStructColorConverter x:Key="ParseTreeReflectionStructColorConverter" />

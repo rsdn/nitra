@@ -1,4 +1,4 @@
-﻿using Common;
+using Common;
 
 using ICSharpCode.AvalonEdit.AddIn;
 using ICSharpCode.AvalonEdit.CodeCompletion;
@@ -49,6 +49,7 @@ namespace Nitra.Visualizer
   using ClientServer.Messages;
   using Interop;
   using System.Collections.Immutable;
+  using System.Text.RegularExpressions;
   using System.Windows.Documents;
   using System.Windows.Interop;
 
@@ -1924,6 +1925,33 @@ namespace Nitra.Visualizer
 
       NitraClient client = suite.Client;
       client.Send(new ClientMessage.GetObjectGraph(solution.Id, project.Id, file.Id, file.Version, node.ObjectId));
+    }
+
+    private void OnGotoSource(object sender, RoutedEventArgs e)
+    {
+      if (_astTreeView.SelectedItem is PropertyAstNodeViewModel prop)
+      {
+        var loc = prop.AssignLocation;
+        var externalEditor = Environment.ExpandEnvironmentVariables(ViewModel.Settings.ExternalEditor);
+        externalEditor = externalEditor.Replace("$filePath", loc.Path).Replace("$line", loc.Line.ToString()).Replace("$column", loc.Column.ToString());
+        try
+        {
+          var process   = new Process();
+          var startInfo = new ProcessStartInfo
+          {
+            WindowStyle = ProcessWindowStyle.Hidden,
+            FileName    = "cmd.exe",
+            Arguments   = "/C " + externalEditor
+          };
+          process.StartInfo = startInfo;
+          process.Start();
+        }
+        catch (Exception ex)
+        {
+          MessageBox.Show(this, "Can't open external editor!" + Environment.NewLine + "Error: " + ex.Message,
+            "Nitra.Visualizer", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+      }
     }
   }
 }
