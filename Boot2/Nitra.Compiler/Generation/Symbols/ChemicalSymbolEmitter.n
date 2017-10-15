@@ -94,42 +94,47 @@ namespace Nitra.Compiler
 
     private DefineSymbolProperty(property : SymbolProperty) : void
     {
-      def hasValueBit = ChemicalSymbolType.GetBitFieldManager().Allocate();
+      def name = property.Property.Name;
 
-      def backingFieldName = Util.tmpname(property.Property.Name);
-      ChemicalSymbolType.Define(<[ decl:
-        private mutable $(backingFieldName : usesite) : $(property.Property.GetMemType() : typed);
-      ]>);
+      when (name != "FirstLocation")
+      {
+        def hasValueBit = ChemicalSymbolType.GetBitFieldManager().Allocate();
+        
+        def backingFieldName = Util.tmpname(name);
+        ChemicalSymbolType.Define(<[ decl:
+          private mutable $(backingFieldName : usesite) : $(property.Property.GetMemType() : typed);
+        ]>);
 
-      def notSetMessage     = $"Property '$(property.Property.Name)' is not set";
-      def alreadySetMessage = $"Property '$(property.Property.Name)' is already set";
+        def notSetMessage     = $"Property '$name' is not set";
+        def alreadySetMessage = $"Property '$name' is already set";
 
-      property.OverriddenProperty = ChemicalSymbolType.DefineAndReturn(<[ decl:
-        public override $(property.Property.Name : usesite) : $(property.Property.GetMemType() : typed)
-        {
-          get
+        property.OverriddenProperty = ChemicalSymbolType.DefineAndReturn(<[ decl:
+          public override $(name : usesite) : $(property.Property.GetMemType() : typed)
           {
-            unless ($(hasValueBit.Read()))
-              throw System.InvalidOperationException($notSetMessage);
-            this.$(backingFieldName : usesite);
+            get
+            {
+              unless ($(hasValueBit.Read()))
+                throw System.InvalidOperationException($notSetMessage);
+              this.$(backingFieldName : usesite);
+            }
+            private set
+            {
+              when ($(hasValueBit.Read()))
+                throw System.InvalidOperationException($alreadySetMessage);
+              this.$(backingFieldName : usesite) = value;
+              $(hasValueBit.Set());
+            }
           }
-          private set
-          {
-            when ($(hasValueBit.Read()))
-              throw System.InvalidOperationException($alreadySetMessage);
-            this.$(backingFieldName : usesite) = value;
-            $(hasValueBit.Set());
-          }
-        }
-      ]>) :> IProperty;
+        ]>) :> IProperty;
+      }
 
       ChemicalSymbolType.Define(<[ decl:
-        public new $("Set" + property.Property.Name : usesite)(value : $(property.Property.GetMemType() : typed)) : $(ChemicalSymbolType.GetMemType() : typed)
+        public new $("Set" + name : usesite)(value : $(property.Property.GetMemType() : typed)) : $(ChemicalSymbolType.GetMemType() : typed)
         {
-          this.$(property.Property.Name : usesite) = value;
+          this.$(name : usesite) = value;
           this
         }
       ]>);
     }
-  }
-}
+  } // class
+} // namespace

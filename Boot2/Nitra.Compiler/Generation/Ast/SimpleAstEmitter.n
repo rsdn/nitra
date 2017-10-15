@@ -281,7 +281,21 @@ namespace Nitra.Compiler
       tb.Define(<[ decl:
         ..$isEvaluatedMods $(symbol.Name + "_Location" : usesite) : string * int * int
         {
-          get; set;
+          get
+          {
+            if (this.IsAmbiguous)
+              this.Ambiguities[0].$(name + "_Location" : usesite)
+            else
+              base.$(name + "_Location" : usesite)
+          }
+          set
+          {
+            if (this.IsAmbiguous)
+              foreach (ambiguity in this.Ambiguities)
+                ambiguity.$(name + "_Location" : usesite) = value;
+            else
+              base.$(name + "_Location" : usesite) = value;
+          }
         }
       ]>);
     }

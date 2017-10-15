@@ -92,9 +92,10 @@ namespace Nitra.Compiler
 
     protected static LinkProperties(source : DependencyPath, target : DependencyPath, dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField], resultBuilder : PExpr -> PExpr = null) : PExpr
     {
+      def locCode = <[ $(CompileLocationPath(target)) = $(CompileLocationPath(source)); ]>;
       def expr1 = CompilePath(source);
       def expr2 = if (resultBuilder != null) resultBuilder(expr1) else expr1;
-      def expr3 = <[ $(CompilePath(target)) = $expr2 ]>;
+      def expr3 = <[ $(CompilePath(target)) = $expr2; $locCode ]>;
       def expr4 = TryAddStageCheck(target, expr3);
       <[
         unless ($(GenerateHasValueCheck(target, dependentProperties)))
@@ -138,7 +139,8 @@ namespace Nitra.Compiler
       tb.Define(<[ decl:
         ..$isEvaluatedMods $(symbol.Name + "_Location" : usesite) : string * int * int
         {
-          get; set;
+          get { this.Ambiguities[0].$(name + "_Location" : usesite) }
+          set { foreach (ambiguity in this.Ambiguities) ambiguity.$(name + "_Location" : usesite) = value; }
         }
       ]>);
     }

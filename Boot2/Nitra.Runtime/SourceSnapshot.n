@@ -67,19 +67,18 @@ namespace Nitra
 
     public PositionToLineColumn(pos : int) : LineColumn
     {
-      def pos = _textOffset + pos;
+      def pos2 = _textOffset + pos;
 
-      match (Array.BinarySearch(_lineIndexes, pos))
+      match (Array.BinarySearch(_lineIndexes, pos2))
       {
-        | index when index < 0 =>
-          def index = ~index;
-          if (index > 0)
-            LineColumn(index, pos - _lineIndexes[index - 1] + 1)
+        | result when result < 0 =>
+          def index = ~result;
+          if (index > 0 && index < _lineIndexes.Length)
+            LineColumn(index, pos2 - _lineIndexes[index - 1] + 1)
           else
             LineColumn(1, 1)
 
-        | index =>
-          LineColumn(index + 1, pos - _lineIndexes[index] + 1)
+        | index => LineColumn(index + 1, pos2 - _lineIndexes[index] + 1)
       }
     }
 

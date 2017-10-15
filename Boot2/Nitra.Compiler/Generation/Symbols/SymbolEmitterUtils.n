@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Text;
@@ -24,14 +24,14 @@ namespace Nitra.Compiler
 
   internal module SymbolEmitterUtils
   {
-    private _systemProperties : HashSet[string] = HashSet(["Description", "Locations", "FirstLocation"]);
+    private _systemProperties : HashSet[string] = HashSet(["Description", "Locations"]);
 
     public GetSymbolProperties(targetSymbolType : TypeBuilder) : list[SymbolProperty]
     {
       def isSymbolProperty(p)
       {
         // TODO: add attribute check
-        !_systemProperties.Contains(p.Name) && p.GetGetter()?.IsAbstract
+        !_systemProperties.Contains(p.Name) && p.GetGetter()?.IsAbstract //|| p.Name == "FirstLocation"
       }
       targetSymbolType
         .GetProperties(BindingFlags.Instance | BindingFlags.Public)

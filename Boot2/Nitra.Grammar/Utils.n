@@ -67,7 +67,7 @@ namespace Nitra
     //  value
     //}
 
-    [DebuggerStepThroughAttribute]
+    //[DebuggerStepThroughAttribute]
     public NLocation(this loc : Nitra.Location) : Compiler.Location
     {
       def (startLine, startCol) = loc.StartLineColumn;
@@ -76,7 +76,14 @@ namespace Nitra
       if (file is NemerleFile(Index = index))
         Compiler.Location(index, startLine, startCol, endLine, endCol)
       else
-        Compiler.Location.Default
+      {
+        def fullName = file.FullName;
+        def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
+        if (!isExecutable && File.Exists(fullName))
+          Compiler.Location(fullName, startLine, startCol, endLine, endCol)
+        else
+          Compiler.Location.Default
+      }
     }
 
     [DebuggerStepThroughAttribute]

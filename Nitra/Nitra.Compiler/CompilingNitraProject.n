@@ -1,6 +1,7 @@
 using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
 
@@ -11,8 +12,11 @@ using Nitra.ProjectSystem;
 
 using System;
 using System.Reflection;
-using SCG = System.Collections.Generic;
+using System.Text;
+
+using SCG  = System.Collections.Generic;
 using Path = System.IO.Path;
+using IOFile = System.IO.File;
 
 namespace Nitra.Compiler
 {
@@ -64,42 +68,60 @@ namespace Nitra.Compiler
       | _ => assert(false, $"Cannot get Nemerle type for symbol '$symbol'")
     }
 
-    private _allFiles    : SCG.Dictionary[int, NemerleFile] = SCG.Dictionary();
-    private _sourceFiles : SCG.List[NemerleFile]            = SCG.List();
+    private _allFiles      : SCG.Dictionary[int, NemerleFile] = SCG.Dictionary();
+    private _sourceFiles   : SCG.List[NemerleFile]            = SCG.List();
+    private _loadedSources : SCG.Dictionary[string, SourceSnapshot] = SCG.Dictionary(StringComparer.InvariantCultureIgnoreCase);
 
     public override MakeFakeNitraLocation(location : Nemerle.Compiler.Location) : Nitra.Location
     {
-      mutable file;
-      unless (_allFiles.TryGetValue(location.FileIndex, out file))
+      MakeNitraLocation(location)
+    }
+
+    private LoadSource(filePath : string) : SourceSnapshot
+    {
+      mutable source;
+      when (_loadedSources.TryGetValue(filePath, out source))
+        return source;
+      
+      def isExecutable = filePath.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
+      if (!isExecutable && IOFile.Exists(filePath))
       {
-        file = FakeNemerleFile(this, location.FileIndex);
-        _allFiles.Add(location.FileIndex, file);
+        def text = IOFile.ReadAllText(filePath, Encoding.UTF8);
+        source = SourceSnapshot(text, filePath)
       }
-      Nitra.Location(file, 0)
+      else
+        source = SingleLineSourceSnapshot("", filePath);
+          
+      _loadedSources[filePath] = source;
+
+      source
+    }
+
+    private GetSource(location : Nemerle.Compiler.Location) : SourceSnapshot
+    {
+      mutable file;
+      if (_allFiles.TryGetValue(location.FileIndex, out file))
+        file.GetSource()
+      else
+        LoadSource(location.File)
     }
 
     public override MakeNitraLocation(location : Nemerle.Compiler.Location) : Nitra.Location
     {
       assert2(!DebugStop);
-      mutable file;
-      if (_allFiles.TryGetValue(location.FileIndex, out file))
+      def source = GetSource(location);
+      try
       {
-        def source   = file.GetSource();
-        try
+        if (location.Line == 0 || source is SingleLineSourceSnapshot)
+          Nitra.Location(source, 0)
+        else
         {
-          if (location.Line == 0)
-            Nitra.Location(file, 0)
-          else
-          {
-            def startPos = source.LineColumnToPosition(LineColumn(location.Line,    location.Column));
-            def endPos   = source.LineColumnToPosition(LineColumn(location.EndLine, location.EndColumn));
-            Nitra.Location(source, startPos, endPos)
-          }
+          def startPos = source.LineColumnToPosition(LineColumn(location.Line,    location.Column));
+          def endPos   = source.LineColumnToPosition(LineColumn(location.EndLine, location.EndColumn));
+          Nitra.Location(source, startPos, endPos)
         }
-        catch { | _e => assert2(false); Nitra.Location(file, 0) }
       }
-      else
-        MakeFakeNitraLocation(location)
+      catch { | _e => assert2(false); Nitra.Location(source, 0) }
     }
 
     public override CreateNemerleFile(source : ISource) : NemerleFile
@@ -132,5 +154,5 @@ namespace Nitra.Compiler
       IgnoreParams();
       // TODO: generate code
     }
-  }
-}
+  } // class
+} // namespace
