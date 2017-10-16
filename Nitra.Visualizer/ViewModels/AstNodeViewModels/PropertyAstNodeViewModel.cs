@@ -57,6 +57,25 @@ namespace Nitra.Visualizer.ViewModels
       }
     }
 
+    public Brush ValueForeground
+    {
+      get
+      {
+        switch (_objectDescriptor)
+        {
+          case ObjectDescriptor.NotEvaluated x:                             return Brushes.Red;
+          case ObjectDescriptor.Null x:                                     return Brushes.Blue;
+          case ObjectDescriptor.Symbol x:                                   return Brushes.DarkGreen;
+          case ObjectDescriptor.Ast x:                                      return Brushes.DarkGoldenrod;
+          default:
+            if (Value == "<no value>")
+              return Brushes.DarkGray;
+
+            return Brushes.Black;
+        }
+      }
+    }
+
     public (string Path, int Line, int Column) AssignLocation
     {
       get

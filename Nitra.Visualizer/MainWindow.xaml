@@ -223,8 +223,12 @@
     <GridSplitter Grid.Row="1" Height="8" ResizeDirection="Rows" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Background="#5700FF00" />
     <TabControl Name="_tabControl" Grid.Row="2" SelectionChanged="_tabControl_SelectionChanged">
       <TabItem Header="AST" Name="_astReflectionTabItem">
-        <TreeView Name="_astTreeView" FontSize="16" Margin="5,0,0,0" SelectedItemChanged="_astTreeView_SelectedItemChanged">
+        <TreeView Name="_astTreeView" FontSize="16" Margin="5,0,0,0" PreviewMouseRightButtonDown="_astTreeView_PreviewMouseRightButtonDown" SelectedItemChanged="_astTreeView_SelectedItemChanged">
           <TreeView.Resources>
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+            <!--<SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="Black" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
+            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />-->
             <HierarchicalDataTemplate DataType="{x:Type nvm:ItemAstNodeViewModel}" ItemsSource="{Binding Path=Items}">
               <StackPanel Orientation="Horizontal">
                 <StackPanel.ContextMenu>
@@ -251,7 +255,7 @@
                 <TextBlock Text="{Binding Pefix}" Foreground="Blue" />
                 <TextBlock Text="{Binding Name}" Foreground="{Binding Foreground}" FontWeight="Bold" />
                 <TextBlock Text=" : " Foreground="Gray" />
-                <TextBlock Text="{Binding Value}"/>
+                <TextBlock Text="{Binding Value}" Foreground="{Binding ValueForeground}"/>
                 <TextBlock Text=" " />
                 <TextBlock Text="{Binding TypeFullName}" Foreground="Gray" />
               </StackPanel>

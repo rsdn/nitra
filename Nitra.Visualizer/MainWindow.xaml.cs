@@ -1953,5 +1953,24 @@ namespace Nitra.Visualizer
         }
       }
     }
+
+    private void _astTreeView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+      TreeViewItem VisualUpwardSearch(DependencyObject source)
+      {
+        while (source != null && !(source is TreeViewItem))
+          source = VisualTreeHelper.GetParent(source);
+
+        return source as TreeViewItem;
+      }
+
+      var treeViewItem = VisualUpwardSearch(e.OriginalSource as DependencyObject);
+
+      if (treeViewItem != null)
+      {
+        treeViewItem.Focus();
+        e.Handled = true;
+      }
+    }
   }
 }
