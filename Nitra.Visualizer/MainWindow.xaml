@@ -225,10 +225,7 @@
       <TabItem Header="AST" Name="_astReflectionTabItem">
         <TreeView Name="_astTreeView" FontSize="16" Margin="5,0,0,0" PreviewMouseRightButtonDown="_astTreeView_PreviewMouseRightButtonDown" SelectedItemChanged="_astTreeView_SelectedItemChanged">
           <TreeView.Resources>
-            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
-            <!--<SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="Black" />
-            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="Transparent" />
-            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Transparent" />-->
+            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="LightBlue" />
             <HierarchicalDataTemplate DataType="{x:Type nvm:ItemAstNodeViewModel}" ItemsSource="{Binding Path=Items}">
               <StackPanel Orientation="Horizontal">
                 <StackPanel.ContextMenu>
