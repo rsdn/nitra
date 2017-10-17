@@ -14,13 +14,13 @@ namespace Nitra.Ast
     {
       Kind      = (if (IsAbstract) "abstract " else null) + if (IsDeclaration) "declaration" else "ast";
       SpanClass = NitraLang.AstSpanClass;
+      Scope     = BaseTypeSet.ParentFullScope.HideWith(MemberTable);
 
       in IsDeclaration : bool;
       in IsAbstract    : bool;
       in Cardinality   : AstCardinality;
     }
 
-    Symbol.Scope = Symbol.BaseTypeSet.ParentFullScope.HideWith(Symbol.MemberTable);
     Symbol.BaseTypeSet |= AstUtils.FilterResolvedAstType(TypeBase.Ref, Symbol);
     Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclaration(context, Symbol, TypeBase.Ref);
     TypeBase.Scope = Scope;
