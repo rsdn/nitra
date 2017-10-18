@@ -1,4 +1,4 @@
-﻿using Nitra.Typing;
+using Nitra.Typing;
 using Nitra.Serialization;
 
 using Nemerle;
@@ -211,7 +211,7 @@ namespace Nitra.Compiler
             _serializationEmitter.Formatter.WriteRecordMembers(serializeBody, serializationMembers, () => <[ this ]>,
               (expr, info) => <[ when (this.$(info.IsEvaluated : usesite)) $expr ]>);
 
-            _tb.Define(<[ decl:
+            _ = _tb.DefineWithSource(<[ decl:
               public Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
               {
                 unchecked when (metadataWriter.BeginWriteSymbol(this, writer))
@@ -229,7 +229,7 @@ namespace Nitra.Compiler
                   symbol.$(info.OriginalName : usesite) = value;
               ]>);
 
-            _tb.Define(<[ decl:
+            _tb.DefineWithSource(<[ decl:
               public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : $(symbolType : typed)
               {
                 mutable symbol;
