@@ -285,6 +285,49 @@ namespace Nitra.Declarations
       }
     }
 
+    public Prefer(isNitraSymbol : DeclarationSymbol -> bool) : BindResult[TSymbol]
+    {
+      match (this)
+      {
+        | Single as s => s
+        | Multiple as x =>
+          def g = x.Symbols.GroupBy(s => s.FullName);
+          def results = LightList();
+          foreach (elem in  g)
+          {
+            def ambiguous = elem.ToArray();
+            if (ambiguous.Length == 1)
+              results.Add(ambiguous[0]);
+            else if (ambiguous.Any(isNitraSymbol))
+              foreach (a when isNitraSymbol(a) in ambiguous)
+                results.Add(a);
+            else
+              foreach (a in ambiguous)
+                results.Add(a);
+          }
+          if (x.Symbols.Length == results.Count)
+            x
+          else
+            results.ToBindResult()
+
+        | Hiding as h =>
+          def r = h.Result.Prefer(isNitraSymbol);
+          BindResult.Hiding(r, h.Hidden.Prefer(isNitraSymbol))
+
+        | Union as u =>
+          def results = LightList();
+          foreach (res in u.Results)
+          {
+            def res2 = res.Prefer(isNitraSymbol);
+            results.Add(res2);
+          }
+
+          results.ToBindResult()
+
+        | Nil as n => n
+      }
+    }
+
     public override ToString() : string
     {
       def displayCount = 5;

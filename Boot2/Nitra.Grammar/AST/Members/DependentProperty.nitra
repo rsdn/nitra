@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 
 using Nitra.AstUtils;
 using Nitra.Declarations;
@@ -17,7 +17,7 @@ namespace Nitra.Ast
 
     in TypeRef : Ref[TypeSymbol] = Type.Ref.Resolve();
 
-    Type.Scope = Scope;
+    Type.Scope = PreferScope(Scope);
     Symbol.Type = TypeRef.Symbol;
 
     Type : QualifiedReference;

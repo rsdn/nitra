@@ -1,0 +1,82 @@
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Serialization2;
+
+using Nemerle;
+using Nemerle.Extensions;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.Ast
+{
+  [Record, StructuralEquality]
+  public sealed class PreferScope : Scope
+  {
+    static _isNitraSymbol : DeclarationSymbol -> bool = IsNitraSymbol;
+
+    public static IsNitraSymbol(symbol : DeclarationSymbol) : bool
+    {
+      | AstSymbol => true
+      | SymbolDeclarationSymbol => true
+      | _ => false
+    }
+
+    public Scope : Scope { get; }
+
+    public override AllSymbols : Seq[DeclarationSymbol]
+    {
+      get
+      {
+        def res1 = Scope.Bind(_ => true);
+        def res2 = res1.Prefer(_isNitraSymbol);
+        res2.GetSymbols().OrderBy(s => s.InitialName)
+      }
+    }
+
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      def res1 = Scope.Bind(isMatch);
+      def res2 = res1.Prefer(_isNitraSymbol);
+      res2
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      def res1 = Scope.Bind(reference);
+      def res2 = res1.Prefer(_isNitraSymbol);
+      res2
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void
+    {
+      def id            = nodeToIdMap.GetObjectId(this);
+      def idScope       = nodeToIdMap.GetObjectId(this.Scope);
+
+      nodes.Add($<#Obj_$id [label="PreferScope"]#>);
+      edges.Add($<#Obj_$id -> Obj_$idScope#>);
+
+      this.Scope.ToDot(nodeToIdMap, nodes, edges);
+    }
+
+    public override ToString() : string
+    {
+      "PreferScope"
+    }
+
+    public override Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
+    {
+      metadataWriter.WriteObject(Scope, writer);
+    }
+
+    public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : this
+    {
+      def scope = metadataReader.ReadObject(reader);
+      PreferScope(scope)
+    }
+  } // class
+} // namespace
