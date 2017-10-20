@@ -33,10 +33,11 @@ namespace DotNet
 
     | Qualified
       {
-        Qualifier.Arity = 0;
-        Qualifier.Scope = Scope;
-        Name.Scope      = NameScopeFactory(Qualifier.Ref.Scope);
-        Ref             = Name.Ref.Resolve(AstUtils.TypeOverloadResolution(Arity));
+        Qualifier.NameScopeFactory = NameScopeFactory;
+        Qualifier.Arity            = 0;
+        Qualifier.Scope            = Scope;
+        Name.Scope                 = NameScopeFactory(Qualifier.Ref.Scope);
+        Ref                        = Name.Ref.Resolve(AstUtils.TypeOverloadResolution(Arity));
 
         Qualifier : QualifiedReference;
         Name      : Reference;

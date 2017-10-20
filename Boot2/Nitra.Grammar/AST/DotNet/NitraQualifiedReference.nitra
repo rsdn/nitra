@@ -20,11 +20,12 @@ namespace Nitra.Ast
 
     | Qualified
       {
-        FieldNameId  = ParsedValue(Name.Span, Name.Id);
-        Qualifier.Arity = 0;
-        Qualifier.Scope = Scope;
-        Name.Scope      = NameScopeFactory(Qualifier.Ref.Scope);
-        Ref             = Name.Ref.Resolve(AstUtils.TypeOverloadResolution(Arity));
+        FieldNameId                = ParsedValue(Name.Span, Name.Id);
+        Qualifier.Arity            = 0;
+        Qualifier.Scope            = Scope;
+        Qualifier.NameScopeFactory = NameScopeFactory;
+        Name.Scope                 = NameScopeFactory(Qualifier.Ref.Scope);
+        Ref                        = Name.Ref.Resolve(AstUtils.TypeOverloadResolution(Arity));
 
         Qualifier : QualifiedReference;
         Name      : Reference;

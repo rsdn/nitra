@@ -50,11 +50,12 @@ namespace Nitra.Ast
 
     in ExtendedRuleRef : Ref[ExtensibleRuleSymbol];
 
-    BaseName.Scope          = Scope;
-    Members.ContainingTable = Symbol.MemberTable;
-    Members.Scope           = Scope;
-    ExtendedRuleRef         = BaseName.Ref.Resolve();
-    Symbol.ExtendedRule     = ExtendedRuleRef.Symbol;
+    BaseName.NameScopeFactory = AstUtils.FilterWithRuleTypeSymbol;
+    BaseName.Scope            = Scope;
+    Members.ContainingTable   = Symbol.MemberTable;
+    Members.Scope             = Scope;
+    ExtendedRuleRef           = BaseName.Ref.Resolve();
+    Symbol.ExtendedRule       = ExtendedRuleRef.Symbol;
 
     BaseName : QualifiedReference;
     Members  : RuleBodyMember*;

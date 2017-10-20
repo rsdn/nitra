@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Nitra.Runtime", "Nitra\Nitra.Runtime\Nitra.Runtime.nproj", "{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}"
 EndProject
@@ -216,5 +216,8 @@ Global
 		{9393C049-D118-41DA-8116-22DB176B1C5B} = {082509BB-DE60-4177-9F95-00576CF8EEA3}
 		{7908821A-47A0-42F4-B6E5-F3062BA8A06A} = {082509BB-DE60-4177-9F95-00576CF8EEA3}
 		{705D1C4F-0AC8-4BDC-80CD-E3D26CFA5397} = {082509BB-DE60-4177-9F95-00576CF8EEA3}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F64EAF25-79E8-4044-86F2-E8F31E30B87B}
 	EndGlobalSection
 EndGlobal

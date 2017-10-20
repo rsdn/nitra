@@ -1,4 +1,4 @@
-﻿using DotNet;
+using DotNet;
 using Nitra.Declarations;
 using System.Collections.Immutable;
 
@@ -26,7 +26,7 @@ namespace Nitra.Ast
     }
 
     Symbol.BaseTypeSet |= AstUtils.FilterResolvedLanguage(TypeBase.Ref);
-    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForLanguage(context, Symbol);
+    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForLanguage(context, Symbol, Symbol.FullName);
     TypeBase.Scope = Scope;
 
     Members.ContainingTable   = Symbol.MemberTable;

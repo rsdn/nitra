@@ -449,7 +449,7 @@ namespace Nitra
       candidates.CreateRevole(result)
     }
 
-    public GetImplicitBaseTypeForLanguage(context : DependentPropertyEvalContext, symbol : LanguageSymbol) : Seq[TypeSymbol] -> TypeSymbol
+    public GetImplicitBaseTypeForLanguage(context : DependentPropertyEvalContext, symbol : LanguageSymbol, _fullName : string) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseLanguage(symbol)
       {
@@ -802,6 +802,22 @@ namespace Nitra
       def filter(symbol : DeclarationSymbol) : bool
       {
         | _ is AstTypeSymbol => true
+        | _ is NamespaceSymbol => true
+        | u is UsingAliasDirectiveSymbol when u.IsReplacementEvaluated && u.Replacement.IsSymbolEvaluated => filter(u.Replacement.Symbol)
+        | _ => false
+      }
+      scope.FilterWith(filter)
+    }
+
+
+    public FilterWithRuleTypeSymbol : ScopeFactory = FilterWithRuleTypeSymbolImpl;
+
+    public FilterWithRuleTypeSymbolImpl(this scope : Scope) : Scope
+    {
+      def filter(symbol : DeclarationSymbol) : bool
+      {
+        | _ is RuleTypeSymbol => true
+        | _ is SyntaxModuleSymbol => true
         | _ is NamespaceSymbol => true
         | u is UsingAliasDirectiveSymbol when u.IsReplacementEvaluated && u.Replacement.IsSymbolEvaluated => filter(u.Replacement.Symbol)
         | _ => false
