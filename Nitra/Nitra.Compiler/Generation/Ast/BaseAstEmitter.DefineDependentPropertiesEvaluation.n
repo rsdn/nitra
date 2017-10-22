@@ -119,7 +119,18 @@ namespace Nitra.Compiler
                   unless (pathType.TryRequire(Environment.CollectorTypeVar))
                     Message.Error(statement.NLocation(), $"Type '$pathType' does not implement '$(Environment.CollectorTypeInfo.FullName)' interface.");
 
-                  match (ti.GetMembers().Find(m => m is IMethod && m.IsCustomAttributeDefined(CollectAttribute)))
+                  def isCollect(m : IMember) : bool
+                  {
+                    if (m is IMethod as method)
+                    {
+                      def attrs = method.GetModifiers();
+                      def result = attrs.IsCustomAttributeDefined(CollectAttribute, tb.Manager.CoreEnv);
+                      result
+                    }
+                    else
+                      false
+                  }
+                  match (ti.GetMembers().Find(isCollect))
                   {
                     | Some(m) => body.Add(<[ Nitra.PExprAnchor($(compilePath(statement)).$(m.Name : usesite)($(prepareExpr(rawExpr)))) ]>);
                     | None    => Message.Error(statement.NLocation(), $"Type '$pathType' does not contain any method marked with '$CollectAttribute' attribute.")
@@ -476,7 +487,7 @@ namespace Nitra.Compiler
             def callId      = calls.Count + 1;
             def node        =
               if (isCollector)
-                if (meth.IsCustomAttributeDefined(CollectAttribute))
+                if (meth.GetModifiers().IsCustomAttributeDefined(CollectAttribute, tb.Manager.CoreEnv))
                   PropertyDependencyCall.Collect(callId, symbol, rawExpr.Location, path, code)
                 else
                   PropertyDependencyCall.StagedUse(callId, symbol, rawExpr.Location, path, code)

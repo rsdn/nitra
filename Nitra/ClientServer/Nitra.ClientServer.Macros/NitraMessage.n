@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Compiler;
@@ -178,7 +178,7 @@ namespace Nitra.ClientServer.Macros
     {
       Macros.DefineCTX(_typer);
       def mappedMemberAttr = <[ ttype: Nemerle.Internal.MappedMemberAttribute; ]>.TypeInfo;
-      def recordCtor = tb.GetConstructors().Find(m => m.IsCustomAttributeDefined("Nemerle.Internal.RecordCtorAttribute"));
+      def recordCtor = tb.GetConstructors().Find(m => m.GetModifiers().IsCustomAttributeDefined("Nemerle.Internal.RecordCtorAttribute", tb.Manager.CoreEnv));
       def declaredFieldNames = tb.GetFields(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public).Filter(x => !x.IsStatic).Map(x => x.Name);
 
       match (recordCtor)

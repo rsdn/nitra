@@ -1,4 +1,4 @@
-﻿using Nemerle;
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -32,7 +32,7 @@ namespace Nitra.Serialization
       mutable result;
 
       foreach (ctor in ctors)
-        when (ctor.IsCustomAttributeDefined("Nemerle.Internal.RecordCtorAttribute"))
+        when (ctor.GetModifiers().IsCustomAttributeDefined("Nemerle.Internal.RecordCtorAttribute", typeInfo.Manager.CoreEnv))
           when (result == null || ctor.Header.Parameters.Length > result.Header.Parameters.Length)
             result = ctor;
 
