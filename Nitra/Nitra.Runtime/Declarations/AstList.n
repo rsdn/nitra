@@ -1,4 +1,4 @@
-﻿using Nitra.Internal;
+using Nitra.Internal;
 using Nitra.ProjectSystem;
 
 using Nemerle;
@@ -35,12 +35,38 @@ namespace Nitra.Declarations
     {
       Source = loc.Source;
       Span   = loc.Span;
-      _items = items ?? EmptyItems;
-      foreach (item in _items)
+      if (items == null || items.Length == 0)
+        _items = EmptyItems;
+      else
       {
-        def itemLoc = item.Location;
-        when (itemLoc.Source : object == Source)
-          Span += itemLoc.Span;
+        mutable notMissedCount = 0;
+        foreach (item when !item.IsMissing in items)
+          notMissedCount++;
+
+        def items2 =
+          if (items.Length == notMissedCount)
+            items
+          else
+          {
+            // remove Missing element to prevetn typing fial
+            def newItems = array(notMissedCount);
+            mutable i = 0;
+            foreach (item when !item.IsMissing in items)
+            {
+              newItems[i] = item;
+              i++;
+            }
+            newItems
+          };
+        
+        _items = items2;
+
+        foreach (item in items2)
+        {
+          def itemLoc = item.Location;
+          when (itemLoc.Source : object == Source)
+            Span += itemLoc.Span;
+        }
       }
     }
 
