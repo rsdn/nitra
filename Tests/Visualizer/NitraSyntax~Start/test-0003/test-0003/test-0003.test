@@ -1,4 +1,4 @@
-namespace Nitra
+﻿namespace Nitra2
 {
   map syntax Core.Start -> Xxx
   {
@@ -36,6 +36,7 @@ namespace Nitra
   
   ast Xxx
   {
+    Value : string;
     in Prop : int;
     Y : Nitra.ParsedValue[int];
     Y1 : Zzz*;
