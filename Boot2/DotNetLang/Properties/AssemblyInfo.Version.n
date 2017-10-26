@@ -1,4 +1,4 @@
 ﻿
-[assembly: System.Reflection.AssemblyVersionAttribute("0.115.0.0")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("0.115.0.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("0.122.0.0")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("0.122.0.0")]
   

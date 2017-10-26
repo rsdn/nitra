@@ -11,6 +11,7 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace DotNet
@@ -128,7 +129,11 @@ namespace DotNet
             when (symbol is ClassSymbol)
               parentClassScope = parentTypeSet.ParentClassScope.HideWith(symbolScope);
 
-          | _ => ()
+          | SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=false) =>
+            Debug.WriteLine("SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=false)");
+            assert2(false);
+
+          | _ => assert2(false);
         }
 
         foreach (type in ancestorTypes)
@@ -164,7 +169,7 @@ namespace DotNet
 
     public override ToString() : string
     {
-      $"$CreatedOnStage($CreatedOnPass): ..$_parentTypes"
+      $"CreatedOnStage: $CreatedOnStage CreatedOnPass:$CreatedOnPass ParentTypes: ..$_parentTypes"
     }
   }
 }
