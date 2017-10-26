@@ -1523,10 +1523,11 @@ namespace Nitra.Visualizer
     {
       switch (node)
       {
-        case null: break;
-        case AstNodeViewModel astVm: SetClipboardText(astVm.Value + " " + astVm.TypeFullName); break;
-        case BaseVm              vm: SetClipboardText(vm.FullPath.ToString()); break;
-        default:                     SetClipboardText(node.ToString()); break;
+        case null:                            break;
+        case PropertyAstNodeViewModel propVm: SetClipboardText($"Name: {propVm.Name} Value = «{propVm.Value}» Type: {propVm.TypeFullName}"); break;
+        case ItemAstNodeViewModel     itemVm: SetClipboardText($"Value = «{itemVm.Value}» Type: {itemVm.TypeFullName}"); break;
+        case BaseVm                       vm: SetClipboardText(vm.FullPath.ToString()); break;
+        default:                              SetClipboardText(node.ToString()); break;
       }
     }
 

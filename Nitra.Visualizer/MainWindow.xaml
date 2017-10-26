@@ -235,8 +235,9 @@
                   </ContextMenu>
                 </StackPanel.ContextMenu>
                 <TextBlock Text="{Binding Pefix}" Foreground="DarkGray" />
+                <TextBlock Text=" «" />
                 <TextBlock Text="{Binding Value}"/>
-                <TextBlock Text=" " />
+                <TextBlock Text="» : " />
                 <TextBlock Text="{Binding TypeFullName}" Foreground="Gray" />
               </StackPanel>
             </HierarchicalDataTemplate>
@@ -251,9 +252,9 @@
                 </StackPanel.ContextMenu>
                 <TextBlock Text="{Binding Pefix}" Foreground="Blue" />
                 <TextBlock Text="{Binding Name}" Foreground="{Binding Foreground}" FontWeight="Bold" />
-                <TextBlock Text=" : " Foreground="Gray" />
+                <TextBlock Text=" = «" />
                 <TextBlock Text="{Binding Value}" Foreground="{Binding ValueForeground}"/>
-                <TextBlock Text=" " />
+                <TextBlock Text="» : " />
                 <TextBlock Text="{Binding TypeFullName}" Foreground="Gray" />
               </StackPanel>
             </HierarchicalDataTemplate>
