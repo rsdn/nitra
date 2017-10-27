@@ -1,0 +1,31 @@
+﻿using DotNet;
+using Nitra.Declarations;
+using Nitra.Core;
+
+map syntax SM.AstInheritance -> QualifiedReference*
+{
+  BaseAsts.Item1
+}
+
+syntax module SM
+{
+  syntax AstInheritance = ":" sm BaseAsts=(QualifiedReference; "," sm)+;
+  
+  token Reference = IdentifierBody;
+  
+  [ExplicitSpaces]
+  syntax QualifiedReference
+  {
+    | Simple = Reference
+  precedence MemberAcces:
+    | Qualified   = QualifiedReference s "." s Reference
+  }
+}
+
+map syntax SM.Reference -> Reference = Reference(this);
+
+map syntax SM.QualifiedReference -> QualifiedReference
+{
+  | Simple      -> Simple    { Reference -> Name; }
+  | Qualified   -> Qualified { QualifiedReference -> Qualifier; Reference -> Name; }
+}
