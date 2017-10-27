@@ -1,5 +1,3 @@
-using Nitra.Ast.AstMembers;
-using System.Text;
 using DotNet;
 
 using Nemerle;
@@ -9,6 +7,7 @@ using Nemerle.Text;
 using Nemerle.Utility;
 
 using Nitra.Ast;
+using Nitra.Ast.AstMembers;
 using Nitra.Declarations;
 using Nitra.ProjectSystem;
 using Nitra.Internal;
@@ -17,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 
 namespace Nitra
 {
