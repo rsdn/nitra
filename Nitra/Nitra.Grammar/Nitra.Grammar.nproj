@@ -8,7 +8,8 @@
     <NeedAddVersionToAssemblyName>False</NeedAddVersionToAssemblyName>
     <CustomArguments>$(CustomArguments) -nowarn:114</CustomArguments>
   </PropertyGroup>
-  <PropertyGroup> <!-- Common properties -->
+  <PropertyGroup>
+    <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
     <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
@@ -683,10 +684,13 @@
     <Compile Include="Typing\TypingUtils-ValidateSyntaxMapping.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="NounUtil.cs">
+    <Compile Include="Utils\AstTypeUnifier.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utils.n">
+    <Compile Include="Utils\NounUtil.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utils\Utils.n">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
@@ -703,6 +707,7 @@
     <Folder Include="Model" />
     <Folder Include="Context" />
     <Folder Include="Model\Type" />
+    <Folder Include="Utils" />
     <Folder Include="Symbols\Ast" />
     <Folder Include="Symbols\DependentProperties" />
     <Folder Include="Symbols\LanguageMembers" />

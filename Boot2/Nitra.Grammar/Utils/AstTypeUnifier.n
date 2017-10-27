@@ -1,0 +1,36 @@
+using Nitra.Ast;
+using Nitra.Declarations;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DotNet
+{
+  public sealed class AstTypeUnifier : DotNet.TypeUnifier
+  {
+    public new static InitInstance() : void
+    {
+      Instance = AstTypeUnifier();
+    }
+
+    protected override IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    {
+      if (base.IsSubtype(subtype, supertype))
+        true
+      else match (subtype, supertype)
+      {
+        | (subtypeList is ListAstTypeSymbol, supertypeList is ListAstTypeSymbol) =>
+          IsSubtype(subtypeList.ElemType, supertypeList.ElemType)
+
+        | _ => false
+      }
+    }
+  }
+}

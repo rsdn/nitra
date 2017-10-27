@@ -12,6 +12,8 @@ namespace Nitra.Declarations
 {
   public abstract class TypeUnifier
   {
+    public static Instance : TypeUnifier { get; protected set; }
+
     private _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
     protected abstract IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool;

@@ -9,6 +9,7 @@ using Nemerle.Utility;
 using Nitra;
 using Nitra.Ast;
 using Nitra.Declarations;
+using Nitra.Grammar;
 using Nitra.Internal;
 using Nitra.ProjectSystem;
 
@@ -40,6 +41,8 @@ namespace DotNet
 
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
+      AstTypeUnifier.InitInstance();
+
       def oldManager = ManagerClass.Instance;
       try
       {

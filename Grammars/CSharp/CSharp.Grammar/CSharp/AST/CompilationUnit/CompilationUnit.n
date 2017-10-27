@@ -28,6 +28,8 @@ namespace CSharp
   {
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
+      TypeUnifier.InitInstance();
+
       def bindNs(scope : Scope, name : string) : Ref[NamespaceSymbol]
       {
         //assert2(false);

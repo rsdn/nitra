@@ -1,4 +1,4 @@
-﻿using Nitra.Declarations;
+using Nitra.Declarations;
 
 using DotNet;
 
@@ -14,16 +14,19 @@ using System.Linq;
 
 namespace DotNet
 {
-  public sealed class AstTypeUnifier : TypeUnifier
+  public class TypeUnifier : Nitra.Declarations.TypeUnifier
   {
-    public static Instance : AstTypeUnifier = AstTypeUnifier();
+    public static InitInstance() : void
+    {
+      Instance = TypeUnifier();
+    }
 
     protected override IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       when (supertype : object == PlatformTypes.Object)
         return true;
 
-      when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated = true, BaseTypeSet = baseTypeSet))
+      when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, BaseTypeSet=baseTypeSet))
         return baseTypeSet.AncestorTypes.Contains(supertype);
 
       false
