@@ -549,7 +549,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (obj.IsNameValid)
         obj.Name
       else
-        obj.InitialName + " <Name not valid>"
+        obj.ToString()
     }
 
     public static GetText(obj : IAst) : string
