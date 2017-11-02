@@ -1,4 +1,4 @@
-using Nitra;
+﻿using Nitra;
 using Nitra.Declarations;
 using Nitra.Serialization2;
 
@@ -41,7 +41,7 @@ namespace Nitra.Ast
 
     protected override CreateMembers() : BindResult[DeclarationSymbol]
     {
-      match (GetElementType())
+      def makeMembers(elemType : RuleTypeSymbol) : BindResult[DeclarationSymbol]
       {
         | SyntaxRuleSymbol(IsScopeEvaluated = true, Scope = scope) =>
           def bindResult = scope.Bind.[MapSyntaxSymbol](s => s.IsNameValid && s.IsReturnTypeEvaluated && s.IsParametersEvaluated);
@@ -57,8 +57,17 @@ namespace Nitra.Ast
           }
           bindResult.Map(toMem);
 
+        | t is RuleTupleTypeSymbol =>
+          def elemTypes = t.ElemTypes.Filter(t : RuleTypeSymbol => !(t is RuleCharsTypeSymbol));
+          if (elemTypes is [et])
+            makeMembers(et)
+          else
+            BindResult.Nil()
+
         | _ => BindResult.Nil()
       }
+
+      makeMembers(GetElementType())
     }
   }
 }
