@@ -1,0 +1,28 @@
+﻿syntax module SM
+{
+  syntax Aaa = DddOpt=(":" Bbb)?; // TODO: try remove explicit name
+  syntax Bbb = X="x";
+}
+
+ast A
+{
+  DD : B;
+}
+
+ast B
+{
+  BB : string;
+}
+
+map syntax SM.Aaa -> A
+{
+  match (DddOpt)
+  {
+    | Some(x) -> x
+  } -> DD;
+}
+
+map syntax SM.Bbb -> B
+{
+  BB = ParsedValue(X, GetText(X));
+}

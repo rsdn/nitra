@@ -43,6 +43,14 @@ namespace Nitra.Ast
     {
       def makeMembers(elemType : RuleTypeSymbol) : BindResult[DeclarationSymbol]
       {
+        | t is RuleTupleTypeSymbol =>
+          def elemTypes = t.ElemTypes.Filter(t : RuleTypeSymbol => !(t is RuleCharsTypeSymbol));
+          if (elemTypes is [et])
+            makeMembers(et)
+          else
+            BindResult.Nil()
+
+        | RuleTypeVarSymbol(IsScopeEvaluated = true, Scope = scope)
         | SyntaxRuleSymbol(IsScopeEvaluated = true, Scope = scope) =>
           def bindResult = scope.Bind.[MapSyntaxSymbol](s => s.IsNameValid && s.IsReturnTypeEvaluated && s.IsParametersEvaluated);
 
@@ -56,13 +64,6 @@ namespace Nitra.Ast
               VSome(mapSyntaxSymbol)
           }
           bindResult.Map(toMem);
-
-        | t is RuleTupleTypeSymbol =>
-          def elemTypes = t.ElemTypes.Filter(t : RuleTypeSymbol => !(t is RuleCharsTypeSymbol));
-          if (elemTypes is [et])
-            makeMembers(et)
-          else
-            BindResult.Nil()
 
         | _ => BindResult.Nil()
       }

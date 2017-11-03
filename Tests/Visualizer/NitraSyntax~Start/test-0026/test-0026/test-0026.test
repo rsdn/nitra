@@ -1,0 +1,25 @@
+﻿syntax module SM
+{
+  syntax Aaa = Bbbs=(":" Bbb)+; // TODO: try remove explicit name
+  syntax Bbb = X="x";
+}
+
+ast A
+{
+  CC : B*;
+}
+
+ast B
+{
+  BB : string;
+}
+
+map syntax SM.Aaa -> A
+{
+  Bbbs -> CC;
+}
+
+map syntax SM.Bbb -> B
+{
+  BB = ParsedValue(X, GetText(X));
+}

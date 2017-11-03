@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nemerle;
 using Nemerle.Imperative;
@@ -388,13 +388,24 @@ namespace Nitra
 
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
-        def castTemplate = CreateFunctionType(loc, array[thisType], AstTypeUnifier.Instance.CreateTypeVar(expectedType, null), context);
+        def castTemplate = CreateFunctionType(loc, array[thisType], AstTypeUnifier.Instance.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
         def canBeImplicitCast(mapSyntax : MapSyntaxSymbol) : bool
-        {
+        { def castTemplate = castTemplate;
           mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
         }
         def scope = if (thisType.IsScopeEvaluated) thisType.Scope else EmptyScope.Instance;
         validCasts = scope.Bind.[MapSyntaxSymbol](canBeImplicitCast);
+        when (validCasts.IsEmpty)
+        match (thisType)
+        {
+          | RuleTupleTypeSymbol as tuple
+          | RuleTypeVarSymbol(IsTypeEvaluated=true, Type=RuleTupleTypeSymbol as tuple) =>
+            def elemTypes = tuple.ElemTypes.Filter(t : RuleTypeSymbol => !(t is RuleCharsTypeSymbol));
+            when (elemTypes is [et])
+              return CreateImplicitRuleTypeCast(loc, et, expectedType, context);
+
+          | _ => ()
+        }
       }
 
       if (validCasts.IsEmpty)
