@@ -323,7 +323,25 @@ namespace Nitra
           unless (p.IsTypeEvaluated)
             return false;
           unless (AstTypeUnifier.Instance.TryRequire(t, p.Type))
-            return false;
+          {
+            def r2 = getAstIdRef.Bind.[MapSyntaxSymbol](t.Scope);
+            def isResolved(symbol : MapSyntaxSymbol) : bool
+            {
+              when (symbol.Parameters.Count != 0)
+                return false;
+
+              when (!symbol.IsReturnTypeEvaluated)
+                return false;
+
+              def res = AstTypeUnifier.Instance.TryRequire(symbol.ReturnType, p.Type);
+              res
+            }
+            def r3 = r2.Resolve(isResolved);
+            if (r3.IsUnresolved || r3.IsAmbiguous)
+              return false;
+            else
+              return true;
+          }
         }
         true
       }
