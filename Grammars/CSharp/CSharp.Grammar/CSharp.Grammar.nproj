@@ -232,9 +232,9 @@
     <Compile Include="CSharp\CS2\CS2.nitra">
       <SubType>Content</SubType>
     </Compile>
-    <Content Include="CSharp\CS3\AnonymousType.nitra">
+    <Compile Include="CSharp\CS3\AnonymousType.nitra">
       <SubType>Content</SubType>
-    </Content>
+    </Compile>
     <Compile Include="CSharp\CS3\CS3.nitra">
       <SubType>Content</SubType>
     </Compile>
