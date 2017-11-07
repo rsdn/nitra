@@ -381,7 +381,9 @@ namespace Nitra
         foreach (type in expectedMemberTypes with index)
           members[index].ExpectedType = type;
       }
-      else
+      else when (members.Count != 0)
+        // Pattern can be specified with empty parameter list or without parameters: "Ctor()", "Ctor".
+        // We should consider these cases as a constructor with any number of parameters given by the Wildcard.
         loc.Error(context, $"Expected pattern of $(expectedMemberTypes.Count), got pattern of $(members.Count).");
 
       returnType
