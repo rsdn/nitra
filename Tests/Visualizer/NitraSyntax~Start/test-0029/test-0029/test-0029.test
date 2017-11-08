@@ -1,0 +1,27 @@
+﻿map syntax Expressions.Expression.True -> DotNet.Expr
+{
+  BooleanLiteral    { Value = ParsedValue(NSpan(), true); }
+}
+
+map syntax Expressions.Expression.False -> DotNet.Expr
+{
+  BooleanLiteral    { Value = ParsedValue(NSpan(), false); }
+}
+
+syntax module Core
+{
+  syntax Expression { }
+}
+
+syntax module Expressions
+{
+ using Core;
+   
+  extend syntax Expression
+  {
+    // B.1.8 Literals
+    | "true"
+    | "false"
+  }
+}
+
