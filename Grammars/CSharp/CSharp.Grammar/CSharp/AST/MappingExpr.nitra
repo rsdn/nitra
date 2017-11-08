@@ -518,6 +518,11 @@ namespace CSharp
     NullConditional2 { }
   }
 
+  map syntax AnonymousType.Expression.NewAnonymous -> DotNet.Expr
+  {
+    AnonymousTypeInstantiation { }
+  }
+
   map syntax Expressions.Argument -> DotNet.Expr
   {
     | Ref    ->
