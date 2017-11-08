@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nemerle.Collections;
 
@@ -49,8 +49,16 @@ namespace Nitra.Ast.RuleExpressions
     Name : string;
   }
 
-  ast Not : Unary { Type = WellKnownSymbols.VoidRuleType; } // "!" RuleExpression ^ Predicate
-  ast And : Unary { Type = WellKnownSymbols.VoidRuleType; } // "&" RuleExpression ^ Predicate
+  ast Not : Unary // "!" RuleExpression ^ Predicate
+  {
+    Type      = WellKnownSymbols.VoidRuleType;
+    FieldName = MakeName(this.Location, "NotPredicate", Expression.FieldName);
+  }
+  ast And : Unary // "&" RuleExpression ^ Predicate
+  {
+    Type      = WellKnownSymbols.VoidRuleType;
+    FieldName = MakeName(this.Location, "AndPredicate", Expression.FieldName);
+  }
   ast Optional : Unary
   {
     Type = InitOption(context, Expression.Type);

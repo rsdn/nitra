@@ -55,6 +55,16 @@ namespace Nitra
       MakeName(loc, value, userDefined)
     }
 
+    public MakeName(loc : Location, suffix : string, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    {
+      unless (parsedValue.HasValue)
+        return parsedValue;
+
+      def (value, userDefined) = parsedValue.Value;
+      def name = if (userDefined) value else value + suffix;
+      MakeName(loc, name, userDefined)
+    }
+
     public MakeOptionalName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
     {
       unless (parsedValue.HasValue)
