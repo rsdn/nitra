@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.Declarations;
 using Nitra.Ast.AstMembers;
@@ -12,7 +12,7 @@ namespace Nitra.Ast
   stage 1:
     in  AstScope     : Scope;
 
-  stage 2:
+  stage 3:
     in  ExpectedType : TypeSymbol;
     out Type         : TypeSymbol;
 
@@ -21,7 +21,7 @@ namespace Nitra.Ast
 
     | Identifier
       {
-      stage 2:
+      stage 3:
         out TempScope : Scope = Scope;
         out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
@@ -144,7 +144,7 @@ namespace Nitra.Ast
 
     | Call
       {
-      stage 2:
+      stage 3:
         out MapSyntaxRef : Ref[MapSyntaxSymbol] = AstUtils.CreateMapSyntaxRef(Arguments.Location.FromStart(), Expression.Type.Scope, Arguments.Type);
 
         Type                    = MapSyntaxRef.Symbol.ReturnType;
@@ -170,7 +170,7 @@ namespace Nitra.Ast
       stage 1:
         out VariableRef : Ref[TypedDeclarationSymbol] = Reference.Ref.Resolve();
 
-      stage 2:
+      stage 3:
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
 
         Expression.ExpectedType = AstUtils.CreateRuleTypeVar(context);

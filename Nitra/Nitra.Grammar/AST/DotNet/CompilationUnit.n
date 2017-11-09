@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -114,7 +114,10 @@ namespace DotNet
         def evalHost = NitraProjectEvalPropertiesHost(files, rootNamespace, rootScope);
         evalHost.EvalProperties(context, "SymbolHierarchy", 0);
         evalHost.EvalProperties(context, "Scopes", 1);
-        evalHost.EvalProperties(context, "Type bodies binding", 2);
+        // We need scopes to bind literals references which we use to calculate rule fields name.
+        // This requires a separate stage, since the field symbols must be created before the rule bodies are typed.
+        evalHost.EvalProperties(context, "Make rule fields symbols", 2);
+        evalHost.EvalProperties(context, "Type bodies binding", 3);
       }
       finally ManagerClass.Instance = oldManager;
     }
