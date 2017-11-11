@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.AstUtils;
 using Nitra.Declarations;

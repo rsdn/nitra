@@ -27,7 +27,7 @@ namespace Nitra.Ast
       }
 
     | Ast ->  // Header Name AstInheritanceOpt Body
-      let astName : Name = Name in
+      let astName   : Name = Name in
       let astHeader : AstHeader = Header in
       Nitra.Ast.TopAst
       {
@@ -519,13 +519,25 @@ namespace Nitra.Ast
     | Decompose                -> AM.Decompose {}
     | StageScope               -> this.StageScope
     | ChildAst                 ->
-      let header : AstHeader = AstHeader { IsDeclaration = parentHeader.IsDeclaration; [] -> Modifiers; } in
+      let astName : Name = Name in
+      let header  : AstHeader = AstHeader { IsDeclaration = parentHeader.IsDeclaration; [] -> Modifiers; } in
       AM.NestedAst
       {
-        Name -> Name;
-        header -> Header;
+        astName -> Name;
+        header  -> Header;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
         match(Body) { Some(value) -> value.Members(header) | None() -> [] } -> Members;
+        match(Body)
+        {
+          | Some(body) ->
+            match (body.SymbolDefinitionOpt)
+            {
+              | Some(value) -> value(astName)
+              | None() -> ImplicitSymbolDeclaration { Name = AstUtils.CreateSymbolName(astName); [] -> TypeBase; }
+            }
+          | None() -> ImplicitSymbolDeclaration { Name = AstUtils.CreateSymbolName(astName); [] -> TypeBase; }
+
+        } -> AssociatedSymbol;
       }
   }
 

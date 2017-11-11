@@ -1,0 +1,10 @@
+﻿abstract declaration VarDeclaration
+{
+  | ScalarDeclaration {}
+  | ArrayDeclaration {}
+}
+
+ast X
+{
+  in Ref : VarDeclaration.ScalarDeclarationSymbol;
+}

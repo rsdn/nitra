@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.Declarations;
 
@@ -12,15 +12,9 @@ namespace Nitra.Ast
     {
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
-
-      in AssociatedSymbol : SymbolDeclarationSymbol;
     }
 
     Members.Parent = Symbol;
-    AssociatedSymbol.AssociatedDeclaration = if (Symbol.IsDeclaration) VSome(Symbol) else VNone();
-    AssociatedSymbol.Scope = Scope;
-
-    AssociatedSymbol : SymbolDeclaration;
 
     EmitSymbol(Symbol, context);
   }
@@ -29,17 +23,16 @@ namespace Nitra.Ast
   {
     sealed symbol
     {
-      in AssociatedDeclaration : TopAstSymbol;
-      FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredIn.FullName, this.Name);
+      in AssociatedDeclaration : AstSymbol;
+      FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredInOpt, this.Name);
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
 
-    in AssociatedDeclaration : ValueOption[TopAstSymbol];
+    in AssociatedDeclaration : ValueOption[AstSymbol];
 
     Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
     Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
 
-    ContainingTable = AssociatedDeclaration.Value.DeclaredIn.MemberTable;
     Symbol.AssociatedDeclaration = AssociatedDeclaration.Value;
   }
 

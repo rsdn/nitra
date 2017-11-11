@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.Typing;
 using Nitra.AstUtils;
@@ -16,10 +16,15 @@ namespace Nitra.Ast
       SpanClass = NitraLang.AstSpanClass;
       Scope     = BaseTypeSet.ParentFullScope.HideWith(MemberTable);
 
+      in AssociatedSymbol : SymbolDeclarationSymbol;
       in IsDeclaration : bool;
       in IsAbstract    : bool;
       in Cardinality   : AstCardinality;
     }
+
+    AssociatedSymbol.AssociatedDeclaration = if (Symbol.IsDeclaration) VSome(Symbol) else VNone();
+    AssociatedSymbol.Scope = Scope;
+    AssociatedSymbol.ContainingTable = ContainingTable;
 
     Symbol.BaseTypeSet |= AstUtils.FilterResolvedAstType(TypeBase.Ref, Symbol);
     Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclaration(context, Symbol, TypeBase.Ref);
@@ -34,6 +39,7 @@ namespace Nitra.Ast
     Header.Modifiers.CardinalityIn = AstCardinality.Single;
     Symbol.Cardinality = Header.Modifiers.CardinalityOut;
 
+    AssociatedSymbol : SymbolDeclaration;
     Header  : AstHeader;
     Members : AM.AstMember*;
   }
