@@ -812,8 +812,13 @@ namespace Nitra
       try
       {
         symbolCache?.CacheSymbol(symbol);
-        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
-          .SymbolToHintMlWithSubHint(symbol);
+        _ = builder.Append("<keyword>");
+        if (symbol.IsKindEvaluated)
+          _ = builder.HintMlEscape(symbol.Kind);
+        else
+          _ = builder.Append("<b><font color='Red'>symbol.Kind is not evaluated</font></b>");
+        _ = builder.Append("</keyword> ");
+        _ = builder.SymbolToHintMlWithSubHint(symbol);
 
         if (symbol.IsBaseTypeSetEvaluated)
         {

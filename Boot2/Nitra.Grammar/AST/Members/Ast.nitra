@@ -15,6 +15,7 @@ namespace Nitra.Ast
       in AssociatedSymbol : SymbolDeclarationSymbol;
     }
 
+    Symbol.IsDeclaration = true;
     AssociatedSymbol.AssociatedDeclaration = Symbol;
     AssociatedSymbol.Scope = Scope;
     AssociatedSymbol.ContainingTable = ContainingTable;
@@ -35,6 +36,7 @@ namespace Nitra.Ast
       in Cardinality   : AstCardinality;
     }
 
+    Symbol.IsDeclaration = false;
     Symbol.BaseTypeSet |= AstUtils.FilterResolvedAstType(TypeBase.Ref, Symbol);
     Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclaration(context, Symbol, TypeBase.Ref);
     TypeBase.Scope = Scope;
@@ -60,11 +62,5 @@ namespace Nitra.Ast
     | Abstract { IsAbstractOut = true; }
     | Optional { CardinalityOut = AstCardinality.Optional; }
     | Multiple { CardinalityOut = AstCardinality.Multiple; }
-  }
-
-  ast AstHeader
-  {
-    IsDeclaration : bool;
-    Modifiers     : AstModifier*;
   }
 }
