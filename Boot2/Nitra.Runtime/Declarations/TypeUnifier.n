@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Imperative;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -14,9 +14,19 @@ namespace Nitra.Declarations
   {
     public static Instance : TypeUnifier { get; protected set; }
 
-    private _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
+    protected _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
-    protected abstract IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
+    public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    {
+      def unwrappedSubtype   = UnwrapTypeVar(subtype);
+      def unwrappedSupertype = UnwrapTypeVar(supertype);
+      when (unwrappedSubtype : object == unwrappedSupertype)
+        return true;
+
+      IsSubtypeUnwraped(unwrappedSubtype, unwrappedSupertype)
+    }
+
+    protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
 
     public virtual CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol
     {
@@ -50,6 +60,15 @@ namespace Nitra.Declarations
       }
     }
 
+    protected ProvideImpl(t : TypeSymbol, derivedTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (UnwrapTypeVar(derivedTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(null, c) => UnifyImpl(t, tv, ref updatedVariables)
+      }
+    }
+
     public TryRequire(t : TypeSymbol, baseTypeConstraint : TypeSymbol) : bool
     {
       match (UnwrapTypeVar(baseTypeConstraint))
@@ -68,10 +87,19 @@ namespace Nitra.Declarations
       }
     }
 
+    protected RequireImpl(t : TypeSymbol, baseTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (UnwrapTypeVar(baseTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(c, null) => UnifyImpl(t, tv, ref updatedVariables)
+      }
+    }
+
     public TryUnify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
     {
       mutable updatedVariables;
-      def result = Unify(t1, t2, ref updatedVariables);
+      def result = UnifyImpl(t1, t2, ref updatedVariables);
       ResetTypeVars(ref updatedVariables);
       result
     }
@@ -79,20 +107,25 @@ namespace Nitra.Declarations
     public Unify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
     {
       mutable updatedVariables;
-      def result = Unify(t1, t2, ref updatedVariables);
+      def result = UnifyImpl(t1, t2, ref updatedVariables);
       unless (result)
         ResetTypeVars(ref updatedVariables);
       result
     }
 
-    private Unify(t1 : TypeSymbol, t2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    protected UnifyImpl(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
     {
-      def t1' = UnwrapTypeVar(t1);
-      def t2' = UnwrapTypeVar(t2);
-      when (t1' : object == t2')
+      def t1 = UnwrapTypeVar(typeSymbol1);
+      def t2 = UnwrapTypeVar(typeSymbol2);
+      when (t1 : object == t2)
         return true;
 
-      match (t1', t2')
+      UnifyUnwraped(t1, t2, ref updatedVariables)
+    }
+
+    protected virtual UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (typeSymbol1, typeSymbol2)
       {
         | (TypeVarSymbol as v, TypeVarSymbol(IsBaseTypeConstraintEvaluated = false, IsDerivedTypeConstraintEvaluated = false) as unboundVar)
         | (TypeVarSymbol(IsBaseTypeConstraintEvaluated = false, IsDerivedTypeConstraintEvaluated = false) as unboundVar, TypeVarSymbol as v) =>
@@ -161,69 +194,105 @@ namespace Nitra.Declarations
           when (var.IsBaseTypeConstraintEvaluated)
           {
             def baseTypeConstraint = var.BaseTypeConstraint;
-            unless (type.Equals(baseTypeConstraint) || IsSubtype(type, baseTypeConstraint) || Unify(type, baseTypeConstraint, ref updatedVariables))
+            unless (type.Equals(baseTypeConstraint) || IsSubtype(type, baseTypeConstraint) || UnifyImpl(type, baseTypeConstraint, ref updatedVariables))
               return false; // base type constraint not satisfied
           }
 
           when (var.IsDerivedTypeConstraintEvaluated)
           {
             def derivedTypeConstraint = var.DerivedTypeConstraint;
-            unless (type.Equals(derivedTypeConstraint) || IsSubtype(derivedTypeConstraint, type) || Unify(type, derivedTypeConstraint, ref updatedVariables))
+            unless (type.Equals(derivedTypeConstraint) || IsSubtype(derivedTypeConstraint, type) || UnifyImpl(type, derivedTypeConstraint, ref updatedVariables))
               return false; // derived type constraint not satisfied
           }
 
           true
 
         | _ =>
-          mutable ti1 = t1';
+          mutable ti1 = typeSymbol1;
           mutable args1;
-          mutable ti2 = t2';
+          mutable ti2 = typeSymbol2;
           mutable args2;
 
-          when (t1'.DecomposeType() is VSome(s))
+          when (typeSymbol1.DecomposeType() is VSome(s))
           {
             ti1   = s.TypeInfo;
             args1 = s.TypeArguments;
           }
 
-          when (t2'.DecomposeType() is VSome(s))
+          when (typeSymbol2.DecomposeType() is VSome(s))
           {
             ti2   = s.TypeInfo;
             args2 = s.TypeArguments;
           }
 
           if (ti1 : object == ti2)
-            Unify(ref args1, ref args2, ref updatedVariables);
+            UnifyAll(ref args1, ref args2, ref updatedVariables);
           else
             false
       }
     }
 
-    private Unify(ts1 : ref LightList[TypeSymbol], ts2 : ref LightList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    protected UnifyAll(ts1 : ref LightList[TypeSymbol], ts2 : ref LightList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
     {
       when (ts1.Count != ts2.Count)
         return false;
 
       for (mutable i = 0; i < ts1.Count; ++i)
-        unless (Unify(ts1[i], ts2[i], ref updatedVariables))
+        unless (UnifyImpl(ts1[i], ts2[i], ref updatedVariables))
           return false;
 
       true
     }
 
-    private static UnwrapTypeVar(t : TypeSymbol) : TypeSymbol
+    protected UnifyAll(ts1 : IList[TypeSymbol], ts2 : IList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      when (ts1.Count != ts2.Count)
+        return false;
+
+      for (mutable i = 0; i < ts1.Count; ++i)
+        unless (UnifyImpl(ts1[i], ts2[i], ref updatedVariables))
+          return false;
+
+      true
+    }
+
+    protected RequireAll(ts1 : IList[TypeSymbol], ts2 : IList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      when (ts1.Count != ts2.Count)
+        return false;
+
+      for (mutable i = 0; i < ts1.Count; ++i)
+        unless (RequireImpl(ts1[i], ts2[i], ref updatedVariables))
+          return false;
+
+      true
+    }
+
+    protected ProvideAll(ts1 : IList[TypeSymbol], ts2 : IList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      when (ts1.Count != ts2.Count)
+        return false;
+
+      for (mutable i = 0; i < ts1.Count; ++i)
+        unless (ProvideImpl(ts1[i], ts2[i], ref updatedVariables))
+          return false;
+
+      true
+    }
+
+    protected static UnwrapTypeVar(t : TypeSymbol) : TypeSymbol
     {
       | tv is TypeVarSymbol when tv.IsTypeEvaluated => UnwrapTypeVar(tv.Type)
       | _ => t
     }
 
-    private static BindTypeVar(var : TypeVarSymbol, type : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : void
+    protected static BindTypeVar(var : TypeVarSymbol, type : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : void
     {
       var.Type = type;
       updatedVariables.Add(var);
     }
 
-    private ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
+    protected ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
     {
       def e = vars.GetEnumerator();
       when (e.MoveNext())

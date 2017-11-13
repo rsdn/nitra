@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nemerle;
 using Nemerle.Imperative;
@@ -53,6 +53,16 @@ namespace Nitra
 
       def (value, userDefined) = parsedValue.Value;
       MakeName(loc, value, userDefined)
+    }
+
+    public MakeName(loc : Location, suffix : string, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
+    {
+      unless (parsedValue.HasValue)
+        return parsedValue;
+
+      def (value, userDefined) = parsedValue.Value;
+      def name = if (userDefined) value else value + suffix;
+      MakeName(loc, name, userDefined)
     }
 
     public MakeOptionalName(loc : Location, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
@@ -323,7 +333,25 @@ namespace Nitra
           unless (p.IsTypeEvaluated)
             return false;
           unless (AstTypeUnifier.Instance.TryRequire(t, p.Type))
-            return false;
+          {
+            def r2 = getAstIdRef.Bind.[MapSyntaxSymbol](t.Scope);
+            def isResolved(symbol : MapSyntaxSymbol) : bool
+            {
+              when (symbol.Parameters.Count != 0)
+                return false;
+
+              when (!symbol.IsReturnTypeEvaluated)
+                return false;
+
+              def res = AstTypeUnifier.Instance.TryRequire(symbol.ReturnType, p.Type);
+              res
+            }
+            def r3 = r2.Resolve(isResolved);
+            if (r3.IsUnresolved || r3.IsAmbiguous)
+              return false;
+            else
+              return true;
+          }
         }
         true
       }
@@ -363,7 +391,9 @@ namespace Nitra
         foreach (type in expectedMemberTypes with index)
           members[index].ExpectedType = type;
       }
-      else
+      else when (members.Count != 0)
+        // Pattern can be specified with empty parameter list or without parameters: "Ctor()", "Ctor".
+        // We should consider these cases as a constructor with any number of parameters given by the Wildcard.
         loc.Error(context, $"Expected pattern of $(expectedMemberTypes.Count), got pattern of $(members.Count).");
 
       returnType
@@ -388,13 +418,24 @@ namespace Nitra
 
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
-        def castTemplate = CreateFunctionType(loc, array[thisType], AstTypeUnifier.Instance.CreateTypeVar(expectedType, null), context);
+        def castTemplate = CreateFunctionType(loc, array[thisType], AstTypeUnifier.Instance.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
         def canBeImplicitCast(mapSyntax : MapSyntaxSymbol) : bool
-        {
+        { def castTemplate = castTemplate;
           mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
         }
         def scope = if (thisType.IsScopeEvaluated) thisType.Scope else EmptyScope.Instance;
         validCasts = scope.Bind.[MapSyntaxSymbol](canBeImplicitCast);
+        when (validCasts.IsEmpty)
+        match (thisType)
+        {
+          | RuleTupleTypeSymbol as tuple
+          | RuleTypeVarSymbol(IsTypeEvaluated=true, Type=RuleTupleTypeSymbol as tuple) =>
+            def elemTypes = tuple.ElemTypes.Filter(t : RuleTypeSymbol => !(t is RuleCharsTypeSymbol));
+            when (elemTypes is [et])
+              return CreateImplicitRuleTypeCast(loc, et, expectedType, context);
+
+          | _ => ()
+        }
       }
 
       if (validCasts.IsEmpty)
@@ -487,7 +528,7 @@ namespace Nitra
     {
       def lst = List();
 
-      foreach (parent is TopAstSymbol in parents)
+      foreach (parent is DeclSymbol in parents)
         when (parent.IsAssociatedSymbolEvaluated)
           lst.Add(parent.AssociatedSymbol);
 

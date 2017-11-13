@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.Typing;
 using Nitra.AstUtils;
@@ -7,6 +7,20 @@ using Nitra.Declarations;
 namespace Nitra.Ast
 {
   using AM = Nitra.Ast.AstMembers;
+
+  abstract declaration Decl : Nitra.Ast.Ast
+  {
+    symbol
+    {
+      in AssociatedSymbol : SymbolDeclarationSymbol;
+    }
+
+    AssociatedSymbol.AssociatedDeclaration = Symbol;
+    AssociatedSymbol.Scope = Scope;
+    AssociatedSymbol.ContainingTable = ContainingTable;
+
+    AssociatedSymbol : SymbolDeclaration;
+  }
 
   abstract declaration Ast : BindableAst, AstType, SupportsInheritanceType
   {
@@ -26,15 +40,13 @@ namespace Nitra.Ast
     TypeBase.Scope = Scope;
     Members.Scope  = Scope.HideWith(Symbol.Scope);
 
-    Symbol.IsDeclaration = Header.IsDeclaration.Value;
+    Modifiers.IsAbstractIn = false;
+    Symbol.IsAbstract = Modifiers.IsAbstractOut;
 
-    Header.Modifiers.IsAbstractIn = false;
-    Symbol.IsAbstract = Header.Modifiers.IsAbstractOut;
+    Modifiers.CardinalityIn = AstCardinality.Single;
+    Symbol.Cardinality = Modifiers.CardinalityOut;
 
-    Header.Modifiers.CardinalityIn = AstCardinality.Single;
-    Symbol.Cardinality = Header.Modifiers.CardinalityOut;
-
-    Header  : AstHeader;
+    Modifiers : AstModifier*;
     Members : AM.AstMember*;
   }
 

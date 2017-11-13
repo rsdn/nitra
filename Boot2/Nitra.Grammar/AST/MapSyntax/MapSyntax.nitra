@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.Declarations;
 using System.Collections.Generic;
@@ -55,7 +55,10 @@ namespace Nitra.Ast
 
   declaration TopMapSyntax : MapSyntaxWithParameters, NamespaceMember
   {
-    RuleName.Scope  = Scope;
+  stage 2:
+    out Scope2 : Scope = Scope;
+
+    RuleName.Scope  = Scope2;
     RuleRef         = RuleName.Ref.Resolve();
     ContainingTable = RuleRef.Symbol.MemberTable; // NB: overrides ContainingTable assign in NamespaceMember
 

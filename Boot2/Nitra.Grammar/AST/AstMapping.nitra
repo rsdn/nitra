@@ -26,15 +26,24 @@ namespace Nitra.Ast
         NamespaceBody.NamespaceMembers -> Members;
       }
 
-    | Ast ->  // Header Name AstInheritanceOpt Body
-      let astName : Name = Name in
-      let astHeader : AstHeader = Header in
+    | Ast ->  // AstModifier* "ast" Name AstInheritanceOpt Body
+      let astName   : Name = Name in
       Nitra.Ast.TopAst
       {
         astName -> Name;
-        astHeader -> Header;
+        AstModifiers -> Modifiers;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        Body.Members(astHeader) -> Members;
+        Body.Members(AstTag {}) -> Members;
+      }
+
+    | Decl ->  // AstModifier* "declaration" Name AstInheritanceOpt Body
+      let astName   : Name = Name in
+      Nitra.Ast.TopDecl
+      {
+        astName -> Name;
+        AstModifiers -> Modifiers;
+        match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
+        Body.Members(DeclTag {}) -> Members;
         match (Body.SymbolDefinitionOpt)
         {
           | Some(value) -> value(astName)
@@ -126,21 +135,6 @@ namespace Nitra.Ast
       | ((first :: other, _)) -> fold (item in other; acc = Simple { first() -> Name; }; acc = Qualified { item() -> Name; Qualifier = acc;  })
       | (([],             _)) -> Simple { Name = Reference.AmbiguousOrMissing(Location); }
     }
-  }
-
-  map syntax NitraSyntax.NamespaceMember.Ast.Header -> AstHeader
-  {
-    | Ast
-      {
-        IsDeclaration = ParsedValue(KwAst, false);
-        AstModifiers -> Modifiers;
-      }
-
-    | Declaration
-      {
-        IsDeclaration = ParsedValue(KwDeclaration, true);
-        AstModifiers -> Modifiers;
-      }
   }
 
   map syntax NitraSyntax.AstModifier -> AstModifier
@@ -509,7 +503,10 @@ namespace Nitra.Ast
       }
   }
 
-  map syntax NitraSyntax.AstMember(parentHeader : AstHeader) -> AM.AstMember
+  ast AstTag {}
+  ast DeclTag {}
+
+  map syntax NitraSyntax.AstMember(parentTag : AstTag) -> AM.AstMember
   {
     | StructuralProperty       -> AM.StructuralProperty { Name -> Name; NitraType /*AstType*/ -> TypeName; }
     | DependentProperty        -> this.DependentProperty
@@ -519,13 +516,44 @@ namespace Nitra.Ast
     | Decompose                -> AM.Decompose {}
     | StageScope               -> this.StageScope
     | ChildAst                 ->
-      let header : AstHeader = AstHeader { IsDeclaration = parentHeader.IsDeclaration; [] -> Modifiers; } in
+      let astName : Name = Name in
       AM.NestedAst
       {
-        Name -> Name;
-        header -> Header;
+        astName -> Name;
+        [] -> Modifiers;
         match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
-        match(Body) { Some(value) -> value.Members(header) | None() -> [] } -> Members;
+        match(Body) { Some(value) -> value.Members(parentTag) | None() -> [] } -> Members;
+      }
+  }
+
+  map syntax NitraSyntax.AstMember(parentTag : DeclTag) -> AM.AstMember
+  {
+    | StructuralProperty       -> AM.StructuralProperty { Name -> Name; NitraType /*AstType*/ -> TypeName; }
+    | DependentProperty        -> this.DependentProperty
+    | DependentAssignStatement -> this.DependentAssignStatement
+    | DependentCallStatement   -> this.DependentCallStatement
+    | DependentAddStatement    -> this.DependentAddStatement
+    | Decompose                -> AM.Decompose {}
+    | StageScope               -> this.StageScope
+    | ChildAst                 ->
+      let astName : Name = Name in
+      AM.NestedDecl
+      {
+        astName -> Name;
+        [] -> Modifiers;
+        match(AstInheritanceOpt) { Some(value) -> value | None() -> [] } -> TypeBase;
+        match(Body) { Some(value) -> value.Members(parentTag) | None() -> [] } -> Members;
+        match(Body)
+        {
+          | Some(body) ->
+            match (body.SymbolDefinitionOpt)
+            {
+              | Some(value) -> value(astName)
+              | None() -> ImplicitSymbolDeclaration { Name = AstUtils.CreateSymbolName(astName); [] -> TypeBase; }
+            }
+          | None() -> ImplicitSymbolDeclaration { Name = AstUtils.CreateSymbolName(astName); [] -> TypeBase; }
+
+        } -> AssociatedSymbol;
       }
   }
 

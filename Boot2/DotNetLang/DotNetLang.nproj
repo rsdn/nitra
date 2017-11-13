@@ -8,7 +8,8 @@
     <NeedAddVersionToAssemblyName>True</NeedAddVersionToAssemblyName>
     <DocumentationFile />
   </PropertyGroup>
-  <PropertyGroup> <!-- Common properties -->
+  <PropertyGroup>
+    <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
     <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
@@ -260,7 +261,7 @@
     <Compile Include="Namespace\UsingDirective.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utils\AstTypeUnifier.n">
+    <Compile Include="Utils\TypeUnifier.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\AstUtils.n">

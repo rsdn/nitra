@@ -1,4 +1,4 @@
-using Nitra.Ast;
+﻿using Nitra.Ast;
 using Nitra.Declarations;
 
 using Nemerle;
@@ -20,16 +20,31 @@ namespace DotNet
       Instance = AstTypeUnifier();
     }
 
-    protected override IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
-      if (base.IsSubtype(subtype, supertype))
+      if (base.IsSubtypeUnwraped(subtype, supertype))
         true
       else match (subtype, supertype)
       {
         | (subtypeList is ListAstTypeSymbol, supertypeList is ListAstTypeSymbol) =>
-          IsSubtype(subtypeList.ElemType, supertypeList.ElemType)
+          def result = IsSubtype(subtypeList.ElemType, supertypeList.ElemType);
+          result
 
         | _ => false
+      }
+    }
+
+    protected override UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (typeSymbol1, typeSymbol2)
+      {
+        | (FunctionTypeSymbol as f1, FunctionTypeSymbol as f2) =>
+          unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
+            return false;
+
+          ProvideImpl(f1.ReturnType, f2.ReturnType, ref updatedVariables)
+
+        | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
       }
     }
   }
