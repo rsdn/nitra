@@ -1,4 +1,4 @@
-using Nitra.Declarations;
+﻿using Nitra.Declarations;
 
 using Nemerle;
 using Nemerle.Collections;
@@ -150,6 +150,7 @@ namespace Nitra
 
     public HintMlException(this builder : StringBuilder, exception : Exception) : StringBuilder
     {
+      builder.Length = 0; // reset content
       def text = exception.ToString();
       def rx   = RegularExpressions.Regex(<# in (.+):line (\d+)#>);
       def res  = rx.Replace(text, <# <keyword>in</keyword> <ref handler="goto line:$1($2,1)">$1($2,1)</ref>#>);
