@@ -387,7 +387,14 @@ namespace Nitra.VisualStudio.QuickInfo
               var col  = int.Parse(res.Groups["col"].Value);
               if (path.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
                 return;
-              VsUtils.NavigateTo(_fileModel.Server.ServiceProvider, path, line, col);
+              try
+              {
+                VsUtils.NavigateTo(_fileModel.Server.ServiceProvider, path, line, col);
+              }
+              catch (Exception ex)
+              {
+                Debug.WriteLine(ex.ToString());
+              }
               _session?.Dismiss();
             }
           }
