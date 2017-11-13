@@ -6,34 +6,46 @@ using System.Linq;
 
 namespace Nitra.Ast
 {
-  declaration TopAst : Nitra.Ast.Ast, NamespaceMemberDeclaration
+  declaration TopDecl : Decl, TopAstBase
+  {
+    symbol
+    {
+      CanMerge = candidate is TopDecl && FirstDeclarationOrDefault is PredefinedDeclaration;
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+    }
+  }
+
+  abstract declaration TopAstBase : Nitra.Ast.Ast, NamespaceMemberDeclaration
+  {
+    Members.Parent = Symbol;
+
+    EmitSymbol(Symbol, context);
+  }
+
+  declaration TopAst : TopAstBase
   {
     symbol
     {
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
-
-    Members.Parent = Symbol;
-
-    EmitSymbol(Symbol, context);
   }
 
   abstract declaration SymbolDeclaration : SupportsInheritanceType
   {
     sealed symbol
     {
-      in AssociatedDeclaration : AstSymbol;
+      in AssociatedDeclaration : DeclSymbol;
       FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredInOpt, this.Name);
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
 
-    in AssociatedDeclaration : ValueOption[AstSymbol];
+    in AssociatedDeclaration : DeclSymbol;
 
     Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
     Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
 
-    Symbol.AssociatedDeclaration = AssociatedDeclaration.Value;
+    Symbol.AssociatedDeclaration = AssociatedDeclaration;
   }
 
   declaration ExplicitSymbolDeclaration : SymbolDeclaration

@@ -236,7 +236,7 @@ namespace Nitra.Compiler
           | AbstractAstSymbol                                  as s => AbstractAstEmitter(environment, s)
           | SimpleAstSymbol(DefinedIn = SymbolRef.None)        as s => SimpleAstEmitter(environment, s, null)
           | SimpleAstSymbol(DefinedIn = SymbolRef.Some(owner)) as s => SimpleAstEmitter(environment, s, astEmitterTable[owner])
-          | _ => assert(false)
+          | _ => assert2(false); assert(false)
         }
       });
 

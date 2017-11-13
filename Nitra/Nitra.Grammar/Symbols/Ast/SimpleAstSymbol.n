@@ -25,28 +25,30 @@ namespace Nitra.Typing
 
   public sealed class ParsedSimpleAstSymbol : SimpleAstSymbol, IDependentStatementContainer
   {
-    private         _node                     : G.NamespaceMember.Ast;
+    private         _parentsLazy              : Func[list[AstSymbol]];
+    private         _body                     : NitraSyntaxParseTree.AstBody;
     private         _statements               : SCG.List[DependentStatement];
     private mutable _initializedOutProperties : list[DependentPropertySymbol];
 
-    public this(node : G.NamespaceMember.Ast, isDeclaration : bool, cardinality : AstCardinality)
+    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], body : NitraSyntaxParseTree.AstBody, isDeclaration : bool, cardinality : AstCardinality)
     {
-      base(node.Name, node.Name.Value());
-      _node                     = node;
+      base(name, name.Value());
+      _parentsLazy              = parentsLazy;
+      _body                     = body;
       _statements               = SCG.List();
       _initializedOutProperties = [];
       DefinedIn                 = SymbolRef.None(this.FirstLocation, true);
       IsDeclaration             = isDeclaration;
       Cardinality               = cardinality;
     }
-
+    
     private mutable _symbol : SymbolRef[SymbolSymbol];
 
     public override DefinedIn                : SymbolRef[AstSymbol]          { get; }
     public override Symbol                   : SymbolRef[SymbolSymbol]       { get { assert(_symbol : object != null); _symbol } }
     public override IsDeclaration            : bool                          { get; }
     public override Cardinality              : AstCardinality                { get; }
-    public override Parents                  : list[AstSymbol]               { get { _node.Parents } }
+    public override Parents                  : list[AstSymbol]               { get { _parentsLazy() } }
     public override InitializedOutProperties : list[DependentPropertySymbol] { get { _initializedOutProperties } }
 
     public AddStatement(statement : DependentStatement) : void { AddStatementImpl(statement, _statements, ref _initializedOutProperties); }
@@ -63,21 +65,23 @@ namespace Nitra.Typing
           _ = Node.Parent.AddAndReport.[SymbolSymbol](symbolSymbol, FirstLocation);
           symbolSymbol
         });
-      _node.Body.CollectSymbolMembers(this, _symbol);
+      _body.CollectSymbolMembers(this, _symbol);
       _symbol
     }
   }
 
   public sealed class ParsedChildAstSymbol : SimpleAstSymbol, IDependentStatementContainer
   {
-    private         _node                     : G.AstMember.ChildAst;
+    private         _parentsLazy              : Func[list[AstSymbol]];
+    private         _bodyOpt                  : OptionParseTree[NitraSyntaxParseTree.AstBody];
     private         _statements               : SCG.List[DependentStatement];
     private mutable _initializedOutProperties : list[DependentPropertySymbol];
 
-    public this(node : G.AstMember.ChildAst, owner : AstSymbol, cardinality : AstCardinality)
+    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], bodyOpt : OptionParseTree[NitraSyntaxParseTree.AstBody], owner : AstSymbol, cardinality : AstCardinality)
     {
-      base(node.Name, node.Name.Value());
-      _node                     = node;
+      base(name, name.Value());
+      _parentsLazy              = parentsLazy;
+      _bodyOpt                  = bodyOpt;
       _statements               = SCG.List();
       _initializedOutProperties = [];
       Owner                     = owner;
@@ -93,7 +97,7 @@ namespace Nitra.Typing
     public override Symbol                   : SymbolRef[SymbolSymbol]       { get { assert(_symbol : object != null); _symbol } }
     public override IsDeclaration            : bool                          { get; }
     public override Cardinality              : AstCardinality                { get; }
-    public override Parents                  : list[AstSymbol]               { get { _node.Parents } }
+    public override Parents                  : list[AstSymbol]               { get { _parentsLazy() } }
     public override InitializedOutProperties : list[DependentPropertySymbol] { get { _initializedOutProperties } }
 
     public AddStatement(statement : DependentStatement) : void { AddStatementImpl(statement, _statements, ref _initializedOutProperties); }
@@ -110,8 +114,8 @@ namespace Nitra.Typing
           _ = Owner.Node.AddAndReport.[SymbolSymbol](symbolSymbol, FirstLocation);
           symbolSymbol
         });
-      when (_node.Body.HasValue)
-        _node.Body.Value.CollectSymbolMembers(this, _symbol);
+      when (_bodyOpt.HasValue)
+        _bodyOpt.Value.CollectSymbolMembers(this, _symbol);
       _symbol
     }
   }

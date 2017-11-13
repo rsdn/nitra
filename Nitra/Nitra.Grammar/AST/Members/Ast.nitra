@@ -8,6 +8,20 @@ namespace Nitra.Ast
 {
   using AM = Nitra.Ast.AstMembers;
 
+  abstract declaration Decl : Nitra.Ast.Ast
+  {
+    symbol
+    {
+      in AssociatedSymbol : SymbolDeclarationSymbol;
+    }
+
+    AssociatedSymbol.AssociatedDeclaration = Symbol;
+    AssociatedSymbol.Scope = Scope;
+    AssociatedSymbol.ContainingTable = ContainingTable;
+
+    AssociatedSymbol : SymbolDeclaration;
+  }
+
   abstract declaration Ast : BindableAst, AstType, SupportsInheritanceType
   {
     symbol
@@ -16,31 +30,23 @@ namespace Nitra.Ast
       SpanClass = NitraLang.AstSpanClass;
       Scope     = BaseTypeSet.ParentFullScope.HideWith(MemberTable);
 
-      in AssociatedSymbol : SymbolDeclarationSymbol;
       in IsDeclaration : bool;
       in IsAbstract    : bool;
       in Cardinality   : AstCardinality;
     }
-
-    AssociatedSymbol.AssociatedDeclaration = if (Symbol.IsDeclaration) VSome(Symbol) else VNone();
-    AssociatedSymbol.Scope = Scope;
-    AssociatedSymbol.ContainingTable = ContainingTable;
 
     Symbol.BaseTypeSet |= AstUtils.FilterResolvedAstType(TypeBase.Ref, Symbol);
     Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclaration(context, Symbol, TypeBase.Ref);
     TypeBase.Scope = Scope;
     Members.Scope  = Scope.HideWith(Symbol.Scope);
 
-    Symbol.IsDeclaration = Header.IsDeclaration.Value;
+    Modifiers.IsAbstractIn = false;
+    Symbol.IsAbstract = Modifiers.IsAbstractOut;
 
-    Header.Modifiers.IsAbstractIn = false;
-    Symbol.IsAbstract = Header.Modifiers.IsAbstractOut;
+    Modifiers.CardinalityIn = AstCardinality.Single;
+    Symbol.Cardinality = Modifiers.CardinalityOut;
 
-    Header.Modifiers.CardinalityIn = AstCardinality.Single;
-    Symbol.Cardinality = Header.Modifiers.CardinalityOut;
-
-    AssociatedSymbol : SymbolDeclaration;
-    Header  : AstHeader;
+    Modifiers : AstModifier*;
     Members : AM.AstMember*;
   }
 

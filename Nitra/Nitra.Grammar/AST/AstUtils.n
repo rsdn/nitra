@@ -528,7 +528,7 @@ namespace Nitra
     {
       def lst = List();
 
-      foreach (parent is TopAstSymbol in parents)
+      foreach (parent is DeclSymbol in parents)
         when (parent.IsAssociatedSymbolEvaluated)
           lst.Add(parent.AssociatedSymbol);
 

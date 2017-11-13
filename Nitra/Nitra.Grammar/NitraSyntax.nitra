@@ -1,4 +1,4 @@
-using Nitra;
+﻿using Nitra;
 using Nitra.Utils;
 using Nitra.Model;
 using Nitra.ProjectSystem;
@@ -704,7 +704,7 @@ syntax module NitraSyntax : NitraLang
             compilerMessages.Error(this, "Child AST is valid only in abstract AST body.");
 
           def (_, _, cardinality) = TypingUtils.TypeAstModifiers(this.AstModifiers, true, owner.IsDeclaration, compilerMessages);
-          ParsedChildAstSymbol(this, owner, cardinality);
+          ParsedChildAstSymbol(this.Name, this.get_Parents, this.Body, owner, cardinality);
         }
         override CollectGlobalSymbols
         {
@@ -774,25 +774,66 @@ syntax module NitraSyntax : NitraLang
         override MakeContext = NamespaceOrTypeAliasContext(parent, Name, NamespaceOrType);
       }
 
-    | Ast = Header sm Name AstInheritance? Body=AstBody
+    | Ast  = AstModifier* "ast"         sm Name AstInheritance? Body=AstBody
       {
-        syntax Header
-        {
-          Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality;
-          | Ast         = AstModifier* "ast"         { override Modifiers = TypingUtils.TypeAstModifiers(this.AstModifiers, false, false, compilerMessages); }
-          | Declaration = AstModifier* "declaration" { override Modifiers = TypingUtils.TypeAstModifiers(this.AstModifiers, false, true,  compilerMessages); }
-        }
+        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality =
+          TypingUtils.TypeAstModifiers(this.AstModifiers, false, false, compilerMessages);
 
         [Cached] MakeAstSymbol(compilerMessages : ICompilerMessages) : AstSymbol
         {
-          def (isDeclaration, isAbstract, cardinality) = this.Header.Modifiers(compilerMessages);
+          def (isDeclaration, isAbstract, cardinality) = this.Modifiers(compilerMessages);
           if (isAbstract)
           {
             assert(cardinality == AstCardinality.Single);
-            ParsedAbstractAstSymbol(this, isDeclaration)
+            ParsedAbstractAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration)
           }
           else
-            ParsedSimpleAstSymbol(this, isDeclaration, cardinality)
+            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality)
+        }
+        [Cached] MakeParents() : list[AstSymbol] = TypingUtils.TypeAstInheritance(this.AstInheritanceOpt, this.Context, this.AstSymbol);
+        override CollectGlobalSymbols
+        {
+          def symbol = MakeAstSymbol(ns.Node.Project);
+          _ = ns.Node.AddAndReport.[SingleDefSymbol](symbol, Name.Location);
+          Body.CollectGlobalSymbols(symbol);
+        }
+        override MakeContext
+        {
+          def  context1 = AstContext(parent, this.AstSymbol);
+          def  context2 = AstDependentPropertyStageContext(context1, 0);
+          _ = Body.MakeContext(context2);
+          parent
+        }
+        override Typing
+        {
+          _ = MakeParents();
+          Body.Typing();
+        }
+        override TypeAst
+        {
+          this.AstSymbol.TypeInheritance();
+          Body.TypeProperties();
+          when (this.AstSymbol.Symbol is SymbolRef.Some(s))
+            s.TypeInheritance();
+        }
+        override TypeSymbolMembers = Body.TypeSymbolMembers();
+      }
+
+    | Decl = AstModifier* "declaration" sm Name AstInheritance? Body=AstBody
+      {
+        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality =
+          TypingUtils.TypeAstModifiers(this.AstModifiers, false, true,  compilerMessages);
+
+        [Cached] MakeAstSymbol(compilerMessages : ICompilerMessages) : AstSymbol
+        {
+          def (isDeclaration, isAbstract, cardinality) = this.Modifiers(compilerMessages);
+          if (isAbstract)
+          {
+            assert(cardinality == AstCardinality.Single);
+            ParsedAbstractAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration)
+          }
+          else
+            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality)
         }
         [Cached] MakeParents() : list[AstSymbol] = TypingUtils.TypeAstInheritance(this.AstInheritanceOpt, this.Context, this.AstSymbol);
         override CollectGlobalSymbols
