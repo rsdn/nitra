@@ -286,10 +286,10 @@ namespace DotNet
           symbol
         });
 
-      context.Declaration = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "Declaration", context,
+      context.Declaration = GetOrCreatePredefinedSymbol.[TopDeclSymbol](declarationsNs.MemberTable, Location.Default, "Declaration", context,
         fun()
         {
-          def symbol = TopAstSymbol();
+          def symbol = TopDeclSymbol();
           symbol.BaseTypeSet = BaseTypeReferenceSet(null);
           symbol.BaseTypeSet.AddParent(scopedAstSymbol);
           symbol
