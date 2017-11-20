@@ -560,7 +560,7 @@ namespace Nitra
       }
     }
 
-    public GetImplicitBaseTypeForDeclarationSymbol(context : DependentPropertyEvalContext, symbol : SymbolDeclarationSymbol, _for_dependency : Scope) : Seq[TypeSymbol] -> TypeSymbol
+    public GetImplicitBaseTypeForDeclarationSymbol(context : DependentPropertyEvalContext, symbol : SymbolDeclarationSymbol, _dependency1 : object, _dependency2 : object) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseDeclaration(symbol : SymbolDeclarationSymbol) : bool
       {
