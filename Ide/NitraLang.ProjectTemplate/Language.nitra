@@ -1,0 +1,7 @@
+﻿namespace $safeprojectname$
+{
+  language $safeprojectname$
+  {
+    syntax module JsonParser start rule Start;
+  }
+}

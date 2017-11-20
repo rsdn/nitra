@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Nitra", "Nitra", "{244BECF5-D87D-434D-839D-771F4D0EDAA1}"
 EndProject
@@ -146,6 +146,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.VisualStudio.Plugin", "Ide\Common.VisualStudio.Plugin\Common.VisualStudio.Plugin.csproj", "{24B5A712-B856-4D0A-B367-222CE38C67C6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfHint2", "Ide\WpfHint\WpfHint2.csproj", "{7670DE22-B023-4783-BA19-BB2DB50E1762}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NitraLang.ProjectTemplate", "Ide\NitraLang.ProjectTemplate\NitraLang.ProjectTemplate.csproj", "{43ACD76F-002D-4063-8AB4-E464271176F0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -599,6 +601,18 @@ Global
 		{7670DE22-B023-4783-BA19-BB2DB50E1762}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{7670DE22-B023-4783-BA19-BB2DB50E1762}.Release|x86.ActiveCfg = Release|Any CPU
 		{7670DE22-B023-4783-BA19-BB2DB50E1762}.Release|x86.Build.0 = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Debug|x86.Build.0 = Debug|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|x86.ActiveCfg = Release|Any CPU
+		{43ACD76F-002D-4063-8AB4-E464271176F0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -661,5 +675,9 @@ Global
 		{D85F6EF5-4F49-4DE5-B83A-D5284F84C139} = {6D240FCF-6798-4564-A378-1E6D30B0C09B}
 		{24B5A712-B856-4D0A-B367-222CE38C67C6} = {6D240FCF-6798-4564-A378-1E6D30B0C09B}
 		{7670DE22-B023-4783-BA19-BB2DB50E1762} = {6D240FCF-6798-4564-A378-1E6D30B0C09B}
+		{43ACD76F-002D-4063-8AB4-E464271176F0} = {6D240FCF-6798-4564-A378-1E6D30B0C09B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {303C8DAB-7766-41B9-BBAD-5711320F80C4}
 	EndGlobalSection
 EndGlobal
