@@ -282,6 +282,7 @@ namespace DotNet
         fun()
         {
           def symbol = TopAstSymbol();
+          symbol.FullName = "Nitra.Declarations.ScopedAst";
           symbol.BaseTypeSet = BaseTypeReferenceSet(null);
           symbol
         });
@@ -290,11 +291,24 @@ namespace DotNet
         fun()
         {
           def symbol = TopDeclSymbol();
+          symbol.FullName = "Nitra.Declarations.Declaration";
           symbol.BaseTypeSet = BaseTypeReferenceSet(null);
           symbol.BaseTypeSet.AddParent(scopedAstSymbol);
+          symbol.IsDeclaration = true;
+          symbol.IsAbstract    = true;
+          symbol.DeclaredIn    = declarationsNs;
           symbol
         });
-      //assert2(context.Declaration != null);
+
+      context.DeclarationSymbol = GetOrCreatePredefinedSymbol.[SymbolDeclarationSymbol](declarationsNs.MemberTable, Location.Default, "DeclarationSymbol", context,
+        fun()
+        {
+          def symbol = SymbolDeclarationSymbol();
+          symbol.FullName = "Nitra.Declarations.DeclarationSymbol";
+          symbol.BaseTypeSet   = BaseTypeReferenceSet(null);
+          symbol.DeclaredInOpt = VSome(declarationsNs);
+          symbol
+        });
     }
 
     private static GetOrCreatePredefinedSymbol[TSymbol](scope : TableScope, loc : Nitra.Location, name : string, context : DependentPropertyEvalContext, symbolFactory : Func[DeclarationSymbol]) : TSymbol

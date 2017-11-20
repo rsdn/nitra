@@ -156,8 +156,15 @@ namespace Nitra.VisualStudio.QuickInfo
         return;
       }
 
-      var content = Hint.ParseToFrameworkElement(data);
-      _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action<FrameworkElement>)SetHintData_inUIThread, content);
+      try
+      {
+        var content = Hint.ParseToFrameworkElement(data);
+        _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action<FrameworkElement>)SetHintData_inUIThread, content);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Exception: " + ex);
+      }
     }
 
     void ResetHintData_inUIThread()

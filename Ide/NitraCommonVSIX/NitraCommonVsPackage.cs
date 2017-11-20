@@ -175,13 +175,16 @@ namespace Nitra.VisualStudio
 
     void BeforeOpenSolution(object sender, BeforeOpenSolutionEventArgs e)
     {
+      InitSolution(e.SolutionFilename);
+    }
+
+    void InitSolution(string solutionPath)
+    {
       _backgroundLoading = SolutionLoadingSate.SynchronousLoading;
 
       InitServers();
 
-      var solutionPath = e.SolutionFilename;
       var id = new SolutionId(_stringManager.GetId(solutionPath));
-
       _currentSolutionId = id;
 
       foreach (var server in _servers)
@@ -213,6 +216,11 @@ namespace Nitra.VisualStudio
 
     void BeforeOpenProject(object sender, BeforeOpenProjectEventArgs e)
     {
+      if (_backgroundLoading == SolutionLoadingSate.NotLoaded)
+      {
+        // This is a separate project which  saw opened without the Solution. We need init the fake solution.
+        InitSolution("<no solution>");
+      }
       Debug.WriteLine($"tr: BeforeOpenProject(Filename='{e.Filename}', Project='{e.Project}'  ProjectType='{e.ProjectType}')");
     }
 

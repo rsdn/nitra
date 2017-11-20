@@ -537,26 +537,49 @@ namespace Nitra
 
     public GetImplicitBaseTypeForDeclaration(context : DependentPropertyEvalContext, symbol : AstSymbol, _for_dependency : ImmutableArray[Ref[DeclarationSymbol]]) : Seq[TypeSymbol] -> TypeSymbol
     {
-      def isBaseDeclaration(symbol)
+      def isBaseDeclaration(symbol : AstSymbol) : bool
       {
-        symbol.Name == "Declaration" && symbol.FullName == "Nitra.Declarations.Declaration"
+        if (symbol.Name == "Declaration" && symbol.FullName == "Nitra.Declarations.Declaration") // symbol.IsNameValid && && symbol.IsFullNameEvaluated
+          true
+        else
+          false
       }
 
-      def isDeclaration(symbol : AstSymbol)
-      {
-        symbol.IsIsDeclarationEvaluated && symbol.IsDeclaration
-      }
-
-      when (isBaseDeclaration(symbol) || !isDeclaration(symbol))
+      when (isBaseDeclaration(symbol) || !(symbol is DeclSymbol))
         return null;
 
       fun (parentTypes : Seq[TypeSymbol]) : TypeSymbol
       {
-        foreach (parent is AstSymbol in parentTypes)
-          when (isDeclaration(parent))
-            return null;
+        foreach (_parent is DeclSymbol in parentTypes)
+        {
+          return null;
+        }
 
         context.GetDeclaration()
+      }
+    }
+
+    public GetImplicitBaseTypeForDeclarationSymbol(context : DependentPropertyEvalContext, symbol : SymbolDeclarationSymbol, _for_dependency : Scope) : Seq[TypeSymbol] -> TypeSymbol
+    {
+      def isBaseDeclaration(symbol : SymbolDeclarationSymbol) : bool
+      {
+        if (symbol.Name == "DeclarationSymbol" && symbol.FullName == "Nitra.Declarations.DeclarationSymbol") // symbol.IsNameValid && && symbol.IsFullNameEvaluated
+          true
+        else
+          false
+      }
+
+      when (isBaseDeclaration(symbol))
+        return null;
+
+      fun (parentTypes : Seq[TypeSymbol]) : TypeSymbol
+      {
+        unless (parentTypes.IsEmpty())
+        {
+          return null;
+        }
+
+        context.GetDeclarationSymbol()
       }
     }
 

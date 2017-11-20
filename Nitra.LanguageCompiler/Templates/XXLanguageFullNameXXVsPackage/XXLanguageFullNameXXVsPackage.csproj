@@ -205,6 +205,16 @@
     <Reference Include="VSLangProj, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include=          "..\XXLanguageFullNameXX.ProjectTemplate\XXLanguageFullNameXX.ProjectTemplate.csproj" 
+                      Condition="Exists('..\XXLanguageFullNameXX.ProjectTemplate')">
+      <Project Condition="'$(ProjectTemplateGuid)' == ''">$(ProjectTemplateGuid)</Project>
+      <Name>XXLanguageFullNameXX.ProjectTemplate</Name>
+      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+    </ProjectReference>
+  </ItemGroup>
   <!-- 
   Resources for our new project system
   -->

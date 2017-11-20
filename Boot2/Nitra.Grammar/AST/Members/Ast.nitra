@@ -15,10 +15,11 @@ namespace Nitra.Ast
       in AssociatedSymbol : SymbolDeclarationSymbol;
     }
 
-    Symbol.IsDeclaration = true;
+    Symbol.IsDeclaration                   = true;
     AssociatedSymbol.AssociatedDeclaration = Symbol;
-    AssociatedSymbol.Scope = Scope;
-    AssociatedSymbol.ContainingTable = ContainingTable;
+    AssociatedSymbol.Scope                 = Scope;
+    AssociatedSymbol.ContainingTable       = ContainingTable;
+    AssociatedSymbol.Symbol.DeclaredInOpt  = Symbol.DeclaredInOpt;
 
     AssociatedSymbol : SymbolDeclaration;
   }

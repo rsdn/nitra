@@ -36,7 +36,7 @@ namespace Nitra.Ast
     sealed symbol
     {
       in AssociatedDeclaration : DeclSymbol;
-      FullName = AstUtils.MakeFullName(AssociatedDeclaration.DeclaredInOpt, this.Name);
+      FullName = AstUtils.MakeFullName(DeclaredInOpt, this.Name);
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
 
@@ -44,8 +44,10 @@ namespace Nitra.Ast
 
     Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
     Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
+    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclarationSymbol(context, Symbol, AssociatedDeclaration.Scope);
 
     Symbol.AssociatedDeclaration = AssociatedDeclaration;
+    //Symbol.DeclaredInOpt = AssociatedDeclaration.DeclaredInOpt;
   }
 
   declaration ExplicitSymbolDeclaration : SymbolDeclaration
