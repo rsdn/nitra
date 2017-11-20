@@ -19,9 +19,30 @@ namespace Nitra.Ast
     AssociatedSymbol.AssociatedDeclaration = Symbol;
     AssociatedSymbol.Scope                 = Scope;
     AssociatedSymbol.ContainingTable       = ContainingTable;
-    AssociatedSymbol.Symbol.DeclaredInOpt  = Symbol.DeclaredInOpt;
 
     AssociatedSymbol : SymbolDeclaration;
+  }
+
+  abstract declaration SymbolDeclaration : SupportsInheritanceType
+  {
+    sealed symbol
+    {
+      in AssociatedDeclaration : DeclSymbol;
+      in DeclaredIn : DeclarationSymbol;
+
+      FullName = AstUtils.MakeFullName(DeclaredInOpt, this.Name);
+      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
+      DeclaredInOpt  = VSome(DeclaredIn);
+    }
+
+    in AssociatedDeclaration : DeclSymbol;
+
+    Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
+    Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
+    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclarationSymbol(context, Symbol, AssociatedDeclaration.Scope, Symbol.FullName);
+
+    Symbol.AssociatedDeclaration = AssociatedDeclaration;
+    //Symbol.DeclaredInOpt = AssociatedDeclaration.DeclaredInOpt;
   }
 
   abstract declaration Ast : BindableAst, AstType, SupportsInheritanceType

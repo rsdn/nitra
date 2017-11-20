@@ -13,6 +13,7 @@ namespace Nitra.Ast
       CanMerge = candidate is TopDecl && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
+    AssociatedSymbol.Symbol.DeclaredIn     = Symbol.DeclaredInOpt.Value;
   }
 
   abstract declaration TopAstBase : Nitra.Ast.Ast, NamespaceMemberDeclaration
@@ -29,25 +30,6 @@ namespace Nitra.Ast
       CanMerge = candidate is TopAst && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
     }
-  }
-
-  abstract declaration SymbolDeclaration : SupportsInheritanceType
-  {
-    sealed symbol
-    {
-      in AssociatedDeclaration : DeclSymbol;
-      FullName = AstUtils.MakeFullName(DeclaredInOpt, this.Name);
-      MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
-    }
-
-    in AssociatedDeclaration : DeclSymbol;
-
-    Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
-    Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
-    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclarationSymbol(context, Symbol, AssociatedDeclaration.Scope);
-
-    Symbol.AssociatedDeclaration = AssociatedDeclaration;
-    //Symbol.DeclaredInOpt = AssociatedDeclaration.DeclaredInOpt;
   }
 
   declaration ExplicitSymbolDeclaration : SymbolDeclaration
