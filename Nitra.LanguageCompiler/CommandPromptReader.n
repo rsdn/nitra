@@ -35,6 +35,8 @@ namespace Nitra.LanguageCompiler
     public DefaultNamespace    : string           { get; private set; }
     public Success             : bool             { get; }
     public CompilerMessages    : CompilerMessages { get; }
+    public UserDefinedVars     : list[string]     { get { _userDefinedVars.ToNList() } }
+    _userDefinedVars           : List[string]     = List();
 
     public this()
     {
@@ -73,6 +75,10 @@ namespace Nitra.LanguageCompiler
         CliOption.NonOption(name = "",
                     help = "Nitra assembly references.",
                     handler = assemblyReferences.Add),
+        CliOption.String(name = "-var",
+                    aliases = [],
+                    help = <#User defined variable. Usage: -var:"XXX<some name>XXX" (without <>)#>,
+                    handler = variable => _userDefinedVars.Add(variable)),
         ];
 
       Getopt.Parse(options);
