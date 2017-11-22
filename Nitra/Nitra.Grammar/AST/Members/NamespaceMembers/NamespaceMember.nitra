@@ -12,7 +12,6 @@ namespace Nitra.Ast
     {
       CanMerge = candidate is TopDecl && FirstDeclarationOrDefault is PredefinedDeclaration;
       MakeHint = AstUtils.SupportsInheritanceTypeMakeHint(symbolCache, this);
-      AssociatedSymbol.DeclaredIn = DeclaredIn;
     }
     AssociatedSymbol.Symbol.DeclaredIn     = Symbol.DeclaredInOpt.Value;
   }

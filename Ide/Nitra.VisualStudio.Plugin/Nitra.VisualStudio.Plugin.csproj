@@ -75,6 +75,7 @@
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
     <VsPackageProjectPath>$(VsPackagePath)\$(VsPackageName).csproj</VsPackageProjectPath>
     <NuGetSource>https://www.nuget.org/api/v2</NuGetSource>
+    <AssetVarValue>&lt;Asset Type='Microsoft.VisualStudio.ProjectTemplate' d:Source='Project' d:ProjectName='XXLanguageFullNameXX.ProjectTemplate' d:TargetPath='|XXLanguageFullNameXX.ProjectTemplate;TemplateProjectOutputGroup|' Path='ProjectTemplates' d:VsixSubPath='ProjectTemplates' /&gt;"</AssetVarValue>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
@@ -87,7 +88,7 @@
     <Message Text="Copy references: '@(Languages)' -&gt; '$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages'" Importance="high" />
     <RemoveDir Directories="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
     <Copy SourceFiles="@(Languages)" DestinationFolder="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
-    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
+    <Exec Command='$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly) /var:"XXXAssetXXX:$(AssetVarValue)"' WorkingDirectory="$(TargetDir)" />
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>

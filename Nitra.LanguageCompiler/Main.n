@@ -231,7 +231,40 @@ namespace Nitra.LanguageCompiler
           replaces ::= (templateGuid, Guid.NewGuid().ToString("D").ToUpperInvariant());
       }
 
-      replaces
+      AddUserDefinedVars(config, replaces)
+    }
+
+    public AddUserDefinedVars(config : CommandPromptReader, vars : list[string * string]) : list[string * string]
+    {
+      def userDefinedVars = config.UserDefinedVars;
+      //assert2(userDefinedVars.IsEmpty);
+      def result = List(vars);
+      def rxExtract = RegularExpressions.Regex(@"(XXX\w+XXX)\:(.*)");
+      def rxReplace = RegularExpressions.Regex(@"XXX\w+XXX");
+
+      foreach (userVar in userDefinedVars)
+      {
+        def m = rxExtract.Match(userVar);
+
+        unless (m.Success)
+        {
+          config.CompilerMessages.Error(Location.Default, $<#Incorrect format of User defined variable: '$userVar'#>);
+          continue;
+        }
+
+        def userVarName  = m.Groups[1].Value;
+        def userVarValue = m.Groups[2].Value;
+        def builder = StringBuilder(userVarValue);
+
+        foreach ((from, to) in vars)
+        {
+          _ = builder.Replace(from, to);
+        }
+
+        result.Add((userVarName, rxReplace.Replace(builder.ToString(), "")));
+      }
+
+      result.ToNList()
     }
 
     internal sealed class CSharpCollectConstVisitor : ParseTreeVisitor
@@ -329,7 +362,10 @@ namespace Nitra.LanguageCompiler
       foreach ((name, value) in vars)
         _ = templateBuilder.Replace(name, value);
 
-      def result = templateBuilder.ToString();
+      // Remove not expanded user defined variables.
+      def rxReplace = RegularExpressions.Regex(@"XXX\w+XXX");
+      def result = rxReplace.Replace(templateBuilder.ToString(), "");
+
       result
     }
 

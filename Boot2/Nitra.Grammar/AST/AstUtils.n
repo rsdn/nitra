@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using System.Reflection;
 
 namespace Nitra
 {
@@ -559,7 +560,7 @@ namespace Nitra
       }
     }
 
-    public GetImplicitBaseTypeForDeclarationSymbol(context : DependentPropertyEvalContext, symbol : SymbolDeclarationSymbol, _for_dependency : Scope) : Seq[TypeSymbol] -> TypeSymbol
+    public GetImplicitBaseTypeForDeclarationSymbol(context : DependentPropertyEvalContext, symbol : SymbolDeclarationSymbol, _dependency1 : object, _dependency2 : object) : Seq[TypeSymbol] -> TypeSymbol
     {
       def isBaseDeclaration(symbol : SymbolDeclarationSymbol) : bool
       {
@@ -829,6 +830,75 @@ namespace Nitra
       builder.ToString()
     }
 
+    public DependentProperties(this builder : StringBuilder, symbolCache : ISymbolCache, dpContainer : object) : StringBuilder
+    {
+      def type = dpContainer.GetType();
+      def typeArgs = type.GetGenericArguments();
+      def typeName = if (typeArgs.Length > 0) $<#[$(type.Name)..$(typeArgs; ","; a => a.Name)]#> else type.Name;
+      _ = builder.Append("<br/><br/><hint value='Dependent Properties of ").HintMlEscape(typeName).Append("'>");
+      def props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+      def nameToPropMap = Dictionary(props.Length);
+
+      foreach (p in props)
+        nameToPropMap[p.Name] = p;
+
+      mutable count = 0;
+      foreach (prop in props.OrderBy(_.Name))
+      {
+        def name = prop.Name;
+        mutable isEvalProp;
+        mutable locProp;
+        try
+        {
+          when (nameToPropMap.TryGetValue("Is" + name + "Evaluated", out isEvalProp))
+          when (nameToPropMap.TryGetValue(name + "_Location", out locProp))
+          {
+            when (count > 0)
+              _ = builder.AppendLine();
+            if (isEvalProp.GetValue(dpContainer) :> bool)
+            {
+              _ = builder.Append(name + "<font color='DarkGray'> = </font>");
+              def value = prop.GetValue(dpContainer);
+              def appebValue(value : object) : void
+              {
+                | null => _ = builder.Append("<null>");
+                | s is string => _ = builder.Append("<font color='DarkRed'>").HintMlQuote(s).Append("</font>");
+                | ch is char => _ = builder.Append("<font color='DarkRed'>").HintMlQuote(ch).Append("</font>");
+                | symbol is DeclarationSymbol => symbolCache?.CacheSymbol(symbol); _ = builder.SymbolToHintMlWithSubHint(symbol);
+                | other =>
+                  def propType = other.GetType();
+                  def hasValueProp = propType.GetProperty("HasValue", typeof(bool)) ?? propType.GetProperty("IsSome", typeof(bool));
+                  def valueProp = propType.GetProperty("Value");
+                  if (hasValueProp != null && valueProp != null)
+                  {
+                    if (hasValueProp.GetValue(other) :> bool)
+                    {
+                      _ = builder.Append("Some(");
+                      appebValue(valueProp.GetValue(other));
+                      _ = builder.Append(")");
+                    }
+                    else
+                      _ = builder.Append("None()");
+                  }
+                  else
+                    _ = builder.HintMlEscape(other);
+              }
+              appebValue(value);
+            }
+            else
+              _ = builder.Append(name + "<font color='DarkGray'> = </font><font color='Red'>Not evaluated</font>");
+
+            def (file, line, col) = locProp.GetValue(dpContainer) :> (string * int * int);
+            when (file != null)
+              _ = builder.Append(" ").MakeLocation(file, line, col);
+            count++;
+          }
+        }
+        catch { e => _ = builder.Append(StringBuilder().HintMlException(e)); }
+      }
+      builder.Append("</hint>")
+    }
+
     public SupportsInheritanceTypeMakeHint(symbolCache : ISymbolCache, symbol : SupportsInheritanceTypeSymbol) : string
     {
       def builder = StringBuilder();
@@ -859,6 +929,8 @@ namespace Nitra
         }
         else
           _ = builder.Append(<# <b><font color="Red">BaseTypeSet not evaluated</font></b>.#>);
+
+        _ = builder.DependentProperties(symbolCache, symbol);
 
         _ = builder.MakeLocations(symbol);
       }

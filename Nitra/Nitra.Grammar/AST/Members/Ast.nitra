@@ -39,7 +39,7 @@ namespace Nitra.Ast
 
     Symbol.AssociatedDeclaration.AssociatedSymbol = Symbol;
     Symbol.BaseTypeSet |= AstUtils.SymbolDeclarationBaseTypeSet(Symbol.AssociatedDeclaration.BaseTypeSet.ParentTypes);
-    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclarationSymbol(context, Symbol, AssociatedDeclaration.Scope);
+    Symbol.BaseTypeSet |= AstUtils.GetImplicitBaseTypeForDeclarationSymbol(context, Symbol, AssociatedDeclaration.Scope, Symbol.FullName);
 
     Symbol.AssociatedDeclaration = AssociatedDeclaration;
     //Symbol.DeclaredInOpt = AssociatedDeclaration.DeclaredInOpt;

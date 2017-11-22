@@ -40,6 +40,14 @@ namespace Nitra
         .Append(<#"#>)
     }
 
+    public HintMlQuote(this builder : StringBuilder, ch : char) : StringBuilder
+    {
+      builder
+        .Append(<#'#>)
+        .Append(ch)
+        .Append(<#'#>)
+    }
+
     public JoinAnd[T](this builder : StringBuilder, elems : Seq[T], converter : StringBuilder * T -> StringBuilder) : StringBuilder
     {
       Join(builder, elems, converter, " and ", ", ")
@@ -120,7 +128,7 @@ namespace Nitra
       def decls = symbol.GetDeclarationsUntyped().ToArray();
 
       when (decls.Length > 0)
-        _ = builder.Append("<br/>");
+        _ = builder.AppendLine("<br/>");
 
       foreach (decl in decls with i)
       {
@@ -146,6 +154,18 @@ namespace Nitra
       }
 
       builder
+    }
+
+    public MakeLocation(this builder : StringBuilder, pathOpt : string, line : int, col : int) : StringBuilder
+    {
+      when (pathOpt == null)
+        return builder.Append("No location present.");
+      
+      def lineCol = "(" + line + "," + col + ")";
+      def text = Path.GetFileName(pathOpt) + lineCol;
+      def goto = "goto line:" + pathOpt + lineCol;
+      def hint = pathOpt + lineCol;
+      builder.Append("<ref").HintMlAttr("handler", goto).HintMlAttr("hint", hint).Append(">").HintMlEscape(text).Append("</ref>")
     }
 
     public HintMlException(this builder : StringBuilder, exception : Exception) : StringBuilder
