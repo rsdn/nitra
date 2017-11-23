@@ -419,7 +419,8 @@ namespace Nitra
 
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
-        def castTemplate = CreateFunctionType(loc, array[thisType], AstTypeUnifier.Instance.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
+        def unifier = AstTypeUnifier.Instance;
+        def castTemplate = CreateFunctionType(loc, array[unifier.CreateTypeVar(null, thisType)], unifier.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
         def canBeImplicitCast(mapSyntax : MapSyntaxSymbol) : bool
         { def castTemplate = castTemplate;
           mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
