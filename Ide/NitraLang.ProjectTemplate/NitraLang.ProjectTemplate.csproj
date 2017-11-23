@@ -55,15 +55,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="AssemblyInfo.cs" />
     <None Include="Language.nitra" />
     <None Include="Ast.nitra" />
-    <None Include="ProjectTemplate.csproj" />
     <None Include="NitraLang.ProjectTemplate.ico" />
     <None Include="Mapping.nitra" />
+    <None Include="ProjectTemplate.nproj" />
+    <None Include="Properties\AssemblyInfo.n" />
     <None Include="Syntax.nitra" />
   </ItemGroup>
   <ItemGroup>

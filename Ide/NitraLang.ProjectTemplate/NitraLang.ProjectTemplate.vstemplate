@@ -4,7 +4,7 @@
     <Name>Nitra project</Name>
     <Description>Nitra project</Description>
     <Icon>NitraLang.ProjectTemplate.ico</Icon>
-    <ProjectType>CSharp</ProjectType>
+    <ProjectType>Nemerle</ProjectType>
     <RequiredFrameworkVersion>2.0</RequiredFrameworkVersion>
     <SortOrder>1000</SortOrder>
     <TemplateID>e8b2da23-2086-4c7b-a194-1a5b3c0ffb1c</TemplateID>
@@ -13,8 +13,8 @@
     <ProvideDefaultName>true</ProvideDefaultName>
   </TemplateData>
   <TemplateContent>
-    <Project File="ProjectTemplate.csproj" ReplaceParameters="true">
-      <ProjectItem ReplaceParameters="true" TargetFileName="Properties\AssemblyInfo.cs">AssemblyInfo.cs</ProjectItem>
+    <Project File="ProjectTemplate.nproj" ReplaceParameters="true">
+      <ProjectItem ReplaceParameters="true" TargetFileName="Properties\AssemblyInfo.n">Properties\AssemblyInfo.n</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Language.nitra">Language.nitra</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Syntax.nitra">Syntax.nitra</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Mapping.nitra">Mapping.nitra</ProjectItem>
