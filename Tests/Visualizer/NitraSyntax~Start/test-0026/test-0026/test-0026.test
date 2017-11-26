@@ -1,4 +1,9 @@
-﻿syntax module SM
+﻿map syntax SM.Aaa -> A
+{
+  this.Bbbs -> CC;
+}
+
+syntax module SM
 {
   syntax Aaa = Bbbs=(":" Bbb)+; // TODO: try remove explicit name
   syntax Bbb = X="x";
@@ -12,11 +17,6 @@ ast A
 ast B
 {
   BB : string;
-}
-
-map syntax SM.Aaa -> A
-{
-  Bbbs -> CC;
 }
 
 map syntax SM.Bbb -> B
