@@ -56,6 +56,31 @@ namespace Nitra
       MakeName(loc, value, userDefined)
     }
 
+    public MakeName(loc : Location, firstParsedValue : ParsedValue[string * bool], restParsedValues : ImmutableArray[ParsedValue[string*  bool]]) : ParsedValue[string * bool]
+    {
+      def parsedValues = List(restParsedValues.Length + 1);
+      parsedValues.Add(firstParsedValue);
+      parsedValues.AddRange(restParsedValues);
+
+      mutable name;
+      mutable userDefined;
+      foreach (parsedValue when parsedValue.HasValue in parsedValues)
+      {
+        def (name2, userDefined2) = parsedValue.Value;
+        when (name2 != "s" && name2 != "S")
+        {
+          name        = name2;
+          userDefined = userDefined2;
+          break;
+        }
+      }
+
+      when (name == null)
+        return firstParsedValue;
+
+      MakeName(loc, name, userDefined)
+    }
+
     public MakeName(loc : Location, suffix : string, parsedValue : ParsedValue[string * bool]) : ParsedValue[string * bool]
     {
       unless (parsedValue.HasValue)

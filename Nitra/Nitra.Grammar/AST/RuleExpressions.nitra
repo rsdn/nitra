@@ -26,7 +26,7 @@ namespace Nitra.Ast.RuleExpressions
     Expressions.Literals = Literals;
     Expression.Scope     = Scope;
     Expressions.Scope    = Scope;
-    FieldName            = MakeName(Location, Expression.FieldName);
+    FieldName            = MakeName(Location, Expression.FieldName, Expressions.FieldName);
     Type                 = InitTuple(context, Expression.Type, Expressions.Type);
 
     Expression : R.Expression;

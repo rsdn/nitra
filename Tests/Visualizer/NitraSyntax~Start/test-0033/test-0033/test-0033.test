@@ -1,0 +1,7 @@
+﻿using Nitra.Core;
+
+syntax module M
+{
+  syntax R = (s TypeSpecifier)*;
+  syntax TypeSpecifier = "a";
+}
