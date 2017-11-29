@@ -75,7 +75,7 @@
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
     <VsPackageProjectPath>$(VsPackagePath)\$(VsPackageName).csproj</VsPackageProjectPath>
     <NuGetSource>https://www.nuget.org/api/v2</NuGetSource>
-    <AssetVarValue>&lt;Asset Type='Microsoft.VisualStudio.ProjectTemplate' d:Source='Project' d:ProjectName='XXLanguageFullNameXX.ProjectTemplate' d:TargetPath='|XXLanguageFullNameXX.ProjectTemplate;TemplateProjectOutputGroup|' Path='ProjectTemplates' d:VsixSubPath='ProjectTemplates' /&gt;"</AssetVarValue>
+    <AssetVarValue>&lt;Asset Type='Microsoft.VisualStudio.ProjectTemplate' d:Source='Project' d:ProjectName='XXLanguageFullNameXX.ProjectTemplate' d:TargetPath='|XXLanguageFullNameXX.ProjectTemplate;TemplateProjectOutputGroup|' Path='ProjectTemplates' d:VsixSubPath='ProjectTemplates' /&gt;</AssetVarValue>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">

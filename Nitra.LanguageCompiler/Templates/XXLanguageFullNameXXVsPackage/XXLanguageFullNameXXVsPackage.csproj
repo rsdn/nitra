@@ -207,7 +207,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include=          "..\XXLanguageFullNameXX.ProjectTemplate\XXLanguageFullNameXX.ProjectTemplate.csproj" 
-                      Condition="Exists('..\XXLanguageFullNameXX.ProjectTemplate')">
+                      Condition="Exists('..\XXLanguageFullNameXX.ProjectTemplate\XXLanguageFullNameXX.ProjectTemplate.csproj')">
       <Project Condition="'$(ProjectTemplateGuid)' == ''">$(ProjectTemplateGuid)</Project>
       <Name>XXLanguageFullNameXX.ProjectTemplate</Name>
       <VSIXSubPath>ProjectTemplates</VSIXSubPath>
