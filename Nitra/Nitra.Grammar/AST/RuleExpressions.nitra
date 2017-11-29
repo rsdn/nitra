@@ -24,10 +24,10 @@ namespace Nitra.Ast.RuleExpressions
   {
     Expression.Literals  = Literals;
     Expressions.Literals = Literals;
-    Expression.Scope  = Scope;
-    Expressions.Scope = Scope;
-    FieldName = MakeName(Location, Expression.FieldName);
-    Type      = InitTuple(context, Expression.Type, Expressions.Type);
+    Expression.Scope     = Scope;
+    Expressions.Scope    = Scope;
+    FieldName            = MakeName(Location, Expression.FieldName);
+    Type                 = InitTuple(context, Expression.Type, Expressions.Type);
 
     Expression : R.Expression;
     Expressions : R.Expression*;
