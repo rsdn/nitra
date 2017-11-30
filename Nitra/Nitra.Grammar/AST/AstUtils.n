@@ -336,9 +336,10 @@ namespace Nitra
       Name(astName.Location, astName.Text + "Symbol")
     }
 
-    public CreateMapSyntaxName(parseTree : ParseTree) : Name
+    public CreateMapSyntaxName(parseTree : ParseTree, endSpan : NSpan) : Name
     {
-      Name(parseTree.Location.FromStart(), GetAstId)
+      def loc = parseTree.Location;
+      Name(Location(loc.Source, loc.StartPos, endSpan.EndPos), GetAstId)
     }
 
     public CreateMapSyntaxRef(loc : Location, scope : Scope, argumentTypes : ImmutableArray[TypeSymbol]) : Ref[MapSyntaxSymbol]
