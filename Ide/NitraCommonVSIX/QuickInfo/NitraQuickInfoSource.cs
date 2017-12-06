@@ -80,7 +80,7 @@ namespace Nitra.VisualStudio.QuickInfo
         _wpfTextView = (IWpfTextView)session.TextView;
         var extent       = GetTextExtent(triggerPoint.Value);
         var text         = extent.Span.GetText();
-        if (!text.All(c => char.IsLetterOrDigit(c) || c == '_'))
+        if (text.All(c => char.IsWhiteSpace(c)))
         {
           applicableToSpan = null;
           return;
