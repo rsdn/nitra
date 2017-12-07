@@ -140,7 +140,7 @@ namespace Nitra.Typing
 
     public FullName : string { [Memoize] get { $<#..$(FullNameParts; ".")#> } }
 
-    public SetRootNamespaceSymbol([NotNull] rootNamespace : NamespaceSymbol) : void
+    public SetRootNamespaceSymbol([NotNull] rootNamespace : OldNamespaceSymbol) : void
     {
       assert2(rootNamespace.Node == null);
       assert2(_symbol == null);

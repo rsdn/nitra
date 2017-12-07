@@ -1,4 +1,4 @@
-using Nitra.Model;
+﻿using Nitra.Model;
 using Nitra.ProjectSystem;
 using Nitra.Runtime;
 using Nitra.Typing;
@@ -543,14 +543,14 @@ namespace Nitra
       Rule.String(loc, newFieldName, value, false, spanClass)
     }
 
-    public MakeNamespaceSymbol(currentNs : NamespaceSymbol, path : list[Nitra.Location]) : NamespaceSymbol
+    public MakeNamespaceSymbol(currentNs : OldNamespaceSymbol, path : list[Nitra.Location]) : OldNamespaceSymbol
     {
-      def enter(currentNs : NamespaceSymbol, path : list[Location]) : NamespaceSymbol
+      def enter(currentNs : OldNamespaceSymbol, path : list[Location]) : OldNamespaceSymbol
       {
         match (path)
         {
           | name :: tail =>
-            match (currentNs.Node.BindMany.[NamespaceSymbol](name.GetText()))
+            match (currentNs.Node.BindMany.[OldNamespaceSymbol](name.GetText()))
             {
               | ns :: _ =>
                 ns.AddDefinition(name);
@@ -560,7 +560,7 @@ namespace Nitra
                   enter(ns, tail)
 
               | [] =>
-                def newNs = NamespaceSymbol(name);
+                def newNs = OldNamespaceSymbol(name);
                 currentNs.AddChild(newNs, name);
                 newNs.AddDefinition(name);
                 if (tail.IsEmpty)

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Threading;
 using Nitra.Declarations;
 using Nitra.Typing;
@@ -25,7 +25,7 @@ namespace Nitra.ProjectSystem
     private _assemblies : List[AssemblyName] = List();
     protected _symbolsCache : ConcurrentDictionary[int, DeclarationSymbol] = ConcurrentDictionary();
     public CompilerMessages : ICompilerMessages { get; }
-    public RootNamespace : NamespaceSymbol { get; private set; }
+    public RootNamespace : OldNamespaceSymbol { get; private set; }
     public Data : object { get; set; }
     public abstract Files : Seq[File] { get; }
     public virtual Solution : Solution { get; protected set; }
@@ -53,7 +53,7 @@ namespace Nitra.ProjectSystem
       _assemblies.AddRange(referencedAssemblies);
 
       def root = HierarchyNode(this);
-      def rootNamespace = NamespaceSymbol(null : string);
+      def rootNamespace = OldNamespaceSymbol(null : string);
       root.SetRootNamespaceSymbol(rootNamespace);
       RootNamespace = rootNamespace;
     }
