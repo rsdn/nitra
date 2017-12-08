@@ -129,7 +129,7 @@ namespace Nitra.Serialization
           def node   =
             if (hasNamespaceSymbol)
             {
-              def ([parentNs]) = parent.GetSymbol.[OldNamespaceSymbol](); // parent must be NamespaceSymbol
+              def ([parentNs]) = parent.GetSymbol.[OldNamespaceSymbol](); // parent must be OldNamespaceSymbol
 
               match (parent.BindMany.[OldNamespaceSymbol](partName))
               {
