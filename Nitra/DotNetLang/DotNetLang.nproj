@@ -292,7 +292,7 @@
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
-  <Target Name="AfterBuild" Condition=" '$(Stage)' == '' ">
+  <Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage1' ">
     <CallTarget Targets="BuildPolicy01Assembly; NugetPack" />
   </Target>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

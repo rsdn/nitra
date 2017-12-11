@@ -69,7 +69,8 @@
     <AL LinkResources="$(OutputPath)\policy.0.1.$(AssemblyName).config" OutputAssembly="$(OutputPath)\policy.0.1.$(AssemblyName).dll" KeyFile="$(KeyOriginatorFile)" Platform="$(Platform)" />
   </Target>
 
-  <Target Name="NugetPack" Condition=" ('$(Stage)' == 'Stage1') And ('$(CoreCompileExecuted)' == 'true') " DependsOnTargets="GetNitraBuildVersion; GetNemerleBuildVersion">
+  <Target Name="NugetPack" Condition=" ('$(Stage)' == 'Stage1') " DependsOnTargets="GetNitraBuildVersion; GetNemerleBuildVersion">
+    <Message Text="!!!! Run NugetPack Target" Importance="High" />
     <PropertyGroup>
       <Nuget>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\ExternalTools\Nuget.exe'))</Nuget>
       <NugetOutput>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\bin\$(Configuration)\NuGetSource'))</NugetOutput>
