@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -32,6 +32,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  Id                                       : ProjectId;
     public  Path                                     : string                       { get; }
     public  Name                                     : string                       { get; private set; }
+    public  DependantProjects                        : list[Project]                { get; private set; }
+    public  DependsOnProjects                        : list[Project]                { get; private set; }
             _config                                  : Config;
             _projectSupport                          : IProjectSupport;
             _extToLanguages                          : Dictionary[string, Nitra.Language * List[GrammarDescriptor]] = Dictionary(StringComparer.InvariantCultureIgnoreCase);
@@ -49,6 +51,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
+      DependantProjects = [];
+      DependsOnProjects = [];
       ParseQueue    = parseQueue;
       Path          = fullPath;
       ProjectDir    = if (string.IsNullOrEmpty(fullPath)) "" else Path.GetDirectoryName(fullPath);
@@ -187,9 +191,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _projectSupport ?? base.GetProjectSupport()
     }
 
+    SemanticAvailableForAllDependsOnProjects : bool
+    {
+      get
+      {
+        foreach (project when !project.IsSemanticAvailable in DependsOnProjects)
+          return false;
+        true
+      }
+    }
+
     TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
-      when (IsOpened && IsAllAstCreated && this._files.Count > 0)
+      when (IsOpened && IsAllAstCreated && SemanticAvailableForAllDependsOnProjects && this._files.Count > 0)
       {
         CancelSemanticAnalysisCancellation();
         def cancellationTokenSource              = CancellationTokenSource();
@@ -279,6 +293,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsSemanticAvailable = true;
       _semanticResult     = files;
 
+      foreach (p in DependantProjects)
+        p.TryStartSemanticAnalysis();
+
       def cancellationToken = _semanticAnalysisCancellationTokenSource.Token;
 
       foreach (file in files)
@@ -351,6 +368,27 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public Open() : void
     {
       IsOpened = true;
+
+      ServerUtils.Log("  Project " + Name + " is opened.");
+
+      if (DependantProjects.IsEmpty)
+        ServerUtils.Log("  DependantProjects is empty", ConsoleColor.DarkCyan);
+      else
+      {
+        ServerUtils.Log("  DependantProjects", ConsoleColor.DarkCyan);
+        foreach (p in DependantProjects)
+          ServerUtils.Log("    " + p.Name, ConsoleColor.DarkGray);
+      }
+
+      if (DependsOnProjects.IsEmpty)
+        ServerUtils.Log("  DependsOnProjects is empty", ConsoleColor.DarkYellow);
+      else
+      {
+        ServerUtils.Log("  DependsOnProjects", ConsoleColor.DarkYellow);
+        foreach (p in DependsOnProjects)
+          ServerUtils.Log("    " + p.Name, ConsoleColor.DarkGray);
+      }
+
       TryStartSemanticAnalysis();
     }
 
@@ -405,6 +443,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def r = NSP.ProjectReference(projectId, path);
         assert2(!string.IsNullOrEmpty(r.Path));
         _libs.Add(r);
+        def dependOn = Parent.GetProject(projectId);
+        DependsOnProjects ::= dependOn;
+        dependOn.DependantProjects ::= this;
       }
     }
 
