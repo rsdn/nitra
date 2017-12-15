@@ -19,6 +19,17 @@
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Syntax.nitra">Syntax.nitra</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Mapping.nitra">Mapping.nitra</ProjectItem>
       <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Ast.nitra">Ast.nitra</ProjectItem>
+      <ProjectItem ReplaceParameters="true" OpenInEditor="true" TargetFileName="Main.n">Main.n</ProjectItem>
     </Project>
   </TemplateContent>
+  <WizardExtension>
+    <Assembly>NuGet.VisualStudio.Interop, Version=1.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <FullClassName>NuGet.VisualStudio.TemplateWizard</FullClassName>
+  </WizardExtension>
+  <WizardData>
+    <packages repository="extension" repositoryId="NitraLangVsPackage">
+      <package id="Nitra.Compiler" version="0.1.4277" />
+      <package id="DotNetLang" version="0.1.4277" />
+    </packages>
+  </WizardData>
 </VSTemplate>

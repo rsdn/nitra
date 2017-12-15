@@ -88,8 +88,13 @@
     <Message Text="Copy references: '@(Languages)' -&gt; '$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages'" Importance="high" />
     <RemoveDir Directories="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
     <Copy SourceFiles="@(Languages)" DestinationFolder="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
-    <Exec Command='$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly) /var:"XXXAssetXXX:$(AssetVarValue)"' WorkingDirectory="$(TargetDir)" />
+    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly) /var:&quot;XXXAssetXXX:$(AssetVarValue)&quot;" WorkingDirectory="$(TargetDir)" />
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>mkdir "$(SolutionDir)Ide\NitraLangVsPackage\Packages"
+copy "$(SolutionDir)bin\Debug\NuGetSource\Nitra.Runtime.0.1.4277.nupkg" "$(SolutionDir)Ide\NitraLangVsPackage\Packages"
+copy "$(SolutionDir)bin\Debug\NuGetSource\DotNetLang.0.1.4277.nupkg" "$(SolutionDir)Ide\NitraLangVsPackage\Packages"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

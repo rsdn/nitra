@@ -1,4 +1,7 @@
 ﻿syntax module $safeprojectname$Syntax
 {
+  using Nitra.Core;
 
+  [StartRule]
+  syntax Start = "hello world";
 }

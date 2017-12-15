@@ -17,6 +17,8 @@
   <Assets>
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />
     <Asset Type="Microsoft.VisualStudio.VsPackage"    d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Nitra.Compiler.0.1.4277.nupkg" d:Source="File" Path="Packages/Nitra.Compiler.0.1.4277.nupkg" d:VsixSubPath="Packages" />
+    <Asset Type="DotNetLang.0.1.4277.nupkg" d:Source="File" Path="Packages/DotNetLang.0.1.4277.nupkg" d:VsixSubPath="Packages" />
     XXXAssetXXX
     <!--<Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" d:ProjectName="ProjectType1.ProjectTemplate" d:TargetPath="|ProjectType1.ProjectTemplate;TemplateProjectOutputGroup|" Path="ProjectTemplates" d:VsixSubPath="ProjectTemplates" />-->
   </Assets>

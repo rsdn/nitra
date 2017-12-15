@@ -1,0 +1,77 @@
+﻿using Nitra;
+using Nitra.Runtime;
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using Nemerle.Imperative;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Console;
+using System.Linq;
+using System.Threading;
+
+module Program
+{
+  Main() : void
+  {
+    def session  = ParseSession($safeprojectname$Syntax.Start, compilerMessages = ConsoleCompilerMessages());
+    while (true)
+    {
+      Write("input>");
+      def text = ReadLine();
+      when (string.IsNullOrEmpty(text))
+        break;
+
+      def source    = SourceSnapshot(text);
+      def result    = session.Parse(source);
+      def parseTree = result.CreateParseTree();
+
+      Write("print>");
+      WriteLine(parseTree);
+      WriteLine();
+    }
+  }
+}
+
+/*
+public partial class Top : AstBase, IProjectSupport
+{
+  public RefreshReferences(_cancellationToken : CancellationToken, project : Project) : object
+  {
+    project
+  }
+
+  public RefreshProject(_cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
+  {
+    def project = data :> Project;
+    def context  = DependentPropertyEvalContext(project);
+    def scope    = TableScope("Variables");
+    def evalHost = SampleProjectEvalPropertiesHost(files, scope);
+    evalHost.EvalProperties(context, "Collect variables", 0);
+    evalHost.EvalProperties(context, "Compute variables", 1);
+  }
+
+  public GetSymbolById(_ : object, _ : int) : ValueOption[DeclarationSymbol] { VNone() }
+  public DeconstructType(_symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
+  {
+    type = null;
+    typeArgs = ImmutableArray.Empty;
+    false
+  }
+
+  public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
+  {
+    IgnoreParams();
+  }
+
+  public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+  {
+    IgnoreParams();
+  }
+}*/

@@ -6,7 +6,7 @@
 		<ProductVersion>8.0.30703</ProductVersion>
 		<SchemaVersion>2.0</SchemaVersion>
 		<ProjectGuid>$guid1$</ProjectGuid>
-		<OutputType>Library</OutputType>
+		<OutputType>Exe</OutputType>
 		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<RootNamespace>$safeprojectname$</RootNamespace>
 		<AssemblyName>$safeprojectname$</AssemblyName>
@@ -50,31 +50,36 @@
 		<Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
 			<Name>System.Collections.Immutable</Name>
 			<AssemblyName>System.Collections.Immutable.dll</AssemblyName>
-			<HintPath>..\..\packages\System.Collections.Immutable.1.1.37\lib\dotnet\System.Collections.Immutable.dll</HintPath>
+			<HintPath>..\packages\System.Collections.Immutable.1.1.37\lib\dotnet\System.Collections.Immutable.dll</HintPath>
 		</Reference>
 		<Reference Include="Nemerle">
 			<SpecificVersion>False</SpecificVersion>
 			<HintPath>$(Nemerle)\Nemerle.dll</HintPath>
 			<Private>True</Private>
 		</Reference>
-		<Reference Include="Nitra.Runtime">
-			<Name>Nitra.Runtime</Name>
-			<AssemblyName>Nitra.Runtime.dll</AssemblyName>
-			<HintPath>..\..\..\lib\Nitra-bin\Nitra.Runtime.dll</HintPath>
-		</Reference>
-		<Reference Include="DotNetLang">
-			<Name>DotNetLang</Name>
-			<AssemblyName>DotNetLang.dll</AssemblyName>
-			<HintPath>..\..\..\lib\Nitra-bin\DotNetLang.dll</HintPath>
-		</Reference>
 		<MacroReference Include="Nitra.Compiler">
 			<Name>Nitra.Compiler</Name>
 			<AssemblyName>Nitra.Compiler.dll</AssemblyName>
-			<HintPath>..\..\..\lib\Nitra-bin\Nitra.Compiler.dll</HintPath>
+			<HintPath>..\packages\Nitra.Compiler.0.1.4277\tools\Nitra.Compiler.dll</HintPath>
 			<Private>False</Private>
 		</MacroReference>
 	</ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.n" />
+  </ItemGroup>
 	<ItemGroup>
+    <Compile Include="Ast.nitra">
+      <SubType>Content</SubType>
+    </Compile>
+    <Compile Include="Language.nitra">
+      <SubType>Content</SubType>
+    </Compile>
+    <Compile Include="Mapping.nitra">
+      <SubType>Content</SubType>
+    </Compile>
+    <Compile Include="Syntax.nitra">
+      <SubType>Content</SubType>
+    </Compile>
 	</ItemGroup>
     <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
