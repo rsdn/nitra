@@ -17,14 +17,14 @@ namespace Nitra.Typing
     public override Project : Project { get; }
     private _coreNemerleEnvironment : GlobalEnv;
 
-    public this(project : Project, rootNamespace : NamespaceSymbol, coreNemerleEnvironment : GlobalEnv)
+    public this(project : Project, rootNamespace : OldNamespaceSymbol, coreNemerleEnvironment : GlobalEnv)
     {
       base(null, rootNamespace);
       Project = project;
       _coreNemerleEnvironment = coreNemerleEnvironment;
     }
 
-    public override Namespace : NamespaceSymbol
+    public override Namespace : OldNamespaceSymbol
     {
       get
       {

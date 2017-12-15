@@ -22,6 +22,7 @@ namespace DotNet
 
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
+      //subtype.GetType().IsAssignableFrom
       if (base.IsSubtypeUnwraped(subtype, supertype))
         true
       else match (subtype, supertype)
@@ -30,6 +31,8 @@ namespace DotNet
           def result = IsSubtype(subtypeList.ElemType, supertypeList.ElemType);
           result
 
+        | (extension is Nitra.Ast.ExtensionRuleSymbol, extensible is Nitra.Ast.TopExtensibleRuleSymbol)
+          when extension.IsParentEvaluated && extension.Parent.Equals(extensible) => true
         | _ => false
       }
     }
@@ -44,6 +47,8 @@ namespace DotNet
 
           ProvideImpl(f1.ReturnType, f2.ReturnType, ref updatedVariables)
 
+        | (AstTypeSymbol, RuleTypeSymbol)
+        | (RuleTypeSymbol, AstTypeSymbol) => false
         | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
       }
     }

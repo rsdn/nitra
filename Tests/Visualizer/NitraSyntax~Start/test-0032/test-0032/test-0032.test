@@ -1,0 +1,28 @@
+﻿map syntax CsIdentifiers.Name(_tag : ImplicitNamespaceTag) -> ImplicitNamespace
+{
+  | Normal   -> ImplicitNamespace { this -> Name; }
+  | Verbatim -> ImplicitNamespace { this -> Name; }
+}
+
+syntax module CsIdentifiers
+{
+  using Nitra.Core;
+  token Name
+  {
+    | Normal   = IdentifierBody
+    | Verbatim = At="@"   IdentifierBody
+  }
+}
+
+map syntax CsIdentifiers.Name -> Nitra.Declarations.Name
+{
+  | Normal   = Nitra.Declarations.Name(this);
+  | Verbatim = Nitra.Declarations.Name(this.Location, GetText(this.IdentifierBody));
+}
+
+ast ImplicitNamespaceTag { }
+
+
+declaration ImplicitNamespace
+{
+}

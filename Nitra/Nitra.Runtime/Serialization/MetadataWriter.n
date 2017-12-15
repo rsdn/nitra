@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Utility;
 
 using Nitra.Runtime;
@@ -20,7 +20,7 @@ namespace Nitra.Serialization
       this(stream, project, project.RootNamespace)
     }
 
-    public this(stream : Stream, project : Project, root : NamespaceSymbol)
+    public this(stream : Stream, project : Project, root : OldNamespaceSymbol)
     {
       _stream             = stream;
       def encoding        = Text.Encoding.UTF8;
@@ -33,7 +33,7 @@ namespace Nitra.Serialization
     private _stream             : Stream;
     private _intermediateWriter : BinaryWriter;
     private _symbolBodyWriter   : BinaryWriter;
-    private _root               : NamespaceSymbol;
+    private _root               : OldNamespaceSymbol;
     private _namespaceNodes     : HashSet[HierarchyNode]              = HashSet();
     private _nonTreeSymbols     : HashSet[IExportableSymbol]          = HashSet();
     private _externalSymbols    : HashSet[IExportableSymbol]          = HashSet();
@@ -249,7 +249,7 @@ namespace Nitra.Serialization
         {
           when (symbol.AssemblyId == AssemblyIds.CurrentAssembly && symbol is IExportableSymbol)
             buffer.Add(symbol :> IExportableSymbol);
-          when (symbol is NamespaceSymbol)
+          when (symbol is OldNamespaceSymbol)
             _ = _namespaceNodes.Add(node);
         }
         foreach (node in node.SubNodes)

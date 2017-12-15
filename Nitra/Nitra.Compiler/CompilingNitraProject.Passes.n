@@ -167,8 +167,6 @@ namespace Nitra.Compiler
 
       TypingUtils.SetOutDependentProperties(this);
 
-      TypingUtils.SetNameReferenceSyntaxMapping(this, this.Environment.Manager);
-
       foreach (start in parseTree)
         start.TypeSyntaxMappings();
 

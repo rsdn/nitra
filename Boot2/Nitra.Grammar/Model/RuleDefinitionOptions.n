@@ -33,8 +33,6 @@ namespace Nitra.Model
     public IsKeyToken                    : bool            { get; private set; }
     /// This token can be parsed by the rule used to parse an identifier. All keywords IsKeyToken.
     public IsKeyword                     : bool            { get; private set; }
-    public IsReference                   : bool            { get; private set; }
-    public IsName                        : bool            { get; private set; }
     public Prefix                        : bool            { get { this.OperatorInfo %&& OperatorInfo.Prefix } }
     public Postfix                       : bool            { get { this.OperatorInfo %&& OperatorInfo.Postfix } }
     public Infix                         : bool            { get { this.OperatorInfo %&& OperatorInfo.Infix } }
@@ -78,9 +76,7 @@ namespace Nitra.Model
         newOptions.IsKeyword  = value;
       }
     }
-    public SetReference             (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsReference                 = value }
     public SplitAtCompletionPosition(_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsSplitAtCompletionPosition = value }
-    public SetName                  (_loc : Located, value : bool)            : RuleDefinitionOptions { surroundwith(newOptions) newOptions.IsName                      = value }
 
     public this() { }
 
@@ -94,8 +90,6 @@ namespace Nitra.Model
           , isNoParseTree                  = original.IsNoParseTree
           , isKeyToken                     = original.IsKeyToken
           , isKeyword                      = original.IsKeyword
-          , isReference                    = original.IsReference
-          , isName                         = original.IsName
           , operatorInfo                   = original.OperatorInfo
           , arity                          = original.Arity
           , isDynamicSyntaxExtender        = original.IsDynamicSyntaxExtender
@@ -116,8 +110,6 @@ namespace Nitra.Model
           , isNoParseTree                 = false
           , isKeyToken                    = false
           , isKeyword                     = false
-          , isReference                   = false
-          , isName                        = false
           , operatorInfo                  = OperatorInfo.None
           , arity                         = 0
           , isDynamicSyntaxExtender       = false
