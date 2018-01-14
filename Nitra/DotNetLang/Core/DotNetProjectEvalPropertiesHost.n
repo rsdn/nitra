@@ -1,0 +1,53 @@
+﻿using DotNet;
+
+using Nitra;
+using Nitra.Declarations;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace DotNet
+{
+  public class DotNetProjectEvalPropertiesHost[TContext] : ProjectEvalPropertiesHost[TContext]
+    where TContext: DotNetDependentPropertyEvalContext
+  {
+    public this(files : ImmutableArray[FileEvalPropertiesData], context : TContext)
+    {
+      base(files, ImmutableArray.Create(context.UnitRootNamespace));
+    }
+
+    protected override BeforeStage(context : TContext, _passName : string) : void
+    {
+      match (context.Stage)
+      {
+        | 0 =>
+          def projectUnitRootNamespace = context.UnitRootNamespace;
+
+          foreach (file in _files)
+            when (file.Ast is CompilationUnit as cu)
+              cu.RootNamespace = projectUnitRootNamespace;
+
+        | 1 =>
+          def dotNetProject = context.DotNetProject;
+          def unitRootNamespace = context.UnitRootNamespace;
+          def compositeRootNamespace = dotNetProject.MakeCompositeRootSymbol(unitRootNamespace, context);
+          context.SetCompositRootNamespace(compositeRootNamespace);
+          def scope = compositeRootNamespace.Scope;
+          _symbols = ImmutableArray.Create(unitRootNamespace, compositeRootNamespace);
+
+          foreach (file in _files)
+            when (file.Ast is CompilationUnit as cu)
+              cu.Scope = scope;
+
+        | _ => ()
+      }
+    }
+  }
+}

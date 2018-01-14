@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Microsoft.Cci;
 
@@ -19,20 +19,21 @@ using System.Linq;
 namespace Nitra.BackEnd.Cci
 {
   [Record]
-  public sealed class LazyAttributeList : LazyList[CustomAttributeSymbol]
+  internal sealed class LazyAttributeList : LazyList[CustomAttributeSymbol]
   {
     _cciAttributeHost : IReference;
-    _cciBackEnd       : CciBackEnd;
+    _cciPlatform      : CciProject.CciPlatform;
+    _context          : DotNetDependentPropertyEvalContext;
 
     protected override OnLoad() : void
     {
       def count = _cciAttributeHost.Attributes.Count();
       def builder = ImmutableArray.CreateBuilder.[CustomAttributeSymbol](count);
-      def context = DependentPropertyEvalContext(null);
+      def context = _context;
 
 
       foreach (attr in _cciAttributeHost.Attributes)
-        builder.Add(_cciBackEnd.LoadCustomAttribute(attr, context));
+        builder.Add(_cciPlatform.LoadCustomAttribute(attr, context));
 
       _list = builder.MoveToImmutable();
     }

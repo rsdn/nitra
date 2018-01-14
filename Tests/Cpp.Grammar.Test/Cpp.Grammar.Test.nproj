@@ -68,11 +68,6 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Grammars\Cpp.Grammar\Cpp.Grammar.nproj">
-      <Name>Cpp.Grammar</Name>
-      <Project>{50762796-46d8-4178-b7bd-22e136c57978}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
       <Name>Nitra.Runtime</Name>
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>

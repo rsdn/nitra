@@ -234,7 +234,7 @@ namespace Nitra.ClientServer.Server
 
     FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos) : void
     {
-      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting=false);
+      try _solution[projectId].GetFile(fileId).FindSymbolReferences(pos, forHighlighting=false);
       catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty)); throw }
     }
 

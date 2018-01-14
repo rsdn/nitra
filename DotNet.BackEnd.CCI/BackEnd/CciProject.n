@@ -1,0 +1,113 @@
+﻿using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using Microsoft.Cci;
+
+using System;
+using System.IO;
+using System.Diagnostics;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Threading;
+
+using NRB = Nitra.Declarations;
+
+namespace Nitra.BackEnd.Cci
+{
+  public partial class CciProject : IDotNetProject
+  {
+    public CancellationToken : CancellationToken { get; set; }
+
+    _platform               : CciPlatform;
+    _libRefToUnitProjectMap : Dictionary[LibReference, DotNetUnit] = Dictionary();
+    _unitToComposeMap       : Dictionary[NamespaceSymbol,  NamespaceSymbol] = Dictionary();
+    _defineCSharpAliases    : bool;
+
+    public this(defineCSharpAliases : bool)
+    {
+      // TODO: try find corelibRef from project.Libs list.
+      _platform = CciPlatform.GetPlatform(VNone());
+      _defineCSharpAliases = defineCSharpAliases;
+    }
+
+    public MakeCompositeRootSymbol(projectUnitNamespace : NamespaceSymbol, context : DotNetDependentPropertyEvalContext) : NamespaceSymbol
+    {
+      def namespaces = LightList();
+      namespaces.Add(projectUnitNamespace);
+      when (_defineCSharpAliases)
+        namespaces.Add(_platform.AliasesNamespace);
+      foreach (unit in _libRefToUnitProjectMap.Values)
+        namespaces.Add(unit.RootNamespace);
+      ComposeRootSymbols(namespaces, context)
+    }
+
+    ComposeRootSymbols(rootNamespaces : LightList[NamespaceSymbol], context : DotNetDependentPropertyEvalContext) : NamespaceSymbol
+    {
+      _unitToComposeMap.Clear();
+
+      def compositeRootNamespace         = NamespaceSymbol();
+      def table                          = CompositeTableScope(compositeRootNamespace, "MemberTable");
+      compositeRootNamespace.MemberTable = table;
+      compositeRootNamespace.DeclaredIn  = null;
+      compositeRootNamespace.FullName    = "";
+      compositeRootNamespace.EvalProperties(context);
+
+      table.Compose(_unitToComposeMap, compositeRootNamespace, rootNamespaces, context);
+
+      compositeRootNamespace
+    }
+
+    public MapUnitToComposite(unitNamespace : NamespaceSymbol) : NamespaceSymbol { _unitToComposeMap[unitNamespace] }
+
+    public LoadLibs(libs : IEnumerable[LibReference], project : Project, compilerMessages : ICompilerMessages, getProject : Func[ProjectReference, Project], context : DotNetDependentPropertyEvalContext) : void
+    {
+      LoadLibs(libs, project, (loc, err) => compilerMessages.Error(loc, err), getProject, context);
+    }
+
+    LoadLibs(libs : IEnumerable[LibReference], project : Project, addError : Action[Location, string], getProject : Func[ProjectReference, Project], context : DotNetDependentPropertyEvalContext) : void
+    {
+      Debug.WriteLine("LoadLibs started");
+
+      def timer = Stopwatch.StartNew();
+
+      def platform = _platform;
+
+      def (assemblies, projects) = platform.MekeAssemblyList(libs, project.ProjectDir, addError);
+
+      platform.LoadAssemblies(project, context);
+
+
+      foreach((libRef, unit) in assemblies)
+      {
+        this.CancellationToken.ThrowIfCancellationRequested();
+        _libRefToUnitProjectMap.Add(libRef, unit);
+      }
+
+      foreach (proj in projects)
+      {
+        def project = getProject(proj);
+        _libRefToUnitProjectMap.Add(proj, CciDotNetProjectUnit(project));
+      }
+
+      this.CancellationToken.ThrowIfCancellationRequested();
+
+      Debug.WriteLine($"Total of LoadLibs took: $(timer.Elapsed)");
+    }
+
+    public Dispose() : void
+    {
+    }
+  }
+}

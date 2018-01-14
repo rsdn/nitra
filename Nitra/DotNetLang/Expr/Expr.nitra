@@ -73,7 +73,7 @@ namespace DotNet
     in ParameterScope : TableScope = TableScope(null, "parameters");
   stage 1:
     out Type : TypeSymbol;
-    unless (Type.IsSubtypeOf(ExpectedType)/* || (ExpectedType.IsNumeric() && Type.IsNumeric())*/)
+    unless (context.IsSubtypeOf(Type, ExpectedType)/* || (ExpectedType.IsNumeric() && Type.IsNumeric())*/)
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
     | String
       {

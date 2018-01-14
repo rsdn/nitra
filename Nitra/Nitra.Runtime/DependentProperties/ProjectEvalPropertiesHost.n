@@ -12,10 +12,11 @@ using System.Linq;
 
 namespace Nitra.Declarations
 {
-  public class ProjectEvalPropertiesHost : EvalPropertiesHost
+  public class ProjectEvalPropertiesHost[TContext] : EvalPropertiesHost[TContext]
+    where TContext: DependentPropertyEvalContext
   {
-    protected _files   : ImmutableArray[FileEvalPropertiesData];
-    protected _symbols : ImmutableArray[DeclarationSymbol];
+    protected         _files   : ImmutableArray[FileEvalPropertiesData];
+    protected mutable _symbols : ImmutableArray[DeclarationSymbol];
 
     public this(files : ImmutableArray[FileEvalPropertiesData])
     {
@@ -28,7 +29,7 @@ namespace Nitra.Declarations
       _symbols = symbols;
     }
 
-    protected override ExecutePass(context : DependentPropertyEvalContext, passName : string) : void
+    protected override ExecutePass(context : TContext, passName : string) : void
     {
       context.Files = _files;
 
@@ -47,7 +48,7 @@ namespace Nitra.Declarations
       }
     }
 
-    protected override AfterStage(context : DependentPropertyEvalContext, _passName : string) : void
+    protected override AfterStage(context : TContext, _passName : string) : void
     {
       // Notify symbols about current stage is finished.
       def stage = context.Stage;

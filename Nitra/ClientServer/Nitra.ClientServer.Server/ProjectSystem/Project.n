@@ -443,7 +443,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def r = NSP.ProjectReference(projectId, path);
         assert2(!string.IsNullOrEmpty(r.Path));
         _libs.Add(r);
-        def dependOn = Parent.GetProject(projectId);
+        def dependOn = Parent[projectId];
         DependsOnProjects ::= dependOn;
         dependOn.DependantProjects ::= this;
       }

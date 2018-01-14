@@ -15,8 +15,15 @@ namespace Nitra.Ast
 {
   public abstract class MappableRuleTypeScope : RuleTypeScope
   {
+    protected _context : DependentPropertyEvalContext;
+
+    public this(context : DependentPropertyEvalContext)
+    {
+      _context = context;
+    }
+
     protected abstract GetElementType() : RuleTypeSymbol;
-    protected abstract TryCreateMapSyntaxSymbol(prototype : MapSyntaxSymbol, context : DependentPropertyEvalContext) : MapSyntaxSymbol;
+    protected abstract TryCreateMapSyntaxSymbol(prototype : MapSyntaxSymbol) : MapSyntaxSymbol;
 
     protected static CreateMapSyntaxDeclaration(prototype : MapSyntaxSymbol) : ExternalDeclaration[MapSyntaxSymbol]
     {
@@ -54,10 +61,9 @@ namespace Nitra.Ast
         | SyntaxRuleSymbol(IsScopeEvaluated = true, Scope = scope) =>
           def bindResult = scope.Bind.[MapSyntaxSymbol](s => s.IsNameValid && s.IsReturnTypeEvaluated && s.IsParametersEvaluated);
 
-          def context = DependentPropertyEvalContext(null);
           def toMem(candidate : MapSyntaxSymbol) : ValueOption[DeclarationSymbol]
           {
-            def mapSyntaxSymbol = TryCreateMapSyntaxSymbol(candidate, context);
+            def mapSyntaxSymbol = TryCreateMapSyntaxSymbol(candidate);
             if (mapSyntaxSymbol == null)
               VNone()
             else

@@ -8,7 +8,8 @@
     <NeedAddVersionToAssemblyName>True</NeedAddVersionToAssemblyName>
     <AdditionalDefineConstants>NITRA_RUNTIME</AdditionalDefineConstants>
   </PropertyGroup>
-  <PropertyGroup> <!-- Common properties -->
+  <PropertyGroup>
+    <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
     <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
@@ -105,6 +106,9 @@
   <ItemGroup>
     <Compile Include="Core.nitra">
       <SubType>Content</SubType>
+    </Compile>
+    <Compile Include="Core\Unit.n">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="CStyleComments.nitra">
       <SubType>Code</SubType>
@@ -218,7 +222,7 @@
     <Compile Include="Highlighting\Style.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="IBackEnd.n">
+    <Compile Include="IBackEndProject.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ILocated.n">
@@ -855,6 +859,7 @@
     <Folder Include="Internal\TokenEnumerator" />
     <Folder Include="Internal\Recovery" />
     <Folder Include="DependentProperties" />
+    <Folder Include="Core" />
     <Folder Include="Serialization2" />
     <Folder Include="Typing2" />
     <Folder Include="Parsing" />

@@ -342,7 +342,7 @@ namespace Nitra
       Name(Location(loc.Source, loc.StartPos, endSpan.EndPos), GetAstId)
     }
 
-    public CreateMapSyntaxRef(loc : Location, scope : Scope, argumentTypes : ImmutableArray[TypeSymbol]) : Ref[MapSyntaxSymbol]
+    public CreateMapSyntaxRef(context : DependentPropertyEvalContext, loc : Location, scope : Scope, argumentTypes : ImmutableArray[TypeSymbol]) : Ref[MapSyntaxSymbol]
     {
       def getAstIdRef = Reference(loc, GetAstId);
       def len = argumentTypes.Length;
@@ -359,7 +359,7 @@ namespace Nitra
           def t = argumentTypes[i];
           unless (p.IsTypeEvaluated)
             return false;
-          unless (AstTypeUnifier.Instance.TryRequire(t, p.Type))
+          unless (context.Unifier.TryRequire(t, p.Type))
           {
             def r2 = getAstIdRef.Bind.[MapSyntaxSymbol](t.Scope);
             def isResolved(symbol : MapSyntaxSymbol) : bool
@@ -370,7 +370,7 @@ namespace Nitra
               when (!symbol.IsReturnTypeEvaluated)
                 return false;
 
-              def res = AstTypeUnifier.Instance.TryRequire(symbol.ReturnType, p.Type);
+              def res = context.Unifier.TryRequire(symbol.ReturnType, p.Type);
               res
             }
             def r3 = r2.Resolve(isResolved);
@@ -429,13 +429,13 @@ namespace Nitra
     public TypeOptionExpression(loc : ILocated, expectedType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
       def t = CreateOptionAstType(loc, CreateAstTypeVar(context), context);
-      _ = AstTypeUnifier.Instance.Unify(t, expectedType);
+      _ = context.Unifier.Unify(t, expectedType);
       t
     }
 
-    public UnifyAndReturn[T](t1 : TypeSymbol, t2 : TypeSymbol, r : T) : T
+    public UnifyAndReturn[T](this context : DependentPropertyEvalContext, t1 : TypeSymbol, t2 : TypeSymbol, r : T) : T
     {
-      _ = AstTypeUnifier.Instance.Unify(t1, t2);
+      _ = context.Unifier.Unify(t1, t2);
       r
     }
 
@@ -445,11 +445,11 @@ namespace Nitra
 
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
-        def unifier = AstTypeUnifier.Instance;
+        def unifier = context.Unifier;
         def castTemplate = CreateFunctionType(loc, array[unifier.CreateTypeVar(null, thisType)], unifier.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
         def canBeImplicitCast(mapSyntax : MapSyntaxSymbol) : bool
         { def castTemplate = castTemplate;
-          mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
+          mapSyntax.IsTypeEvaluated && unifier.TryUnify(mapSyntax.Type, castTemplate);
         }
         def scope = if (thisType.IsScopeEvaluated) thisType.Scope else EmptyScope.Instance;
         validCasts = scope.Bind.[MapSyntaxSymbol](canBeImplicitCast);

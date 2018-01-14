@@ -10,12 +10,54 @@ using System.Linq;
 
 namespace Nitra.Declarations
 {
+  public abstract class TypeUnifier[TContext] : TypeUnifier
+    where TContext: DependentPropertyEvalContext
+  {
+    protected this(context : TContext) { _context = context; }
+    protected _context : TContext;
+
+    public override CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol
+    {
+      def var = BoundedTypeVarSymbol();
+
+      when (baseTypeConstraint : object != null)
+        var.BaseTypeConstraint = baseTypeConstraint;
+
+      when (derivedTypeConstraint : object != null)
+        var.DerivedTypeConstraint = derivedTypeConstraint;
+
+      var.EvalProperties(_context);
+      var
+    }
+
+    protected override ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
+    {
+      def e = vars.GetEnumerator();
+      when (e.MoveNext())
+      {
+        do
+        {
+          def var                   = e.Current;
+          def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
+          def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
+
+          var.ResetProperties();
+
+          when (baseTypeConstraint : object != null)
+            var.BaseTypeConstraint = baseTypeConstraint;
+
+          when (derivedTypeConstraint : object != null)
+            var.DerivedTypeConstraint = derivedTypeConstraint;
+
+          var.EvalProperties(_context);
+        }
+        while (e.MoveNext())
+      }
+    }
+  }
+
   public abstract class TypeUnifier
   {
-    public static Instance : TypeUnifier { get; protected set; }
-
-    protected _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
-
     public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       def unwrappedSubtype   = UnwrapTypeVar(subtype);
@@ -28,19 +70,7 @@ namespace Nitra.Declarations
 
     protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
 
-    public virtual CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol
-    {
-      def var = BoundedTypeVarSymbol();
-
-      when (baseTypeConstraint : object != null)
-        var.BaseTypeConstraint = baseTypeConstraint;
-
-      when (derivedTypeConstraint : object != null)
-        var.DerivedTypeConstraint = derivedTypeConstraint;
-
-      var.EvalProperties(_typeVarInitContext);
-      var
-    }
+    public abstract CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol;
 
     public TryProvide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
     {
@@ -292,29 +322,6 @@ namespace Nitra.Declarations
       updatedVariables.Add(var);
     }
 
-    protected ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
-    {
-      def e = vars.GetEnumerator();
-      when (e.MoveNext())
-      {
-        do
-        {
-          def var                   = e.Current;
-          def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
-          def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
-
-          var.ResetProperties();
-
-          when (baseTypeConstraint : object != null)
-            var.BaseTypeConstraint = baseTypeConstraint;
-
-          when (derivedTypeConstraint : object != null)
-            var.DerivedTypeConstraint = derivedTypeConstraint;
-
-          var.EvalProperties(_typeVarInitContext);
-        }
-        while (e.MoveNext())
-      }
-    }
+    protected abstract ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void;
   }
 }

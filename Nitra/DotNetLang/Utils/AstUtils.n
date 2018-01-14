@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Nitra;
 using Nitra.Declarations;
 using Nitra.ProjectSystem;
@@ -45,8 +45,16 @@ namespace DotNet
         makeCurrentScope(currentScope)
     }
 
-    public MakeEnteredScope(parentScope : Scope, parentNs : NamespaceSymbol, enteredNs : NamespaceSymbol) : Scope
+    //public ToComposite(context : DependentPropertyEvalContext, ns : NamespaceSymbol) : NamespaceSymbol
+    //{
+    //}
+
+    public MakeEnteredScope(context : DependentPropertyEvalContext, parentScope : Scope, unitParentNs : NamespaceSymbol, unitEnteredNs : NamespaceSymbol) : Scope
     {
+      def dotNetProject   = (context :> DotNetDependentPropertyEvalContext).DotNetProject;
+      def parentNs        = dotNetProject.MapUnitToComposite(unitParentNs);
+      def enteredNs       = dotNetProject.MapUnitToComposite(unitEnteredNs);
+
       def buildEnterNsScope(ns : NamespaceSymbol) : Scope
       {
         def declaredIn = ns.DeclaredIn;
@@ -318,9 +326,9 @@ namespace DotNet
       symbols.SelectMany(s => s.OfType.[NestedTypeSymbol]()).ToArray()
     }
 
-    public IsSubtypeOf(this symbol1 : TypeSymbol, symbol2 : TypeSymbol) : bool
+    public IsSubtypeOf(this context : DependentPropertyEvalContext, symbol1 : TypeSymbol, symbol2 : TypeSymbol) : bool
     {
-      TypeUnifier.Instance.Require(symbol1, symbol2)
+      context.Unifier.Require(symbol1, symbol2)
     }
 
     public IsNumeric(this symbol : TypeSymbol) : bool

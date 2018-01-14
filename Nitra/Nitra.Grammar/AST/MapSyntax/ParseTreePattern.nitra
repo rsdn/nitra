@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 using Nitra;
 using Nitra.Declarations;
 
@@ -10,7 +10,7 @@ namespace Nitra.Ast
     in  ExpectedType : TypeSymbol;
     out Type         : TypeSymbol;
 
-    unless (Type.IsSubtypeOf(ExpectedType))
+    unless (context.IsSubtypeOf(Type, ExpectedType))
       Error(context, $"<hint>Pattern type '$(AstUtils.ToHint(self.Type, context))' is not subtype of expected type '$(AstUtils.ToHint(self.ExpectedType, context))'.</hint>");
 
     | Wildcard

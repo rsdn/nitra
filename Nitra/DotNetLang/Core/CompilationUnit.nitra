@@ -1,8 +1,7 @@
-﻿/*
-using DotNet;
+﻿using DotNet;
 using Nitra.Declarations;
 
-namespace CSharp
+namespace DotNet
 {
   ast CompilationUnit : NamespaceBody
   {
@@ -13,4 +12,3 @@ namespace CSharp
     EnteredScope   = Scope;
   }
 }
-*/

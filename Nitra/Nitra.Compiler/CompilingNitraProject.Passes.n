@@ -336,7 +336,9 @@ namespace Nitra.Compiler
         return;
       _beforeTypedMembers = true;
 
-      surroundwith (ThrowOnProjectErrors) UpdateProperties();
+       this.Libs = this.Manager.Options.ReferencedLibraries.MapToArray(path => FileLibReference(path));
+
+       surroundwith (ThrowOnProjectErrors) UpdateProperties(ProjectSupport());
 
       def parseTree = SCG.List();
       foreach (file in Files)

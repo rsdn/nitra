@@ -61,7 +61,7 @@ namespace Nitra.ClientServer.Server
       | FileInMemoryLoaded (projectId, id, name, text)   => File(id, name, _solution[projectId], text).TrySendParseMessage();
       | FileActivated      (projectId, id, version)      => _solution.GetFile(projectId, id).Activate(version);
       | FileDeactivated    (projectId, id)               => _solution.GetFile(projectId, id).Deactivate();
-      | FileUnloaded       (projectId, id)               => _solution.GetProject(projectId).RemoveFile(id);
+      | FileUnloaded       (projectId, id)               => _solution[projectId].RemoveFile(id);
       | FileRenamed        (oldId, newId, newPath)       => foreach (f in _solution.GetFiles(oldId)) f.RenameFile(newId, newPath); // TODO: get 'newVersion' from client
       | FileChanged        (id, version, change, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
       | FileChangedBatch   (id, version, changes, caret) => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);

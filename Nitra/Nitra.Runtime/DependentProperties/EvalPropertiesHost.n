@@ -13,10 +13,11 @@ using System.Linq;
 
 namespace Nitra.Declarations
 {
-  public abstract class EvalPropertiesHost
+  public abstract class EvalPropertiesHost[TContext]
+    where TContext: DependentPropertyEvalContext
   {
     public EvalProperties(
-      [NotNull] context    : DependentPropertyEvalContext,
+      [NotNull] context    : TContext,
                 passName   : string = null,
                 stage      : int    = 0) : void
     {
@@ -47,19 +48,19 @@ namespace Nitra.Declarations
       AfterStage(context, passName);
     }
 
-    protected abstract ExecutePass(context : DependentPropertyEvalContext, passName : string) : void;
+    protected abstract ExecutePass(context : TContext, passName : string) : void;
 
-    protected virtual BeforeStage(context : DependentPropertyEvalContext, passName : string) : void
+    protected virtual BeforeStage(context : TContext, passName : string) : void
     {
       IgnoreParams();
     }
 
-    protected virtual AfterStage(context : DependentPropertyEvalContext, passName : string) : void
+    protected virtual AfterStage(context : TContext, passName : string) : void
     {
       IgnoreParams();
     }
 
-    protected EvalProperties(context : DependentPropertyEvalContext, obj : IDependentPropertyContainer, statistics : StatisticsTask.Single = null) : void
+    protected EvalProperties(context : TContext, obj : IDependentPropertyContainer, statistics : StatisticsTask.Single = null) : void
     {
       statistics?.Restart();
       obj.EvalProperties(context);

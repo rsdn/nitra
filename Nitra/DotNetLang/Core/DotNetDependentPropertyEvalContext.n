@@ -1,0 +1,48 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DotNet
+{
+  public class DotNetDependentPropertyEvalContext : DependentPropertyEvalContext
+  {
+    public          DotNetProject         : IDotNetProject  { get; }
+    public          UnitRootNamespace     : NamespaceSymbol { get; protected set; }
+    public          CompositRootNamespace : NamespaceSymbol { get; protected set; }
+    public override Unifier               : Nitra.Declarations.TypeUnifier { get; }
+
+    public this([NotNull] symbolCache : ISymbolCache, [NotNull] dotNetProject : IDotNetProject)
+    {
+      base(symbolCache);
+
+      DotNetProject = dotNetProject;
+
+      def unitRootNamespace = NamespaceSymbol();
+      unitRootNamespace.DeclaredIn  = null;
+      unitRootNamespace.FullName    = "";
+      unitRootNamespace.EvalProperties(this);
+      UnitRootNamespace = unitRootNamespace;
+
+      Unifier = CreateUnifier()
+    }
+
+    protected virtual CreateUnifier() : Nitra.Declarations.TypeUnifier
+    {
+      TypeUnifier(this)
+    }
+
+    public SetCompositRootNamespace(compositRootNamespace : NamespaceSymbol) : void
+    {
+      CompositRootNamespace = compositRootNamespace;
+    }
+  }
+}

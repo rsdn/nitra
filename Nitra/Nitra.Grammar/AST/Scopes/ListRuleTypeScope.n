@@ -17,8 +17,9 @@ namespace Nitra.Ast
   {
     private _type : RuleListTypeSymbol;
 
-    public this(type : RuleListTypeSymbol)
+    public this(type : RuleListTypeSymbol, context : DependentPropertyEvalContext)
     {
+      base(context);
       _type = type;
     }
 
@@ -27,7 +28,7 @@ namespace Nitra.Ast
       _type.ElemType
     }
 
-    protected override TryCreateMapSyntaxSymbol(prototype : MapSyntaxSymbol, context : DependentPropertyEvalContext) : MapSyntaxSymbol
+    protected override TryCreateMapSyntaxSymbol(prototype : MapSyntaxSymbol) : MapSyntaxSymbol
     {
       match (prototype.ReturnType)
       {
@@ -35,7 +36,7 @@ namespace Nitra.Ast
         | OptionAstTypeSymbol(IsValueTypeEvaluated = true, ValueType = AstSymbol as t)
         | AstSymbol as t =>
           def decl = CreateMapSyntaxDeclaration(prototype);
-          CreateMapSyntaxSymbol(decl, prototype, _type, AstUtils.CreateListAstType(decl, t, context), context)
+          CreateMapSyntaxSymbol(decl, prototype, _type, AstUtils.CreateListAstType(decl, t, _context), _context)
 
         | _ => null
       }
@@ -49,7 +50,8 @@ namespace Nitra.Ast
     public static Deserialize(reader : IO.BinaryReader, metadataReader : MetadataReader) : this
     {
       def type = metadataReader.ReadObject(reader);
-      ListRuleTypeScope(type)
+      def context = metadataReader.Project.Data;
+      ListRuleTypeScope(type, context)
     }
   }
 }

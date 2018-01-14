@@ -154,13 +154,7 @@
     <Compile Include="AST\CharLiteral.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AST\DotNet\CompilationUnit.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="AST\DotNet\CompilationUnit.nitra">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="AST\DotNet\DependentPropertyEvalContextEx.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="AST\DotNet\NitraQualifiedReference.nitra">
@@ -684,7 +678,13 @@
     <Compile Include="Utils\AstTypeUnifier.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Utils\NitraDependentPropertyEvalContext.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utils\NounUtil.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utils\ProjectSupport.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\Utils.n">
@@ -728,6 +728,13 @@
     <Content Include="packages.config">
       <SubType>Content</SubType>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\DotNet.BackEnd.CCI\DotNet.BackEnd.CCI.nproj">
+      <Name>DotNet.BackEnd.CCI</Name>
+      <Project>{9bc9b613-47f1-443c-8205-ac3cfabe7db9}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />

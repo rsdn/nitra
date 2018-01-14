@@ -9,7 +9,7 @@
     <ProjectGuid>9bc9b613-47f1-443c-8205-ac3cfabe7db9</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DotNet.BackEnd.CCI</RootNamespace>
+    <RootNamespace>Nitra.BackEnd.Cci</RootNamespace>
     <AssemblyName>DotNet.BackEnd.CCI</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -21,6 +21,8 @@
     <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <StartupObject />
+    <ApplicationIcon />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -106,7 +108,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CciBackEnd.n" />
+    <Compile Include="BackEnd\CciPlatform.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BackEnd\CciProject.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CciAssemblyFile.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CciDotNetAssemblyUnit.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CciDotNetProjectUnit.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CompositeTableScope.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="LazyAttributeList.n">
       <SubType>Code</SubType>
     </Compile>
@@ -119,6 +138,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="BackEnd" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>

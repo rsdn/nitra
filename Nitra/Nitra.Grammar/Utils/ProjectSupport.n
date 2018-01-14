@@ -1,0 +1,280 @@
+﻿using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Ast;
+using Nitra.BackEnd.Cci;
+using Nitra.Declarations;
+using Nitra.Grammar;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
+using System.Linq;
+
+using System.Threading;
+using NRB = Nitra.Declarations;
+
+[assembly: ProjectSupport("Nitra Compiler", typeof(Nitra.ProjectSupport))]
+
+namespace Nitra
+{
+  public partial class ProjectSupport : IProjectSupport
+  {
+    // IProjectSupport
+
+    public RefreshReferences(cancellationToken : CancellationToken, project : Project) : DependentPropertyEvalContext
+    {
+      assert2(false);
+
+      project.OnSymbolAssemblyResolve += OnSymbolAssemblyResolve;
+      try
+      {
+        def solution = project.Solution;
+        def cciProject = CciProject(defineCSharpAliases=true);
+        cciProject.CancellationToken = cancellationToken;
+        _ = WellKnownSymbols.GetSymbolsToEvaluate(); // TODO: move to
+        def context = NitraDependentPropertyEvalContext(project, cciProject);
+        def projectRefToProject(projectRef : ProjectReference) : Project { solution.GetProject(projectRef.ProjectId) }
+        cciProject.LoadLibs(project.Libs, project, project.CompilerMessages, projectRefToProject, context);
+        project.Data = context;
+        assert2(project.Data != null);
+
+        when (project is NitraProject as p)
+          context.OnEmitSymbol += p.EmitSymbol;
+        context
+      }
+      finally
+      {
+        project.OnSymbolAssemblyResolve -= OnSymbolAssemblyResolve;
+      }
+    }
+
+    public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : DependentPropertyEvalContext) : void
+    {
+      def context = data :> NitraDependentPropertyEvalContext;
+
+      context.CancellationToken = cancellationToken;
+
+      def evalHost = DotNetProjectEvalPropertiesHost(files, context);
+      evalHost.EvalProperties(context, "SymbolHierarchy", 0);
+      evalHost.EvalProperties(context, "Scopes", 1);
+      // We need scopes to bind literals references which we use to calculate rule fields name.
+      // This requires a separate stage, since the field symbols must be created before the rule bodies are typed.
+      evalHost.EvalProperties(context, "Make rule fields symbols", 2);
+      evalHost.EvalProperties(context, "Type bodies binding", 3);
+    }
+
+    public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : DependentPropertyEvalContext) : void
+    {
+      IgnoreParams();
+    }
+
+    public GetSymbolById(data : DependentPropertyEvalContext, symbolId : int) : ValueOption[DeclarationSymbol]
+    {
+      def rootNamespace = (data :> NitraDependentPropertyEvalContext).CompositRootNamespace;
+      // TODO: cache symbols an use it cache to find symbol by id
+      def findSymbol(tableScope : TableScope) : ValueOption[DeclarationSymbol]
+      {
+        foreach (symbols in tableScope.Symbols)
+        foreach (symbol in symbols)
+        {
+          when (symbol.Id == symbolId)
+            return ValueOption.Some(symbol);
+
+          when (symbol is NamespaceSymbol as ns)
+          {
+            def result = findSymbol(ns.MemberTable);
+            when (result.IsSome)
+              return result;
+          }
+        }
+
+        ValueOption.None()
+      }
+
+      findSymbol(rootNamespace.MemberTable)
+    }
+
+    public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
+    {
+      match (symbol)
+      {
+        | s is TopConstructedTypeSymbol    => type = s.TypeInfo; typeArgs = s.Args; true
+        | s is NestedConstructedTypeSymbol => type = s.TypeInfo; typeArgs = s.Args; true
+        | _ => type = null; typeArgs = ImmutableArray.Empty; false
+      }
+    }
+
+    public VisitGlobalSymbols(data : DependentPropertyEvalContext, callback : Predicate[DeclarationSymbol]) : void
+    {
+      def rootNamespace = (data :> NitraDependentPropertyEvalContext).CompositRootNamespace;
+      _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
+    }
+
+    private static OnSymbolAssemblyResolve(_ : Project, fullName : System.Reflection.AssemblyName) : System.Reflection.Assembly
+    {
+      def name = fullName.Name;
+
+      if (name.StartsWith("DotNetLang", StringComparison.Ordinal))
+        typeof(DotNet.ClassSymbol).Assembly
+      else if (name.StartsWith("Nitra.Runtime", StringComparison.Ordinal))
+        typeof(Nitra.Location).Assembly
+      else if (name.StartsWith("Nitra.Grammar", StringComparison.Ordinal))
+        typeof(CompilationUnit).Assembly
+      else
+        null
+    }
+
+    private static NitraMetadataStreamName = "Nitra.Metadata2";
+
+    private static LoadNitraMetadata(cancellationToken : CancellationToken, project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
+    {
+      def assemblyWithMetadata = Dictionary();
+      foreach (reference in manager.ReferencedAssemblies)
+      {
+        when (cancellationToken.IsCancellationRequested)
+          return;
+
+        def assembly       = reference.Assembly;
+        def metadataStream = assembly.GetManifestResourceStream(NitraMetadataStreamName);
+        when (metadataStream != null)
+        {
+          def assemblyId = project.GetAssemblyId(assembly.GetName());
+          def file       = AssemblyFile(project, assembly.CodeBase);
+          assemblyWithMetadata.Add(assemblyId, (assembly, metadataStream, file));
+        }
+      }
+
+      def visitedAssemblies = HashSet();
+      def visitAssembly(assemblyId)
+      {
+        when (visitedAssemblies.Add(assemblyId))
+        {
+          mutable data;
+          when (assemblyWithMetadata.TryGetValue(assemblyId, out data))
+          {
+            def (assembly, metadataStream, file) = data;
+            foreach (dependency in assembly.GetReferencedAssemblies())
+              visitAssembly(project.GetAssemblyId(dependency));
+
+            def source = SingleLineSourceSnapshot("Fake source: " + file.Name, file);
+            def reader = Nitra.Serialization2.MetadataReader(project, source);
+            try reader.ReadRoot(rootNamespace, metadataStream)
+            catch { e => throw ApplicationException($"Load symbols from '$file' failed. Exception: $(e.Message)", e); }
+          }
+        }
+      }
+
+      foreach (assemblyId in assemblyWithMetadata.Keys)
+      {
+        when (cancellationToken.IsCancellationRequested)
+          return;
+
+        visitAssembly(assemblyId);
+      }
+    }
+
+    private static CreatePredefinedSymbols(rootScope : TableScope, context : NitraDependentPropertyEvalContext) : void
+    {
+      def nitraNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](rootScope, Location.Default, "Nitra", context, () => NamespaceSymbol());
+
+      context.Language = GetOrCreatePredefinedSymbol.[LanguageSymbol](nitraNs.MemberTable, Location.Default, "Language", context,
+        fun()
+        {
+          def symbol = LanguageSymbol();
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+
+      def declarationsNs = GetOrCreatePredefinedSymbol.[NamespaceSymbol](nitraNs.MemberTable, Location.Default, "Declarations", context, () => NamespaceSymbol());
+
+      def scopedAstSymbol = GetOrCreatePredefinedSymbol.[TopAstSymbol](declarationsNs.MemberTable, Location.Default, "ScopedAst", context,
+        fun()
+        {
+          def symbol = TopAstSymbol();
+          symbol.FullName = "Nitra.Declarations.ScopedAst";
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol
+        });
+
+      context.Declaration = GetOrCreatePredefinedSymbol.[TopDeclSymbol](declarationsNs.MemberTable, Location.Default, "Declaration", context,
+        fun()
+        {
+          def symbol = TopDeclSymbol();
+          symbol.FullName = "Nitra.Declarations.Declaration";
+          symbol.BaseTypeSet = BaseTypeReferenceSet(null);
+          symbol.BaseTypeSet.AddParent(scopedAstSymbol);
+          symbol.IsDeclaration = true;
+          symbol.IsAbstract    = true;
+          symbol.DeclaredIn    = declarationsNs;
+          symbol
+        });
+
+      context.DeclarationSymbol = GetOrCreatePredefinedSymbol.[SymbolDeclarationSymbol](declarationsNs.MemberTable, Location.Default, "DeclarationSymbol", context,
+        fun()
+        {
+          def symbol = SymbolDeclarationSymbol();
+          symbol.FullName = "Nitra.Declarations.DeclarationSymbol";
+          symbol.BaseTypeSet   = BaseTypeReferenceSet(null);
+          symbol.DeclaredInOpt = VSome(declarationsNs);
+          symbol
+        });
+    }
+
+    private static GetOrCreatePredefinedSymbol[TSymbol](scope : TableScope, loc : Nitra.Location, name : string, context : DependentPropertyEvalContext, symbolFactory : Func[DeclarationSymbol]) : TSymbol
+      where TSymbol : DeclarationSymbol
+    {
+      def result = Reference(loc, name).Bind(scope);
+      if (result.IsSymbolEvaluated)
+      {
+        result.Symbol
+      }
+      else
+      {
+        def decl   = PredefinedDeclaration(Name(loc, name), symbolFactory);
+        def symbol = decl.DefineSymbol(scope) :> TSymbol;
+        symbol.EvalProperties(context);
+        symbol
+      }
+    }
+
+    private static SaveNitraMetadata(project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
+    {
+      def metadataFileName = manager.Options.OutputFileName + ".nitrametadata2";
+      def metadataWriter   = Nitra.Serialization2.MetadataWriter(project);
+      using (stream = IO.File.OpenWrite(metadataFileName))
+        metadataWriter.WriteRoot(rootNamespace, stream);
+      manager.Options.EmbeddedResources ::= metadataFileName + "," + NitraMetadataStreamName;
+    }
+  }
+
+  internal sealed class AssemblyFile : ConcreteFile
+  {
+    public this(project : Project, fullName : string)
+    {
+      base(null);
+      Project  = project;
+      FullName = fullName;
+    }
+
+    private mutable _source   : SourceSnapshot;
+
+    public override Project     : Project        { get; }
+    public override Length      : int            { get { 0 } }
+    public override FullName    : string         { get; }
+    public override Language    : Nitra.Language { get { Nitra.Language.Instance } }
+    public override GetSource() : SourceSnapshot { when(_source == null) _source = SingleLineSourceSnapshot("", this); _source }
+    public override IsFake      : bool           { get { true } }
+  }
+}

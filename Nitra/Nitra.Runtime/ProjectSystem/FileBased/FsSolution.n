@@ -29,6 +29,14 @@ namespace Nitra.ProjectSystem
       get { FsProjects }
     }
 
+    public override GetProject(id : int) : Project
+    {
+      if (id >= 0 || id < FsProjects.Count)
+        FsProjects[id]
+      else
+        throw ArgumentException($"Can't find a project with id=$id.", "id")
+    }
+
     OnCollectionChanged(_sender : object, e : NotifyCollectionChangedEventArgs) : void
     {
       when (e.OldItems != null)

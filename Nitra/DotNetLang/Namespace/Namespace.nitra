@@ -36,7 +36,7 @@ namespace DotNet
 
   declaration ExplicitNamespace : AssemblyNamespace, NamespaceBody
   {
-    EnteredScope                    = MakeEnteredScope(Scope, DeclaredIn, Symbol);
+    EnteredScope                    = MakeEnteredScope(context, Scope, DeclaredIn, Symbol);
     Path.DeclaredInPipeIn           = DeclaredIn;
     ContainingTable                 = Path.DeclaredInPipeOut.MemberTable;
     Members.DeclaredIn              = Symbol;

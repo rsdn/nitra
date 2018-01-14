@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra;
 using Nitra.Declarations;
@@ -29,7 +29,7 @@ namespace Nitra.Ast
     symbol
     {
       in ElemType  : RuleTypeSymbol;
-      Scope    = ListRuleTypeScope(this);
+      Scope    = ListRuleTypeScope(this, context);
       ToString = ElemType + "*";
 
       DecomposeType =
@@ -44,7 +44,7 @@ namespace Nitra.Ast
     symbol
     {
       in ElemTypes : IList[RuleTypeSymbol];
-      Scope    = TupleRuleTypeScope(this);
+      Scope    = TupleRuleTypeScope(this, context);
       ToString = "(" + string.Join(", ", ElemTypes) + ")";
 
       DecomposeType =
@@ -59,7 +59,7 @@ namespace Nitra.Ast
     symbol
     {
       in ValueType : RuleTypeSymbol;
-      Scope    = OptionRuleTypeScope(this);
+      Scope    = OptionRuleTypeScope(this, context);
       ToString = ValueType + "?";
 
       DecomposeType =

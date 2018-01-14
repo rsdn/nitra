@@ -1,0 +1,23 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DotNet
+{
+  /// <summary>The base class for a assembly or project.</summary>
+  public class DotNetUnit : Unit
+  {
+    public RootNamespace : NamespaceSymbol { get; protected set; }
+
+    public class DotNetProjectUnit : DotNetUnit
+    {
+    }
+  }
+}

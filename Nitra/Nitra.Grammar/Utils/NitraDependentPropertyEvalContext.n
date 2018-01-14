@@ -1,4 +1,6 @@
-﻿using Nemerle;
+﻿using DotNet;
+
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -21,15 +23,16 @@ using System.Linq;
 using System.Threading;
 using NRB = Nitra.Declarations;
 
-namespace DotNet
+namespace Nitra
 {
-  public partial class CompilationUnit : AstBase, IProjectSupport, NamespaceBody
+  public partial class ProjectSupport : IProjectSupport
   {
-    private class DependentPropertyEvalContextEx : DependentPropertyEvalContext
+    private class NitraDependentPropertyEvalContext : DotNetDependentPropertyEvalContext
     {
-      public this(symbolCache : ISymbolCache) { base(symbolCache) }
+      public this(symbolCache : ISymbolCache, dotNetProject : IDotNetProject) { base(symbolCache, dotNetProject) }
 
-      public RootNamespace     : NamespaceSymbol { get; set; }
+      public override Unifier : Nitra.Declarations.TypeUnifier { get { AstTypeUnifier(this) } }
+
       public Language          : LanguageSymbol  { get; set; }
       public Declaration       : TopDeclSymbol   { get; set; }
       public DeclarationSymbol : SymbolDeclarationSymbol { get; set; }
@@ -38,7 +41,7 @@ namespace DotNet
     public static BindFullName[TSymbol](this context : DependentPropertyEvalContext, typeArgsCount : int, params names : array[string]) : GenericTypeSymbol
       where TSymbol : GenericTypeSymbol
     {
-      def rootNamespace = (context :> DependentPropertyEvalContextEx).RootNamespace;
+      def rootNamespace = (context :> NitraDependentPropertyEvalContext).CompositRootNamespace;
 
       def loop(ns : NamespaceSymbol, i : int) : GenericTypeSymbol
       {
@@ -75,22 +78,22 @@ namespace DotNet
 
     public static GetRootNamespace(this context : DependentPropertyEvalContext) : NamespaceSymbol
     {
-      (context :> DependentPropertyEvalContextEx).RootNamespace
+      (context :> NitraDependentPropertyEvalContext).CompositRootNamespace
     }
 
     public static GetLanguage(this context : DependentPropertyEvalContext) : LanguageSymbol
     {
-      (context :> DependentPropertyEvalContextEx).Language
+      (context :> NitraDependentPropertyEvalContext).Language
     }
 
     public static GetDeclaration(this context : DependentPropertyEvalContext) : TopDeclSymbol
     {
-      (context :> DependentPropertyEvalContextEx).Declaration
+      (context :> NitraDependentPropertyEvalContext).Declaration
     }
 
     public static GetDeclarationSymbol(this context : DependentPropertyEvalContext) : SymbolDeclarationSymbol
     {
-      (context :> DependentPropertyEvalContextEx).DeclarationSymbol
+      (context :> NitraDependentPropertyEvalContext).DeclarationSymbol
     }
   }
 }

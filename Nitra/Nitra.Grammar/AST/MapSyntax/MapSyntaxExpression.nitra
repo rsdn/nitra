@@ -16,7 +16,7 @@ namespace Nitra.Ast
     in  ExpectedType : TypeSymbol;
     out Type         : TypeSymbol;
 
-    unless (ExpectedType : object == WellKnownSymbols.AnyType || Type.IsSubtypeOf(ExpectedType))
+    unless (ExpectedType : object == WellKnownSymbols.AnyType || context.IsSubtypeOf(Type, ExpectedType))
       Error(context, $"<hint>Expression type '$(AstUtils.ToHint(self.Type, context))' is not subtype of expected type '$(AstUtils.ToHint(self.ExpectedType, context))'.</hint>");
 
     | Identifier
@@ -54,7 +54,7 @@ namespace Nitra.Ast
         Type               = AstUtils.CreateListAstType(this, ItemTypeVar, context);
         Items.AstScope     = AstScope;
         Items.Scope        = Scope;
-        Items.ExpectedType = AstUtils.UnifyAndReturn(Type, ExpectedType, ItemTypeVar);
+        Items.ExpectedType = context.UnifyAndReturn(Type, ExpectedType, ItemTypeVar);
 
         Items : MapSyntaxExpression*;
       }
@@ -66,7 +66,7 @@ namespace Nitra.Ast
         Type               = AstUtils.CreateOptionAstType(this, ValueTypeVar, context);
         Value.AstScope     = AstScope;
         Value.Scope        = Scope;
-        Value.ExpectedType = AstUtils.UnifyAndReturn(Type, ExpectedType, ValueTypeVar);
+        Value.ExpectedType = context.UnifyAndReturn(Type, ExpectedType, ValueTypeVar);
 
         Value : MapSyntaxExpression;
       }
@@ -145,7 +145,7 @@ namespace Nitra.Ast
     | Call
       {
       stage 3:
-        out MapSyntaxRef : Ref[MapSyntaxSymbol] = AstUtils.CreateMapSyntaxRef(Arguments.Location.FromStart(), Expression.Type.Scope, Arguments.Type);
+        out MapSyntaxRef : Ref[MapSyntaxSymbol] = AstUtils.CreateMapSyntaxRef(context, Arguments.Location.FromStart(), Expression.Type.Scope, Arguments.Type);
 
         Type                    = MapSyntaxRef.Symbol.ReturnType;
         Expression.ExpectedType = WellKnownSymbols.AnyType;

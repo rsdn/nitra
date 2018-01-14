@@ -35,9 +35,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     }
 
     public IsOpened       : bool    { get; private set; }
-    public Item[projectId : int] : Project { get { GetProject(projectId) } }
+    public Item[projectId : int] : Project { get { GetProjectImpl(projectId) } }
 
-    public GetProject(id : int) : Project
+    public override GetProject(id : int) : NSP.Project { GetProjectImpl(id) }
+
+    GetProjectImpl(id : int) : Project
     {
       assert2(!IsDisposed);
       mutable value;
@@ -61,7 +63,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       assert2(!IsDisposed);
 
-      def project = GetProject(projectId);
+      def project = GetProjectImpl(projectId);
 
       project.GetFile(id)
     }

@@ -14,13 +14,9 @@ using System.Linq;
 
 namespace DotNet
 {
-  public class TypeUnifier : Nitra.Declarations.TypeUnifier
+  [Record]
+  public class TypeUnifier : Nitra.Declarations.TypeUnifier[DotNetDependentPropertyEvalContext]
   {
-    public static InitInstance() : void
-    {
-      Instance = TypeUnifier();
-    }
-
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       when (supertype : object == PlatformTypes.Object)

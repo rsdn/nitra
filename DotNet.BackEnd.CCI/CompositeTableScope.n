@@ -1,0 +1,91 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Declarations;
+
+using System;
+using DotNet;
+using System.Collections.Generic;
+using System.Linq;
+
+using Queue = System.Collections.Generic.Queue;
+
+namespace Nitra.BackEnd.Cci
+{
+  /// <summary>
+  /// Description of CompositeTableScope.
+  /// </summary>
+  class CompositeTableScope : TableScope
+  {
+    public this(owner : DeclarationSymbol, name : string)
+    {
+      base(owner, name);
+    }
+
+    public Compose(unitToComposeMap : Dictionary[NamespaceSymbol, NamespaceSymbol], compositeNamespace : NamespaceSymbol, unitNamespaces : LightList[NamespaceSymbol], context : DependentPropertyEvalContext) : void
+    {
+      foreach (unitNamespace in unitNamespaces)
+        unitToComposeMap.Add(unitNamespace, compositeNamespace);
+
+      // TODO: We need to use lazy loading of a composite namespace and unit namespace which loading from assemblies.
+      def q = Queue();
+
+      q.Enqueue(compositeNamespace, unitNamespaces);
+
+      while (q.Count > 0)
+      {
+        def (compositeNs, unitNss) = q.Dequeue();
+
+        def ids = HashSet();
+        foreach (ns in unitNss)
+          ids.UnionWith(ns.MemberTable._nameTable.Keys);
+
+        mutable currentSymbols;
+        foreach (id in ids)
+        {
+          def symbols    = LightList();
+          def namespaces = LightList();
+
+          foreach (ns when ns.MemberTable._nameTable.TryGetValue(id, out currentSymbols) in unitNss)
+          {
+            foreach (s in currentSymbols)
+            {
+              | nestedNs is NamespaceSymbol => namespaces.Add(nestedNs);
+              | _                           => symbols.Add(s);
+            }
+          }
+
+          def table = compositeNs.MemberTable._nameTable;
+
+          when (namespaces.Count > 0)
+          {
+            mutable nestedNss;
+            mutable nestedNs;
+            when (table.TryGetValue(id, out nestedNss))
+              nestedNs = nestedNss.OfType.[NamespaceSymbol]().FirstOrDefault();
+            when (nestedNs == null)
+            {
+              nestedNs = NamespaceSymbol();
+              nestedNs.MemberTable = CompositeTableScope(nestedNs, "MemberTable");
+              nestedNs.DeclaredIn  = compositeNs;
+              nestedNs.FullName    = "";
+              nestedNs.EvalProperties(context);
+
+              foreach (ns in namespaces)
+                foreach (d in ns.GetDeclarationsUntyped())
+                  nestedNs.AddDeclaration(d);
+            };
+
+            symbols.Add(nestedNs);
+            q.Enqueue(nestedNs, namespaces);
+          }
+
+          table[id] = symbols.ToNList();
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+﻿using Microsoft.Cci;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.ProjectSystem;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.BackEnd.Cci
+{
+  internal sealed class AssemblyFile : ConcreteFile
+  {
+    public Assembly : IAssembly { get; }
+
+    public this(project : Project, assembly : IAssembly)
+    {
+      base(null);
+      Project  = project;
+      Assembly = assembly;
+    }
+
+    private mutable _source   : SourceSnapshot;
+
+    public override Project     : Project        { get; }
+    public override Length      : int            { get { 0 } }
+    public override FullName    : string         { get { Assembly.Location.ToString() } }
+    public override Language    : Nitra.Language { get { Nitra.Language.Instance } }
+    public override GetSource() : SourceSnapshot { when(_source == null) _source = SingleLineSourceSnapshot("Fake source: " + FullName, this); _source }
+    public override IsFake      : bool           { get { true } }
+  }
+}

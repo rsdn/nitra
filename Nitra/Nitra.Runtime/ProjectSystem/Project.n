@@ -26,7 +26,7 @@ namespace Nitra.ProjectSystem
     protected _symbolsCache : ConcurrentDictionary[int, DeclarationSymbol] = ConcurrentDictionary();
     public CompilerMessages : ICompilerMessages { get; }
     public RootNamespace : OldNamespaceSymbol { get; private set; }
-    public Data : object { get; set; }
+    public Data : DependentPropertyEvalContext { get; set; }
     public abstract Files : Seq[File] { get; }
     public virtual Solution : Solution { get; protected set; }
     public virtual Libs : Seq[LibReference] { get; protected set; }
@@ -132,9 +132,9 @@ namespace Nitra.ProjectSystem
       }
     }
 
-    public UpdateProperties() : void { UpdateProperties(default(CancellationToken)) }
+    public UpdateProperties(projectSupport : IProjectSupport) : void { UpdateProperties(projectSupport, default(CancellationToken)) }
 
-    public virtual UpdateProperties(cancellationToken : CancellationToken) : void
+    public virtual UpdateProperties(projectSupport : IProjectSupport, cancellationToken : CancellationToken) : void
     {
       def files = Files.ToArray();
 
@@ -144,12 +144,8 @@ namespace Nitra.ProjectSystem
       foreach (file in files)
         file.DeepResetProperties();
 
-      def projectSupport = GetProjectSupport();
-      when (projectSupport != null)
-      {
-        this.Data = projectSupport.RefreshReferences(cancellationToken, this);
-        projectSupport.RefreshProject(cancellationToken, File.GetEvalPropertiesData(files), this.Data);
-      }
+      this.Data = projectSupport.RefreshReferences(cancellationToken, this);
+      projectSupport.RefreshProject(cancellationToken, File.GetEvalPropertiesData(files), this.Data);
     }
 
     public virtual EvalProperties(context : DependentPropertyEvalContext, passName : string, stage : int) : void

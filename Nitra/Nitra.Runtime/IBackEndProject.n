@@ -5,14 +5,16 @@ using Nemerle.Utility;
 
 using Nitra.Declarations;
 using Nitra.ProjectSystem;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace Nitra
 {
-  public interface IBackEnd : IDisposable
+  public interface IBackEndProject : IDisposable
   {
-    LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : DeclarationSymbol;
+    CancellationToken : CancellationToken { get; set; }
   }
 }

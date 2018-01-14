@@ -119,6 +119,21 @@
     </When>
   </Choose>
   <ItemGroup>
+    <Compile Include="Core\CompilationUnit.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\DotNetDependentPropertyEvalContext.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\DotNetProjectEvalPropertiesHost.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\DotNetUnit.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\IDotNetBackEnd.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Core\QualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>

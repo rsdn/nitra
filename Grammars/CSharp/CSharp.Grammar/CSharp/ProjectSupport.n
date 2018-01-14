@@ -1,0 +1,122 @@
+﻿using Nitra;
+using Nitra.BackEnd.Cci;
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+using System.Threading;
+using ND = Nitra.Declarations;
+
+[assembly: ProjectSupport("Nitra C#", typeof(CSharp.ProjectSupport))]
+
+namespace CSharp
+{
+  public class ProjectSupport : IProjectSupport
+  {
+    public RefreshReferences(cancellationToken : CancellationToken, project : Project) : DependentPropertyEvalContext
+    {
+      def cciProject = CciProject(defineCSharpAliases=true);
+      cciProject.CancellationToken = cancellationToken;
+      def context = DotNetDependentPropertyEvalContext(project, cciProject);
+      project.Data = context;
+      project.Data
+    }
+
+    public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : DependentPropertyEvalContext) : void
+    {
+      def context = data :> DotNetDependentPropertyEvalContext;
+      context.CancellationToken = cancellationToken;
+
+      when (cancellationToken.IsCancellationRequested) return;
+
+      def evalHost = DotNetProjectEvalPropertiesHost.[DotNetDependentPropertyEvalContext](files, context);
+      evalHost.EvalProperties(context, "SymbolHierarchy", 0);
+      when (cancellationToken.IsCancellationRequested) return;
+      evalHost.EvalProperties(context, "Scopes", 1);
+      when (cancellationToken.IsCancellationRequested) return;
+      evalHost.EvalProperties(context, "Type bodies binding", 2);
+    }
+
+    public Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : DependentPropertyEvalContext) : void
+    {
+    	IgnoreParams();
+    }
+
+    public GetSymbolById(data : DependentPropertyEvalContext, symbolId : int) : ValueOption[DeclarationSymbol]
+    {
+      def context = data :> DotNetDependentPropertyEvalContext;
+      def rootNamespace = context.CompositRootNamespace;
+      assert2(rootNamespace != null);
+
+      // TODO: cache symbols an use it cache to find symbol by id
+      def findSymbol(symbols : Seq[DeclarationSymbol]) : ValueOption[DeclarationSymbol]
+      {
+        foreach (symbol in symbols)
+        {
+          when (symbol.Id == symbolId)
+            return ValueOption.Some(symbol);
+
+          match (symbol)
+          {
+            | t is GenericContainerTypeSymbol =>
+              def result = findSymbol(t.NestedTypes);
+              when (result.IsSome)
+                return result;
+
+            | NamespaceSymbol as ns =>
+              foreach (symbols in ns.MemberTable.Symbols)
+              {
+                def result = findSymbol(symbols);
+                when (result.IsSome)
+                  return result;
+              }
+
+            | _ => ()
+          }
+        }
+
+        ValueOption.None()
+      }
+
+      foreach (symbols in rootNamespace.MemberTable.Symbols)
+      {
+        def result = findSymbol(symbols);
+        when (result.IsSome)
+          return result;
+      }
+
+      ValueOption.None()
+    }
+
+    public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
+    {
+      match (symbol)
+      {
+        | s is TopConstructedTypeSymbol    => type = s.TypeInfo; typeArgs = s.Args; true
+        | s is NestedConstructedTypeSymbol => type = s.TypeInfo; typeArgs = s.Args; true
+        | _ => type = null; typeArgs = ImmutableArray.Empty; false
+      }
+    }
+
+    public VisitGlobalSymbols(data : DependentPropertyEvalContext, callback : Predicate[DeclarationSymbol]) : void
+    {
+      def context = data :> DotNetDependentPropertyEvalContext;
+      def rootNamespace = context.CompositRootNamespace;
+      assert2(rootNamespace != null);
+      _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
+    }
+  }
+}

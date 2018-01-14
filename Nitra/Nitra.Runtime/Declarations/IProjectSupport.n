@@ -1,4 +1,4 @@
-using Nemerle.Collections;
+﻿using Nemerle.Collections;
 
 using Nitra.ProjectSystem;
 
@@ -13,14 +13,14 @@ namespace Nitra.Declarations
   /// Returns: The project data. It put in "data" parameter in next time when RefreshProject() will be called.
   public interface IProjectSupport
   {
-    RefreshReferences(cancellationToken : CancellationToken, project : Project) : object;
-    RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void;
-    GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol];
+    RefreshReferences(cancellationToken : CancellationToken, project : Project) : DependentPropertyEvalContext;
+    RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : DependentPropertyEvalContext) : void;
+    GetSymbolById(data : DependentPropertyEvalContext, symbolId : int) : ValueOption[DeclarationSymbol];
     DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool;
     /// <summary>Call the callback for each global symbol (namespaces, typese, etc).</summary>
     /// <param name="callback">Call for each gobal symbol. If 'callback' returns true, the symbols visiting will be stopped..</param>
     /// <returns>True if visiting was stopped by 'callback'.</returns>
-    VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void;
-    Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void;
+    VisitGlobalSymbols(data : DependentPropertyEvalContext, callback : Predicate[DeclarationSymbol]) : void;
+    Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : DependentPropertyEvalContext) : void;
   }
 }

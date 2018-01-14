@@ -75,9 +75,6 @@
     <Compile Include="CSharp\AST\BuiltInTypeAlias.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CSharp\AST\CompilationUnit\CompilationUnit.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="CSharp\AST\CsSpecificAst.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -109,6 +106,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CSharp\Extensible.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CSharp\ProjectSupport.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Preprocessor\PreParser.n">

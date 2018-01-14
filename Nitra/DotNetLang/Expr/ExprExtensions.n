@@ -67,7 +67,7 @@ namespace DotNet
         | type is TypeSymbol =>
           def bind(ctor : Member.ConstructorSymbol) : bool
           {
-            DoArgumentsMatchParameters(ctor.ParameterScope, argumentTypes)
+            DoArgumentsMatchParameters(context, ctor.ParameterScope, argumentTypes)
           }
           def res = type.Scope.Bind(bind);
           Ref.CreateBind(ctor.Location, res)
@@ -76,7 +76,7 @@ namespace DotNet
       }
     }
 
-    private DoArgumentsMatchParameters(parameterScope : TableScope, argumentTypes : ImmutableArray[TypeSymbol]) : bool
+    private DoArgumentsMatchParameters(context : DependentPropertyEvalContext, parameterScope : TableScope, argumentTypes : ImmutableArray[TypeSymbol]) : bool
     {
       def parms = parameterScope.Symbols
                                 .SelectMany(s => s)
@@ -90,22 +90,10 @@ namespace DotNet
       def zipped = parms.Zip(argumentTypes, (parm, argType) => (parm, argType));
 
       foreach ((parm, argType) in zipped)
-        when(!argType.IsSubtypeOf(parm.Type) && !argType.HasImplicitConversion(parm.Type))
+        when(!context.IsSubtypeOf(argType, parm.Type) && !argType.HasImplicitConversion(parm.Type))
           return false;
 
       true
-    }
-
-    public GetOverloadResolutionAlgorithm[TSymbol, TConcreteSymbol](this _methodCall : Expr, argumentTypes : ImmutableArray[TypeSymbol]) : ResolutionAlgorithm[TSymbol, TConcreteSymbol]
-      where TSymbol         : DeclarationSymbol
-      where TConcreteSymbol : DeclarationSymbol
-    {
-      fun (symbol : TSymbol) : ValueOption[TConcreteSymbol] {
-        | x is Member.MethodSymbol when DoArgumentsMatchParameters(x.ParameterScope, argumentTypes) =>
-          VSome(symbol :> TConcreteSymbol);
-        | _ =>
-          VNone()
-      }
     }
 
     public InvocationResolveMethod(this host : Expr, left : Expr, _ : TypeSymbol, argumentTypes : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : Ref[Member.MethodSymbol]
@@ -120,7 +108,7 @@ namespace DotNet
           {
             def resolve(x : Member.MethodSymbol) : bool
             {
-              DoArgumentsMatchParameters(x.ParameterScope, argumentTypes)
+              DoArgumentsMatchParameters(context, x.ParameterScope, argumentTypes)
             }
             symbolRef.Resolve(resolve)
           }
