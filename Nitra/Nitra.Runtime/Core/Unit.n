@@ -12,7 +12,7 @@ using System.Linq;
 namespace Nitra
 {
   /// <summary>The base class for a executable, library, project, or other unit generated during compilation.</summary>
-  public abstract class Unit : GraphNodeWithConnections[Unit]
+  public abstract class Unit
   {
   }
 }

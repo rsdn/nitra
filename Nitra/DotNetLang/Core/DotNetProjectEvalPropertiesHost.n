@@ -32,7 +32,10 @@ namespace DotNet
 
           foreach (file in _files)
             when (file.Ast is CompilationUnit as cu)
+            {
               cu.RootNamespace = projectUnitRootNamespace;
+              cu.Unit = null;
+            }
 
         | 1 =>
           def dotNetProject = context.DotNetProject;

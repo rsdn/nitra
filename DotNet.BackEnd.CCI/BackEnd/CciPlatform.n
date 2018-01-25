@@ -10,6 +10,7 @@ using Nitra;
 using Nitra.Declarations;
 using Nitra.Internal;
 using Nitra.ProjectSystem;
+using Nitra.Runtime.GraphUtils;
 
 using Microsoft.Cci;
 
@@ -27,6 +28,13 @@ using Queue = System.Collections.Generic.Queue;
 
 namespace Nitra.BackEnd.Cci
 {
+  public enum ThreeColor
+  {
+    | White
+    | Gray
+    | Black
+  }
+
   public partial class CciProject
   {
     internal class CciPlatform : IDisposable
@@ -100,8 +108,6 @@ namespace Nitra.BackEnd.Cci
 
         UpdateGraph(units);
 
-        //Visualize(units);
-
         (units, projects)
       }
 
@@ -114,17 +120,91 @@ namespace Nitra.BackEnd.Cci
         AddAssemblyToGraph(nodes);
       }
 
+      public abstract class GraphTopologicalSort[T]
+        where T : IGraphNode[T]
+      {
+        public StopIfCycled : bool { get; }
+        _sortedNodes : List[T];
+        mutable _cycledEdges : list[T * T] = [];
+
+        protected abstract GetColor(node : T) : ThreeColor;
+        protected abstract SetColor(node : T, color : ThreeColor) : void;
+        public SortedNodes : Seq[T] { get { _sortedNodes } }
+        public CycledEdges : Seq[T * T] { get { _cycledEdges } }
+        public IsCycled : bool { get { !_cycledEdges.IsEmpty } }
+
+        protected this(graph : Seq[T])
+        {
+          this(graph, stopIfCycled = false, capacity = 0)
+        }
+
+        /// Return true if graph sorted and false if cycle is found.
+        protected this(graph : Seq[T], stopIfCycled : bool, capacity : int)
+        {
+          StopIfCycled = stopIfCycled;
+          _sortedNodes = List(capacity);
+
+          foreach (node in graph)
+          {
+            def cycle = DepthFirstSearch(node);
+            when (cycle)
+              return;
+          }
+          _sortedNodes.Reverse();
+        }
+
+        /// Return flase if cycle is found.
+        DepthFirstSearch(node : T) : bool
+        {
+          match (GetColor(node))
+          {
+            | ThreeColor.Gray  => true
+            | ThreeColor.Black => false
+            | _ =>
+              SetColor(node, ThreeColor.Gray);
+              foreach (connection in node.Connections)
+                when (DepthFirstSearch(connection))
+                {
+                  _cycledEdges ::= (node, connection);
+                  when (StopIfCycled)
+                    return true;
+                  continue;
+                }
+
+              _sortedNodes.Add(node);
+              SetColor(node, ThreeColor.Black);
+              false
+          }
+        }
+      }
+
+      [Record]
+      class UnitsTopologicalSort : GraphTopologicalSort[CciDotNetAssemblyUnit]
+      {
+        protected override GetColor(node : CciDotNetAssemblyUnit) : ThreeColor { node.Color }
+        protected override SetColor(node : CciDotNetAssemblyUnit, color : ThreeColor) : void { node.Color = color; }
+      }
+
       public LoadAssemblies(project : Project, context : DotNetDependentPropertyEvalContext) : void
       {
-        def nodes = Queue();
-        nodes.Enqueue(_assembliesGraph);
-        while (nodes.Count > 0)
+        foreach (node in _assemblyToNodeMap.Values)
+          node.Color = ThreeColor.White;
+        def sorter = UnitsTopologicalSort([_assembliesGraph], false, _assemblyToNodeMap.Count);
+        unless (sorter.IsCycled)
         {
-          def node = nodes.Dequeue();
+          _ = project.CompilerMessages.RootError(NoLocation, $"Cycle is found in the '$(project.ProjectDir)' project.", -1);
+          return;
+        }
+
+        foreach (node in sorter.SortedNodes with i)
+          node.Order = i;
+
+        Visualize(result);
+
+        foreach (node when node.IsSymbolsLoaded in result)
+        {
           LoadLib(node, project, context);
           assert2(node.IsSymbolsLoaded);
-          foreach (subNode is CciDotNetAssemblyUnit in node.Connections)
-            nodes.Enqueue(subNode);
         }
       }
 
@@ -135,7 +215,7 @@ namespace Nitra.BackEnd.Cci
           def name(node : CciDotNetAssemblyUnit) : string { node.Assembly.Name.Value.Replace(".", "_"); }
           def label(node : CciDotNetAssemblyUnit) : string { node.Assembly.Name.Value; }
           nodes.Add($<#$(name(node)) [label="$(label(node))" color=purple shape=box]#>);
-          foreach (to is CciDotNetAssemblyUnit in node.Connections)
+          foreach (to in node.Connections)
           {
             edges.Add($<#$(name(node)) -> $(name(to))#>);
           }
@@ -144,24 +224,59 @@ namespace Nitra.BackEnd.Cci
 
       public static Visualize(units : List[LibReference * CciDotNetAssemblyUnit]) : void
       {
-      def nodes       = List();
-      def edges       = List();
-      //def nodeToIdMap = Dictionary();
+        def nodes = List();
+        def edges = List();
 
-      ToDot(units, nodes, edges);
+        ToDot(units, nodes, edges);
 
-      def typeName = "Assemblies dependencies";
-      def content = $<#
-        digraph RecoveryParser
+        def typeName = "Assemblies dependencies";
+        def content = $<#
+          digraph RecoveryParser
+          {
+            compound=true;
+            label="$typeName";
+
+            ..$(nodes; "\r\n          ")
+
+            ..$(edges; "\r\n          ")
+          }
+        #>;
+        DotUtils.ExecuteDot(content);
+      }
+
+      public static ToDot(units : List[CciDotNetAssemblyUnit], nodes : List[string], edges : List[string]) : void
+      {
+        foreach (node in units)
         {
-          compound=true;
-          label="$typeName";
-
-          ..$(nodes; "\r\n          ")
-
-          ..$(edges; "\r\n          ")
+          def name(node : CciDotNetAssemblyUnit) : string { node.Assembly.Name.Value.Replace(".", "_"); }
+          def label(node : CciDotNetAssemblyUnit) : string { node.Assembly.Name.Value; }
+          nodes.Add($<#$(name(node)) [label="$(label(node))\n$(node.Order)" color=purple shape=box]#>);
+          foreach (to in node.Connections)
+          {
+            edges.Add($<#$(name(node)) -> $(name(to))#>);
+          }
         }
-      #>;
+      }
+
+      public static Visualize(units : List[CciDotNetAssemblyUnit]) : void
+      {
+        def nodes = List();
+        def edges = List();
+
+        ToDot(units, nodes, edges);
+
+        def typeName = "Assemblies dependencies";
+        def content = $<#
+          digraph RecoveryParser
+          {
+            compound=true;
+            label="$typeName";
+
+            ..$(nodes; "\r\n          ")
+
+            ..$(edges; "\r\n          ")
+          }
+        #>;
         DotUtils.ExecuteDot(content);
       }
 

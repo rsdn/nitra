@@ -249,9 +249,9 @@ namespace Nitra
       }
     }
 
-    private static SaveNitraMetadata(project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
+    private static SaveNitraMetadata(project : Project, rootNamespace : NamespaceSymbol) : void
     {
-      def metadataFileName = manager.Options.OutputFileName + ".nitrametadata2";
+      def metadataFileName = project.OutputFileName + ".nitrametadata2";
       def metadataWriter   = Nitra.Serialization2.MetadataWriter(project);
       using (stream = IO.File.OpenWrite(metadataFileName))
         metadataWriter.WriteRoot(rootNamespace, stream);
