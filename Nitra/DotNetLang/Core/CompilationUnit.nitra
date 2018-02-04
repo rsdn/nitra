@@ -7,8 +7,9 @@ namespace DotNet
   {
   stage 0:
     in RootNamespace : NamespaceSymbol;
+    in Unit          : IDotNetUnit;
 
     Members.DeclaredIn = RootNamespace;
-    EnteredScope   = Scope;
+    EnteredScope       = Scope;
   }
 }

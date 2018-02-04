@@ -3,16 +3,18 @@ using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
 
+using Nitra;
 using Nitra.Runtime.GraphUtils;
+using Nitra.Serialization2;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
-namespace Nitra
+namespace DotNet
 {
-  /// <summary>The base class for a executable, library, project, or other unit generated during compilation.</summary>
-  public interface IUnit : Nitra.Serialization2.ISerializable
+  public interface IDotNetAssemblyUnit : IDotNetUnit
   {
   }
 }

@@ -16,7 +16,6 @@ namespace DotNet
       Kind      = "namespace";
       SpanClass = DotNetLang.NamespaceSpanClass;
       Scope     = MemberTable;
-
       IsSameIdentity = AstUtils.IsSameIdentity(0, candidate);
       CanMerge       = candidate is Namespace || candidate is ExternalDeclaration[NamespaceSymbol];
       //MakeHint       = "<keyword>namespace</keyword> " + AstUtils.Combine(DeclaredIn, this);

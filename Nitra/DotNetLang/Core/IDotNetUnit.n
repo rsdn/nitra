@@ -1,0 +1,29 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Runtime.GraphUtils;
+using Nitra.Serialization2;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace DotNet
+{
+  /// <summary>The base class for a assembly or project.</summary>
+  public interface IDotNetUnit : IUnit, IGraphNode[IDotNetUnit]
+  {
+    RootNamespace : NamespaceSymbol { get; protected set; }
+
+    public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+    {
+      IgnoreParams();
+      assert2(false);
+      assert(false)
+    }
+  }
+}

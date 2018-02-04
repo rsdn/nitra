@@ -5,17 +5,19 @@ using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
 
+using Nitra.Serialization2;
 using Nitra.Runtime.GraphUtils;
 
 using Microsoft.Cci;
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace Nitra.BackEnd.Cci
 {
-  class CciDotNetAssemblyUnit : DotNetUnit, IGraphNode[CciDotNetAssemblyUnit]
+  class CciDotNetAssemblyUnit : IDotNetAssemblyUnit, IGraphNode[CciDotNetAssemblyUnit]
   {
     public Assembly : IAssembly { get; }
     public NeedLoadSymbols : bool { get; set; }
@@ -60,6 +62,16 @@ namespace Nitra.BackEnd.Cci
     public override ToString() : string
     {
       this.Assembly.Name.Value
+    }
+
+    public Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+    {
+      IgnoreParams();
+    }
+
+    public RootNamespace : DotNet.NamespaceSymbol
+    {
+      get; protected set;
     }
   }
 }

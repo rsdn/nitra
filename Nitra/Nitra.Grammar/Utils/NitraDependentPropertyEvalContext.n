@@ -30,11 +30,11 @@ namespace Nitra
     private class NitraDependentPropertyEvalContext : DotNetDependentPropertyEvalContext
     {
       public Language          : LanguageSymbol          { get; set; }
-      public Unit              : CciDotNetProjectUnit    { get; set; }
+      public Unit              : IDotNetProjectUnit      { get; set; }
       public Declaration       : TopDeclSymbol           { get; set; }
       public DeclarationSymbol : SymbolDeclarationSymbol { get; set; }
 
-      public this(symbolCache : ISymbolCache, dotNetProject : IDotNetProject) { base(symbolCache, dotNetProject) }
+      public this(symbolCache : ISymbolCache, dotNetProject : IDotNetProjectUnit) { base(symbolCache, dotNetProject) }
 
       public override Unifier : Nitra.Declarations.TypeUnifier { get { AstTypeUnifier(this) } }
     }

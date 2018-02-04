@@ -1,0 +1,30 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Nitra.BackEnd.Cci
+{
+  module Utils
+  {
+    public GetLinkerTime(filePath : string) : int
+    {
+        def c_PeHeaderOffset = 60;
+        def c_LinkerTimestampOffset = 8;
+
+        def buffer = array(2048);
+
+        using (def stream = FileStream(filePath, FileMode.Open, FileAccess.Read))
+            _ = stream.Read(buffer, 0, 2048);
+
+        def offset = BitConverter.ToInt32(buffer, c_PeHeaderOffset);
+        def secondsSince1970 = BitConverter.ToInt32(buffer, offset + c_LinkerTimestampOffset);
+        secondsSince1970
+    }
+  }
+}

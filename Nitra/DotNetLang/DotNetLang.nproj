@@ -37,14 +37,14 @@
     <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES;DEBUG</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\bin\Debug\$(Stage)\</OutputPath>
+    <OutputPath>..\..\bin\Debug\Stage1\</OutputPath>
     <IntermediateOutputPath>obj\Debug\$(Stage)\</IntermediateOutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunDebugger>false</RunDebugger>
+    <RunDebugger>true</RunDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
@@ -128,7 +128,13 @@
     <Compile Include="Core\DotNetProjectEvalPropertiesHost.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Core\DotNetUnit.n">
+    <Compile Include="Core\IDotNetAssemblyUnit.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\IDotNetProjectUnit.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Core\IDotNetUnit.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Core\IDotNetBackEnd.n">

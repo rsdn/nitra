@@ -13,14 +13,15 @@ using System.Linq;
 
 namespace DotNet
 {
-  public class DotNetDependentPropertyEvalContext : DependentPropertyEvalContext
+  public abstract class DotNetDependentPropertyEvalContext : DependentPropertyEvalContext
   {
-    public          DotNetProject         : IDotNetProject  { get; }
-    public          UnitRootNamespace     : NamespaceSymbol { get; protected set; }
-    public          CompositRootNamespace : NamespaceSymbol { get; protected set; }
+    public          DotNetProject         : IDotNetProjectUnit  { get; }
+    public          UnitRootNamespace     : NamespaceSymbol     { get; protected set; }
+    public          Unit                  : IDotNetUnit         { get; protected set; }
+    public          CompositRootNamespace : NamespaceSymbol     { get; protected set; }
     public override Unifier               : Nitra.Declarations.TypeUnifier { get; }
 
-    public this([NotNull] symbolCache : ISymbolCache, [NotNull] dotNetProject : IDotNetProject)
+    public this([NotNull] symbolCache : ISymbolCache, [NotNull] dotNetProject : IDotNetProjectUnit)
     {
       base(symbolCache);
 

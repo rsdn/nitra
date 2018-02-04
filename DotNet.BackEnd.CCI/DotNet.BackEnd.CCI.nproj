@@ -136,6 +136,9 @@
     <Compile Include="TypeMemberScope.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Utils.n">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="BackEnd" />

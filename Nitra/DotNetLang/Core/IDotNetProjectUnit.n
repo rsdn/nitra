@@ -1,0 +1,23 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Runtime.GraphUtils;
+using Nitra.Serialization2;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace DotNet
+{
+  public interface IDotNetProjectUnit : IDotNetUnit
+  {
+    /// Return a composite symbol which compose given the unitSymbol.
+    MapUnitToComposite(unitSymbol : NamespaceSymbol) : NamespaceSymbol;
+    MakeCompositeRootSymbol(projectUnitNamespace : NamespaceSymbol, context : DotNetDependentPropertyEvalContext) : NamespaceSymbol;
+  }
+}

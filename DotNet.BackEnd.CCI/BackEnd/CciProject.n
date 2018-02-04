@@ -26,17 +26,23 @@ using NRB = Nitra.Declarations;
 
 namespace Nitra.BackEnd.Cci
 {
-  public partial class CciProject : IDotNetProject
+  public partial class CciProject : IDotNetProjectUnit
   {
     public CancellationToken : CancellationToken { get; set; }
 
     _platform               : CciPlatform;
-    _libRefToUnitProjectMap : Dictionary[LibReference, DotNetUnit] = Dictionary();
+    _libRefToUnitProjectMap : Dictionary[LibReference, IDotNetUnit] = Dictionary();
     _unitToComposeMap       : Dictionary[NamespaceSymbol,  NamespaceSymbol] = Dictionary();
     _defineCSharpAliases    : bool;
+    public Project : Project { get; }
 
-    public this(defineCSharpAliases : bool)
+    public this(project : Project, defineCSharpAliases : bool)
     {
+      def context = project.Data :> DotNetDependentPropertyEvalContext;
+
+      this.Project       = project;
+      this.RootNamespace = context.UnitRootNamespace;
+
       // TODO: try find corelibRef from project.Libs list.
       _platform = CciPlatform.GetPlatform(VNone());
       _defineCSharpAliases = defineCSharpAliases;
@@ -104,6 +110,18 @@ namespace Nitra.BackEnd.Cci
       this.CancellationToken.ThrowIfCancellationRequested();
 
       Debug.WriteLine($"Total of LoadLibs took: $(timer.Elapsed)");
+    }
+
+    public override Equals(obj : object) : bool
+    {
+      | _ when this : object == obj => true
+      | other is CciProject => this.Project.Equals(other.Project)
+      | _ => false
+    }
+
+    public override GetHashCode() : int
+    {
+      this.Project.GetHashCode()
     }
 
     public Dispose() : void

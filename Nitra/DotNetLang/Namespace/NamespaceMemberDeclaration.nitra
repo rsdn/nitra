@@ -11,7 +11,7 @@ namespace DotNet
       DeclaredInOpt = if (DeclaredIn == null) VNone() else VSome(DeclaredIn);
 
       in DeclaredIn : NamespaceSymbol;
-      in Unit       : DotNetUnit;
+      in Unit       : IDotNetUnit;
 
       Unit     = DeclaredIn.Unit;
       FullName = AstUtils.MakeFullName(this.DeclaredIn.FullName, this.Name);
