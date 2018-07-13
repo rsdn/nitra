@@ -78,7 +78,7 @@ syntax module NitraSyntax : NitraLang
   [StartRule]
   syntax Start = NamespaceMember*
   {
-    CollectGlobalSymbols(rootNs : NamespaceSymbol) : void = foreach (topDecl in NamespaceMembers) topDecl.CollectGlobalSymbols(rootNs);
+    CollectGlobalSymbols(rootNs : OldNamespaceSymbol) : void = foreach (topDecl in NamespaceMembers) topDecl.CollectGlobalSymbols(rootNs);
     [Cached] MakeContext(parent : Context) : Context
     {
       //assert2(false);
@@ -94,7 +94,7 @@ syntax module NitraSyntax : NitraLang
 
   syntax NamespaceBody = NamespaceMember*
   {
-    CollectGlobalSymbols(rootNs : NamespaceSymbol) : void = foreach (topDecl in NamespaceMembers) topDecl.CollectGlobalSymbols(rootNs);
+    CollectGlobalSymbols(rootNs : OldNamespaceSymbol) : void = foreach (topDecl in NamespaceMembers) topDecl.CollectGlobalSymbols(rootNs);
     [Cached] MakeContext(parent : Context) : Context
     {
       def context2 = PassThrough(NamespaceMembers, parent, _.MakeContext(_));
@@ -754,7 +754,7 @@ syntax module NitraSyntax : NitraLang
 
   syntax NamespaceMember
   {
-    CollectGlobalSymbols(ns : NamespaceSymbol) : void;
+    CollectGlobalSymbols(ns : OldNamespaceSymbol) : void;
     [Cached] MakeContext(parent : Context) : Context;
     TypeSyntaxMappings() : void {}
     TypeAst() : void {}
@@ -918,7 +918,7 @@ syntax module NitraSyntax : NitraLang
           }
         }
 
-        [Cached] MakeCurrentSymbol(ns : NamespaceSymbol) : NamespaceSymbol = MakeNamespaceSymbol(ns, NamespaceName.CalcLocations());
+        [Cached] MakeCurrentSymbol(ns : OldNamespaceSymbol) : OldNamespaceSymbol = MakeNamespaceSymbol(ns, NamespaceName.CalcLocations());
         override CollectGlobalSymbols = NamespaceBody.CollectGlobalSymbols(MakeCurrentSymbol(ns));
         override MakeContext
         {

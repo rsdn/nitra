@@ -4,6 +4,11 @@ using DotNet.AstUtils;
 
 namespace DotNet
 {
+  /// The AssemblyNamespace declare namespace from a single assembly or a single project.
+  abstract declaration AssemblyNamespace : Namespace
+  {
+  }
+
   abstract declaration Namespace : NamespaceMemberDeclaration, Container
   {
     sealed symbol
@@ -19,7 +24,7 @@ namespace DotNet
     }
   }
 
-  declaration ImplicitNamespace : Namespace
+  declaration ImplicitNamespace : AssemblyNamespace
   {
     inout DeclaredInPipe : NamespaceSymbol;
 
@@ -27,6 +32,22 @@ namespace DotNet
     Symbol.DeclaredIn               = DeclaredIn;
     ContainingTable                 = DeclaredInPipeIn.MemberTable;
     DeclaredInPipeOut               = Symbol;
+  }
+
+  declaration ExplicitNamespace : AssemblyNamespace, NamespaceBody
+  {
+    EnteredScope                    = MakeEnteredScope(Scope, DeclaredIn, Symbol);
+    Path.DeclaredInPipeIn           = DeclaredIn;
+    ContainingTable                 = Path.DeclaredInPipeOut.MemberTable;
+    Members.DeclaredIn              = Symbol;
+    Symbol.DeclaredIn               = Path.DeclaredInPipeOut;
+
+    Path            : ImplicitNamespace*;
+  }
+
+  /// The CompositeNamespace declaration combined namespaces from all loaded assemblies.
+  declaration CompositeNamespace : Namespace
+  {
   }
 
   abstract ast NamespaceBody : BindableAst
@@ -40,16 +61,5 @@ namespace DotNet
     Members.Scope             = MakeMembersScope(EnteredScope, Members.OpeningOut, Members.UsingAliasesScope);
 
     Members         : NamespaceMember*;
-  }
-
-  declaration ExplicitNamespace : Namespace, NamespaceBody
-  {
-    EnteredScope                    = MakeEnteredScope(Scope, DeclaredIn, Symbol);
-    Path.DeclaredInPipeIn           = DeclaredIn;
-    ContainingTable                 = Path.DeclaredInPipeOut.MemberTable;
-    Members.DeclaredIn              = Symbol;
-    Symbol.DeclaredIn               = Path.DeclaredInPipeOut;
-
-    Path            : ImplicitNamespace*;
   }
 }

@@ -14,21 +14,21 @@ namespace Nitra.Typing
 {
   public class EnteredNamespaceContext : EnteredScopeContext, INemerleEnvironmentContext
   {
-    public Entered   : list[NamespaceSymbol] { get; }
+    public Entered   : list[OldNamespaceSymbol] { get; }
 
-    public this(parent : Context, currentNode : NamespaceSymbol)
+    public this(parent : Context, currentNode : OldNamespaceSymbol)
     {
       base(parent);
 
       Namespace = currentNode;
 
-      def getEnteredNss(currentNode : NamespaceSymbol, acc : list[NamespaceSymbol]) : list[NamespaceSymbol]
+      def getEnteredNss(currentNode : OldNamespaceSymbol, acc : list[OldNamespaceSymbol]) : list[OldNamespaceSymbol]
       {
         def parentNode = currentNode.Node.Parent;
 
         if (parentNode == null)
           currentNode :: acc
-        else match (currentNode.Node.Parent.GetSymbol.[NamespaceSymbol]())
+        else match (currentNode.Node.Parent.GetSymbol.[OldNamespaceSymbol]())
         {
           | [ns] => getEnteredNss(ns, currentNode :: acc)
           | _ => assert3(false)
@@ -38,7 +38,7 @@ namespace Nitra.Typing
       Entered = getEnteredNss(currentNode, []);
     }
 
-    public virtual Namespace : NamespaceSymbol { get; }
+    public virtual Namespace : OldNamespaceSymbol { get; }
 
     public override CurrentSymbols : list[Symbol] { get { Entered.Map(x => x) } }
 

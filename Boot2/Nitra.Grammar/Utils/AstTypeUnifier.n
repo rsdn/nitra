@@ -47,6 +47,8 @@ namespace DotNet
 
           ProvideImpl(f1.ReturnType, f2.ReturnType, ref updatedVariables)
 
+        | (AstTypeSymbol, RuleTypeSymbol)
+        | (RuleTypeSymbol, AstTypeSymbol) => false
         | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
       }
     }

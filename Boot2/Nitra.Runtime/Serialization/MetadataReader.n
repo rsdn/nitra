@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Imperative;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -22,7 +22,7 @@ namespace Nitra.Serialization
     private _reader                       : BinaryReader;
     private _symbolConstructorRegistry    : ExternalSymbolConstructorRegistry;
     private _externalSymbolPropertyReader : IExternalSymbolPropertyReader;
-    private _root                         : NamespaceSymbol;
+    private _root                         : OldNamespaceSymbol;
     private _stringTable                  : array[string];
     private _stringTableSourceSnapshot    : array[SourceSnapshot];
 
@@ -31,7 +31,7 @@ namespace Nitra.Serialization
       this(stream, symbolConstructorRegistry, externalSymbolPropertyReader, project, project.RootNamespace, assemblyId, symbolLocation)
     }
 
-    public this(stream : Stream, symbolConstructorRegistry : ExternalSymbolConstructorRegistry, externalSymbolPropertyReader : IExternalSymbolPropertyReader, project : Project, root : NamespaceSymbol, assemblyId : byte, symbolLocation : Location)
+    public this(stream : Stream, symbolConstructorRegistry : ExternalSymbolConstructorRegistry, externalSymbolPropertyReader : IExternalSymbolPropertyReader, project : Project, root : OldNamespaceSymbol, assemblyId : byte, symbolLocation : Location)
     {
       def reader                    = BinaryReader(stream, Text.Encoding.UTF8);
       _reader                       = reader;
@@ -129,13 +129,13 @@ namespace Nitra.Serialization
           def node   =
             if (hasNamespaceSymbol)
             {
-              def ([parentNs]) = parent.GetSymbol.[NamespaceSymbol](); // parent must be NamespaceSymbol
+              def ([parentNs]) = parent.GetSymbol.[OldNamespaceSymbol](); // parent must be OldNamespaceSymbol
 
-              match (parent.BindMany.[NamespaceSymbol](partName))
+              match (parent.BindMany.[OldNamespaceSymbol](partName))
               {
                 | [ns] => ns.AddDefinition(SymbolLocation); ns.Node // namespace already exists
                 | []   =>
-                  def nsSymbol = NamespaceSymbol(partName);
+                  def nsSymbol = OldNamespaceSymbol(partName);
                   parentNs.AddChild(nsSymbol, SymbolLocation);
                   nsSymbol.AddDefinition(SymbolLocation);
                   nsSymbol.Node
