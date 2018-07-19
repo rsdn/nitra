@@ -39,11 +39,6 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.1.37.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Name>System.Collections.Immutable</Name>
-      <AssemblyName>System.Collections.Immutable.dll</AssemblyName>
-      <HintPath>..\..\packages\System.Collections.Immutable.1.1.37\lib\dotnet\System.Collections.Immutable.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -70,6 +65,11 @@
     <ProjectReference Include="..\..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
       <Name>Nitra.Runtime</Name>
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Name>System.Collections.Immutable.Light</Name>
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

@@ -16,8 +16,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Common.VisualStudio.Plugin</RootNamespace>
     <AssemblyName>Common.VisualStudio.Plugin</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -47,6 +48,10 @@
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
       <Name>Nitra.Runtime</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
+      <Name>System.Collections.Immutable.Light</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NitraCommonIde\NitraCommonIde.csproj">
       <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
       <Name>NitraCommonIde</Name>
@@ -63,7 +68,8 @@
     <Compile Include="CodeFile1.cs" />
   </ItemGroup>
   <PropertyGroup>
-    <ProjectSupport></ProjectSupport>
+    <ProjectSupport>
+    </ProjectSupport>
     <LanguageName>Nitra.Language</LanguageName>
     <Namespace>Nitra.Common</Namespace>
     <Assembly>Nitra.Runtime.dll</Assembly>

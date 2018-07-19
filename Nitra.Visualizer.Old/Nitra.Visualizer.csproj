@@ -94,9 +94,6 @@
       <HintPath>$(Nemerle)\Nemerle.Diff.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.2.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Collections.Immutable.1.4.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
@@ -217,6 +214,10 @@
     <ProjectReference Include="..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
       <Project>{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}</Project>
       <Name>Nitra.Runtime</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
+      <Name>System.Collections.Immutable.Light</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

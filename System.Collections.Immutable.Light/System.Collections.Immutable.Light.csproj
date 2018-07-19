@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{46F78A78-93FF-4E51-B221-8E5FFFE8806D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>System.Collections.Immutable</RootNamespace>
+    <AssemblyName>System.Collections.Immutable.Light</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7.3</LangVersion>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>Nitra.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AllocFreeConcurrentStack.cs" />
+    <Compile Include="DictionaryEnumerator.cs" />
+    <Compile Include="DisposableEnumeratorAdapter_2.cs" />
+    <Compile Include="IBinaryTree.cs" />
+    <Compile Include="IHashKeyCollection.cs" />
+    <Compile Include="IImmutableArray.cs" />
+    <Compile Include="IImmutableDictionary.cs" />
+    <Compile Include="IImmutableDictionaryInternal.cs" />
+    <Compile Include="IImmutableList.cs" />
+    <Compile Include="IImmutableListQueries.cs" />
+    <Compile Include="IImmutableSet.cs" />
+    <Compile Include="ImmutableArray.cs" />
+    <Compile Include="ImmutableArrayExtensions.cs" />
+    <Compile Include="ImmutableArray_1.Builder.cs" />
+    <Compile Include="ImmutableArray_1.Builder.DebuggerProxy.cs" />
+    <Compile Include="ImmutableArray_1.cs" />
+    <Compile Include="ImmutableArray_1.Enumerator.cs" />
+    <Compile Include="ImmutableArray_1.Minimal.cs" />
+    <Compile Include="ImmutableDictionary.cs" />
+    <Compile Include="ImmutableDictionary_2.Builder.cs" />
+    <Compile Include="ImmutableDictionary_2.Comparers.cs" />
+    <Compile Include="ImmutableDictionary_2.cs" />
+    <Compile Include="ImmutableDictionary_2.Enumerator.cs" />
+    <Compile Include="ImmutableDictionary_2.HashBucket.cs" />
+    <Compile Include="ImmutableDictionary_2.MutationInput.cs" />
+    <Compile Include="ImmutableDictionary_2.MutationResult.cs" />
+    <Compile Include="ImmutableEnumerableDebuggerProxy.cs" />
+    <Compile Include="ImmutableExtensions.cs" />
+    <Compile Include="ImmutableExtensions.Minimal.cs" />
+    <Compile Include="ImmutableHashSet.cs" />
+    <Compile Include="ImmutableHashSet_1.Builder.cs" />
+    <Compile Include="ImmutableHashSet_1.cs" />
+    <Compile Include="ImmutableHashSet_1.Enumerator.cs" />
+    <Compile Include="ImmutableHashSet_1.HashBucket.cs" />
+    <Compile Include="ImmutableHashSet_1.HashBucketByRefEqualityComparer.cs" />
+    <Compile Include="ImmutableHashSet_1.HashBucketByValueEqualityComparer.cs" />
+    <Compile Include="ImmutableHashSet_1.MutationInput.cs" />
+    <Compile Include="ImmutableHashSet_1.MutationResult.cs" />
+    <Compile Include="ImmutableHashSet_1.NodeEnumerable.cs" />
+    <Compile Include="ImmutableList.cs" />
+    <Compile Include="ImmutableList_1.Builder.cs" />
+    <Compile Include="ImmutableList_1.cs" />
+    <Compile Include="ImmutableList_1.Enumerator.cs" />
+    <Compile Include="ImmutableList_1.Node.cs" />
+    <Compile Include="IOrderedCollection.cs" />
+    <Compile Include="IStrongEnumerable_2.cs" />
+    <Compile Include="IStrongEnumerator_1.cs" />
+    <Compile Include="KeysOrValuesCollectionAccessor.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="RefAsValueType.cs" />
+    <Compile Include="Requires.cs" />
+    <Compile Include="SecureObjectPool.cs" />
+    <Compile Include="SortedInt32KeyNode.cs" />
+    <Compile Include="SortedInt32KeyNode.Enumerator.cs" />
+    <Compile Include="ValidatedNotNullAttribute.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Nitra.snk" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

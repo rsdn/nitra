@@ -113,9 +113,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable, Version=1.2.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Collections.Immutable.1.4.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
-    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -296,6 +293,10 @@
       <Project>{7908821a-47a0-42f4-b6e5-f3062ba8a06a}</Project>
       <Name>Nitra.ClientServer.Messages</Name>
       <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
+      <Name>System.Collections.Immutable.Light</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
