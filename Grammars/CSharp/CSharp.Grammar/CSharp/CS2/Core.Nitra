@@ -18,6 +18,7 @@
 
     syntax Expression
     {
+      map DotNet.Expr;
     }
 
     syntax VariableInitializer

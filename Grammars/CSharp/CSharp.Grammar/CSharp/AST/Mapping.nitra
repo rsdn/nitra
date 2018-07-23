@@ -711,4 +711,29 @@ namespace CSharp
       | _          => CustomAttributeTarget.AmbiguousOrMissing(this.Location.WithSpan(this.GlobalAttributeTarget))
     }
   }
+
+  map syntax Core.Argument -> DotNet.Expr
+  {
+    | Ref    ->
+      Argument
+      {
+        Expression -> Expr;
+        // ArgumentNameOpt -> Name;
+        // Modifier -> Modifier;
+      }
+    | Out    ->
+      Argument
+      {
+        Expression -> Expr;
+        // ArgumentNameOpt -> Name;
+        // Modifier -> Modifier;
+      }
+    | Simple ->
+      Argument
+      {
+        Expression -> Expr;
+        // ArgumentNameOpt -> Name;
+        // Modifier -> Modifier;
+      }
+  }
 }

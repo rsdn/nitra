@@ -8,7 +8,7 @@ using Nemerle.Collections;
 
 namespace CSharp
 {
-  map syntax Core.Expression -> DotNet.Expr;
+  //map syntax Core.Expression -> DotNet.Expr;
 
   map syntax Expressions.Expression.True -> DotNet.Expr
   {
@@ -408,7 +408,7 @@ namespace CSharp
     PostDecrement { Expression -> Expr1; }
   }
 
-  map syntax AnonymousFunction.Expression.Lambda_SingleParam1 -> DotNet.Expr
+  map syntax CSharp.AnonymousFunction.Expression.Lambda_SingleParam1 -> DotNet.Expr
   {
     Lambda_SingleParam1 { }
   }
@@ -521,30 +521,5 @@ namespace CSharp
   map syntax AnonymousType.Expression.NewAnonymous -> DotNet.Expr
   {
     AnonymousTypeInstantiation { }
-  }
-
-  map syntax Expressions.Argument -> DotNet.Expr
-  {
-    | Ref    ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
-    | Out    ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
-    | Simple ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
   }
 }
