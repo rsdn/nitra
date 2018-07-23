@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "DotNet.BackEnd.CCI", "DotNet.BackEnd.CCI\DotNet.BackEnd.CCI.nproj", "{9BC9B613-47F1-443C-8205-AC3CFABE7DB9}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp.VisualStudio.Plugin", "Ide\CSharp.VisualStudio.Plugin\CSharp.VisualStudio.Plugin.csproj", "{E83ABDE7-81E4-4127-AE94-B630B842B9A7}"
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Nitra.Runtime", "Nitra\Nitra.Runtime\Nitra.Runtime.nproj", "{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}"
+EndProject
+Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "CSharp.Grammar.Expressions", "Grammars\CSharp\CSharp.Grammar.Expressions\CSharp.Grammar.Expressions.nproj", "{B349EBD1-7E36-4B25-8FB6-D2DB6EF31D45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,8 +41,15 @@ Global
 		{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B349EBD1-7E36-4B25-8FB6-D2DB6EF31D45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B349EBD1-7E36-4B25-8FB6-D2DB6EF31D45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B349EBD1-7E36-4B25-8FB6-D2DB6EF31D45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B349EBD1-7E36-4B25-8FB6-D2DB6EF31D45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C93DF13E-8726-47B5-A68E-1DB0D6694A96}
 	EndGlobalSection
 EndGlobal

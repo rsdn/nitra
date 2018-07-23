@@ -4,8 +4,8 @@
   {
     using Nitra.Core;
 
-    using CSharp.Core;
-    using CSharp.TokenNames;
+    using Core;
+    using TokenNames;
     using Literals;
     using CSharp.CsIdentifiers;
     using Expressions;
@@ -15,24 +15,8 @@
 
     alias BooleanExpression   = Expression;
     alias ConstantExpression  = Expression;
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // Variables
-
-    syntax VariableDeclarator  = Name (sm "=" sm VariableInitializer)?;
-    alias  VariableDeclarators = (VariableDeclarator; ","sm)+;
-
-    //
-    ////////////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////////////
-    // Constants
-
-    syntax ConstantDeclarator  = Name sm "=" sm ConstantExpression;
-    alias  ConstantDeclarators = (ConstantDeclarator; ","sm)+;
-
-    //
-    ////////////////////////////////////////////////////////////////////////////////////
+    alias VariableDeclarators = (VariableDeclarator; ","sm)+;
+    alias ConstantDeclarators = (ConstantDeclarator; ","sm)+;
 
     syntax SwitchLabel
     {

@@ -12,14 +12,14 @@
   // require license acceptance;
 
   syntax module CSharp.Main start rule CompilationUnit;
-  syntax module CSharp.Linq;
+  //syntax module CSharp.Linq;
   syntax module CSharp.Extensible;
 }
 
-language NitraCSharpStatement
-{
-  syntax module CSharp.Core start rule Statement;
-  syntax module CSharp.Statements;
-  syntax module CSharp.Linq;
-  syntax module CSharp.Extensible;
-}
+//language NitraCSharpStatement
+//{
+//  syntax module CSharp.Core start rule Statement;
+//  syntax module CSharp.Statements;
+//  syntax module CSharp.Linq;
+//  syntax module CSharp.Extensible;
+//}

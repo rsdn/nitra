@@ -1,6 +1,6 @@
 ﻿namespace CSharp
 {
-  syntax module CS6
+  syntax module CS6Declarations
   {
     using CSharp.CS5;
     using CS6Expression;
@@ -20,7 +20,6 @@
 
     alias Attributes    = AttributeSection*;
     alias QualifiedName = QualifiedIdentifier;
-
     alias InterfaceType = QualifiedIdentifier;
 
     extend syntax TypeMemberDeclaration
@@ -33,16 +32,6 @@
     extend syntax NamespaceMemberDeclaration
     {
       | OpenStatic = "using"sm "static"sm QualifiedName ";" nl;
-    }
-
-    extend syntax CatchClause
-    {
-      | WithFilter = "catch" sm CatchSpecifier sm "when" sm "(" Candition=Expression ")" sm Block;
-    }
-
-    extend syntax MemberInitializer
-    {
-      | Index = "[" ArgumentList "]" sm "=" sm InitializerValue;
     }
   }
 }

@@ -1,0 +1,30 @@
+﻿namespace CSharp
+{
+  syntax module CS6
+  {
+    using CSharp.CS5;
+    using CS6Expression;
+    using CS6Literals;
+
+    using Nitra.Core;
+    using CSharp.Core;
+    using CSharp.CsIdentifiers;
+    using CSharp.Types;
+
+    using TopDeclarations;
+    using Expressions;
+    using Statements;
+    using Literals;
+    using ObjectAndCollectionInitializers;
+
+    extend syntax CatchClause
+    {
+      | WithFilter = "catch" sm CatchSpecifier sm "when" sm "(" Candition=Expression ")" sm Block;
+    }
+
+    extend syntax MemberInitializer
+    {
+      | Index = "[" ArgumentList "]" sm "=" sm InitializerValue;
+    }
+  }
+}

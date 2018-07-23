@@ -1,11 +1,14 @@
-namespace CSharp
+﻿namespace CSharp
 {
   syntax module Core
   {
     using Nitra.Core;
     using Nitra.CStyleComments;
+    using CsIdentifiers;
 
     keyword regex ['A'..'Z', 'a'..'z', '_'..'_']+ rule S;
+
+    alias ConstantExpression  = Expression;
 
     extend token IgnoreToken
     {
@@ -16,6 +19,45 @@ namespace CSharp
     syntax Expression
     {
     }
+
+    syntax VariableInitializer
+    {
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Variables
+
+    syntax VariableDeclarator  = Name (sm "=" sm VariableInitializer)?;
+    alias  VariableDeclarators = (VariableDeclarator; ","sm)+;
+
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Constants
+
+    syntax ConstantDeclarator  = Name sm "=" sm ConstantExpression;
+    alias  ConstantDeclarators = (ConstantDeclarator; ","sm)+;
+
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Arguments
+
+    regex ArgumentModfier = "ref" | "out";
+    syntax ArgumentName    = Reference !"::" ":" sm;
+    syntax Argument
+    {
+      | Ref    = ArgumentName? Modfier="ref" sm Expression;
+      | Out    = ArgumentName? Modfier="out" sm Expression;
+      | Simple = ArgumentName?                  Expression;
+    }
+
+    syntax ArgumentList    = (Argument; ","sm)*;
+
+    //
+    ////////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////////
     //  Statement internals

@@ -1,0 +1,34 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+using DotNet;
+
+using Nemerle.Collections;
+
+namespace CSharp
+{
+  map syntax Unsafe.Modifier.Unsafe -> Modifier
+  {
+    Unsafe    {}
+  }
+
+  map syntax Unsafe.TypeSpecifier.PointerSpecifier(qualifiedName : QualifiedReference) -> QualifiedReference
+  {
+    Generic
+    {
+      Simple { Name = Reference(this.Location, "#Pointer"); } -> QualifiedName;
+      [qualifiedName] -> Arguments;
+    }
+  }
+
+  map syntax Async.Modifier.Async -> Modifier
+  {
+    Async    {}
+  }
+
+  map syntax Statements.LocalVariableType -> QualifiedReference
+  {
+    | Var  -> CsVarReference { Name = Reference(Location(Location.Source, KwVar), "var"); }
+    | Type -> this.AnyType
+  }
+}

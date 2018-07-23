@@ -66,12 +66,12 @@ namespace Nitra
       ParsedValue(parseTree.Span, value)
     }
 
-    public StrToInt(parseTree : Nitra.ParseTree, span : NSpan, radix : int) : ulong
+    private StrToInt(parseTree : Nitra.ParseTree, span : NSpan, radix : int) : ulong
     {
       StrToInt(parseTree, span.StartPos, span.EndPos, radix)
     }
 
-    public StrToInt(parseTree : Nitra.ParseTree, startPos : int, endPos : int, radix : int) : ulong
+    private StrToInt(parseTree : Nitra.ParseTree, startPos : int, endPos : int, radix : int) : ulong
     {
       assert2(startPos < endPos);
 
@@ -99,7 +99,7 @@ namespace Nitra
       | _ => 0U
     }
 
-    public RemoveChar(this input : string, toRemove : char) : string
+    private RemoveChar(this input : string, toRemove : char) : string
     {
       if (input.IndexOf(toRemove) < 0)
         input

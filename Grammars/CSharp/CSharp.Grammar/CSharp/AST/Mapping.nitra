@@ -166,7 +166,7 @@ namespace CSharp
     AnyTypes.Item1
   }
 
-  map syntax CS6.TypeMemberDeclaration.PropertyWithInitializer -> TypeMember*
+  map syntax CS6Declarations.TypeMemberDeclaration.PropertyWithInitializer -> TypeMember*
   {
     [Member.Property
     {
@@ -179,7 +179,7 @@ namespace CSharp
     }]
   }
 
-  map syntax CS6.TypeMemberDeclaration.PropertyExpressionBodied -> TypeMember*
+  map syntax CS6Declarations.TypeMemberDeclaration.PropertyExpressionBodied -> TypeMember*
   {
     [Member.Property
     {
@@ -192,7 +192,7 @@ namespace CSharp
     }]
   }
 
-  map syntax CS6.TypeMemberDeclaration.MethodExpressionBodied -> TypeMember*
+  map syntax CS6Declarations.TypeMemberDeclaration.MethodExpressionBodied -> TypeMember*
   {
     [Member.Method
       {
@@ -312,13 +312,13 @@ namespace CSharp
       }]
   }
 
-  map syntax Statements.VariableDeclarator(header : FieldHeader) -> Member.Field
+  map syntax Core.VariableDeclarator(header : FieldHeader) -> Member.Field
   {
     Name   -> Name;
     header -> Header;
   }
 
-  map syntax Statements.VariableDeclarator(header : EventHeader) -> Member.Event
+  map syntax Core.VariableDeclarator(header : EventHeader) -> Member.Event
   {
     Name   -> Name;
     header -> Header;
@@ -400,7 +400,7 @@ namespace CSharp
   {
   }
 
-  map syntax CS6.NamespaceMemberDeclaration.OpenStatic -> NamespaceMember
+  map syntax CS6Declarations.NamespaceMemberDeclaration.OpenStatic -> NamespaceMember
   {
     UsingOpenDirective
     {
@@ -408,7 +408,7 @@ namespace CSharp
     }
   }
 
-  //map syntax CS6.NamespaceMemberDeclaration.UsingStaticDirective -> NamespaceMember
+  //map syntax CS6Declarations.NamespaceMemberDeclaration.UsingStaticDirective -> NamespaceMember
   //{
   //  UsingStaticDirective
   //  {
@@ -475,7 +475,7 @@ namespace CSharp
         ParsedValue(this.ParameterModifierOpt.Span, ParameterModifier.None);
   }
 
-  map syntax Statements.ConstantDeclarator(header : ConstantHeader) -> Member.Constant
+  map syntax Core.ConstantDeclarator(header : ConstantHeader) -> Member.Constant
   {
     Name -> Name;
     header -> Header;
@@ -546,16 +546,6 @@ namespace CSharp
     | Override  {}
     | Abstract  {}
     | Extern    {}
-  }
-
-  map syntax Unsafe.Modifier.Unsafe -> Modifier
-  {
-    Unsafe    {}
-  }
-
-  map syntax Async.Modifier.Async -> Modifier
-  {
-    Async    {}
   }
 
   map syntax CsIdentifiers.QualifiedIdentifier -> QualifiedReference
@@ -656,15 +646,6 @@ namespace CSharp
     }
   }
 
-  map syntax Unsafe.TypeSpecifier.PointerSpecifier(qualifiedName : QualifiedReference) -> QualifiedReference
-  {
-    Generic
-    {
-      Simple { Name = Reference(this.Location, "#Pointer"); } -> QualifiedName;
-      [qualifiedName] -> Arguments;
-    }
-  }
-
   map syntax Types.TypeSpecifier(qualifiedName : QualifiedReference) -> QualifiedReference
   {
     | RankSpecifier -> Generic
@@ -682,12 +663,6 @@ namespace CSharp
   map syntax Types.AnyTypeNullableHack -> QualifiedReference
   {
     fold (ts in TypeSpecifiers; acc = AnyNonArrayTypeNullableHack; acc = ts(acc))
-  }
-
-  map syntax Statements.LocalVariableType -> QualifiedReference
-  {
-    | Var  -> CsVarReference { Name = Reference(Location(Location.Source, KwVar), "var"); }
-    | Type -> this.AnyType
   }
 
   map syntax Attributes.Attribute(targetOpt : CustomAttributeTarget?) -> CustomAttributeReference

@@ -16,28 +16,11 @@
     alias QualifiedName       = QualifiedIdentifier;
 
     ////////////////////////////////////////////////////////////////////////////////////
-    // Arguments
-
-    regex ArgumentModfier = "ref" | "out";
-    syntax ArgumentName    = Reference !"::" ":" sm;
-    syntax Argument
-    {
-      | Ref    = ArgumentName? Modfier="ref" sm Expression;
-      | Out    = ArgumentName? Modfier="out" sm Expression;
-      | Simple = ArgumentName?                  Expression;
-    }
-
-    syntax ArgumentList    = (Argument; ","sm)*;
-
-    //
-    ////////////////////////////////////////////////////////////////////////////////////
-
-    ////////////////////////////////////////////////////////////////////////////////////
     //  Initializers: array-initializer, variable-initializer
 
     syntax ArrayInitializer = "{" sm (VariableInitializer; "," sm; ?)* sm "}";
 
-    syntax VariableInitializer
+    extend syntax VariableInitializer
     {
       | Expression
       | ArrayInitializer
