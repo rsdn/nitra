@@ -221,12 +221,22 @@ namespace Nitra.VisualStudio.QuickInfo
       if (hc.Hint != null)
       {
         _timer.Stop();
+        if (_container == null)
+          return;
         _subhintOpen++;
         Debug.WriteLine($"_subhintOpen = {_subhintOpen}  OnMouseHover");
-        _container.IsMouseOverAggregated = true;
-        var subHuntWindow = Hint.ShowSubHint(hc, hc.Hint, null);
-        subHuntWindow.Closed += SubHuntWindow_Closed;
-        _subHuntWindow = subHuntWindow;
+        
+        try
+        {
+          _container.IsMouseOverAggregated = true;
+          var subHuntWindow = Hint.ShowSubHint(hc, hc.Hint, null);
+          subHuntWindow.Closed += SubHuntWindow_Closed;
+          _subHuntWindow = subHuntWindow;
+        }
+        catch (Exception ex)
+        {
+          Debug.WriteLine(ex);
+        }
       }
     }
 
