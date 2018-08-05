@@ -1,0 +1,50 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using System;
+using System.Globalization;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using Nitra;
+using Nitra.Declarations;
+using DotNet;
+
+namespace DotNet
+{
+  ast EmptyStatement : Statement
+  {
+  }
+
+  ast LocalVarsStatement : Statement
+  {
+    LocalVars : LocalVar*;
+  }
+
+  abstract ast LocalVarHeader
+  {
+    | ExplicitType { Type : QualifiedReference; }
+    | Var  { }
+  }
+
+  declaration LocalVar
+  {
+    Type : LocalVarHeader;
+  }
+
+  ast TupleDeconstruction : Statement
+  {
+    // TODO: Implement...
+  }
+
+  ast BlockStatement : Statement
+  {
+    Statements : Statement*;
+  }
+
+  ast ExpressionStatement : Statement
+  {
+    Expr : Expr;
+  }
+}

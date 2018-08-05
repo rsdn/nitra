@@ -91,7 +91,7 @@
     ////////////////////////////////////////////////////////////
     // Tuple
 
-    extend syntax LocalVariableDeclaration
+    extend syntax TupleDeconstructionStatement = Statement
     {
       | TupleDeconstruction = "var" TupleDeconstruction sm "=" sm VariableInitializer
       | VarDeconstruction   = "(" ("var" sm TupleDeconstructionField; "," sm){2,} ")" sm "=" sm VariableInitializer

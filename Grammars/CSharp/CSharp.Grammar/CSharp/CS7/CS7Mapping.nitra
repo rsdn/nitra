@@ -79,6 +79,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
+        Body                          -> Statements;
       }]
   }
 
@@ -135,6 +136,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
+        [DotNet.ExpressionStatement { Expression -> Expr; }] -> Statements;
       }]
   }
 
@@ -209,5 +211,35 @@ namespace CSharp
   map syntax CS7.Expression.HexadecimalIntegerLiteralWithSeparator -> DotNet.Expr
   {
     IntegerLiteral { Value = ParseUtils.MakeIntegerLiteral(Lit, Lit.Digits, Lit.SuffixOpt, 16) ;}
+  }
+
+  map syntax CS7.Statement.LocalRefVariable -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax CS7.Statement.LocalFunction -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax CS7.Statement.LocalRefFunction -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax CS7.Statement.LocalFunctionExpressionBodied -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax CS7.Statement.LocalRefFunctionExpressionBodied -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax CS7.EmbeddedStatement.RefReturn -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
   }
 }

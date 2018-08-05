@@ -123,13 +123,19 @@ namespace WpfHint2
 
 		private void OnMouseHover(object sender, RoutedEventArgs e)
 		{
-			var hc = e.Source as HintControl;
-			if (hc == null)
-				return;
+      try
+      {
+        if (!(e.Source is HintControl hc))
+          return;
 
-			if (hc.Hint != null)
-				ShowSubHint(hc, hc.Hint);
-		}
+        if (hc.Hint != null)
+				  ShowSubHint(hc, hc.Hint);
+      }
+      catch (Exception ex)
+      {
+        Trace.WriteLine(ex);
+      }
+    }
 
     private void ShowSubHint(FrameworkElement el, string hintText)
     {

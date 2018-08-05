@@ -70,6 +70,7 @@ namespace DotNet
         IsPartial                : bool;
         Parameters               : FormalParameter*;
         ReturnType               : QualifiedReference;
+        Statements               : Statement*;
       }
     | Property : CustomAttributeHostDeclaration, ModifierHostAndAst
       {

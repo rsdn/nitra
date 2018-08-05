@@ -1,0 +1,187 @@
+﻿using DotNet;
+
+using Nitra;
+using Nitra.Declarations;
+
+using Nemerle.Collections;
+
+using System.Globalization;
+
+namespace CSharp
+{
+  map syntax Core.Statement -> DotNet.Statement
+  {
+    | EmbeddedStatement -> this
+  }
+
+  map syntax Core.EmbeddedStatement -> DotNet.Statement
+  {
+    | Empty -> EmptyStatement { }
+    | Block -> BlockStatement { Block.Statements -> Statements; }
+    | ExpressionStatement -> ExpressionStatement { Expression -> Expr; }
+  }
+
+  map syntax TopDeclarations.Body -> DotNet.Statement*
+  {
+    | Empty -> [DotNet.EmptyStatement {}]
+    | Block -> Statements
+  }
+
+  map syntax Goto.Statement.Labeled -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Goto.EmbeddedStatement.GotoCase -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Goto.EmbeddedStatement.GotoDefault -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Goto.EmbeddedStatement.GotoId -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.Statement.LocalVariable -> DotNet.Statement
+  {
+    DotNet.LocalVarsStatement {  LocalVariableDeclaration -> LocalVars; } // TODO: Implement...
+  }
+
+  map syntax Statements.LocalVariableDeclaration -> LocalVar*;
+
+  map syntax Statements.LocalVariableDeclaration.Multi -> LocalVar*
+  {
+    VariableDeclarators.Item1(LocalVariableType)
+  }
+
+  map syntax Statements.VariableDeclarator(header : LocalVarHeader) -> LocalVar
+  {
+    Name   -> Name;
+    header -> Type;
+  }
+
+  map syntax CS7.TupleDeconstructionStatement.TupleDeconstruction -> Statement
+  {
+    TupleDeconstruction {  }
+  }
+
+  map syntax CS7.TupleDeconstructionStatement.VarDeconstruction -> Statement
+  {
+    TupleDeconstruction {  }
+  }
+
+  map syntax Statements.LocalVariableType -> LocalVarHeader
+  {
+    | Var  -> Var { }
+    | Type -> ExplicitType { this.AnyType -> Type; }
+  }
+
+
+  map syntax Statements.Statement.LocalConstant -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.If -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.Switch -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.While -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.Do -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.For -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.Foreach -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.Checked -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+  map syntax Statements.EmbeddedStatement.Unchecked -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Lock -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Using -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.YieldReturn -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.YieldBreak -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.TryCatch -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.TryFinally -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Break -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Continue -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Return -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.ReturnVoid -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Statements.EmbeddedStatement.Throw -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Unsafe.EmbeddedStatement.Unsafe -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+
+  map syntax Unsafe.EmbeddedStatement.Fixed -> DotNet.Statement
+  {
+    DotNet.EmptyStatement { } // TODO: Implement...
+  }
+}

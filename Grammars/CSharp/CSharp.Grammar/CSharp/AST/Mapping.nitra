@@ -205,6 +205,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
+        [DotNet.ExpressionStatement { Expression -> Expr; }] -> Statements;
       }]
   }
 
@@ -228,15 +229,16 @@ namespace CSharp
       }]
     | Method          -> [Member.Method
       {
-        MethodHeader.Name             -> Name;
-        MethodHeader.InterfaceTypeOpt -> InterfaceType;
         match(MethodHeader.TypeParametersOpt) { Some(value) -> value | None() -> [] } -> TypeParameterAliases;
-        MethodHeader.TypeParameterConstraintsClauses -> TypeParameterConstraints;
-        IsPartial = ParsedValue(PartialOpt.Span, PartialOpt.HasValue);
-        MethodHeader.AnyType          -> ReturnType;
-        MethodHeader.FormalParameters.Item1 -> Parameters;
-        Attributes                    -> Attributes;
-        Modifiers                     -> Modifiers;
+        MethodHeader.Name                             -> Name;
+        MethodHeader.InterfaceTypeOpt                 -> InterfaceType;
+        MethodHeader.TypeParameterConstraintsClauses  -> TypeParameterConstraints;
+        MethodHeader.AnyType                          -> ReturnType;
+        MethodHeader.FormalParameters.Item1           -> Parameters;
+        Attributes                                    -> Attributes;
+        Modifiers                                     -> Modifiers;
+        Body                                          -> Statements;
+        IsPartial                                     = ParsedValue(PartialOpt.Span, PartialOpt.HasValue);
       }]
     | Property        -> [Member.Property
       {

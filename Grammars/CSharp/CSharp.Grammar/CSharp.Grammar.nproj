@@ -250,6 +250,12 @@
     <Compile Include="CSharp\CS6\CS6Expression.nitra">
       <SubType>Content</SubType>
     </Compile>
+    <Compile Include="CSharp\AST\Statements.nitra">
+      <SubType>Content</SubType>
+    </Compile>
+    <Compile Include="CSharp\AST\MappingStatement.nitra">
+      <SubType>Content</SubType>
+    </Compile>
     <Content Include="packages.config">
       <SubType>Content</SubType>
     </Content>

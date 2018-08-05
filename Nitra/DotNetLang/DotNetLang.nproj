@@ -123,6 +123,9 @@
     <Compile Include="Expr\ExprExtensions.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Expr\Statement.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Namespace\Namespace.n">
       <SubType>Code</SubType>
     </Compile>
