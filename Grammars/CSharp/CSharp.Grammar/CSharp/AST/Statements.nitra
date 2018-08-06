@@ -30,7 +30,7 @@ namespace DotNet
 
   declaration LocalVar
   {
-    Type : LocalVarHeader;
+    Type : QualifiedReference;
   }
 
   ast TupleDeconstruction : Statement

@@ -59,7 +59,7 @@ namespace CSharp
     VariableDeclarators.Item1(LocalVariableType)
   }
 
-  map syntax Statements.VariableDeclarator(header : LocalVarHeader) -> LocalVar
+  map syntax Statements.VariableDeclarator(header : QualifiedReference) -> LocalVar
   {
     Name   -> Name;
     header -> Type;
@@ -75,11 +75,11 @@ namespace CSharp
     TupleDeconstruction {  }
   }
 
-  map syntax Statements.LocalVariableType -> LocalVarHeader
-  {
-    | Var  -> Var { }
-    | Type -> ExplicitType { this.AnyType -> Type; }
-  }
+  //map syntax Statements.LocalVariableType -> LocalVarHeader
+  //{
+  //  | Var  -> Var { }
+  //  | Type -> ExplicitType { this.AnyType -> Type; }
+  //}
 
 
   map syntax Statements.Statement.LocalConstant -> DotNet.Statement
