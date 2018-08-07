@@ -21,10 +21,10 @@ namespace CSharp
     | ExpressionStatement -> ExpressionStatement { Expression -> Expr; }
   }
 
-  map syntax TopDeclarations.Body -> DotNet.Statement*
+  map syntax TopDeclarations.Body -> DotNet.Statement
   {
-    | Empty -> [DotNet.EmptyStatement {}]
-    | Block -> Statements
+    | Empty -> DotNet.EmptyStatement {}
+    | Block -> DotNet.BlockStatement { Statements -> Statements; }
   }
 
   map syntax Goto.Statement.Labeled -> DotNet.Statement

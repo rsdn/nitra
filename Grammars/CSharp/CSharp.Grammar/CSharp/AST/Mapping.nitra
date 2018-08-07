@@ -205,7 +205,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
-        [DotNet.ExpressionStatement { Expression -> Expr; }] -> Statements;
+        DotNet.ExpressionStatement { Expression -> Expr; } -> Body;
       }]
   }
 
@@ -237,7 +237,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1           -> Parameters;
         Attributes                                    -> Attributes;
         Modifiers                                     -> Modifiers;
-        Body                                          -> Statements;
+        Body                                          -> Body;
         IsPartial                                     = ParsedValue(PartialOpt.Span, PartialOpt.HasValue);
       }]
     | Property        -> [Member.Property

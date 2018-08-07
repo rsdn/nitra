@@ -65,12 +65,14 @@ namespace DotNet
         Parameters.Scope           = TypeParameterConstraints.Scope;
         Parameters.IndexIn         = 0u;
         Symbol.ReturnType          = ReturnTypeRef.Symbol;
+        Body.ParameterScope        = Symbol.ParameterScope;
+        Body.ScopeIn               = Scope.HideWith(Symbol.ParameterScope);
 
         InterfaceType            : QualifiedReference?;
         IsPartial                : bool;
         Parameters               : FormalParameter*;
         ReturnType               : QualifiedReference;
-        Statements               : Statement*;
+        Body                     : Statement;
       }
     | Property : CustomAttributeHostDeclaration, ModifierHostAndAst
       {

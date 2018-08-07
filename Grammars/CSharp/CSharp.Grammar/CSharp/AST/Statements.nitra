@@ -17,8 +17,17 @@ namespace DotNet
   {
   }
 
+  ast BlockStatement : Statement
+  {
+    LocalVarsScopeIn = TableScope("LocalVarsScope");
+
+    Statements : Statement*;
+  }
+
   ast LocalVarsStatement : Statement
   {
+    LocalVars.ContainingTable = LocalVarsScopeIn;
+
     LocalVars : LocalVar*;
   }
 
@@ -36,11 +45,6 @@ namespace DotNet
   ast TupleDeconstruction : Statement
   {
     // TODO: Implement...
-  }
-
-  ast BlockStatement : Statement
-  {
-    Statements : Statement*;
   }
 
   ast ExpressionStatement : Statement

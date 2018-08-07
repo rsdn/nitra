@@ -15,5 +15,11 @@ namespace DotNet
 {
   abstract ast Statement
   {
+    inout LocalVarsScope : TableScope;
+    inout Scope : Scope;
+
+    LocalVarsScopeOut = LocalVarsScopeIn;
+
+    in ParameterScope : TableScope = TableScope(null, "parameters");
   }
 }

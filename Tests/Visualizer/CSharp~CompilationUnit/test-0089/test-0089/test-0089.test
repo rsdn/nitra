@@ -1,7 +1,7 @@
-﻿class Program
+class Program
 {
   static void Main(string[] args)
   {
-    int i;
+    int i, ss = 33;
   }
 }

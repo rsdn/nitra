@@ -79,7 +79,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
-        Body                          -> Statements;
+        Body                          -> Body;
       }]
   }
 
@@ -136,7 +136,7 @@ namespace CSharp
         MethodHeader.FormalParameters.Item1 -> Parameters;
         Attributes                    -> Attributes;
         Modifiers                     -> Modifiers;
-        [DotNet.ExpressionStatement { Expression -> Expr; }] -> Statements;
+        DotNet.ExpressionStatement { Expression -> Expr; } -> Body;
       }]
   }
 
