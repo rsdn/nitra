@@ -9,10 +9,7 @@ using System.Globalization;
 
 namespace CSharp
 {
-  map syntax Core.Statement -> DotNet.Statement
-  {
-    | EmbeddedStatement -> this
-  }
+  map syntax Core.Statement -> DotNet.Statement;
 
   map syntax Core.EmbeddedStatement -> DotNet.Statement
   {

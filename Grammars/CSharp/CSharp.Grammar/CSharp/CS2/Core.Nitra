@@ -1,4 +1,4 @@
-namespace CSharp
+﻿namespace CSharp
 {
   syntax module Core
   {
@@ -30,7 +30,6 @@ namespace CSharp
 
     syntax Statement
     {
-      | EmbeddedStatement;
     }
 
     syntax EmbeddedStatement
