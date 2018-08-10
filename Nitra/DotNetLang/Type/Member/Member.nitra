@@ -65,8 +65,9 @@ namespace DotNet
         Parameters.Scope           = TypeParameterConstraints.Scope;
         Parameters.IndexIn         = 0u;
         Symbol.ReturnType          = ReturnTypeRef.Symbol;
+        Body.LocalVarsScopeIn      = TableScope(null, "LocalVars");
         Body.ParameterScope        = Symbol.ParameterScope;
-        Body.ScopeIn               = Scope.HideWith(Symbol.ParameterScope);
+        Body.ScopeIn               = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
 
         InterfaceType            : QualifiedReference?;
         IsPartial                : bool;

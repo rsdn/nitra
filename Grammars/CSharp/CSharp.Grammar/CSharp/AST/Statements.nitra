@@ -21,24 +21,29 @@ namespace DotNet
   {
     LocalVarsScopeIn = TableScope("LocalVarsScope");
 
+    Statements.LocalVarsScopeIn = LocalVarsScopeIn;
+    Statements.ParameterScope   = ParameterScope;
+    Statements.ScopeIn          = ScopeIn;
+
     Statements : Statement*;
   }
 
   ast LocalVarsStatement : Statement
   {
     LocalVars.ContainingTable = LocalVarsScopeIn;
+    LocalVars.Scope           = ScopeIn;
+    LocalVarsScopeOut         = TableScope("LocalVarsScope");
+    ScopeOut                  = ScopeIn.HideWith(LocalVarsScopeOut);
 
     LocalVars : LocalVar*;
   }
 
-  abstract ast LocalVarHeader
-  {
-    | ExplicitType { Type : QualifiedReference; }
-    | Var  { }
-  }
-
   declaration LocalVar
   {
+    in Scope : Scope;
+
+    Type.Scope = Scope;
+
     Type : QualifiedReference;
   }
 

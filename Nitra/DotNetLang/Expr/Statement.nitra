@@ -20,6 +20,6 @@ namespace DotNet
 
     LocalVarsScopeOut = LocalVarsScopeIn;
 
-    in ParameterScope : TableScope = TableScope(null, "parameters");
+    in ParameterScope : TableScope;
   }
 }
