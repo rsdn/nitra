@@ -24,6 +24,35 @@ namespace CSharp
     | Block -> DotNet.BlockStatement { Statements -> Statements; }
   }
 
+  map syntax Statements.Statement.LocalVariable -> DotNet.Statement
+  {
+    DotNet.LocalVarsStatement { LocalVariableDeclaration -> LocalVars; }
+  }
+  
+  map syntax Statements.LocalVariableDeclaration -> LocalVar*;
+
+  map syntax Statements.LocalVariableDeclaration.Multi -> LocalVar*
+  {
+    VariableDeclarators.Item1(LocalVariableType)
+  }
+
+  map syntax Statements.VariableDeclarator(header : QualifiedReference) -> LocalVar
+  {
+    Name   -> Name;
+    header -> Type;
+    match (VariableInitializerOpt)
+    {
+      | Some((_, expr)) -> expr
+      | None -> Expr.Default { }
+    } -> Expression;
+  }
+
+  map syntax Expressions.VariableInitializer -> DotNet.Expr
+  {
+      | Expression -> Expression
+      | ArrayInitializer -> Expr.NewArray { }
+  }
+
   map syntax Goto.Statement.Labeled -> DotNet.Statement
   {
     DotNet.EmptyStatement { } // TODO: Implement...
@@ -43,25 +72,7 @@ namespace CSharp
   {
     DotNet.EmptyStatement { } // TODO: Implement...
   }
-
-  map syntax Statements.Statement.LocalVariable -> DotNet.Statement
-  {
-    DotNet.LocalVarsStatement {  LocalVariableDeclaration -> LocalVars; } // TODO: Implement...
-  }
-
-  map syntax Statements.LocalVariableDeclaration -> LocalVar*;
-
-  map syntax Statements.LocalVariableDeclaration.Multi -> LocalVar*
-  {
-    VariableDeclarators.Item1(LocalVariableType)
-  }
-
-  map syntax Statements.VariableDeclarator(header : QualifiedReference) -> LocalVar
-  {
-    Name   -> Name;
-    header -> Type;
-  }
-
+  
   map syntax CS7.TupleDeconstructionStatement.TupleDeconstruction -> Statement
   {
     TupleDeconstruction {  }
@@ -71,13 +82,6 @@ namespace CSharp
   {
     TupleDeconstruction {  }
   }
-
-  //map syntax Statements.LocalVariableType -> LocalVarHeader
-  //{
-  //  | Var  -> Var { }
-  //  | Type -> ExplicitType { this.AnyType -> Type; }
-  //}
-
 
   map syntax Statements.Statement.LocalConstant -> DotNet.Statement
   {

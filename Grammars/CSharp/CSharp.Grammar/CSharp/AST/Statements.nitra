@@ -19,7 +19,7 @@ namespace DotNet
 
   ast BlockStatement : Statement
   {
-    LocalVarsScopeIn = TableScope("LocalVarsScope");
+    LocalVarsScopeIn = null;
 
     Statements.LocalVarsScopeIn = LocalVarsScopeIn;
     Statements.ParameterScope   = ParameterScope;
@@ -30,7 +30,7 @@ namespace DotNet
 
   ast LocalVarsStatement : Statement
   {
-    LocalVars.ContainingTable = LocalVarsScopeIn;
+    LocalVars.ContainingTable = LocalVarsScopeOut;
     LocalVars.Scope           = ScopeIn;
     LocalVarsScopeOut         = TableScope("LocalVarsScope");
     ScopeOut                  = ScopeIn.HideWith(LocalVarsScopeOut);
@@ -40,11 +40,22 @@ namespace DotNet
 
   declaration LocalVar
   {
+    symbol
+    {
+      Kind  = "variable";
+      in TypeRef : Ref[TypeSymbol];
+      // протащить в скоп скоп от типа!
+    }
     in Scope : Scope;
 
     Type.Scope = Scope;
+    Expression.ScopeIn = Scope;
+    // The type of a local variable can be shared between two declarations.
+    // Use ResolveOrCopy() method to avoid multiple type resolutions.
+    Symbol.TypeRef = Type.Ref.ResolveOrCopy();
 
     Type : QualifiedReference;
+    Expression : Expr;
   }
 
   ast TupleDeconstruction : Statement

@@ -19,7 +19,7 @@
     ////////////////////////////////////////////////////////////////////////////////////
     // Variables
 
-    syntax VariableDeclarator  = Name (sm "=" sm VariableInitializer)?;
+    syntax VariableDeclarator  = Name VariableInitializerOpt=(sm "=" sm VariableInitializer)?;
     alias  VariableDeclarators = (VariableDeclarator; ","sm)+;
 
     //

@@ -105,6 +105,11 @@ namespace Nitra.BackEnd.Cci
 
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
+            def name = typeSymbol.Name;
+            when (name == "Int32")
+            {
+              assert(true);
+            }
             cciInternedKeyToSymbolMap[type.InternedKey] = typeSymbol;
 
             when (typeSymbol is GenericTypeSymbol as genericSymbol)
@@ -137,6 +142,13 @@ namespace Nitra.BackEnd.Cci
             when ((typeSymbol : DeclarationSymbol)  is CustomAttributeHostDeclarationSymbol as attrHost)
               attrHost.CustomAttributes = LazyAttributeList(type, this);
 
+            when ((typeSymbol : DeclarationSymbol) is Nitra.Declarations.ContainerSymbol as cont)
+            {
+              def memberTable = TypeMemberScope(cont, "MemberTable", this);
+              cont.MemberTable = memberTable;
+              typeSymbol.Scope = memberTable;
+            }
+              
             typeSymbol.EvalProperties(context);
 
             when (typeSymbol is GenericContainerTypeSymbol as genericContainerTypeSymbol)
@@ -181,12 +193,7 @@ namespace Nitra.BackEnd.Cci
                 def symbol : TopTypeSymbol =
                          if (type.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
-                    else if (type.IsEnum)
-                    {
-                      def en = ExternalTopTypeDeclaration.[TopEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable);
-                      en.UnderlyingType = CciTypeToTypeSymbol(type.UnderlyingType, context);
-                      en
-                    }
+                    else if (type.IsEnum)      ExternalTopTypeDeclaration.[TopEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable);
                     else if (type.IsValueType) ExternalTopTypeDeclaration.[TopStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
                     else                       ExternalTopTypeDeclaration.[TopClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
 
@@ -368,6 +375,7 @@ namespace Nitra.BackEnd.Cci
             unless (prop.IsDeclaredInEvaluated)
               prop.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
             prop.Type = CciTypeToTypeSymbol(m.Type, context);
+            assert2(prop.Type != null);
             prop
 
           | m is IMethodDefinition when m.IsConstructor =>
@@ -441,71 +449,75 @@ namespace Nitra.BackEnd.Cci
 
     CciTypeToTypeSymbol(cciTypeReference : ITypeReference, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      match (cciTypeReference)
-      {
-        | t is IGenericTypeParameter =>
-          def typeInfo = CciTypeToTypeSymbol(t.DefiningType, context) :> GenericTypeSymbol;
-          def tp = typeInfo.TypeParameters[t.Index];
-          tp
+      def result : TypeSymbol =
+        match (cciTypeReference)
+        {
+          | t is IGenericTypeParameter =>
+            def typeInfo = CciTypeToTypeSymbol(t.DefiningType, context) :> GenericTypeSymbol;
+            def tp = typeInfo.TypeParameters[t.Index];
+            tp
 
-        | t is IArrayTypeReference =>
-          def args = ImmutableArray.Create(CciTypeToTypeSymbol(t.ElementType, context));
-          def typeInfo = if (t.IsVector) _singleDimensionArray : ArraySymbol
-                          else
-                          {
-                            def a = MultiDimensionArraySymbol();
-                            a.TypeParametersCount = 0;
-                            a.Rank        = t.Rank;
-                            //a.LowerBounds = t.LowerBounds.ToArray();
-                            //a.Sizes       = t.Sizes.ToArray();
-                            a.EvalProperties(context);
-                            a
-                          };
-          def constructedType = TopConstructedTypeSymbol();
-          constructedType.TypeInfo = typeInfo;
-          constructedType.Args = args;
-          constructedType.EvalProperties(context);
-          //constructedType.Scope = typeInfo.Scope;
-          constructedType
-
-        | t is ITypeDefinition =>
-          mutable typeSymbol;
-          if (_cciInternedKeyToSymbolMap.TryGetValue(t.InternedKey, out typeSymbol))
-          {
-            typeSymbol
-          }
-          else
-          {
-            // the type definition not found
-            _objectSymbol
-          }
-
-        | t is IGenericTypeInstanceReference =>
-          _cciInternedKeyToGenericSymbolMap.GetOrAdd(cciTypeReference.InternedKey, _key => {
-            def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
-            def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
-            def name = Name(NoLocation, t.GenericType.Name.Value);
-            def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, t.ResolvedType).DefineSymbol(null);
-
+          | t is IArrayTypeReference =>
+            def args = ImmutableArray.Create(CciTypeToTypeSymbol(t.ElementType, context));
+            def typeInfo = if (t.IsVector) _singleDimensionArray : ArraySymbol
+                            else
+                            {
+                              def a = MultiDimensionArraySymbol();
+                              a.TypeParametersCount = 0;
+                              a.Rank        = t.Rank;
+                              //a.LowerBounds = t.LowerBounds.ToArray();
+                              //a.Sizes       = t.Sizes.ToArray();
+                              a.EvalProperties(context);
+                              a
+                            };
+            def constructedType = TopConstructedTypeSymbol();
             constructedType.TypeInfo = typeInfo;
             constructedType.Args = args;
             constructedType.EvalProperties(context);
+            //constructedType.Scope = typeInfo.Scope;
             constructedType
-          });
-        | _ =>
-          //resolvs++;
-          mutable typeSymbol;
 
-          if (_cciInternedKeyToSymbolMap.TryGetValue(cciTypeReference.InternedKey, out typeSymbol))
-          {
-            //resolvedByKey++;
-            typeSymbol
-          }
-          else
-          {
-            _objectSymbol
-          }
-      }
+          | t is ITypeDefinition =>
+            mutable typeSymbol;
+            if (_cciInternedKeyToSymbolMap.TryGetValue(t.InternedKey, out typeSymbol))
+            {
+              typeSymbol
+            }
+            else
+            {
+              // the type definition not found
+              _objectSymbol
+            }
+
+          | t is IGenericTypeInstanceReference =>
+            _cciInternedKeyToGenericSymbolMap.GetOrAdd(cciTypeReference.InternedKey, _key => {
+              def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
+              def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
+              def name = Name(NoLocation, t.GenericType.Name.Value);
+              def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, t.ResolvedType).DefineSymbol(null);
+
+              constructedType.TypeInfo = typeInfo;
+              constructedType.Args = args;
+              constructedType.EvalProperties(context);
+              constructedType
+            });
+          | _ =>
+            //resolvs++;
+            mutable typeSymbol;
+
+            if (_cciInternedKeyToSymbolMap.TryGetValue(cciTypeReference.InternedKey, out typeSymbol))
+            {
+              //resolvedByKey++;
+              typeSymbol
+            }
+            else
+            {
+              _objectSymbol
+            }
+        };
+
+        assert2(result != null);
+        result
     }
 
     CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeParameterSymbol]
@@ -568,20 +580,28 @@ namespace Nitra.BackEnd.Cci
       foreach (x in _cciInternedKeyToSymbolMap.Values)
       {
         def cciType = (x.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
-        when (x is SupportsInheritanceTypeSymbol as type)
+        match (x)
         {
-          def baseTypeSet = BaseTypeReferenceSet(context);
-          type.BaseTypeSet = baseTypeSet;
-          foreach (cciBaseClasse in cciType.BaseClasses)
-          {
-            def typeSymbol = CciTypeToTypeSymbol(cciBaseClasse, context);
-            baseTypeSet.AddParent(typeSymbol);
-          }
-          foreach (cciInterface in cciType.Interfaces)
-          {
-            def typeSymbol = CciTypeToTypeSymbol(cciInterface, context);
-            baseTypeSet.AddParent(typeSymbol);
-          }
+          | EnumSymbol as en =>
+            def ext = en.GetDeclarationsUntyped().OfType.[IExternalTypeDeclaration]().FirstOrDefault();
+            assert2(ext != null);
+            def type = ext.Type;
+            en.UnderlyingType = CciTypeToTypeSymbol(type.UnderlyingType, context);
+
+          | SupportsInheritanceTypeSymbol as type => 
+            def baseTypeSet = BaseTypeReferenceSet(context);
+            type.BaseTypeSet = baseTypeSet;
+            foreach (cciBaseClasse in cciType.BaseClasses)
+            {
+              def typeSymbol = CciTypeToTypeSymbol(cciBaseClasse, context);
+              baseTypeSet.AddParent(typeSymbol);
+            }
+            foreach (cciInterface in cciType.Interfaces)
+            {
+              def typeSymbol = CciTypeToTypeSymbol(cciInterface, context);
+              baseTypeSet.AddParent(typeSymbol);
+            }
+          | _ => ()
         }
       }
 

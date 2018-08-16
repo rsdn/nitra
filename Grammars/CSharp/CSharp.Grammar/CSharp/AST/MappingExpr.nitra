@@ -58,11 +58,7 @@ namespace CSharp
   // ??
   map syntax Expressions.Expression.QualifiedName -> DotNet.Expr
   {
-    QualifiedName  {
-        // QualifiedAliasOpt -> QualifiedAlias
-        // QualifiedIdentifierPart -> QualifiedIdentifierPart;
-        Key = null;
-    }
+    QualifiedName  { QualifiedName -> Key; }
   }
 
   map syntax Expressions.Expression.Parenthesized -> DotNet.Expr
@@ -367,7 +363,7 @@ namespace CSharp
     MemberAccess1
     {
       Expr1 -> Expr1;
-      // QualifiedName -> QualifiedName;
+      // \ -> QualifiedName;
     }
   }
 

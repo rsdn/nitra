@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Microsoft.Cci;
 
@@ -37,8 +37,10 @@ namespace Nitra.BackEnd.Cci
       def props = List();
       def methods = Dictionary();
 
-      def getTypeScope(type : TypeSymbol) {
+      def getTypeScope(type : TypeSymbol)
+      {
         | x is TopConstructedTypeSymbol => x.TypeInfo.Scope
+        | null => assert2(false); assert(false)
         | _ => type.Scope
       }
 
@@ -78,7 +80,8 @@ namespace Nitra.BackEnd.Cci
     {
       get
       {
-        unless (_isLoaded) Load();
+        unless (_isLoaded)
+          Load();
         base.AllSymbols
       }
     }
@@ -87,32 +90,35 @@ namespace Nitra.BackEnd.Cci
     {
       get
       {
-        unless (_isLoaded) Load();
+        unless (_isLoaded)
+          Load();
         base.Symbols
       }
     }
 
     public override Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext, name : Name = null) : TSymbol
     {
-      unless (_isLoaded) Load();
       base.Define(declaration, context, name)
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
-      unless (_isLoaded) Load();
+      unless (_isLoaded)
+        Load();
       base.Bind(isMatch)
     }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
-      unless (_isLoaded) Load();
+      unless (_isLoaded)
+        Load();
       base.Bind(reference)
     }
 
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
     {
-      unless (_isLoaded) Load();
+      unless (_isLoaded)
+        Load();
       base.ToDot(nodeToIdMap, nodes, _edges)
     }
 

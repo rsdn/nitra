@@ -148,6 +148,17 @@ namespace Nitra.Declarations
       CreateRevole(bindResult)
     }
 
+    public ResolveOrCopy[TConcreteSymbol]() : Ref[TConcreteSymbol]
+      where TConcreteSymbol : DeclarationSymbol
+      //where TConcreteSymbol : TSymbol
+    {
+      def bindResult = _result.Filter.[TConcreteSymbol](null);
+      if (IsResolvedToEvaluated)
+        Resolved(bindResult, this)
+      else
+        CreateRevole(bindResult)
+    }
+
     public Resolve[TConcreteSymbol]() : Ref[TConcreteSymbol]
       where TConcreteSymbol : DeclarationSymbol
       //where TConcreteSymbol : TSymbol

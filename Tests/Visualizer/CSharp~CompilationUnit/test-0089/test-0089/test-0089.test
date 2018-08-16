@@ -1,8 +1,8 @@
-class Program
+﻿class Program
 {
   static void Main(string[] args)
   {
     int i, ss = 33;
-    string ss;
+    string ss = i.ToString();
   }
 }
