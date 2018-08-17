@@ -42,7 +42,7 @@
 
     extend syntax MemberInitializer
     {
-      | Index = "[" ArgumentList "]" sm "=" sm InitializerValue;
+      | Index = "[" (Argument; ","sm)* "]" sm "=" sm InitializerValue;
     }
   }
 }

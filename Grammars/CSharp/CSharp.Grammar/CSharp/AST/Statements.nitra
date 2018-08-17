@@ -43,8 +43,10 @@ namespace DotNet
     symbol
     {
       Kind  = "variable";
+
+      Scope = TypeRef.Scope;
+
       in TypeRef : Ref[TypeSymbol];
-      // протащить в скоп скоп от типа!
     }
     in Scope : Scope;
 

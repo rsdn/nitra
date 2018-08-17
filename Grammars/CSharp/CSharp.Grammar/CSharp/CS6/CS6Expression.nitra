@@ -22,7 +22,7 @@
       | InterpolatedVerbatimStringLiteral
     precedence Primary:
       | NullConditional1 = Expression ^ Primary "?" "." QualifiedName=QualifiedReferenceParts;
-      | NullConditional2 = Expression ^ Primary "?" "[" ArgumentList "]";
+      | NullConditional2 = Expression ^ Primary "?" "[" (Argument; ","sm)* "]";
     }
   }
 }

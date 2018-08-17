@@ -55,7 +55,6 @@ namespace CSharp
     NullLiteral    { }
   }
 
-  // ??
   map syntax Expressions.Expression.QualifiedName -> DotNet.Expr
   {
     QualifiedName  { QualifiedName -> Key; }
@@ -106,7 +105,7 @@ namespace CSharp
     NewObject_1
     {
       AnyNonArrayType -> ConstructorType;
-      // ArgumentList.Arguments.Item1 -> Arguments;
+      //Arguments.Item1 -> Arguments;
     }
   }
 
@@ -380,9 +379,17 @@ namespace CSharp
   {
     Invocation
     {
-      Expression -> Expr1;
-      // ArgumentList.Arguments.Item1 -> Arguments;
+      LeftExpression -> Left;
+      Arguments.Item1 -> Arguments;
     }
+  }
+
+  map syntax Expressions.Argument -> Expr.Argument
+  {
+    // TODO: Доделать поддержку именованных аргументов и out/ref-аргументов.
+    | Ref    -> Expr.Argument { Expression -> Expr; } //= ArgumentName? Modfier="ref" sm Expression;
+    | Out    -> Expr.Argument { Expression -> Expr; } //= ArgumentName? Modfier="out" sm Expression;
+    | Simple -> Expr.Argument { Expression -> Expr; } //= ArgumentName?                  Expression;
   }
 
   map syntax Expressions.Expression.IndexerAccess -> DotNet.Expr
@@ -390,7 +397,7 @@ namespace CSharp
     IndexerAccess
     {
       Expression -> Expr1;
-      // ArgumentList.Arguments.Item1 -> Arguments;
+      // Arguments.Item1 -> Arguments;
     }
   }
 
@@ -519,28 +526,28 @@ namespace CSharp
     AnonymousTypeInstantiation { }
   }
 
-  map syntax Expressions.Argument -> DotNet.Expr
-  {
-    | Ref    ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
-    | Out    ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
-    | Simple ->
-      Argument
-      {
-        Expression -> Expr;
-        // ArgumentNameOpt -> Name;
-        // Modifier -> Modifier;
-      }
-  }
+  //map syntax Expressions.Argument -> DotNet.Expr
+  //{
+  //  | Ref    ->
+  //    Argument
+  //    {
+  //      Expression -> Expr;
+  //      // ArgumentNameOpt -> Name;
+  //      // Modifier -> Modifier;
+  //    }
+  //  | Out    ->
+  //    Argument
+  //    {
+  //      Expression -> Expr;
+  //      // ArgumentNameOpt -> Name;
+  //      // Modifier -> Modifier;
+  //    }
+  //  | Simple ->
+  //    Argument
+  //    {
+  //      Expression -> Expr;
+  //      // ArgumentNameOpt -> Name;
+  //      // Modifier -> Modifier;
+  //    }
+  //}
 }

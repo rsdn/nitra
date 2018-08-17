@@ -13,7 +13,7 @@
 
     alias QualifiedName       = QualifiedIdentifier;
 
-    syntax AttributeArguments = "(" ArgumentList ")";
+    syntax AttributeArguments = "(" (Argument; ","sm)* ")";
     syntax Attribute          = QualifiedName AttributeArguments?;
     syntax AttributeList      = (Attribute; ","sm; ?)*;
 

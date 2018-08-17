@@ -1,4 +1,4 @@
-namespace CSharp
+﻿namespace CSharp
 {
   syntax module TopDeclarations
   {
@@ -107,8 +107,8 @@ namespace CSharp
 
     syntax ConstructorInitializer
     {
-      | This = sm ":" sm "this" "(" ArgumentList ")";
-      | Base = sm ":" sm "base" "(" ArgumentList ")";
+      | This = sm ":" sm "this" "(" (Argument; ","sm)* ")";
+      | Base = sm ":" sm "base" "(" (Argument; ","sm)* ")";
     }
 
     syntax EnumBase               = sm ":" sm AnyType;

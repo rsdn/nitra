@@ -39,7 +39,7 @@
 
     extend syntax Expression
     {
-      | NewObject_2            = "new" sm AnyNonArrayType "(" ArgumentList ")" sm ObjectOrCollectionInitializer;
+      | NewObject_2            = "new" sm AnyNonArrayType "(" (Argument; ","sm)* ")" sm ObjectOrCollectionInitializer;
       | NewObject_3            = "new" sm AnyNonArrayType sm ObjectOrCollectionInitializer;
     }
   }

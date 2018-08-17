@@ -117,13 +117,7 @@
     <Compile Include="Core\QualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Expr\Expr.nitra">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Expr\ExprExtensions.n">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Expr\Statement.nitra">
+    <Compile Include="Statments\Statement.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Namespace\Namespace.n">
@@ -275,8 +269,9 @@
   <ItemGroup>
     <Folder Include="Collectors\" />
     <Folder Include="Core\" />
+    <Folder Include="Expr\" />
     <Folder Include="Namespace\" />
-    <Folder Include="Expr" />
+    <Folder Include="Statments" />
     <Folder Include="Utils" />
     <Folder Include="Properties\" />
     <Folder Include="Scopes\" />

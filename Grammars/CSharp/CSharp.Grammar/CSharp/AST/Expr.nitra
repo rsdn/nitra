@@ -422,20 +422,22 @@ namespace DotNet
       }
     | Invocation
       {
-        Expr1 : Expr;
+        Left.ScopeIn                   = ScopeIn;
+        Left.ParameterScope            = ParameterScope;
 
-        Expr1.ScopeIn = ScopeOut;
-        Expr1.ParameterScope = ParameterScope;
-        // Arguments : Expr.Argument*;
-        // Arguments.ParameterScope = ParameterScope;
-        // Arguments.Scope = Scope.HideWith(ParameterScope);
-        // Arguments.IndexIn = 0;
-        // Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
-        // Arguments.Used = true;
-        Type = PlatformTypes.Void;
-        // Type = Method.Symbol.ReturnType;
+        Arguments.ParameterScope       = ParameterScope;
+        Arguments.ScopeIn              = ScopeIn.HideWith(ParameterScope);
+        Arguments.IndexIn              = 0;
+        Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
+        Arguments.Used                 = true;
+      
+        Type                           = Method.Symbol.ReturnType;
+
       stage 1:
-        // out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Expr1, Expr1.Type, Arguments.Type, context);
+        out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Left, Left.Type, Arguments.Type, context);
+
+        Left      : Expr;
+        Arguments : Expr.Argument*;
       }
     | IndexerAccess
       {
@@ -555,7 +557,7 @@ namespace DotNet
         Type = PlatformTypes.Void; // FIXME
       }
   }
-  abstract ast OutVarArgumentBase : Expr
+  abstract ast OutVarArgumentBase : Expr.Argument
   {
     inout Index : int;
     IndexOut = IndexIn + 1;
