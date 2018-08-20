@@ -27,7 +27,7 @@ using NRB = Nitra.Declarations;
 namespace Nitra.BackEnd.Cci
 {
   [Record]
-  public class CciBackEnd : IBackEnd
+  public partial class CciBackEnd : DotNet.IDotNetBackEnd
   {
     public static NoLocation : Location       = Location(SourceSnapshot.Default.File, NSpan(0));
     public static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
@@ -35,6 +35,7 @@ namespace Nitra.BackEnd.Cci
 
     public CciHost : IMetadataHost { get; protected set; }
 
+    [RecordIgnore] public PlatformType                : DotNet.IPlatformType { get; private set; }
     [RecordIgnore] mutable _cciInternedKeyToSymbolMap : Hashtable.[uint, TypeSymbol];
     [RecordIgnore] mutable _cciInternedKeyToGenericSymbolMap : ConcurrentDictionary.[uint, TypeSymbol];
     [RecordIgnore] mutable _singleDimensionArray      : SingleDimensionArraySymbol;
@@ -105,11 +106,11 @@ namespace Nitra.BackEnd.Cci
 
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
-            def name = typeSymbol.Name;
-            when (name == "Int32")
-            {
-              assert(true);
-            }
+            //def name = typeSymbol.Name;
+            //when (name == "Int32")
+            //{
+            //  assert(true);
+            //}
             cciInternedKeyToSymbolMap[type.InternedKey] = typeSymbol;
 
             when (typeSymbol is GenericTypeSymbol as genericSymbol)
@@ -542,7 +543,7 @@ namespace Nitra.BackEnd.Cci
     {
       def textName             = "#Array1";
       def name                 = Name(NoLocation, textName); // TODO: type.Name.UniqueKey
-      def cciType              = CciHost.PlatformType.SystemArray. ResolvedType;
+      def cciType              = CciHost.PlatformType.SystemArray.ResolvedType;
       def singleDimensionArray = ExternalTopTypeDeclaration.[SingleDimensionArraySymbol] (name, cciType).DefineSymbol(rootNamespace.MemberTable);
       def modifiers            = ModifierSet(context);
       modifiers.Add(Modifiers.Public);
@@ -558,6 +559,8 @@ namespace Nitra.BackEnd.Cci
       def cciObject = CciHost.PlatformType.SystemObject.ResolvedType;
       _cciObject = cciObject;
       _ = _cciInternedKeyToSymbolMap.TryGetValue(cciObject.InternedKey, out _objectSymbol);
+
+      this.PlatformType = PlatformTypeImpl(this);
     }
 
     MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeParameterSymbol

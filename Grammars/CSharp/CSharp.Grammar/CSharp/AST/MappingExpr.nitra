@@ -384,12 +384,12 @@ namespace CSharp
     }
   }
 
-  map syntax Expressions.Argument -> Expr.Argument
+  map syntax Expressions.Argument -> Argument
   {
     // TODO: Доделать поддержку именованных аргументов и out/ref-аргументов.
-    | Ref    -> Expr.Argument { Expression -> Expr; } //= ArgumentName? Modfier="ref" sm Expression;
-    | Out    -> Expr.Argument { Expression -> Expr; } //= ArgumentName? Modfier="out" sm Expression;
-    | Simple -> Expr.Argument { Expression -> Expr; } //= ArgumentName?                  Expression;
+    | Ref    -> Expr.Argument    { Expression -> Expr; } //= ArgumentName? Modfier="ref" sm Expression;
+    | Out    -> Expr.OutArgument { Expression -> Expr; } //= ArgumentName? Modfier="out" sm Expression;
+    | Simple -> Expr.RefArgument { Expression -> Expr; } //= ArgumentName?                  Expression;
   }
 
   map syntax Expressions.Expression.IndexerAccess -> DotNet.Expr

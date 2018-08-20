@@ -9,7 +9,7 @@ using System.Globalization;
 
 namespace CSharp
 {
-  map syntax CS7.Argument.OutVar -> DotNet.Expr
+  map syntax CS7.Argument.OutVar -> DotNet.Argument
   {
     OutVarArgument
     {
@@ -20,9 +20,9 @@ namespace CSharp
     }
   }
 
-  map syntax CS7.Argument.OutWildcard -> DotNet.Expr
+  map syntax CS7.Argument.OutWildcard -> DotNet.Argument
   {
-    IgnoreOutVarArgument
+    Expr.IgnoreOutVarArgument
     {
       // ArgumentNameOpt -> Name;
       // Modifier -> Modifier;

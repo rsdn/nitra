@@ -24,18 +24,15 @@ namespace Nitra
     | Double  { Value : double; }  // d
     | Decimal { Value : decimal; } // m
 
-    public Type : TypeSymbol
+    public GetType(context : DependentPropertyEvalContext) : TypeSymbol
     {
-      get
+      match (this)
       {
-        match (this)
-        {
-          | None     => PlatformTypes.GetFreeVar()
-          | Overflow => PlatformTypes.GetFreeVar()
-          | Single   => PlatformTypes.Single
-          | Double   => PlatformTypes.Double
-          | Decimal  => PlatformTypes.Decimal
-        }
+        | None     => context.CreateFreeTypeVar()
+        | Overflow => context.CreateFreeTypeVar()
+        | Single   => context.GetSingleType()
+        | Double   => context.GetDoubleType()
+        | Decimal  => context.GetDecimalType()
       }
     }
   }

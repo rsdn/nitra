@@ -28,6 +28,11 @@ namespace Nitra.Declarations
 
     protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
 
+    public virtual CreateFreeTypeVar() : TypeVarSymbol
+    {
+      CreateTypeVar(null, null)
+    }
+
     public virtual CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol
     {
       def var = BoundedTypeVarSymbol();

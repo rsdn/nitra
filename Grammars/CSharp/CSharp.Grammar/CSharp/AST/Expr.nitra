@@ -9,7 +9,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nitra;
 using Nitra.Declarations;
-using DotNet;
+
 namespace DotNet
 {
   abstract ast Unary : Expr
@@ -49,20 +49,20 @@ namespace DotNet
   abstract ast SameTypesExpr : BinaryExpr { }
   abstract ast OrAndExpr : SameTypesExpr
   {
-    Type = PlatformTypes.Boolean;
+    Type = context.GetBooleanType();
   }
   abstract ast EqualExpr : SameTypesExpr
   {
-    Type = PlatformTypes.Boolean;
+    Type = context.GetBooleanType();
   }
   abstract ast NumericBinary : SameTypesExpr { }
   abstract ast Comparison : NumericBinary
   {
-    Type = PlatformTypes.Boolean;
+    Type = context.GetBooleanType();
   }
   abstract ast Arithmetic : NumericBinary
   {
-    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type);
+    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
   }
   abstract ast Expr
   {
@@ -73,26 +73,26 @@ namespace DotNet
     in ParameterScope : TableScope = TableScope(null, "parameters");
   stage 1:
     out Type : TypeSymbol;
-    unless (Type.IsSubtypeOf(ExpectedType)/* || (ExpectedType.IsNumeric() && Type.IsNumeric())*/)
+    unless (Type.IsSubtypeOf(ExpectedType)/* || (ExpectedType.IsNumeric(contect) && Type.IsNumeric(contect))*/)
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
     | String
       {
         Value : string;
-        Type = PlatformTypes.String;
+        Type = context.GetStringType();
       }
     | Char
       {
         Value : char;
-        Type = PlatformTypes.Char;
+        Type = context.GetCharType();
       }
     | BooleanLiteral
       {
         Value : bool;
-        Type = PlatformTypes.Boolean;
+        Type = context.GetBooleanType();
       }
     | NullLiteral
       {
-        Type = PlatformTypes.Object;
+        Type = context.GetObjectType();
       }
     | QualifiedName
       {
@@ -101,7 +101,7 @@ namespace DotNet
         Key.Scope = ScopeOut.HideWith(ParameterScope);
       stage 1:
         out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
-        Type = AstUtils.GetMemberReturnType(Ref.Symbol);
+        Type = AstUtils2.GetMemberReturnType(Ref.Symbol, context);
       }
     | Parenthesized
       {
@@ -110,6 +110,10 @@ namespace DotNet
         Expression.ScopeIn = ScopeOut;
         Type = Expression.Type;
       }
+    | Argument : ExprArgument { }
+    | OutArgument : ExprArgument { }
+    | RefArgument : ExprArgument { }
+    | IgnoreOutVarArgument : OutVarArgumentBase { Type = ExpectedType; }
     | NewObject_1
       {
         ConstructorType : QualifiedReference;
@@ -126,24 +130,7 @@ namespace DotNet
         // out Ref : Ref[Member.ConstructorSymbol] = this.FindSuitableConstructor(ConstructorType.Ref.Symbol, Arguments.ArgumentType, context);
         //
         // Type = Ref.Symbol.DeclaredIn;
-        Type = PlatformTypes.Void;
-      }
-    | Argument
-      {
-        Expr : Expr;
-
-        inout Index : int;
-        IndexOut = IndexIn + 1;
-        in ParentParameterScope : TableScope;
-        // Name : Reference?;
-        // Modifier : ArgumentModifier?;
-        Expr.ParameterScope = ParameterScope;
-        Expr.ScopeIn = ScopeOut;
-        Expr.Used = true;
-        ExpectedType = ParentParameterScope.GetParameterType(IndexIn);
-        Type = Expr.Type;
-        stage 1:
-        out ArgumentType : TypeSymbol = Type;
+        Type = context.GetVoidType();
       }
     | Conditional
       {
@@ -190,83 +177,83 @@ namespace DotNet
       }
     | ThisAccess
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | BaseAccessMember
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | BaseAccessIndexer
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | NewArray
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | TypeOf
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | Checked
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | Unchecked
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | Default
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.CreateFreeTypeVar();
       }
     | Sizeof
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetInt32Type(); // FIXME
       }
     | Assignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.CreateFreeTypeVar();
       }
     | MulAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | DivAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | RemainderAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | AddAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | SubAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | ShiftLeftAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | ShiftRightAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | AndAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | XorAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | OrAssignment
       {
-        Type = PlatformTypes.Object; // FIXME
+        Type = context.GetObjectType(); // FIXME
       }
     | ConditionalOr : OrAndExpr
       {
@@ -317,7 +304,7 @@ namespace DotNet
         // TypeName.Scope = Scope;
       stage 1:
         // out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
-        Type = PlatformTypes.Boolean;
+        Type = context.GetBooleanType();
       }
     | As
       {
@@ -330,7 +317,7 @@ namespace DotNet
       //  stage 1:
       //    out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
       //  Type = TypeRef.Symbol;
-        Type = PlatformTypes.Void;
+        Type = context.GetVoidType();
       }
     | ShiftLeft       : Arithmetic
       {
@@ -405,7 +392,7 @@ namespace DotNet
         Expr1.ParameterScope = ParameterScope;
         // QualifiedName : Reference;
         // QualifiedName.Scope = Expr1.Type.Scope;
-        Type = PlatformTypes.Void; //this.GetMemberAccessReturnType(Ref);
+        Type = context.GetVoidType(); //this.GetMemberAccessReturnType(Ref);
       stage 1:
         out Ref : Ref[DeclarationSymbol] = null; // QualifiedName.Ref.Resolve();
       }
@@ -415,7 +402,7 @@ namespace DotNet
         // TypeName.Scope = Scope;
         // QualifiedName : QualifiedReference;
         // QualifiedName.Scope = TypeNameRef.Scope;
-        Type = PlatformTypes.Void; // this.GetMemberAccessReturnType(QualifiedNameRef);
+        Type = context.GetVoidType(); // this.GetMemberAccessReturnType(QualifiedNameRef);
       stage 1:
         // out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
         // out QualifiedNameRef : Ref[DeclarationSymbol] = TypeName.Ref.Resolve();
@@ -437,7 +424,7 @@ namespace DotNet
         out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Left, Left.Type, Arguments.Type, context);
 
         Left      : Expr;
-        Arguments : Expr.Argument*;
+        Arguments : DotNet.Argument*;
       }
     | IndexerAccess
       {
@@ -452,7 +439,7 @@ namespace DotNet
         // Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
         // Arguments.Used = true;
         // Type = Method.Symbol.ReturnType;
-        Type = PlatformTypes.Void;
+        Type = context.GetVoidType();
       stage 1:
         // out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Expr1, Expr1.Type, Arguments.Type, context);
       }
@@ -466,112 +453,124 @@ namespace DotNet
       }
     | Lambda_SingleParam1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Lambda_ExplicitParams1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Lambda_ImplicitParams1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | AnonymousFunction1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Lambda_SingleParam2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Lambda_ExplicitParams2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Lambda_ImplicitParams3
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | AnonymousFunction2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Await
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Query
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | StackallocInitializer
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NewArray_1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NewArray_2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | Addressof
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | PointerMemberAccess
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NewObject_2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NewObject_3
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NameofExpression
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | InterpolatedRegularStringLiteral
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | InterpolatedVerbatimStringLiteral
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NullConditional1
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | NullConditional2
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
     | AnonymousTypeInstantiation
       {
-        Type = PlatformTypes.Void; // FIXME
+        Type = context.GetVoidType(); // FIXME
       }
   }
-  abstract ast OutVarArgumentBase : Expr.Argument
+
+  abstract ast Argument : Expr
   {
     inout Index : int;
     IndexOut = IndexIn + 1;
     in ParentParameterScope : TableScope;
     // Name : Reference?;
     // Modifier : ArgumentModifier?;
+  }
+
+  abstract ast ExprArgument : Argument
+  {
+    Expr : Expr;
+
+    Expr.ParameterScope = ParameterScope;
+    Expr.ScopeIn = ScopeOut;
+    Expr.Used = true;
     ExpectedType = ParentParameterScope.GetParameterType(IndexIn);
+    Type = Expr.Type;
   stage 1:
     out ArgumentType : TypeSymbol = Type;
   }
-  ast IgnoreOutVarArgument : OutVarArgumentBase
+
+  abstract ast OutVarArgumentBase : Argument
   {
-    Type = ExpectedType;
   }
+
   declaration OutVarArgument : OutVarArgumentBase
   {
     VariableType : QualifiedReference;
@@ -582,8 +581,9 @@ namespace DotNet
     // Например: x = Foo() && Bar(out var outVar) && outVar.
     // Таким образом скопы нужнло протаскивать хитрым образом. Они должны идти для выражений
     VariableType.Scope = ScopeOut;
-    Type = ExpectedType; // TODO: Временное решение. Нужно прозиводить унификацию с VariableType.
+    Type = ExpectedType; // TODO: Временное решение. Нужно производить унификацию с VariableType.
   }
+
   ast LambdaExpr
   {
     Parameter : LambdaParameter;
@@ -611,7 +611,7 @@ namespace DotNet
     Type : LambdaParameterType?;
 
     Type.TypeScope = TypeScope;
-    Symbol.Type = this.ResolveLambdaParameterType(Type.TypeNameRef);
+    Symbol.Type = this.ResolveLambdaParameterType(Type.TypeNameRef, context);
     in TypeScope : Scope;
   }
 

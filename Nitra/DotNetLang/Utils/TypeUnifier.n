@@ -23,8 +23,9 @@ namespace DotNet
 
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
-      when (supertype : object == PlatformTypes.Object)
-        return true;
+      // TODO: оптимизировать рабту с object
+      //when (supertype : object == context.GetVoidType())
+      //  return true;
 
       when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, BaseTypeSet=baseTypeSet))
         return baseTypeSet.AncestorTypes.Contains(supertype);

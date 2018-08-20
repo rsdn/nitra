@@ -1,4 +1,4 @@
-using Nitra.Internal;
+﻿using Nitra.Internal;
 using Nitra.Serialization2;
 
 using Nemerle;

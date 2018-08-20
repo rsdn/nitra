@@ -22,21 +22,22 @@ namespace DotNet
     public static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     public static NoSpan : NSpan              = NSpan(0);
 
-    public GetArithmeticType(this host : Expr, e1Type : TypeSymbol, e2Type : TypeSymbol) : TypeSymbol
+    public GetArithmeticType(this host : Expr, e1Type : TypeSymbol, e2Type : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
+      // TODO: Переделать на типах.
       match (host, e1Type.FullName, e2Type.FullName) {
         | (Expr.Sum, "System.String", _) => e1Type
         | (Expr.Sum, _, "System.String") => e2Type
-        | (Expr.Sum, "System.Char", "System.Char") => PlatformTypes.String
-        | (Expr.Sum, _, "System.Char") when e1Type.IsNumeric() => e1Type
-        | (Expr.Sum, "System.Char", _) when e2Type.IsNumeric() => e2Type
-        | (_, "System.Double", _) => PlatformTypes.Double
-        | (_, _, "System.Double") => PlatformTypes.Double
+        | (Expr.Sum, "System.Char", "System.Char") => context.GetStringType()
+        | (Expr.Sum, _, "System.Char") when e1Type.IsNumeric(context) => e1Type
+        | (Expr.Sum, "System.Char", _) when e2Type.IsNumeric(context) => e2Type
+        | (_, "System.Double", _) => context.GetDoubleType()
+        | (_, _, "System.Double") => context.GetDoubleType()
         | (_, "System.Float", _) => e1Type
         | (_, _, "System.Float") => e2Type
         | (_, "System.Int64", _) => e1Type
         | (_, _, "System.Int64") => e2Type
-        | (_, _, _) when e1Type.IsNumeric() && e2Type.IsNumeric() => e1Type
+        | (_, _, _) when e1Type.IsNumeric(context) && e2Type.IsNumeric(context) => e1Type
         | _ => e1Type
       }
     }
@@ -52,10 +53,10 @@ namespace DotNet
       parm.Type
     }
 
-    public IsBinaryOpCompatible(this expr : BinaryExpr, left : TypeSymbol, right : TypeSymbol) : bool
+    public IsBinaryOpCompatible(this expr : BinaryExpr, left : TypeSymbol, right : TypeSymbol, context : DependentPropertyEvalContext) : bool
     {
-      if (left.IsNumeric() && right.IsNumeric()) true
-      else if (left.IsNumeric() && !right.IsNumeric()) false
+      if (left.IsNumeric(context) && right.IsNumeric(context)) true
+      else if (left.IsNumeric(context) && !right.IsNumeric(context)) false
       else if ((left.FullName == "System.String" || right.FullName == "System.String") && expr is Expr.Sum) true
       else true
     }
@@ -67,7 +68,7 @@ namespace DotNet
         | type is TypeSymbol =>
           def bind(ctor : Member.ConstructorSymbol) : bool
           {
-            DoArgumentsMatchParameters(ctor.ParameterScope, argumentTypes)
+            DoArgumentsMatchParameters(ctor.ParameterScope, argumentTypes, context)
           }
           def res = type.Scope.Bind(bind);
           Ref.CreateBind(ctor.Location, res)
@@ -76,7 +77,7 @@ namespace DotNet
       }
     }
 
-    private DoArgumentsMatchParameters(parameterScope : TableScope, argumentTypes : ImmutableArray[TypeSymbol]) : bool
+    private DoArgumentsMatchParameters(parameterScope : TableScope, argumentTypes : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : bool
     {
       def parms = parameterScope.Symbols
                                 .SelectMany(s => s)
@@ -90,18 +91,18 @@ namespace DotNet
       def zipped = parms.Zip(argumentTypes, (parm, argType) => (parm, argType));
 
       foreach ((parm, argType) in zipped)
-        when(!argType.IsSubtypeOf(parm.Type) && !argType.HasImplicitConversion(parm.Type))
+        when(!argType.IsSubtypeOf(parm.Type) && !argType.HasImplicitConversion(parm.Type, context))
           return false;
 
       true
     }
 
-    public GetOverloadResolutionAlgorithm[TSymbol, TConcreteSymbol](this _methodCall : Expr, argumentTypes : ImmutableArray[TypeSymbol]) : ResolutionAlgorithm[TSymbol, TConcreteSymbol]
+    public GetOverloadResolutionAlgorithm[TSymbol, TConcreteSymbol](this _methodCall : Expr, argumentTypes : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ResolutionAlgorithm[TSymbol, TConcreteSymbol]
       where TSymbol         : DeclarationSymbol
       where TConcreteSymbol : DeclarationSymbol
     {
       fun (symbol : TSymbol) : ValueOption[TConcreteSymbol] {
-        | x is Member.MethodSymbol when DoArgumentsMatchParameters(x.ParameterScope, argumentTypes) =>
+        | x is Member.MethodSymbol when DoArgumentsMatchParameters(x.ParameterScope, argumentTypes, context) =>
           VSome(symbol :> TConcreteSymbol);
         | _ =>
           VNone()
@@ -120,7 +121,7 @@ namespace DotNet
           {
             def resolve(x : Member.MethodSymbol) : bool
             {
-              DoArgumentsMatchParameters(x.ParameterScope, argumentTypes)
+              DoArgumentsMatchParameters(x.ParameterScope, argumentTypes, context)
             }
             symbolRef.Resolve(resolve)
           }
@@ -188,7 +189,7 @@ namespace DotNet
     //  }
     //}
 
-    public ResolveLambdaParameterType(this _parm : LambdaParameter, typeRef : ValueOption[Ref[TypeSymbol]]) : TypeSymbol
+    public ResolveLambdaParameterType(this _parm : LambdaParameter, typeRef : ValueOption[Ref[TypeSymbol]], context : DependentPropertyEvalContext) : TypeSymbol
     {
       if (typeRef.HasValue && typeRef.Value.IsSymbolEvaluated) {
         match (typeRef.Value.Symbol) {
@@ -196,7 +197,7 @@ namespace DotNet
           | x => x
         }
       } else {
-        PlatformTypes.Object;
+        context.GetObjectType();
       }
     }
     /*
@@ -213,7 +214,7 @@ namespace DotNet
             if (elementType != null && context.TypeMap.TryGetValue(elementType.FullName, out elementTypeSymbol))
               elementTypeSymbol;
             else
-              PlatformTypes.Object
+              context.GetObjectType()
           } else {
             def parmTypeMatches(prop) {
               def indexerParms = prop.GetIndexParameters();
@@ -233,12 +234,12 @@ namespace DotNet
               indexerTypeSymbol
             else {
               expr.Error(context, "Indexer of type " + indexType.GetFullName() + " is not compatible with " + leftType.GetFullName());
-              PlatformTypes.Object
+              context.GetObjectType()
             }
           }
         | _ => {
           expr.Error(context, "Indexer of type " + indexType.GetFullName() + " is not compatible with " + leftType.GetFullName());
-          PlatformTypes.Object;
+          context.GetObjectType();
         }
       }
     }*/
@@ -257,7 +258,7 @@ namespace DotNet
     //    else
     //      InitAst.StaticCall(types.String.AsTypeInfo(), "Concat", array[leftAst, rightAst])
 
-    //    | EqualExpr when leftExprType.IsNumeric() && rightExprType.IsNumeric()
+    //    | EqualExpr when leftExprType.IsNumeric(contect) && rightExprType.IsNumeric()
     //    | NumericBinary =>
     //      mutable resultType;
     //      def (l, r) = BinaryNumericPromotion(op, leftExprType, leftAst, rightExprType, rightAst, context, out resultType);

@@ -10,14 +10,14 @@ namespace DotNet
 {
   ast RealLiteral : Expr
   {
-    Type = if (Value.HasValue) Value.Value.Type else PlatformTypes.GetFreeVar();  // TODO: use free type var
+    Type = if (Value.HasValue) Value.Value.GetType(context) else context.CreateFreeTypeVar();
 
     Value : RealLiteralValue;
   }
 
   ast IntegerLiteral : Expr
   {
-    Type = PlatformTypes.Int32;
+    Type = context.GetInt32Type();
 
     Value : IntegerLiteralValue;
   }
@@ -26,7 +26,7 @@ namespace DotNet
   {
     TypeName.Scope = ScopeOut;
     Expr1.ScopeIn    = ScopeOut;
-    Type = PlatformTypes.Boolean;
+    Type = context.GetVoidType();
   stage 1:
     out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
 
@@ -36,19 +36,19 @@ namespace DotNet
 
   ast RefExpr : Expr
   {
-    Type = PlatformTypes.Object; // TODO: Wrap the Expr1.Type in RefType()
+    Type = context.GetVoidType(); // TODO: Wrap the Expr1.Type in RefType()
     Expr1 : Expr;
   }
 
   ast ThrowExpr : Expr
   {
-    Type = PlatformTypes.Object; // TODO: make free type var
+    Type = context.GetVoidType(); // TODO: make free type var
     Expr1 : Expr;
   }
 
   ast TupleExpr : Expr
   {
-    Type = PlatformTypes.Object; // FIXME
+    Type = context.GetVoidType(); // FIXME
     Fields : TupleExprField*;
   }
 

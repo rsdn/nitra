@@ -27,9 +27,9 @@ namespace Nitra
 
           match (last)
           {
-            | 'F' | 'f' => RealLiteralValue.Single (loc, float.Parse(text, CultureInfo.InvariantCulture))
+            | 'F' | 'f' => RealLiteralValue.Single (loc, float.Parse  (text, CultureInfo.InvariantCulture))
             | 'M' | 'm' => RealLiteralValue.Decimal(loc, decimal.Parse(text, CultureInfo.InvariantCulture))
-            | _         => RealLiteralValue.Double (loc, double.Parse(text, CultureInfo.InvariantCulture))
+            | _         => RealLiteralValue.Double (loc, double.Parse (text, CultureInfo.InvariantCulture))
           }
         }
         catch { _ is OverflowException => RealLiteralValue.Overflow(loc) } ;

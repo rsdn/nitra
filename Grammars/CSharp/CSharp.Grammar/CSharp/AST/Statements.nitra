@@ -55,6 +55,7 @@ namespace DotNet
     // The type of a local variable can be shared between two declarations.
     // Use ResolveOrCopy() method to avoid multiple type resolutions.
     Symbol.TypeRef = Type.Ref.ResolveOrCopy();
+    Expression.ExpectedType = Symbol.TypeRef.Symbol;
 
     Type : QualifiedReference;
     Expression : Expr;

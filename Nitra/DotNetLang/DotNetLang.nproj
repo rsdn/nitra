@@ -117,6 +117,9 @@
     <Compile Include="Core\QualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="IDotNetBackEnd.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Statments\Statement.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -259,7 +262,7 @@
     <Compile Include="Utils\AstUtils.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utils\PlatformTypes.n">
+    <Compile Include="Utils\IPlatformType.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\SymbolUtils.n">

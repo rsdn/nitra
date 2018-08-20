@@ -1,0 +1,37 @@
+﻿using Nitra.Declarations;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DotNet
+{
+  public interface IPlatformType
+  {
+    Void    : TypeSymbol { get; }
+    Object  : TypeSymbol { get; }
+    Type    : TypeSymbol { get; }
+    String  : TypeSymbol { get; }
+    Char    : TypeSymbol { get; }
+    Byte    : TypeSymbol { get; }
+    SByte   : TypeSymbol { get; }
+    Int16   : TypeSymbol { get; }
+    Int32   : TypeSymbol { get; }
+    Int64   : TypeSymbol { get; }
+    UInt16  : TypeSymbol { get; }
+    UInt32  : TypeSymbol { get; }
+    UInt64  : TypeSymbol { get; }
+    Single  : TypeSymbol { get; }
+    Double  : TypeSymbol { get; }
+    Decimal : TypeSymbol { get; }
+    Boolean : TypeSymbol { get; }
+
+    CreateFreeTypeVar() : TypeSymbol;
+  }
+}

@@ -108,6 +108,9 @@
     <Compile Include="LazyList.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="PlatformType.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
     <Compile Include="TypeMemberScope.n">
       <SubType>Code</SubType>
