@@ -1,6 +1,8 @@
 ﻿using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace DotNet
 {
   abstract declaration Member : TypeMember
@@ -10,23 +12,18 @@ namespace DotNet
       FullName = DeclaredIn.FullName + "." + this.Name;
     }
 
-    | Constructor : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Constructor : Parametrizable, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "constructor";
           SpanClass = DotNetLang.MethodSpanClass;
-
-          table ParameterScope;
         }
 
         Symbol.Flags              |= Modifiers.Flags;
         Modifiers.Flags            = ModifierSet(context);
-        Parameters.ContainingTable = Symbol.ParameterScope;
         Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
 
-        Parameters  : FormalParameter*;
         Initializer : ConstructorInitializer?;
       }
     | Destructor : CustomAttributeHostDeclaration, ModifierHostAndAst
@@ -45,35 +42,31 @@ namespace DotNet
 
         Parameters : FormalParameter*;
       }
-    | Method : GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Method : Parametrizable, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
 
-          table ParameterScope;
-          in  ReturnType     : TypeSymbol;
+          in ReturnType     : TypeSymbol;
         }
 
       stage 1:
         out ReturnTypeRef : Ref[TypeSymbol] = ReturnType.Ref.Resolve();
 
-        InterfaceType.Scope        = Scope;
-        ReturnType.Scope           = TypeParameterConstraints.Scope;
-        Parameters.ContainingTable = Symbol.ParameterScope;
-        Parameters.Scope           = TypeParameterConstraints.Scope;
-        Parameters.IndexIn         = 0u;
-        Symbol.ReturnType          = ReturnTypeRef.Symbol;
-        Body.LocalVarsScopeIn      = TableScope(null, "LocalVars");
-        Body.ParameterScope        = Symbol.ParameterScope;
-        Body.ScopeIn               = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
+        InterfaceType.Scope   = Scope;
+        ReturnType.Scope      = TypeParameterConstraints.Scope;
+        Parameters.Scope      = TypeParameterConstraints.Scope;
+        Symbol.ReturnType     = ReturnTypeRef.Symbol;
+        Body.LocalVarsScopeIn = TableScope(null, "LocalVars");
+        Body.ParameterScope   = Symbol.ParameterScope;
+        Body.ScopeIn          = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
 
-        InterfaceType            : QualifiedReference?;
-        IsPartial                : bool;
-        Parameters               : FormalParameter*;
-        ReturnType               : QualifiedReference;
-        Body                     : Statement;
+        InterfaceType : QualifiedReference?;
+        IsPartial     : bool;
+        ReturnType    : QualifiedReference;
+        Body          : Statement;
       }
     | Property : CustomAttributeHostDeclaration, ModifierHostAndAst
       {
@@ -120,14 +113,13 @@ namespace DotNet
         Header        : EventHeader;
         Accessors     : EventAccessor*;
       }
-    | Indexer : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Indexer : Parametrizable, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "indexer";
           SpanClass = DotNetLang.PropertySpanClass;
 
-          table ParameterScope;
           in  Type           : TypeSymbol;
         }
 
@@ -136,13 +128,10 @@ namespace DotNet
 
         InterfaceType.Scope        = Scope;
         Type.Scope                 = Scope;
-        Parameters.ContainingTable = Symbol.ParameterScope;
         Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
         Symbol.Type                = TypeRef.Symbol;
         Accessors.Scope            = Scope;
 
-        Parameters    : FormalParameter*;
         Type          : QualifiedReference;
         InterfaceType : QualifiedReference?;
         Accessors     : PropertyAccessor*;

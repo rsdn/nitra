@@ -144,6 +144,9 @@
     <Compile Include="Type\CustomAttributeHost.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\Member\Parametrizable.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\ModifierHost.nitra">
       <SubType>Code</SubType>
     </Compile>

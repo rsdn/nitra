@@ -333,8 +333,9 @@ namespace Nitra.BackEnd.Cci
       modifiers
     }
 
-    internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : void
+    internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
+      def builder = ImmutableArray.CreateBuilder();
       foreach (p in paremeters)
       {
         //FormalParameter
@@ -351,7 +352,9 @@ namespace Nitra.BackEnd.Cci
         parameter.Modifier = parameterModifier;
         parameter.Index = p.Index;
         parameter.EvalProperties(context);
+        builder.Add(parameter);
       }
+      builder.ToImmutable()
     }
 
     internal LoadTypeMembers(member : ITypeDefinitionMember, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
@@ -386,7 +389,7 @@ namespace Nitra.BackEnd.Cci
             unless (method.IsDeclaredInEvaluated)
               method.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
             method.EvalProperties(context);
-            LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
             method
 
           | m is IMethodDefinition   =>
@@ -404,7 +407,7 @@ namespace Nitra.BackEnd.Cci
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
             method.EvalProperties(context);
 
-            LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
             method
 
           | m is IFieldDefinition    =>

@@ -1,4 +1,4 @@
-using Nitra;
+﻿using Nitra;
 using Nitra.BackEnd.Cci;
 using Nitra.Declarations;
 using Nitra.Internal;
@@ -92,14 +92,14 @@ namespace CSharp
         defineAlias(context, systemNs, rootNamespace, "Char",    "char");
       }
 
-      (backEnd, context, rootNamespace)
+      (backEnd : IDotNetBackEnd, context, rootNamespace)
     }
 
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
-      def (_backEnd, context, rootNamespace) = (data :> CciBackEnd * DependentPropertyEvalContext * NamespaceSymbol);
+      def (backEnd, context, rootNamespace) = (data :> IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol);
       context.CancellationToken = cancellationToken;
-      _backEnd.CancellationToken = cancellationToken;
+      backEnd.CancellationToken = cancellationToken;
 
       def removeParsedSymbols(tableScope : TableScope)
       {
@@ -183,9 +183,9 @@ namespace CSharp
       _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
     }
 
-    public DecomposeData(data : object) : CciBackEnd * DependentPropertyEvalContext * NamespaceSymbol
+    public DecomposeData(data : object) : IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol
     {
-      data :> (CciBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
+      data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
     }
   }
 

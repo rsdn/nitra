@@ -21,8 +21,24 @@ namespace DotNet
       Instance = TypeUnifier();
     }
 
+    protected override Unwrap(t : TypeSymbol) : TypeSymbol
+    {
+      | alias is TypeAliasSymbol when alias.IsReplacementEvaluated =>
+        def replacement = alias.Replacement;
+        when (replacement.IsSymbolEvaluated)
+          when (replacement.Symbol is TypeSymbol as type)
+            return Unwrap(type);
+            
+        base.Unwrap(t)
+        
+      | _ => base.Unwrap(t)
+    }
+
+    
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
+      when (subtype.Equals(supertype))
+        return true;
       // TODO: оптимизировать рабту с object
       //when (supertype : object == context.GetVoidType())
       //  return true;
