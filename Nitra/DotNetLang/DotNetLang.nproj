@@ -144,6 +144,9 @@
     <Compile Include="Type\CustomAttributeHost.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\FunctionType.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\Member\Parametrizable.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -257,6 +260,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Namespace\UsingDirective.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\WellKnownSymbols.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\WellKnownType.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\TypeUnifier.n">

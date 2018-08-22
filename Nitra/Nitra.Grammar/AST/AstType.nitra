@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra;
 using Nitra.Declarations;
@@ -98,7 +98,7 @@ namespace Nitra.Ast
           mutable typeArguments = LightList();
           typeArguments.Add(ReturnType);
           typeArguments.AddRange(Parameters);
-          VSome(TypeStructure(WellKnownSymbols.FunctionType, typeArguments))
+          VSome(TypeStructure(Nitra.Ast.WellKnownSymbols.FunctionType, typeArguments))
         }
         else
           VNone();

@@ -1,0 +1,10 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+namespace DotNet
+{
+  public module WellKnownSymbols
+  {
+    public FunctionType   : WellKnownTypeSymbol = StaticScope.CreateSymbol("Function");
+  }
+}

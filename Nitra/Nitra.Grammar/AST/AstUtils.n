@@ -19,6 +19,8 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 
+using FunctionTypeSymbol = Nitra.Ast.FunctionTypeSymbol;
+
 namespace Nitra
 {
   public module AstUtils
