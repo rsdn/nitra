@@ -19,13 +19,16 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 
-using FunctionTypeSymbol = Nitra.Ast.FunctionTypeSymbol;
-
 namespace Nitra
 {
   public module AstUtils
   {
     public static GetAstId : int = StringIndex.GetId("GetAst");
+
+    static this()
+    {
+      TypeHintHelper.AddTypeHintHandler(MakeHintForAstType);
+    }
 
     public Wait[V, R](value : V, result : R) : R
     {
@@ -171,7 +174,7 @@ namespace Nitra
           return WellKnownSymbols.VoidRuleType;
       }
 
-      def args = List();
+      def args = ImmutableArray.CreateBuilder();
 
       when (CanBeTupleElem(arg1))
         args.Add(arg1);
@@ -183,7 +186,7 @@ namespace Nitra
       {
         | 0 => WellKnownSymbols.VoidRuleType
         | 1 => args[0]
-        | _ => CreateTupleRuleType(args, context)
+        | _ => CreateTupleRuleType(args.ToImmutable(), context)
       }
     }
 
@@ -194,11 +197,11 @@ namespace Nitra
         | (false,  true) => arg2
         | (true,  false) => arg1
         | (false, false) => WellKnownSymbols.VoidRuleType
-        | (true,   true) => CreateTupleRuleType(array[arg1, arg2], context)
+        | (true,   true) => CreateTupleRuleType(ImmutableArray.Create(arg1, arg2), context)
       }
     }
 
-    public CreateTupleRuleType(args : IList[RuleTypeSymbol], context : DependentPropertyEvalContext) : RuleTypeSymbol
+    public CreateTupleRuleType(args : ImmutableArray[RuleTypeSymbol], context : DependentPropertyEvalContext) : RuleTypeSymbol
     {
       def symbol = RuleTupleTypeSymbol();
       symbol.ElemTypes = args;
@@ -276,19 +279,19 @@ namespace Nitra
       optionSymbol
     }
 
-    public CreateFunctionType(loc : ILocated, thisType : TypeSymbol, parameters : IList[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
+    public CreateFunctionType(loc : ILocated, thisType : TypeSymbol, parameters : ImmutableArray[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
     {
-      def parametersWithThis = List();
+      def parametersWithThis = ImmutableArray.CreateBuilder(parameters.Length + 1);
       parametersWithThis.Add(thisType);
       parametersWithThis.AddRange(parameters);
-      CreateFunctionType(loc, parametersWithThis, returnType, context)
+      CreateFunctionType(loc, parametersWithThis.MoveToImmutable(), returnType, context)
     }
 
-    public CreateFunctionType(loc : ILocated, parameters : IList[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
+    public CreateFunctionType(loc : ILocated, parameters : ImmutableArray[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : FunctionTypeSymbol
     {
-      def funcSymbol = FunctionTypeSymbol();
+      def funcSymbol        = FunctionTypeSymbol();
       funcSymbol.Parameters = parameters;
-      funcSymbol.ReturnType = returnType;
+      funcSymbol.Return     = returnType;
       funcSymbol.EvalProperties(context);
       funcSymbol
     }
@@ -402,18 +405,18 @@ namespace Nitra
       }
       else
       {
-        def args = array(members.Count);
-        foreach (m in members with index)
+        def args = ImmutableArray.CreateBuilder(members.Count);
+        foreach (m in members)
         {
           def typeVar = CreateRuleTypeVar(context);
-          args[index] = typeVar;
+          args.Add(typeVar);
           m.ExpectedType = typeVar;
         }
-        CreateTupleRuleType(args, context)
+        CreateTupleRuleType(args.MoveToImmutable(), context)
       }
     }
 
-    public TypeParseTreePatternCtor(loc : IAst, members : Nitra.Ast.ParseTreePattern.IAstList, expectedMemberTypes : IList[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
+    public TypeParseTreePatternCtor(loc : IAst, members : Nitra.Ast.ParseTreePattern.IAstList, expectedMemberTypes : ImmutableArray[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
       if (members.Count == expectedMemberTypes.Count)
       {
@@ -671,37 +674,6 @@ namespace Nitra
       builder.ToString()
     }
 
-    public FunctionTypeMakeHint(this builder : StringBuilder, symbolCache : ISymbolCache, symbol : FunctionTypeSymbol) : StringBuilder
-    {
-      try
-      {
-        // $"..$(Parameters; \" * \") -> $ReturnType"
-        if (symbol.IsParametersEvaluated)
-          _ = builder.JoinAnd(symbol.Parameters, (b, p) => b.MakeHintForType(symbolCache, p)).Append(" * ");
-        else
-          _ = builder.Append("«Parameters not evaluated»");
-
-        _ = builder.Append(" -> ");
-
-        if (symbol.IsReturnTypeEvaluated)
-          _ = builder.MakeHintForType(symbolCache, symbol.ReturnType);
-        else
-          _ = builder.Append("«ReturnType not evaluated»");
-
-        builder
-      }
-      catch { e => builder.HintMlException(e) }
-    }
-
-    public FunctionTypeMakeHint(symbolCache : ISymbolCache, symbol : FunctionTypeSymbol) : string
-    {
-      def builder = StringBuilder();
-      builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ")
-        .FunctionTypeMakeHint(symbolCache, symbol)
-        .MakeLocations(symbol)
-        .ToString()
-    }
-
     /// Prefer a TPrefer, if the candidate contains both symbols TPrefer and other symbol types.
     public PreferSymbolType[TCandidate, TPrefer](candidates : Ref[TCandidate]) : Ref[TCandidate]
       where TCandidate: DeclarationSymbol
@@ -715,67 +687,68 @@ namespace Nitra
 
     public ToHint(this symbol : TypeSymbol, context : DependentPropertyEvalContext) : string
     {
-      StringBuilder().MakeHintForType(context.SymbolCache, symbol).ToString()
+      TypeHintHelper.MakeHintForType(context.SymbolCache, symbol)
     }
 
-    public MakeHintForType(this builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : StringBuilder
+    public MakeHintForAstType(this builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : bool
     {
+      mutable processed = true;
       symbolCache?.CacheSymbol(type);
       match (type)
       {
         | x is ListAstTypeSymbol =>
           if (x.IsElemTypeEvaluated)
-            builder.MakeHintForType(symbolCache, x.ElemType).Append("*")
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.ElemType).Append("*");
           else
-            builder.Append("«list type not evaluated»")
+            _ = builder.Append("«list type not evaluated»");
 
         | x is OptionAstTypeSymbol =>
           if (x.IsValueTypeEvaluated)
-            builder.MakeHintForType(symbolCache, x.ValueType).Append("?")
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.ValueType).Append("?");
           else
-            builder.Append("«option type not evaluated»")
+            _ = builder.Append("«option type not evaluated»");
 
         | x is ValueAstTypeSymbol =>
           if (x.IsValueTypeEvaluated)
-            builder.Append("ValueAst[").MakeHintForType(symbolCache, x.ValueType).Append("]")
+            _ = builder.Append("ValueAst[").MakeHintForType(symbolCache, x.ValueType).Append("]");
           else
-            builder.Append("«option type not evaluated»")
+            _ = builder.Append("«option type not evaluated»");
 
-        | x is FunctionTypeSymbol => builder.FunctionTypeMakeHint(symbolCache, x)
-        | _ is RuleCharsTypeSymbol => builder.Append("<keyword>chars</keyword>")
-        | _ is RuleLiteralTypeSymbol => builder.Append("<keyword>string</keyword>")
-        | _ is RuleVoidTypeSymbol => builder.Append("<keyword>void</keyword>")
+        | _ is RuleCharsTypeSymbol => _ = builder.Append("<keyword>chars</keyword>");
+        | _ is RuleLiteralTypeSymbol => _ = builder.Append("<keyword>string</keyword>");
+        | _ is RuleVoidTypeSymbol => _ = builder.Append("<keyword>void</keyword>");
         | x is RuleListTypeSymbol =>
           if (x.IsElemTypeEvaluated)
-            builder.MakeHintForType(symbolCache, x.ElemType).Append("*")
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.ElemType).Append("*");
           else
-            builder.Append("«list type not evaluated»")
+            _ = builder.Append("«list type not evaluated»");
 
         | x is RuleOptionTypeSymbol =>
           if (x.IsValueTypeEvaluated)
-            builder.MakeHintForType(symbolCache, x.ValueType).Append("?")
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.ValueType).Append("?");
           else
-            builder.Append("«option type not evaluated»")
+            _ = builder.Append("«option type not evaluated»");
 
         | x is RuleTupleTypeSymbol =>
           if (x.IsElemTypesEvaluated)
-            builder.Append("(").Join(x.ElemTypes, MakeHintForType(_, symbolCache, _)).Append(")")
+            _ = builder.Append("(").Join(x.ElemTypes, TypeHintHelper.MakeHintForType(_, symbolCache, _)).Append(")");
           else
-            builder.Append("«tuple type not evaluated»")
+            _ = builder.Append("«tuple type not evaluated»");
 
         | x is TypeVarSymbol =>
           if (x.IsTypeEvaluated)
-            builder.MakeHintForType(symbolCache, x.Type)
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.Type);
           else match (x.IsBaseTypeConstraintEvaluated, x.IsDerivedTypeConstraintEvaluated)
           {
-            | (false, false) => builder.Append("<keyword>unbound</keyword>")
-            | (true,  false) => builder.MakeHintForType(symbolCache, x.BaseTypeConstraint).Append("+")
-            | (false,  true) => builder.MakeHintForType(symbolCache, x.DerivedTypeConstraint).Append("-")
-            | (true,   true) => builder.MakeHintForType(symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForType(symbolCache, x.DerivedTypeConstraint)
+            | (false, false) => _ = builder.Append("<keyword>unbound</keyword>");
+            | (true,  false) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append("+");
+            | (false,  true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.DerivedTypeConstraint).Append("-");
+            | (true,   true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForType(symbolCache, x.DerivedTypeConstraint);
           }
 
-        | x => builder.SymbolToHintMlWithSubHint(x)
+        | x => processed = false;
       }
+      processed
     }
 
     public TypedDeclarationMakeHint(symbolCache : ISymbolCache, symbol : TypedDeclarationSymbol) : string
@@ -849,7 +822,7 @@ namespace Nitra
           .Append(" : ");
 
         if (symbol.IsTypeEvaluated)
-          _ = builder.MakeHintForType(symbolCache, symbol.Type);
+          _ = TypeHintHelper.MakeHintForType(builder, symbolCache, symbol.Type);
         else
           _ = builder.Append(<# <b><font color="Red">Type symbol not evaluated</font></b>.#>);
 
@@ -950,9 +923,9 @@ namespace Nitra
           when (parents.Length > 0)
           {
             _ = builder.Append(" : ")
-              .Join(parents, MakeHintForType(_, symbolCache, _))
+              .Join(parents, TypeHintHelper.MakeHintForType(_, symbolCache, _))
               .Append("<br/><br/><hint value='Ancestors'>")
-              .Join(ancestorTypes, MakeHintForType(_, symbolCache, _))
+              .Join(ancestorTypes, TypeHintHelper.MakeHintForType(_, symbolCache, _))
               .Append("</hint>");
           }
         }

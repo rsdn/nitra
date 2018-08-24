@@ -268,6 +268,9 @@
     <Compile Include="Type\WellKnownType.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Utils\TypeHintHelper.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utils\TypeUnifier.n">
       <SubType>Code</SubType>
     </Compile>

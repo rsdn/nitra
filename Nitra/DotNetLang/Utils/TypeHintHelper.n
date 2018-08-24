@@ -1,0 +1,44 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace DotNet
+{
+  public module TypeHintHelper
+  {
+    public MakeHintForType(symbolCache : ISymbolCache, symbol : TypeSymbol) : string
+    {
+      def builder = StringBuilder();
+      builder.Append("<keyword>").Append(symbol.Kind).Append("</keyword> ")
+        .MakeHintForType(symbolCache, symbol)
+        .MakeLocations(symbol)
+        .ToString()
+    }
+
+    public MakeHintForType(this builder : StringBuilder, symbolCache : ISymbolCache, symbol : TypeSymbol) : StringBuilder
+    {
+      foreach (handler in TypeHintHandlers)
+        when (handler(builder, symbolCache, symbol))
+          return builder;
+
+      builder.SymbolToHintMlWithSubHint(symbol)
+    }
+
+    public AddTypeHintHandler(handler : Func[StringBuilder, ISymbolCache, TypeSymbol, bool]) : void
+    {
+      TypeHintHandlers.Add(handler);
+    }
+    
+    private TypeHintHandlers : List[Func[StringBuilder, ISymbolCache, TypeSymbol, bool]] = List();
+  }
+}

@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 using Nitra;
 using Nitra.Declarations;
 
@@ -22,7 +22,7 @@ namespace Nitra.Ast
       {
         out CtorRef : Ref[FunctionTypeSymbol] = Reference.Ref.Resolve();
 
-        Type                      = AstUtils.TypeParseTreePatternCtor(this, Arguments, CtorRef.Symbol.Parameters, CtorRef.Symbol.ReturnType, context);
+        Type                      = AstUtils.TypeParseTreePatternCtor(this, Arguments, CtorRef.Symbol.Parameters, CtorRef.Symbol.Return, context);
         Reference.Scope           = Scope;
         Arguments.Scope           = Scope;
         Arguments.ContainingTable = ContainingTable;

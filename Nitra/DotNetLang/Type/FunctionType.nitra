@@ -20,7 +20,7 @@ namespace DotNet
       in Return: TypeSymbol;
 
       ToString = $"..$(Parameters; \", \") -> $Return";
-      //MakeHint = AstUtils.FunctionTypeMakeHint(symbolCache, this);
+      MakeHint = TypeHintHelper.MakeHintForType(symbolCache, this);
 
       DecomposeType =
         if (IsParametersEvaluated && IsReturnEvaluated)

@@ -41,7 +41,7 @@ namespace DotNet
     {
       match (typeSymbol1, typeSymbol2)
       {
-        | (Nitra.Ast.FunctionTypeSymbol as f1, Nitra.Ast.FunctionTypeSymbol as f2) =>
+        | (FunctionTypeSymbol as f1, FunctionTypeSymbol as f2) =>
           unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
             return false;
 
