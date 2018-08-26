@@ -53,10 +53,20 @@ namespace DotNet
       match (typeSymbol1, typeSymbol2)
       {
         | (FunctionTypeSymbol as f1, FunctionTypeSymbol as f2) =>
-          unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
+          if (f1.IsParametersEvaluated && !f2.IsParametersEvaluated)
+            f2.Parameters = f1.Parameters;
+          else if (!f1.IsParametersEvaluated && f2.IsParametersEvaluated)
+            f1.Parameters = f2.Parameters;
+          else unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
             return false;
 
-          ProvideImpl(f1.Return, f2.Return, ref updatedVariables)
+          if (f1.IsReturnEvaluated && !f2.IsReturnEvaluated)
+            f2.Return = f1.Return;
+          else if (!f1.IsReturnEvaluated && f2.IsReturnEvaluated)
+            f1.Return = f2.Return;
+          else
+            return ProvideImpl(f1.Return, f2.Return, ref updatedVariables);
+          true
 
         | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
       }

@@ -1,4 +1,4 @@
-using Nitra.Internal;
+﻿using Nitra.Internal;
 
 using Nemerle;
 using Nemerle.Assertions;
@@ -286,10 +286,7 @@ namespace Nitra.Declarations
     public override ToString() : string
     {
       def symbol  = this :> DeclarationSymbol;
-      def builder = StringBuilder(symbol.Name);
-      when (symbol.IsKindEvaluated)
-        _ = builder.Append(" (").Append(symbol.Kind).Append(")");
-      builder.ToString();
+      symbol.InitialName
     }
   }
 }

@@ -17,9 +17,9 @@ namespace DotNet
     symbol
     {
       in Parameters : ImmutableArray[TypeSymbol];
-      in Return: TypeSymbol;
+      in Return     : TypeSymbol;
 
-      ToString = $"..$(Parameters; \", \") -> $Return";
+      ToString = TypeHintHelper.ToString(this);
       MakeHint = TypeHintHelper.MakeHintForType(symbolCache, this);
 
       DecomposeType =

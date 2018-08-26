@@ -21,7 +21,7 @@ module Program
   Main(args : array[string]) : void
   {
     ServerUtils.Log("Process ID: " + Process.GetCurrentProcess().Id);
-    assert2(false, "Start debugger");
+    //assert2(false, "Start debugger");
 
     when (args.Length != 1)
     {

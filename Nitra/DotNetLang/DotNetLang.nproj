@@ -144,6 +144,9 @@
     <Compile Include="Type\CustomAttributeHost.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\Fanctional.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\FunctionType.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -227,6 +230,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\TypeAlias.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\Typed.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\TypeParameter.nitra">

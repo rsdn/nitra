@@ -16,6 +16,8 @@ namespace DotNet
 {
   public module TypeHintHelper
   {
+    private TypeHintHandlers : List[Func[StringBuilder, ISymbolCache, TypeSymbol, bool]] = List();
+
     public MakeHintForType(symbolCache : ISymbolCache, symbol : TypeSymbol) : string
     {
       def builder = StringBuilder();
@@ -38,7 +40,24 @@ namespace DotNet
     {
       TypeHintHandlers.Add(handler);
     }
-    
-    private TypeHintHandlers : List[Func[StringBuilder, ISymbolCache, TypeSymbol, bool]] = List();
+
+    public ToString(symbol : FunctionTypeSymbol) : string
+    {
+        def parameters =
+          if (symbol.IsParametersEvaluated)
+          {
+              match (symbol.Parameters.Length)
+              {
+                  | 0 => ""
+                  | 1 => symbol.Parameters[0].ToString()
+                  | _ => "(" + string.Join(", ", symbol.Parameters) + ")"
+              }
+          }
+          else "?";
+
+        def ret = if (symbol.IsReturnEvaluated) symbol.Return.ToString() else "?";
+
+        $"$parameters -> $ret"
+    }
   }
 }

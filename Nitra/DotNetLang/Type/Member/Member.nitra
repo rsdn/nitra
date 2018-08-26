@@ -12,17 +12,19 @@ namespace DotNet
       FullName = DeclaredIn.FullName + "." + this.Name;
     }
 
-    | Constructor : Parametrizable, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Constructor : Fanctional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "constructor";
           SpanClass = DotNetLang.MethodSpanClass;
+
+          ReturnType = DeclaredIn;
         }
 
-        Symbol.Flags              |= Modifiers.Flags;
-        Modifiers.Flags            = ModifierSet(context);
-        Parameters.Scope           = Scope;
+        Symbol.Flags      |= Modifiers.Flags;
+        Modifiers.Flags    = ModifierSet(context);
+        Parameters.Scope   = Scope;
 
         Initializer : ConstructorInitializer?;
       }
@@ -42,14 +44,12 @@ namespace DotNet
 
         Parameters : FormalParameter*;
       }
-    | Method : Parametrizable, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Method : Fanctional, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
-
-          in ReturnType     : TypeSymbol;
         }
 
       stage 1:
@@ -113,14 +113,12 @@ namespace DotNet
         Header        : EventHeader;
         Accessors     : EventAccessor*;
       }
-    | Indexer : Parametrizable, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Indexer : Fanctional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "indexer";
           SpanClass = DotNetLang.PropertySpanClass;
-
-          in  Type           : TypeSymbol;
         }
 
       stage 1:
@@ -129,7 +127,7 @@ namespace DotNet
         InterfaceType.Scope        = Scope;
         Type.Scope                 = Scope;
         Parameters.Scope           = Scope;
-        Symbol.Type                = TypeRef.Symbol;
+        Symbol.ReturnType          = TypeRef.Symbol;
         Accessors.Scope            = Scope;
 
         Type          : QualifiedReference;

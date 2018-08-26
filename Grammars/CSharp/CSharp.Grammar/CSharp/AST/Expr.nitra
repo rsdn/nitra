@@ -101,7 +101,7 @@ namespace DotNet
         Key.Scope = ScopeOut.HideWith(ParameterScope);
       stage 1:
         out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
-        Type = AstUtils2.GetMemberReturnType(Ref.Symbol, context);
+        Type = AstUtils2.GetMemberType(Ref.Symbol, context);
       }
     | Parenthesized
       {
@@ -409,6 +409,8 @@ namespace DotNet
       }
     | Invocation
       {
+
+        Left.ExpectedType              = ExpectedFunctionType;
         Left.ScopeIn                   = ScopeIn;
         Left.ParameterScope            = ParameterScope;
 
@@ -417,10 +419,13 @@ namespace DotNet
         Arguments.IndexIn              = 0;
         Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
         Arguments.Used                 = true;
-      
+
+
+        //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
         Type                           = Method.Symbol.ReturnType;
 
       stage 1:
+        out ExpectedFunctionType : FunctionTypeSymbol = FunctionTypeSymbol();
         out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Left, Left.Type, Arguments.Type, context);
 
         Left      : Expr;

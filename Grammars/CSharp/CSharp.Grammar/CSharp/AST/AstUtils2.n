@@ -35,8 +35,23 @@ namespace DotNet
       }
     }
 
+    public GetMemberType(this member : DeclarationSymbol, context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      match (member)
+      {
+        | x is Member.PropertySymbol => x.Type
+        | x is Member.MethodSymbol   => x.Type
+        | x is Member.FieldSymbol    => x.Type
+        | x is Member.ConstantSymbol => x.Type
+        | x is LambdaParameterSymbol => x.Type
+        | x is EnumMemberSymbol      => x.DeclaredIn
+        | TypeSymbol                 => GetPlatformType(context).Type;
+        | _                          => context.CreateFreeTypeVar()
+      }
+    }
+
     public CreateFreeTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
-    
+
     public GetBackEnd(this context : DependentPropertyEvalContext) : IDotNetBackEnd
     {
       (context.Project.Data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol))[0]
@@ -47,63 +62,63 @@ namespace DotNet
       GetBackEnd(context).PlatformType
     }
 
-    public GetStringType(this context : DependentPropertyEvalContext) : TypeSymbol 
+    public GetStringType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).String
     }
-    
-    public GetCharType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetCharType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Char
     }
-    
-    public GetInt32Type(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetInt32Type(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Int32
     }
-    
-    public GetDoubleType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetDoubleType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Double
     }
-    
-    public GetSingleType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetSingleType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Single
     }
-    
-    public GetDecimalType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetDecimalType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Decimal
     }
-    
-    public GetBooleanType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetBooleanType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Boolean
     }
-    
-    public GetObjectType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetObjectType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Object
     }
-    
-    public GetVoidType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    public GetVoidType(this context : DependentPropertyEvalContext) : TypeSymbol
     {
       GetPlatformType(context).Void
     }
-    
-    //public GetBindingBaseType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    //public GetBindingBaseType(this context : DependentPropertyEvalContext) : TypeSymbol
     //{
     //  (context :> AmmyDependentPropertyEvalContext).Types.BindingBase;
     //  GetBackEnd(context).PlatformType.Char
     //}
-    
-    //public GetBindingType(this context : DependentPropertyEvalContext) : TypeSymbol 
+
+    //public GetBindingType(this context : DependentPropertyEvalContext) : TypeSymbol
     //{
     //  (context :> AmmyDependentPropertyEvalContext).Types.Binding;
     //  GetBackEnd(context).PlatformType.Char
     //}
-    
+
     //public GetBindingTypeScope(this context : DependentPropertyEvalContext) : Scope
     //{
     //  (context :> AmmyDependentPropertyEvalContext).Types.Binding.Scope;
@@ -128,7 +143,7 @@ namespace DotNet
         | _ => false
       }
     }
-    
+
     public HasImplicitConversion(this from : TypeSymbol, to : TypeSymbol, context : DependentPropertyEvalContext) : bool
     {
       def char = context.GetVoidType().FullName;
@@ -143,7 +158,7 @@ namespace DotNet
       def float = context.GetVoidType().FullName;
       def double = context.GetVoidType().FullName;
       def decimal = context.GetVoidType().FullName;
-    
+
       match(from) {
         | x when x.FullName == sbyte => [short, int, long, float, double, decimal].Any(s => s == to.FullName)
         | x when x.FullName == byte => [short, ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)

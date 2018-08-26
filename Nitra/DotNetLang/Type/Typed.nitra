@@ -1,0 +1,12 @@
+﻿using Nitra.Declarations;
+
+namespace DotNet
+{
+  abstract declaration Typed
+  {
+    symbol
+    {
+      in Type : TypeSymbol;
+    }
+  }
+}

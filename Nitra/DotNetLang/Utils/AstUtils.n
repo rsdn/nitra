@@ -328,5 +328,19 @@ namespace DotNet
       assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
       TypeUnifier.Instance.Require(symbol1, symbol2)
     }
-  }
-}
+
+    public MapParametersToTypes(parameters : ImmutableArray[FormalParameterSymbol]) : ImmutableArray[TypeSymbol]
+    {
+        def builder = ImmutableArray.CreateBuilder(parameters.Length);
+        foreach (parameter in parameters)
+        {
+          if (parameter.IsTypeEvaluated)
+            builder.Add(parameter.Type);
+          else
+            builder.Add(CreateFreeTypeVar());
+        }
+
+        builder.MoveToImmutable()
+    }
+  } // module
+} // namespace
