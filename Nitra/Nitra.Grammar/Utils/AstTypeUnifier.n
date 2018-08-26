@@ -45,7 +45,7 @@ namespace DotNet
           unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
             return false;
 
-          ProvideImpl(f1.ReturnType, f2.ReturnType, ref updatedVariables)
+          ProvideImpl(f1.Return, f2.Return, ref updatedVariables)
 
         | (AstTypeSymbol, RuleTypeSymbol)
         | (RuleTypeSymbol, AstTypeSymbol) => false

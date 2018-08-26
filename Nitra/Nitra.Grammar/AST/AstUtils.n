@@ -355,7 +355,7 @@ namespace Nitra
       def isMatch(symbol : MapSyntaxSymbol) : bool
       {
         def parms = symbol.Parameters;
-        when (parms.Count != len)
+        when (parms.Length != len)
           return false;
 
         for (mutable i = 0; i < argumentTypes.Length; ++i)
@@ -369,7 +369,7 @@ namespace Nitra
             def r2 = getAstIdRef.Bind.[MapSyntaxSymbol](t.Scope);
             def isResolved(symbol : MapSyntaxSymbol) : bool
             {
-              when (symbol.Parameters.Count != 0)
+              when (!symbol.Parameters.IsDefaultOrEmpty)
                 return false;
 
               when (!symbol.IsReturnTypeEvaluated)
@@ -394,14 +394,14 @@ namespace Nitra
     {
       if (expectedType is SyntaxRuleSymbol(IsFieldsEvaluated = true, Fields = fields) as returnType)
       {
-        def nonVoidTypes = List();
+        def nonVoidTypes = ImmutableArray.CreateBuilder();
         foreach (field when field.IsTypeEvaluated in fields)
         {
           when (field.Type is RuleTypeSymbol as t)
           unless (t is RuleVoidTypeSymbol)
             nonVoidTypes.Add(t);
         }
-        TypeParseTreePatternCtor(loc, members, nonVoidTypes, returnType, context)
+        TypeParseTreePatternCtor(loc, members, nonVoidTypes.ToImmutable(), returnType, context)
       }
       else
       {
@@ -418,7 +418,7 @@ namespace Nitra
 
     public TypeParseTreePatternCtor(loc : IAst, members : Nitra.Ast.ParseTreePattern.IAstList, expectedMemberTypes : ImmutableArray[TypeSymbol], returnType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      if (members.Count == expectedMemberTypes.Count)
+      if (members.Count == expectedMemberTypes.Length)
       {
         foreach (type in expectedMemberTypes with index)
           members[index].ExpectedType = type;
@@ -426,7 +426,7 @@ namespace Nitra
       else when (members.Count != 0)
         // Pattern can be specified with empty parameter list or without parameters: "Ctor()", "Ctor".
         // We should consider these cases as a constructor with any number of parameters given by the Wildcard.
-        loc.Error(context, $"Expected pattern of $(expectedMemberTypes.Count), got pattern of $(members.Count).");
+        loc.Error(context, $"Expected pattern of $(expectedMemberTypes.Length), got pattern of $(members.Count).");
 
       returnType
     }
@@ -451,7 +451,7 @@ namespace Nitra
       when (expectedType : object != WellKnownSymbols.AnyType)
       {
         def unifier = AstTypeUnifier.Instance;
-        def castTemplate = CreateFunctionType(loc, array[unifier.CreateTypeVar(null, thisType)], unifier.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
+        def castTemplate = CreateFunctionType(loc, ImmutableArray.Create(unifier.CreateTypeVar(null, thisType)), unifier.CreateTypeVar(expectedType, null), context); def castTemplate = castTemplate;
         def canBeImplicitCast(mapSyntax : MapSyntaxSymbol) : bool
         { def castTemplate = castTemplate;
           mapSyntax.IsTypeEvaluated && AstTypeUnifier.Instance.TryUnify(mapSyntax.Type, castTemplate);
@@ -472,7 +472,7 @@ namespace Nitra
       }
 
       if (validCasts.IsEmpty)
-        Ref.CreateBind(loc.Location, CreateFunctionType(loc, array[thisType], thisType, context))
+        Ref.CreateBind(loc.Location, CreateFunctionType(loc, ImmutableArray.Create(thisType), thisType, context))
       else
         Ref.CreateBind(loc.Location, "MapSyntaxCast", validCasts.Map(m => VSome(m.Type :> FunctionTypeSymbol)));
     }

@@ -28,13 +28,12 @@ namespace DotNet
         when (replacement.IsSymbolEvaluated)
           when (replacement.Symbol is TypeSymbol as type)
             return Unwrap(type);
-            
+
         base.Unwrap(t)
-        
+
       | _ => base.Unwrap(t)
     }
 
-    
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       when (subtype.Equals(supertype))
@@ -47,6 +46,20 @@ namespace DotNet
         return baseTypeSet.AncestorTypes.Contains(supertype);
 
       false
+    }
+
+    protected override UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (typeSymbol1, typeSymbol2)
+      {
+        | (FunctionTypeSymbol as f1, FunctionTypeSymbol as f2) =>
+          unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
+            return false;
+
+          ProvideImpl(f1.Return, f2.Return, ref updatedVariables)
+
+        | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
+      }
     }
   }
 }
