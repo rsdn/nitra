@@ -270,12 +270,22 @@ namespace Nitra.Declarations
       {
         base(result);
         Location = location;
-        Symbol   = Symbols[0];
       }
 
       public override Location            : Location { get; }
-      public override Symbol              : TSymbol  { get; }
-      public override IsSymbolEvaluated   : bool     { get { true } }
+      public override Symbol              : TSymbol
+      {
+          get
+          {
+            if (ResolvedTo != null && ResolvedTo.IsSymbolEvaluated)
+              ResolvedTo.Symbol :> TSymbol
+            else if (Symbols.Length == 1)
+              Symbols[0]
+            else
+              assert(false);
+          }
+      }
+      public override IsSymbolEvaluated   : bool     { get { ResolvedTo != null && ResolvedTo.IsSymbolEvaluated || Symbols.Length == 1 } }
       public override IgnoreAmbiguities   : bool     { get { false } }
       public override IsNameValid         : bool     { get { Symbol.IsNameValid } }
       public override Name                : string   { get { Symbol.Name } }
@@ -341,16 +351,22 @@ namespace Nitra.Declarations
     [Record]
     private class Resolved : ResolvedBase
     {
-      public this(result : BindResult[TSymbol], from : IRef)
+      public override Symbol              : TSymbol
       {
-        base(result, from);
-        Symbol = Symbols[0];
+          get
+          {
+            if (ResolvedTo != null && ResolvedTo.IsSymbolEvaluated)
+              ResolvedTo.Symbol :> TSymbol
+            else if (Symbols.Length == 1)
+              Symbols[0]
+            else
+              assert(false);
+          }
       }
 
-      public override Symbol              : TSymbol  { get; }
+      public override IsSymbolEvaluated   : bool     { get { ResolvedTo != null && ResolvedTo.IsSymbolEvaluated || Symbols.Length == 1 } }
       public override IsNameValid         : bool     { get { Symbol.IsNameValid } }
       public override Name                : string   { get { Symbol.Name } }
-      public override IsSymbolEvaluated   : bool     { get { true } }
       public override IsFullNameEvaluated : bool     { get { Symbol.IsFullNameEvaluated } }
       public override FullName            : string   { get { Symbol.FullName } }
 
