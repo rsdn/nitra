@@ -2,7 +2,7 @@
 
 namespace DotNet
 {
-  abstract declaration Fanctional : Parametrizable
+  abstract declaration Functional : Parametrizable
   {
     symbol
     {

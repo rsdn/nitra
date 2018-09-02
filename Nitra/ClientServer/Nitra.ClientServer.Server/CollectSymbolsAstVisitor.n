@@ -59,6 +59,9 @@ namespace Nitra.ClientServer.Server
 
     public Visit(r : IRef) : void
     {
+      when (r == null)
+        return;
+      
       when (r.ResolvedTo != null)
       {
         Visit(r.ResolvedTo);

@@ -57,6 +57,11 @@ namespace DotNet
             f2.Parameters = f1.Parameters;
           else if (!f1.IsParametersEvaluated && f2.IsParametersEvaluated)
             f1.Parameters = f2.Parameters;
+          else if (!f1.IsParametersEvaluated && !f2.IsParametersEvaluated)
+          {
+            assert2(false, "FunctionTypeSymbol Unify failed!");
+            //return false;
+          }
           else unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
             return false;
 

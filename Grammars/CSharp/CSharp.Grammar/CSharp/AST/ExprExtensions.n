@@ -109,26 +109,17 @@ namespace DotNet
       }
     }
 
-    public InvocationResolveMethod(this host : Expr, left : Expr, _ : TypeSymbol, argumentTypes : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : Ref[Member.MethodSymbol]
+    public InvocationResolveFunc(this context : DependentPropertyEvalContext, funcRef : Ref[FunctionalSymbol], argumentTypes : ImmutableArray[TypeSymbol]) : Ref[FunctionalSymbol]
     {
-      match (left)
+      if (funcRef.IsUnresolved)
+        funcRef
+      else
       {
-        | qn is Expr.QualifiedName with symbolRef = qn.Ref
-        | ma is Expr.MemberAccess1 with symbolRef = ma.Ref =>
-          if (symbolRef.IsUnresolved)
-            Ref.CreateUnresolved(host.Location)
-          else
-          {
-            def resolve(x : Member.MethodSymbol) : bool
-            {
-              DoArgumentsMatchParameters(x.ParameterScope, argumentTypes, context)
-            }
-            symbolRef.Resolve(resolve)
-          }
-
-          | _ =>
-          host.Error(context, "Invocation of " + left + " not supported");
-          Ref.CreateUnresolved(host.Location)
+        def resolve(x : FunctionalSymbol) : bool
+        {
+          DoArgumentsMatchParameters(x.ParameterScope, argumentTypes, context)
+        }
+        funcRef.Resolve(resolve)
       }
     }
 

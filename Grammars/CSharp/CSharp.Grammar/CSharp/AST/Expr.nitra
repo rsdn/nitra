@@ -12,58 +12,6 @@ using Nitra.Declarations;
 
 namespace DotNet
 {
-  abstract ast Unary : Expr
-  {
-    Expr1 : Expr;
-
-    Expr1.ScopeIn = ScopeOut;
-    Expr1.Used = true;
-    Expr1.ParameterScope = ParameterScope;
-    Type = Expr1.Type;
-    out Operation : UnaryOp;
-  }
-  abstract ast NumericUnary : Unary
-  {
-    //unless (Expr1.Type == context.GetInt32Type() ||
-    //        Expr1.Type == context.GetDoubleType())
-    //  Expr1.Error(context, $"Expected int or float, but found $(self.Expr1.Type)");
-  }
-  abstract ast BoolUnary : Unary
-  {
-    //unless (Expr1.Type.IsSubtypeOf(context.GetBooleanType()))
-    //  Expr1.Error(context, $"Expected bool but found $(self.Expr1.Type)");
-  }
-  abstract ast BinaryExpr : Expr
-  {
-    Expr1 : Expr;
-    Expr2 : Expr;
-
-    Expr1.ScopeIn = ScopeOut;
-    Expr2.ScopeIn = ScopeOut;
-    Expr1.Used = true;
-    Expr2.Used = true;
-    Expr1.ParameterScope = ParameterScope;
-    Expr2.ParameterScope = ParameterScope;
-    out Operation : BinaryOp;
-  }
-  abstract ast SameTypesExpr : BinaryExpr { }
-  abstract ast OrAndExpr : SameTypesExpr
-  {
-    Type = context.GetBooleanType();
-  }
-  abstract ast EqualExpr : SameTypesExpr
-  {
-    Type = context.GetBooleanType();
-  }
-  abstract ast NumericBinary : SameTypesExpr { }
-  abstract ast Comparison : NumericBinary
-  {
-    Type = context.GetBooleanType();
-  }
-  abstract ast Arithmetic : NumericBinary
-  {
-    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
-  }
   abstract ast Expr
   {
     inout Scope : Scope;
@@ -73,7 +21,9 @@ namespace DotNet
     in ParameterScope : TableScope = TableScope(null, "parameters");
   stage 1:
     out Type : TypeSymbol;
-    unless (Type.IsSubtypeOf(ExpectedType)/* || (ExpectedType.IsNumeric(contect) && Type.IsNumeric(contect))*/)
+    out Func : Ref[FunctionalSymbol] = AstUtils2.CreateUnresolved();
+
+    unless (Type.IsSubtypeOf(ExpectedType))
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
     | String
       {
@@ -100,8 +50,10 @@ namespace DotNet
 
         Key.Scope = ScopeOut.HideWith(ParameterScope);
       stage 1:
-        out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
-        Type = AstUtils2.GetMemberType(Ref.Symbol, context);
+        Func = Key.Ref.Resolve();
+        //out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
+        // Результат Ref может быть неоднозначным. 
+        Type = context.GetOverloadedMemberType(Func.Symbols);
       }
     | Parenthesized
       {
@@ -417,16 +369,22 @@ namespace DotNet
         Arguments.ParameterScope       = ParameterScope;
         Arguments.ScopeIn              = ScopeIn.HideWith(ParameterScope);
         Arguments.IndexIn              = 0;
-        Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
+        Arguments.ParentParameterScope = Func.Symbol.ParameterScope;
         Arguments.Used                 = true;
 
 
         //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
-        Type                           = Method.Symbol.ReturnType;
+        Type                           = Func.Symbol.ReturnType;
+        Func                           = context.InvocationResolveFunc(Left.Func, Arguments.Type);
+
+        unless (Left.Type.Unify(Func.Symbol.Type))
+          Error(context, $"The $(Left.Type) not unify with $(Func.Symbol.Type)");
+
+        //Left.Type, Func.Symbol.Type
 
       stage 1:
         out ExpectedFunctionType : FunctionTypeSymbol = FunctionTypeSymbol();
-        out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Left, Left.Type, Arguments.Type, context);
+        //out Func : Ref[FunctionalSymbol] = this.InvocationResolveFunc(Left, Left.Type, Arguments.Type, context);
 
         Left      : Expr;
         Arguments : DotNet.Argument*;
@@ -635,5 +593,57 @@ namespace DotNet
     | None
     | Ref
     | Out
+  }
+  abstract ast Unary : Expr
+  {
+    Expr1 : Expr;
+
+    Expr1.ScopeIn = ScopeOut;
+    Expr1.Used = true;
+    Expr1.ParameterScope = ParameterScope;
+    Type = Expr1.Type;
+    out Operation : UnaryOp;
+  }
+  abstract ast NumericUnary : Unary
+  {
+    //unless (Expr1.Type == context.GetInt32Type() ||
+    //        Expr1.Type == context.GetDoubleType())
+    //  Expr1.Error(context, $"Expected int or float, but found $(self.Expr1.Type)");
+  }
+  abstract ast BoolUnary : Unary
+  {
+    //unless (Expr1.Type.IsSubtypeOf(context.GetBooleanType()))
+    //  Expr1.Error(context, $"Expected bool but found $(self.Expr1.Type)");
+  }
+  abstract ast BinaryExpr : Expr
+  {
+    Expr1 : Expr;
+    Expr2 : Expr;
+
+    Expr1.ScopeIn = ScopeOut;
+    Expr2.ScopeIn = ScopeOut;
+    Expr1.Used = true;
+    Expr2.Used = true;
+    Expr1.ParameterScope = ParameterScope;
+    Expr2.ParameterScope = ParameterScope;
+    out Operation : BinaryOp;
+  }
+  abstract ast SameTypesExpr : BinaryExpr { }
+  abstract ast OrAndExpr : SameTypesExpr
+  {
+    Type = context.GetBooleanType();
+  }
+  abstract ast EqualExpr : SameTypesExpr
+  {
+    Type = context.GetBooleanType();
+  }
+  abstract ast NumericBinary : SameTypesExpr { }
+  abstract ast Comparison : NumericBinary
+  {
+    Type = context.GetBooleanType();
+  }
+  abstract ast Arithmetic : NumericBinary
+  {
+    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
   }
 }

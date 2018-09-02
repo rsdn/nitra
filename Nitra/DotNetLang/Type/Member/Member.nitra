@@ -12,7 +12,7 @@ namespace DotNet
       FullName = DeclaredIn.FullName + "." + this.Name;
     }
 
-    | Constructor : Fanctional, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Constructor : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
@@ -44,7 +44,7 @@ namespace DotNet
 
         Parameters : FormalParameter*;
       }
-    | Method : Fanctional, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Method : Functional, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
@@ -113,7 +113,7 @@ namespace DotNet
         Header        : EventHeader;
         Accessors     : EventAccessor*;
       }
-    | Indexer : Fanctional, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Indexer : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
