@@ -1,8 +1,10 @@
-﻿class Program
+using System;
+
+class Program
 {
   static void Main(string[] args)
   {
     int i, ss = 33;
-    string ss = i.ToString();
+    string ss = Console.WriteLine(i.ToString());
   }
 }
