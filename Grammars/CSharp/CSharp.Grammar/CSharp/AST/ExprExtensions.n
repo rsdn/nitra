@@ -119,7 +119,41 @@ namespace DotNet
         {
           DoArgumentsMatchParameters(x.ParameterScope, argumentTypes, context)
         }
-        funcRef.Resolve(resolve)
+        def res = funcRef.Resolve.[FunctionalSymbol](resolve);
+        if (res.IsAmbiguous)
+        {
+          mutable bestFunc;
+          mutable prevFunc;
+          mutable prevParam;
+          mutable funcIndex;
+          def funcs = res.Symbols;
+
+          def isIdentityConversion(type1 : TypeSymbol, type2 : TypeSymbol) : bool
+          {
+          }
+          def isBetterConversionTarget(type1 : TypeSymbol, type2 : TypeSymbol) : bool
+          {
+              // prevParam.Type.Unify(p.Type)
+              // prevParam.Type.IsSubtypeOf(p.Type)
+          }
+          // 7.5.3.3 Better conversion from expression
+          def betterConversionFromExpression(nParamTypes : array[TypeSymbol]) : array[int]
+          {
+          }
+
+          // 7.5.3.2 Better function member
+          def firstFunc = res.Symbols[0];
+          def types = array(funcs.Length);
+          for (mutable i = 0; i < paramsCount; i++) // Перебераем параметры. Их должно быть одинаковое число.
+          {
+            foreach (func in funcs with fi)
+              types[fi] = func.Parameters[i];
+
+            def winners = betterConversionFromExpression(types);
+          }
+        }
+        else
+          res
       }
     }
 
