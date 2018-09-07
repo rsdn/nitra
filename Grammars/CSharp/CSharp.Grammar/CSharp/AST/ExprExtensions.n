@@ -128,17 +128,53 @@ namespace DotNet
           mutable funcIndex;
           def funcs = res.Symbols;
 
+          // 6.1.1 Identity conversion
           def isIdentityConversion(type1 : TypeSymbol, type2 : TypeSymbol) : bool
           {
+            // An identity conversion converts from any type to the same type. This conversion exists such that an entity
+            // that already has a required type can be said to be convertible to that type.
+            // Because object and dynamic are considered equivalent there is an identity conversion between object and dynamic,
+            // and between constructed types that are the same when replacing all occurences of dynamic with object.
+
+            // TODO: Add object and dynamic unification
+            
+            type1.TryUnify(type2)
           }
+          // 7.5.3.5 Better conversion target
           def isBetterConversionTarget(type1 : TypeSymbol, type2 : TypeSymbol) : bool
           {
-              // prevParam.Type.Unify(p.Type)
-              // prevParam.Type.IsSubtypeOf(p.Type)
+            // Given two different types T¹ and T², T¹ is a better conversion target than T² if at least one of the
+            // following holds:
+            // •	An implicit conversion from T¹ to T² exists, and no implicit conversion from T² to T¹ exists
+            // •	T¹ is a signed integral type and T² is an unsigned integral type. Specifically:
+            //    *	T¹ is sbyte and T² is byte, ushort, uint, or ulong
+            //    *	T¹ is short and T² is ushort, uint, or ulong
+            //    *	T¹ is int and T² is uint, or ulong
+            //    *	T¹ is long and T² is ulong
+
+            // TODO: поддержать неявные приведения типов
+            
+            type1.IsSubtypeOf(type2) && !type2.IsSubtypeOf(type1)
           }
           // 7.5.3.3 Better conversion from expression
-          def betterConversionFromExpression(nParamTypes : array[TypeSymbol]) : array[int]
+          def betterConversionFromExpression(argType : TypeSymbol, nParamTypes : array[TypeSymbol]) : array[int]
           {
+            // Given an implicit conversion C¹ that converts from an expression E to a type T¹, and an implicit
+            // conversion C² that converts from an expression E to a type T², C¹ is a better conversion than C²
+            // if at least one of the following holds:
+            // • E has a type S and an identity conversion exists from S to T¹ but not from S to T²
+            // • E is not an anonymous function and T¹ is a better conversion target than T² (§7.5.3.5)
+            // • E is an anonymous function, T¹ is either a delegate type D¹ or an expression tree type Expression<D¹>, T²
+            //   is either a delegate type D² or an expression tree type Expression<D²> and one of the following holds:
+            //      * D¹ is a better conversion target than D²
+            //      * D¹ and D² have identical parameter lists, and one of the following holds:
+            //         • D¹ has a return type Y¹, and D² has a return type Y², an inferred return type X exists for E in
+            //           the context of that parameter list (§7.5.2.12), and the conversion from X to Y¹ is better than
+            //           the conversion from X to Y² 
+            //         • E is async, D¹ has a return type Task<Y¹>, and D² has a return type Task<Y²>, an inferred return type
+            //           Task<X> exists for E in the context of that parameter list (§7.5.2.12), and the conversion from X to Y¹
+            //           is better than the conversion from X to Y²
+            //         • D¹ has a return type Y, and D² is void returning
           }
 
           // 7.5.3.2 Better function member
@@ -149,7 +185,7 @@ namespace DotNet
             foreach (func in funcs with fi)
               types[fi] = func.Parameters[i];
 
-            def winners = betterConversionFromExpression(types);
+            def winners = betterConversionFromExpression(argumentTypes[i], types);
           }
         }
         else
