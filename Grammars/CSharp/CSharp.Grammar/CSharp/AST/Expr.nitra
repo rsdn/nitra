@@ -52,7 +52,7 @@ namespace DotNet
       stage 1:
         Func = Key.Ref.Resolve();
         //out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
-        // Результат Ref может быть неоднозначным. 
+        // Результат Ref может быть неоднозначным.
         Type = context.GetOverloadedMemberType(Func.Symbols);
       }
     | Parenthesized
@@ -375,7 +375,7 @@ namespace DotNet
 
         //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
         Type                           = Func.Symbol.ReturnType;
-        Func                           = context.InvocationResolveFunc(Left.Func, Arguments.Type);
+        Func                           = context.InvocationResolveFunc(Left.Func, Arguments.Type, Arguments);
 
         unless (Left.Type.Unify(Func.Symbol.Type))
           Error(context, $"The $(Left.Type) not unify with $(Func.Symbol.Type)");

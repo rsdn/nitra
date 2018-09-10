@@ -19,7 +19,7 @@ namespace DotNet
   public module AstUtils
   {
     public CreateFreeTypeVar() : TypeVarSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
-      
+
     public Append(this lst : QualifiedReference.IAstList, item : QualifiedReference) : QualifiedReference.IAstList
     {
       def newItems = array(lst.Count + 1);
@@ -336,6 +336,15 @@ namespace DotNet
       assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
       assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
       TypeUnifier.Instance.Unify(symbol1, symbol2)
+    }
+
+    public TryUnify[T1, T2](this symbol1 : T1, symbol2 : T2) : bool
+      where T1: class, TypeSymbol
+      where T2: class, TypeSymbol
+    {
+      assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
+      assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
+      TypeUnifier.Instance.TryUnify(symbol1, symbol2)
     }
 
     public MapParametersToTypes(parameters : ImmutableArray[FormalParameterSymbol]) : ImmutableArray[TypeSymbol]
