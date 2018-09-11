@@ -317,24 +317,6 @@ namespace DotNet
                 }
               }
             }
-
-            for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
-            {
-              // Находим максимальное значение преобразование (значение лучшего преобразования).
-              // Определяем: а) есть ли другие такие же значения для параметра;
-              //             б) есть ли значения меньшие чем максимальное (блее худшие).
-              // Если лучшее значение одно, заменяем его на Best, а остальные на Worse.
-              // Если лучшее значение не одно, заменяем его на NotWorse, а остальные на Worse.
-              mutable max = int.MinValue;
-              mutable best = int.MinValue;
-              for (mutable ci = 0; ci < candidatsCount; ci++) // ci - candidat index
-              {
-                  def r = decisionTable[ci, ai] :> int;
-                  when (r > max)
-                  {
-                  }
-              }
-            }
           }
 
           findBetterFunction(candidats, argumentTypes, args, argumentsCount, candidatsCount, typeTable, decisionTable);
@@ -349,18 +331,17 @@ namespace DotNet
 
           def bestFunctionChoice(candidats : array[FunctionalSymbol], decisionTable : array.[2][Convertion]) : Ref[FunctionalSymbol]
           {
-            def res = LightList.[FunctionalSymbol]();
-            foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
-            {
-              when (argumentsCount == 0)
-              {
-                res.Add(candidat);
-                continue;
-              }
+            // Находим максимальное значение преобразование (значение лучшего преобразования).
+            // Определяем: а) есть ли другие такие же значения для параметра;
+            //             б) есть ли значения меньшие чем максимальное (блее худшие).
+            // Если лучшее значение одно, заменяем его на Best, а остальные на Worse.
+            // Если лучшее значение не одно, заменяем его на NotWorse, а остальные на Worse.
 
+            for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+            {
               mutable max = int.MinValue;
               mutable maxCount = 0;
-              for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+              foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
               {
                   def rang = decisionTable[ci, ai] :> int;
                   if (rang > max)
@@ -372,24 +353,29 @@ namespace DotNet
                     maxCount++;
               }
 
-              for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+              foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
                 if (decisionTable[ci, ai] :> int == max)
                   decisionTable[ci, ai] = if (maxCount == 1) Convertion.Best else Convertion.NotWorse;
                 else
                   decisionTable[ci, ai] = Convertion.Worse;
 
-              for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+              foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
               {
-                when (decisionTable[ci, ai] != Convertion.Worse)
+                if (decisionTable[ci, ai] == Convertion.Worse)
+                  candidats[ci] = null;
+                else
                 {
-                  def paramToStr(p : FormalParameterSymbol) : string { p.Type + " " + p.Name + " (" + decisionTable[ci, ai] + ")" }
-                  Debug.WriteLine($<#$(candidat.Name)(..$(candidat.Parameters; ", "; paramToStr))#>);
-                  res.Add(candidats[ci]);
-                  //Debug.Write(supplementedTo(decisionTable[ci, ai].ToString(), 15));
+                //  def paramToStr(p : FormalParameterSymbol) : string { p.Type + " " + p.Name + " (" + decisionTable[ci, ai] + ")" }
+                //  Debug.WriteLine($<#$(candidat.Name)(..$(candidat.Parameters; ", "; paramToStr))#>);
                 }
-                Debug.WriteLine("");
               }
             }
+
+            def res = LightList.[FunctionalSymbol]();
+            foreach (candidat when candidat != null in candidats)
+              res.Add(candidat);
+
+            // TODO: Реализовать эвристики из стандарта
 
             match (res.Count)
             {
