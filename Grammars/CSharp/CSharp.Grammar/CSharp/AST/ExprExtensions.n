@@ -210,13 +210,20 @@ namespace DotNet
               for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
               {
                 def argumentType = argumentTypes[ai];
-                when (hasImplicitConversions(argumentType, sym.Parameters[ai].Type))
+                when (!hasImplicitConversions(argumentType, sym.Parameters[ai].Type))
                   return false;
               }
+
+              when (sym.IsParametersEvaluated && sym.Parameters.Length != argumentsCount) // TODO: Сделать поддержку опциональных параметров
+                return false;
+
               true;
           }
 
           def candidats = res.Symbols.FilterToArray(isApplicableFunction);
+
+          // 1. Для одного кандидата возвращать результат без обработки.
+          // 2. Для пустого списка параметров decisionTable не формировать.
 
           // 7.5.3.2 Better function member
           def typeTable      = array(candidats.Length, argumentsCount);
@@ -340,34 +347,59 @@ namespace DotNet
                 str + string(' ', len - str.Length)
           }
 
-          def bestFunctionChoice(candidats : array[FunctionalSymbol], decisionTable : array.[2][Convertion])
+          def bestFunctionChoice(candidats : array[FunctionalSymbol], decisionTable : array.[2][Convertion]) : Ref[FunctionalSymbol]
           {
+            def res = LightList.[FunctionalSymbol]();
             foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
             {
+              when (argumentsCount == 0)
+              {
+                res.Add(candidat);
+                continue;
+              }
+
+              mutable max = int.MinValue;
+              mutable maxCount = 0;
               for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
               {
-                  def decision = decisionTable[ci, ai];
-                  when (decision == Convertion.Identity)
+                  def rang = decisionTable[ci, ai] :> int;
+                  if (rang > max)
                   {
+                    max      = rang;
+                    maxCount = 0;
                   }
+                  else when (rang == max)
+                    maxCount++;
+              }
+
+              for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+                if (decisionTable[ci, ai] :> int == max)
+                  decisionTable[ci, ai] = if (maxCount == 1) Convertion.Best else Convertion.NotWorse;
+                else
+                  decisionTable[ci, ai] = Convertion.Worse;
+
+              for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+              {
+                when (decisionTable[ci, ai] != Convertion.Worse)
+                {
+                  def paramToStr(p : FormalParameterSymbol) : string { p.Type + " " + p.Name + " (" + decisionTable[ci, ai] + ")" }
+                  Debug.WriteLine($<#$(candidat.Name)(..$(candidat.Parameters; ", "; paramToStr))#>);
+                  res.Add(candidats[ci]);
+                  //Debug.Write(supplementedTo(decisionTable[ci, ai].ToString(), 15));
+                }
+                Debug.WriteLine("");
               }
             }
-          }
-          foreach (candidat when candidat != null in candidats with ci) // ci - candidat index
-          {
-            def paramToStr(p : FormalParameterSymbol) : string { p.Type + " " + p.Name }
-            Debug.WriteLine($<#$(candidat.Name)(..$(candidat.Parameters; ", "; paramToStr))#>);
 
-            for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
-              Debug.Write(supplementedTo(decisionTable[ci, ai].ToString(), 15));
-            Debug.WriteLine("");
+            match (res.Count)
+            {
+              | 0 => funcRef.CreateRevole(BindResult.Nil())
+              | 1 => funcRef.CreateRevole(BindResult.Single(res[0]))
+              | _ => funcRef.CreateRevole(BindResult.Multiple(res.ToImmutableArray()))
+            }
           }
 
-          def resolve(x : FunctionalSymbol) : bool
-          {
-            candidats.Contains(x)
-          }
-          funcRef.Resolve.[FunctionalSymbol](resolve);
+          bestFunctionChoice(candidats, decisionTable)
         }
         else
           res
