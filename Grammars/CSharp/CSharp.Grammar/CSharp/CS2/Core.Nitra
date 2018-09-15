@@ -30,6 +30,7 @@
 
     syntax Statement
     {
+      | EmbeddedStatement;
     }
 
     syntax EmbeddedStatement

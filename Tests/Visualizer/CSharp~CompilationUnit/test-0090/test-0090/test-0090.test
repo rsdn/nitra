@@ -5,6 +5,6 @@ class Program
   static void Main(string[] args)
   {
     int i, ss = 33;
-    string ss = i.ToString();
+    Console.WriteLine(i.ToString());
   }
 }

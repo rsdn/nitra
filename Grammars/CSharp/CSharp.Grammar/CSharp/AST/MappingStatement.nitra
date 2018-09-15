@@ -9,7 +9,10 @@ using System.Globalization;
 
 namespace CSharp
 {
-  map syntax Core.Statement -> DotNet.Statement;
+  map syntax Core.Statement -> DotNet.Statement
+  {
+    | EmbeddedStatement -> EmbeddedStatement
+  }
 
   map syntax Core.EmbeddedStatement -> DotNet.Statement
   {
@@ -28,7 +31,7 @@ namespace CSharp
   {
     DotNet.LocalVarsStatement { LocalVariableDeclaration -> LocalVars; }
   }
-  
+
   map syntax Statements.LocalVariableDeclaration -> LocalVar*;
 
   map syntax Statements.LocalVariableDeclaration.Multi -> LocalVar*
@@ -72,7 +75,7 @@ namespace CSharp
   {
     DotNet.EmptyStatement { } // TODO: Implement...
   }
-  
+
   map syntax CS7.TupleDeconstructionStatement.TupleDeconstruction -> Statement
   {
     TupleDeconstruction {  }
