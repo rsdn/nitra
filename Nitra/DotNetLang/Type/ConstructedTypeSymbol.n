@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Nitra;
 using Nitra.Declarations;
 
@@ -21,6 +21,12 @@ namespace DotNet
 
   module ConstructedTypeImpl
   {
+    public ToString(sym : ConstructedTypeSymbol) : string
+    {
+      def typeInfoText = if (sym.IsTypeInfoEvaluated) sym.TypeInfo.InitialName else "?";
+      def argsText = if (sym.IsArgsEvaluated) string.Join(" ,", sym.Args.MapToArray(a => a.ToString())) else "?";
+      typeInfoText + "<" + argsText + ">";
+    }
     public MakeHint(symbol : ConstructedTypeSymbol) : string
     {
       def builder = StringBuilder();
@@ -79,7 +85,7 @@ namespace DotNet
       }
     }
 
-    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
+    public override ToString() : string { ConstructedTypeImpl.ToString(this) }
   }
 
   public partial class NestedConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
@@ -102,6 +108,6 @@ namespace DotNet
       }
     }
 
-    public override ToString() : string { if (IsFullNameEvaluated) FullName else base.ToString() }
+    public override ToString() : string { ConstructedTypeImpl.ToString(this) }
   }
 } //namespace
