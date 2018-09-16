@@ -80,8 +80,14 @@ namespace DotNet
             CreateFreeTypeVar(context)
       }
     }
-    
+
     public CreateFreeTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
+
+    public CreateNullTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      // TODO: Добавить Reference Type Constraint
+      TypeUnifier.Instance.CreateFreeTypeVar()
+    }
 
     public CreateFunctionTypeSymbol(this context : DependentPropertyEvalContext, returnType : TypeSymbol) : FunctionTypeSymbol
     {
@@ -97,7 +103,7 @@ namespace DotNet
       type.EvalProperties(context);
       type
     }
-    
+
     public CreateFunctionTypeSymbol(this context : DependentPropertyEvalContext, returnType : TypeSymbol, parameters : ImmutableArray[TypeSymbol]) : FunctionTypeSymbol
     {
       def type = FunctionTypeSymbol();
@@ -106,7 +112,7 @@ namespace DotNet
       type.EvalProperties(context);
       type
     }
-    
+
     public CreateFunctionTypeSymbol(this context : DependentPropertyEvalContext, parameters : ImmutableArray[TypeSymbol]) : FunctionTypeSymbol
     {
       def type = FunctionTypeSymbol();
@@ -114,7 +120,7 @@ namespace DotNet
       type.EvalProperties(context);
       type
     }
-    
+
     public GetBackEnd(this context : DependentPropertyEvalContext) : IDotNetBackEnd
     {
       (context.Project.Data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol))[0]

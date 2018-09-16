@@ -42,7 +42,7 @@ namespace DotNet
       }
     | NullLiteral
       {
-        Type = context.GetObjectType();
+        Type = context.CreateNullTypeVar();
       }
     | QualifiedName
       {
@@ -375,7 +375,7 @@ namespace DotNet
 
         //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
         Type                           = Func.Symbol.ReturnType;
-        Func                           = context.InvocationResolveFunc(Left.Func, Arguments.Type, Arguments);
+        Func                           = context.InvocationResolveFunc(Left, Left.Func, Arguments.Type, Arguments);
 
         unless (Left.Type.Unify(Func.Symbol.Type))
           Error(context, $"The $(Left.Type) not unify with $(Func.Symbol.Type)");
