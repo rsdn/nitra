@@ -16,21 +16,134 @@ namespace DotNet
 {
   public class TopSubstScope : Scope
   {
-    private _typeInfo : GenericTypeSymbol;
-    private _args     : ImmutableArray[TypeSymbol];
+    private _typeInfo      : GenericTypeSymbol;
+    private _args          : ImmutableArray[TypeSymbol];
+    private _typeParamsMap : Hashtable[int, TypeSymbol];
 
     public this(typeInfo : GenericTypeSymbol, _scope : Scope, args : ImmutableArray[TypeSymbol])
     {
       _typeInfo = typeInfo;
       _args     = args;
+
+      def typeParams    = typeInfo.TypeParameters;
+      def typeParamsMap = Hashtable();
+      assert2(args.Length == typeParams.Length);
+      // TODO: Add support of parent type type parameters.
+      foreach (tp in typeParams with i)
+        typeParamsMap[tp.Id] = args[i];
+
+      _typeParamsMap = typeParamsMap;
     }
 
     // TODO: add type subst
     public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } }
 
+    private TrySubst(type : TypeSymbol) : TypeSymbol
+    {
+      mutable result;
+      if (_typeParamsMap.TryGetValue(type.Id, out result))
+        result
+      else
+        type
+    }
+
+    private TrySubsts(types : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(types.Length);
+      foreach (type in types)
+        builder.Add(TrySubst(type));
+      builder.MoveToImmutable()
+    }
+
+    private TrySubstTypeParameters(types : ImmutableArray[TypeParameterSymbol]) : ImmutableArray[TypeSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(types.Length);
+      foreach (type in types)
+        builder.Add(TrySubst(type));
+      builder.MoveToImmutable()
+    }
+
+    private SubstMethod(it : Member.MethodSymbol) : Member.MethodSymbol
+    {
+      def subst = Member.MethodSymbol();
+      foreach (decl in it.GetDeclarationsUntyped())
+        subst.AddDeclaration(decl);
+      when (it.IsCustomAttributesEvaluated)
+      {
+        subst.CustomAttributes = it.CustomAttributes;
+        subst.CustomAttributes_Location = it.CustomAttributes_Location;
+      }
+      when (it.IsDeclaredInEvaluated)
+      {
+        subst.DeclaredIn = it.DeclaredIn;
+        subst.DeclaredIn_Location = it.DeclaredIn_Location;
+      }
+      when (it.IsDeclaredInOptEvaluated)
+      {
+        subst.DeclaredInOpt = it.DeclaredInOpt;
+        subst.DeclaredInOpt_Location = it.DeclaredInOpt_Location;
+      }
+      when (it.IsFlagsEvaluated)
+      {
+        subst.Flags = it.Flags;
+        subst.Flags_Location = it.Flags_Location;
+      }
+      when (it.IsKindEvaluated)
+      {
+        subst.Kind = it.Kind;
+        subst.Kind_Location = it.Kind_Location;
+      }
+      when (it.IsScopeEvaluated)
+      {
+        subst.Scope = it.Scope;
+        subst.Scope_Location = it.Scope_Location;
+      }
+      when (it.IsSpanClassEvaluated)
+      {
+        subst.SpanClass = it.SpanClass;
+        subst.SpanClass_Location = it.SpanClass_Location;
+      }
+      // ...... Type subst ......
+      when (it.IsReturnTypeEvaluated)
+      {
+        subst.ReturnType = TrySubst(it.ReturnType);
+        subst.ReturnType_Location = it.ReturnType_Location;
+      }
+      when (it.IsParametersEvaluated)
+      {
+        subst.Parameters = it.Parameters;
+        subst.Parameters_Location = it.Parameters_Location;
+      }
+      //when (it.IsTypeEvaluated)
+      //{
+      //  subst.Type = it.Type;
+      //  subst.Type_Location = it.Type_Location;
+      //}
+      when (it.IsTypeParametersEvaluated)
+      {
+        subst.TypeParameters = TrySubstTypeParameters(it.TypeParameters);
+        subst.TypeParameters_Location = it.TypeParameters_Location;
+      }
+      when (it.IsTypeParametersCountEvaluated)
+      {
+        subst.TypeParametersCount = it.TypeParametersCount;
+        subst.TypeParametersCount_Location = it.TypeParametersCount_Location;
+      }
+      subst
+    }
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
-      _typeInfo.Scope.Bind.[TSymbol](reference)
+      def result = _typeInfo.Scope.Bind.[TSymbol](reference);
+      def symbols = result.GetSymbols();
+
+      def res = LightList();
+      foreach (x in symbols)
+      {
+        | method is Member.MethodSymbol => res.Add(SubstMethod(method));
+        | _ => ()
+      }
+      res.ToBindResult()
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]

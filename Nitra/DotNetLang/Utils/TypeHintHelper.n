@@ -48,7 +48,7 @@ namespace DotNet
           {
               match (symbol.Parameters.Length)
               {
-                  | 0 => ""
+                  | 0 => "void"
                   | 1 => symbol.Parameters[0].ToString()
                   | _ => "(" + string.Join(", ", symbol.Parameters) + ")"
               }

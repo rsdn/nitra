@@ -29,7 +29,7 @@ namespace Nitra.BackEnd.Cci
           assert2(res);
           typeSymbol
         }
-        
+
         Void    = getType(types.SystemVoid.ResolvedType);
         Type    = getType(types.SystemType.ResolvedType);
         String  = getType(types.SystemString.ResolvedType);
@@ -47,7 +47,7 @@ namespace Nitra.BackEnd.Cci
         Decimal = getType(types.SystemDecimal.ResolvedType);
         Boolean = getType(types.SystemBoolean.ResolvedType);
       }
-    
+
       public CreateFreeTypeVar() : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
 
       public Void    : TypeSymbol { get; }
