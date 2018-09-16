@@ -1,4 +1,4 @@
-using Common;
+﻿using Common;
 
 using ICSharpCode.AvalonEdit.AddIn;
 using ICSharpCode.AvalonEdit.CodeCompletion;
@@ -1189,7 +1189,7 @@ namespace Nitra.Visualizer
             //var replaceText = _textEditor.Document.GetText(replacementSpan.StartPos, replacementSpan.Length);
             //var replace = $" {replacementSpan} - '{replaceText}'";
             var replace = "";
-            data.Add(new CompletionData(replacementSpan, s.name, s.content + replace, s.description + replace, priority: 1.0));
+            data.Add(new CompletionData(replacementSpan, s.name, s.content + replace, Utils.Escape(s.description) + replace, priority: 1.0));
             break;
         }
       }
