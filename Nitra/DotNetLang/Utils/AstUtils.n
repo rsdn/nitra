@@ -287,16 +287,16 @@ namespace DotNet
       (declaration :> GenericEntity).TypeParameterAliases?.Count
     }
 
-    public GetTypeParameter(alias : TypeParameterAlias, typeParameterSymbols : IList[TypeParameterSymbol], IndexIn : int) : TypeParameterSymbol
+    public GetTypeParameter(alias : TypeParameterAlias, typeParameterSymbols : IList[TypeSymbol], IndexIn : int) : TypeParameterSymbol
     {
-      def typeParameterSymbol = typeParameterSymbols[IndexIn];
+      def typeParameterSymbol = typeParameterSymbols[IndexIn] :> TypeParameterSymbol;
       typeParameterSymbol.AddAliasSymbol(alias);
       typeParameterSymbol
     }
 
     public NoTypeParameters : array[TypeParameterSymbol] = array(0);
 
-    public CreateTypeParameters(count : int) : ImmutableArray[TypeParameterSymbol]
+    public CreateTypeParameters(count : int) : ImmutableArray[TypeSymbol]
     {
       if (count == 0)
         ImmutableArray.Empty

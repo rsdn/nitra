@@ -40,6 +40,8 @@ namespace DotNet
 
     private TrySubst(type : TypeSymbol) : TypeSymbol
     {
+      // Это может быть сконструированный тип (у которого параметров типы уже подставлены или отсутствуют).
+      // Возможно здесь имеет смысл сделать проверку на это и не делать для них подмены.
       mutable result;
       if (_typeParamsMap.TryGetValue(type.Id, out result))
         result
@@ -55,10 +57,10 @@ namespace DotNet
       builder.MoveToImmutable()
     }
 
-    private TrySubstTypeParameters(types : ImmutableArray[TypeParameterSymbol]) : ImmutableArray[TypeSymbol]
+    private TrySubstTypeParameters(typeParameters : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
     {
-      def builder = ImmutableArray.CreateBuilder(types.Length);
-      foreach (type in types)
+      def builder = ImmutableArray.CreateBuilder(typeParameters.Length);
+      foreach (type in typeParameters)
         builder.Add(TrySubst(type));
       builder.MoveToImmutable()
     }
@@ -140,7 +142,7 @@ namespace DotNet
       def res = LightList();
       foreach (x in symbols)
       {
-        | method is Member.MethodSymbol => res.Add(SubstMethod(method));
+        | method is Member.MethodSymbol => res.Add(SubstMethod(method) :> TSymbol);
         | _ => ()
       }
       res.ToBindResult()

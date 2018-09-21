@@ -149,7 +149,7 @@ namespace Nitra.BackEnd.Cci
               cont.MemberTable = memberTable;
               typeSymbol.Scope = memberTable;
             }
-              
+
             typeSymbol.EvalProperties(context);
 
             when (typeSymbol is GenericContainerTypeSymbol as genericContainerTypeSymbol)
@@ -524,7 +524,7 @@ namespace Nitra.BackEnd.Cci
         result
     }
 
-    CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeParameterSymbol]
+    CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeSymbol]
     {
       if (genericParameterCount == 0)
         ImmutableArray.Empty
@@ -566,7 +566,7 @@ namespace Nitra.BackEnd.Cci
       this.PlatformType = PlatformTypeImpl(this);
     }
 
-    MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeParameterSymbol
+    MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeSymbol
     {
       def name  = NRB.Name(NoLocation, "T");
       def tps   = ArrayTypeParameterDeclaration(name).DefineSymbol();
@@ -594,7 +594,7 @@ namespace Nitra.BackEnd.Cci
             def type = ext.Type;
             en.UnderlyingType = CciTypeToTypeSymbol(type.UnderlyingType, context);
 
-          | SupportsInheritanceTypeSymbol as type => 
+          | SupportsInheritanceTypeSymbol as type =>
             def baseTypeSet = BaseTypeReferenceSet(context);
             type.BaseTypeSet = baseTypeSet;
             foreach (cciBaseClasse in cciType.BaseClasses)
