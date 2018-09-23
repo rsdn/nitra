@@ -40,13 +40,33 @@ namespace DotNet
 
     private TrySubst(type : TypeSymbol) : TypeSymbol
     {
-      // Это может быть сконструированный тип (у которого параметров типы уже подставлены или отсутствуют).
-      // Возможно здесь имеет смысл сделать проверку на это и не делать для них подмены.
-      mutable result;
-      if (_typeParamsMap.TryGetValue(type.Id, out result))
-        result
-      else
-        type
+      match (type)
+      {
+        | TypeParameterSymbol =>
+          mutable result;
+          if (_typeParamsMap.TryGetValue(type.Id, out result))
+            result
+          else
+          {
+            assert2(false, "Unmapped TypeParameterSymbol!");
+            type
+          }
+
+        | ConstructedTypeSymbol as cts =>
+          def typeInfo      = cts.TypeInfo;
+          def args          = cts.Args;
+          def substArgs     = TrySubsts(args);
+          def isNotChanged  = args.Equals(substArgs);
+          match (cts)
+          {
+            | TopConstructedTypeSymbol when isNotChanged => cts
+            | TopConstructedTypeSymbol           => AstUtils.CreateConstructedTypeSymbol(typeInfo, substArgs, DependentPropertyEvalContext(null))
+            //| NestedConstructedTypeSymbol as cts when isNotChanged
+            | NestedConstructedTypeSymbol as cts =>  AstUtils.CreateNestedConstructedTypeSymbol(cts.Parent, typeInfo, substArgs, DependentPropertyEvalContext(null))
+          }
+
+        | _ => type
+      }
     }
 
     private TrySubsts(types : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]

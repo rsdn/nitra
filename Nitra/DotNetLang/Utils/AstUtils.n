@@ -216,6 +216,11 @@ namespace DotNet
 
     public CreateNestedConstructedTypeSymbol(_loc : Location, parentTypeSubst : TypeSymbol, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
     {
+      CreateNestedConstructedTypeSymbol(parentTypeSubst, typeInfo, arguments, context)
+    }
+
+    public CreateNestedConstructedTypeSymbol(parentTypeSubst : TypeSymbol, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    {
       def resultSymbol       = NestedConstructedTypeSymbol();
       resultSymbol.Parent    = parentTypeSubst;
       resultSymbol.TypeSubst = resultSymbol;
@@ -225,13 +230,18 @@ namespace DotNet
       resultSymbol
     }
 
-    public CreateConstructedTypeSymbol(_loc : Location, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    public CreateConstructedTypeSymbol(typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
     {
       def resultSymbol      = TopConstructedTypeSymbol();
       resultSymbol.TypeInfo = typeInfo;
       resultSymbol.Args     = arguments;
       resultSymbol.EvalProperties(context);
       resultSymbol
+    }
+
+    public CreateConstructedTypeSymbol(_loc : Location, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    {
+      CreateConstructedTypeSymbol(typeInfo, arguments, context)
     }
 
     public MakeConstructedType(ast : ILocated, args : ImmutableArray[Ref[DeclarationSymbol]], context : DependentPropertyEvalContext) : ResolutionAlgorithm[DeclarationSymbol, DeclarationSymbol]
