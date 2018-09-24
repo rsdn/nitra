@@ -20,7 +20,9 @@ namespace DotNet
     private _args          : ImmutableArray[TypeSymbol];
     private _typeParamsMap : Hashtable[int, TypeSymbol];
 
-    public this(typeInfo : GenericTypeSymbol, _scope : Scope, args : ImmutableArray[TypeSymbol])
+    public this(typeInfo : GenericTypeSymbol, nestedScope : Scope, args : ImmutableArray[TypeSymbol]) { this(typeInfo, args) }
+
+    public this(typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
     {
       _typeInfo = typeInfo;
       _args     = args;
@@ -38,20 +40,23 @@ namespace DotNet
     // TODO: add type subst
     public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } }
 
+    public virtual TrySubstTypeParameterSymbol(parameterSymbol : TypeParameterSymbol) : TypeSymbol
+    {
+      mutable result;
+      if (_typeParamsMap.TryGetValue(parameterSymbol.Id, out result))
+        result
+      else
+      {
+        assert2(false, "Unmapped TypeParameterSymbol!");
+        parameterSymbol
+      }
+    }
+
     private TrySubst(type : TypeSymbol) : TypeSymbol
     {
       match (type)
       {
-        | TypeParameterSymbol =>
-          mutable result;
-          if (_typeParamsMap.TryGetValue(type.Id, out result))
-            result
-          else
-          {
-            assert2(false, "Unmapped TypeParameterSymbol!");
-            type
-          }
-
+        | TypeParameterSymbol as parameterSymbol => TrySubstTypeParameterSymbol(parameterSymbol)
         | ConstructedTypeSymbol as cts =>
           def typeInfo      = cts.TypeInfo;
           def args          = cts.Args;

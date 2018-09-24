@@ -15,12 +15,23 @@ namespace DotNet
 {
   public class NestedSubstScope : TopSubstScope
   {
-    private _parent : TypeSymbol;
+    private _parent      : TypeSymbol;
+    private _nestedScope : Scope;
 
-    public this(typeInfo : GenericTypeSymbol, scope : Scope, args : ImmutableArray[TypeSymbol], parent : TypeSymbol)
+    public this(typeInfo : GenericTypeSymbol, nestedScope : Scope, args : ImmutableArray[TypeSymbol], parent : TypeSymbol)
     {
-      base(typeInfo, scope, args);
-      _parent = parent;
+      base(typeInfo, args);
+      _parent      = parent;
+      _nestedScope = nestedScope;
+    }
+
+    public override TrySubstTypeParameterSymbol(parameterSymbol : TypeParameterSymbol) : TypeSymbol
+    {
+      def result = base.TrySubstTypeParameterSymbol(parameterSymbol);
+      if (_nestedScope is TopSubstScope as substScope)
+        substScope.TrySubstTypeParameterSymbol(parameterSymbol);
+      else
+        result
     }
 
     public override Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
