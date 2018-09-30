@@ -221,7 +221,7 @@ namespace Nitra.Serialization
     {
       def isExecutable = filePath.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
       def source =
-        if (!isExecutable && File.Exists(filePath))
+        if (!isExecutable && NitraUtils.IsFileExists(filePath))
         {
           def text = File.ReadAllText(filePath, Encoding.UTF8);
           SourceSnapshot(text, filePath)

@@ -140,13 +140,13 @@ namespace Nitra.LanguageCompiler
         def path = Path.GetFullPath(path1);
         if (Directory.Exists(path))
           FileSystem.CopyDirectory(path, binPath, UIOption.OnlyErrorDialogs);
-        else if (File.Exists(path))
+        else if (NitraUtils.IsFileExists(path))
         {
           def fileName = Path.GetFileName(path);
           def outPath = Path.Combine(binPath, fileName);
           File.Copy(path, outPath, overwrite=true);
           def pdbPath = Path.ChangeExtension(path, ".pdb");
-          when (File.Exists(pdbPath))
+          when (NitraUtils.IsFileExists(pdbPath))
           {
             def pdbFileName = Path.GetFileName(pdbPath);
             def pdbOutPath = Path.Combine(binPath, pdbFileName);
@@ -217,7 +217,7 @@ namespace Nitra.LanguageCompiler
       def prjName           = config.ProjectName;
       def guidsPath         = Path.Combine(config.OutputPath, prjName, guidsFileName);
       def templateGuids     = ReadGuids(templateGuidsPath);
-      def guids             = if (config.NewGuids || !File.Exists(guidsPath)) Hashtable() else ReadGuids(guidsPath);
+      def guids             = if (config.NewGuids || !NitraUtils.IsFileExists(guidsPath)) Hashtable() else ReadGuids(guidsPath);
       mutable replaces = vars;
 
       foreach ((templateConstName, templateGuid) in templateGuids.KeyValuePairs)
@@ -308,7 +308,7 @@ namespace Nitra.LanguageCompiler
       ExpandTemplates(VsPackageTemplatePath,  Path.Combine(config.OutputPath, prjName), vars, config);
 
       def snkPath = Path.Combine(config.OutputPath, prjName, "Key.snk");
-      unless (File.Exists(snkPath))
+      unless (NitraUtils.IsFileExists(snkPath))
         CreateSnk(snkPath);
     }
 

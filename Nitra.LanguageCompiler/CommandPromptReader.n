@@ -128,7 +128,7 @@ namespace Nitra.LanguageCompiler
       {
         def asmRef = Path.GetFullPath(assemblyReference);
 
-        when (!File.Exists(asmRef))
+        when (!NitraUtils.IsFileExists(asmRef))
         {
           WriteLine($"Error: The '$asmRef' file does not exist.");
           usage();

@@ -23,7 +23,7 @@ namespace Nitra.ProjectSystem
     {
       base(statistics);
       Language = language;
-      assert3(IO.File.Exists(filePath));
+      assert3(NitraUtils.IsFileExists(filePath));
       FilePath = filePath;
       when (fsProject != null)
         fsProject.FsFiles.Add(this);

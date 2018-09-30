@@ -79,7 +79,7 @@ namespace Nitra
       {
         def fullName = file.FullName;
         def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
-        if (!isExecutable && File.Exists(fullName))
+        if (!isExecutable && NitraUtils.IsFileExists(fullName))
           Compiler.Location(fullName, startLine, startCol, endLine, endCol)
         else
           Compiler.Location.Default

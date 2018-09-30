@@ -76,7 +76,6 @@ namespace Nitra.ViewModels
       {
         def dir         = Path.GetDirectoryName(FullPath);
         def newFullPath = Path.Combine(dir, value);
-        //def exists      = File.Exists(newFullPath);
         File.Move(FullPath, newFullPath);
         def client = Suite.Client;
         def sm     = Suite.Workspace.StringManager;

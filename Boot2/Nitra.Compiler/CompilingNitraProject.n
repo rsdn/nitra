@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Imperative;
@@ -82,16 +82,16 @@ namespace Nitra.Compiler
       mutable source;
       when (_loadedSources.TryGetValue(filePath, out source))
         return source;
-      
+
       def isExecutable = filePath.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || filePath.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
-      if (!isExecutable && IOFile.Exists(filePath))
+      if (!isExecutable && NitraUtils.IsFileExists(filePath))
       {
         def text = IOFile.ReadAllText(filePath, Encoding.UTF8);
         source = SourceSnapshot(text, filePath)
       }
       else
         source = SingleLineSourceSnapshot("", filePath);
-          
+
       _loadedSources[filePath] = source;
 
       source

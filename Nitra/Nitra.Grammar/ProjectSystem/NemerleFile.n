@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Compiler;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -67,7 +67,7 @@ namespace Nitra.ProjectSystem
       base(project, index);
       def fullName     = FullName;
       def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
-      if (!isExecutable && File.Exists(fullName))
+      if (!isExecutable && NitraUtils.IsFileExists(fullName))
       {
         def text = File.ReadAllText(FullName, Encoding.UTF8);
         _source = SourceSnapshot(text, this, 0);

@@ -68,7 +68,7 @@ namespace Nemerle.CommandlineCompiler
           binPathRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Nemerle");
 
         def executablePath = Path.Combine(binPathRoot, "Net-4.0", processName);
-        unless (File.Exists(executablePath))
+        unless (NitraUtils.IsFileExists(executablePath))
         {
           Console.Error.Write($"Nemerle command line compiler '$executablePath' not found.");
           Environment.Exit(-1);

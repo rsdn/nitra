@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 
 using SCG = System.Collections.Generic;
@@ -94,6 +95,19 @@ namespace Nitra
         | 1 => BindResult.Single(res.FirstItem)
         | _ => BindResult.Multiple(res.ToImmutableArray())
       }
+    }
+
+    public IsFileExists(path : string) : bool
+    {
+      when (FilePathHasInvalidChars(path))
+        return false;
+
+      File.Exists(path)
+    }
+
+    public FilePathHasInvalidChars(path : string) : bool
+    {
+      !string.IsNullOrEmpty(path) && path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0
     }
   } // module
 } // namespace
