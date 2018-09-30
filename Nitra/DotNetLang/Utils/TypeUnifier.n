@@ -65,12 +65,18 @@ namespace DotNet
           else unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
             return false;
 
-          if (f1.IsReturnEvaluated && !f2.IsReturnEvaluated)
-            f2.Return = f1.Return;
-          else if (!f1.IsReturnEvaluated && f2.IsReturnEvaluated)
-            f1.Return = f2.Return;
-          else
+          def f1Eval = f1.IsReturnEvaluated;
+          def f2Eval = f2.IsReturnEvaluated;
+
+          if (f1Eval && f2Eval)
             return ProvideImpl(f1.Return, f2.Return, ref updatedVariables);
+          else if (!f1Eval && !f2Eval)
+            return false;
+          else if (!f2Eval)
+            f2.Return = f1.Return;
+          else
+            f1.Return = f2.Return;
+
           true
 
         | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
