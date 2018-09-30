@@ -157,8 +157,7 @@ namespace Nitra.BackEnd.Cci
               def nestedTypes = LightList();
               foreach (cciNestedType in type.NestedTypes)
               {
-                def visibility = cciNestedType.Visibility;
-                when (visibility != TypeMemberVisibility.Private && visibility != TypeMemberVisibility.Assembly)
+                when (TypeHelper.IsVisibleOutsideAssembly(cciNestedType))
                   nestedTypes.Add(loadNestedType(cciNestedType, genericContainerTypeSymbol));
               }
 
@@ -494,7 +493,12 @@ namespace Nitra.BackEnd.Cci
             }
 
           | t is IGenericTypeInstanceReference =>
-            _cciInternedKeyToGenericSymbolMap.GetOrAdd(cciTypeReference.InternedKey, _key => {
+            mutable typeSymbol;
+
+            if (_cciInternedKeyToGenericSymbolMap.TryGetValue(cciTypeReference.InternedKey, out typeSymbol))
+              typeSymbol
+            else
+            {
               def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
               def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
               def name = Name(NoLocation, t.GenericType.Name.Value);
@@ -503,8 +507,11 @@ namespace Nitra.BackEnd.Cci
               constructedType.TypeInfo = typeInfo;
               constructedType.Args = args;
               constructedType.EvalProperties(context);
+              def ok = _cciInternedKeyToGenericSymbolMap.TryAdd(cciTypeReference.InternedKey, constructedType);
+              assert2(ok);
               constructedType
-            });
+            }
+
           | _ =>
             //resolvs++;
             mutable typeSymbol;
@@ -602,7 +609,7 @@ namespace Nitra.BackEnd.Cci
               def typeSymbol = CciTypeToTypeSymbol(cciBaseClasse, context);
               baseTypeSet.AddParent(typeSymbol);
             }
-            foreach (cciInterface in cciType.Interfaces)
+            foreach (cciInterface when TypeHelper.IsVisibleOutsideAssembly(cciInterface.ResolvedType) in cciType.Interfaces)
             {
               def typeSymbol = CciTypeToTypeSymbol(cciInterface, context);
               baseTypeSet.AddParent(typeSymbol);
