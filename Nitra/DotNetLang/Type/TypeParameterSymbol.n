@@ -1,5 +1,6 @@
 ﻿using Nitra;
 using Nitra.Declarations;
+using Nitra.Serialization2;
 
 using Nemerle;
 using Nemerle.Collections;
@@ -13,7 +14,15 @@ using System.Linq;
 
 namespace DotNet
 {
-  public partial class TypeParameterSymbol : SymbolBase, TypeSymbol
+  public partial interface CustomAttributeHostDeclarationSymbol : ISerializable, IDependentPropertyContainer, DeclarationSymbol
+  {
+  }
+
+  public partial class TypeParameterAliasSymbol : SymbolBase, ISerializable, IDependentPropertyContainer, DeclarationSymbol, CustomAttributeHostDeclarationSymbol, TypeSymbol
+  {
+  }
+
+  public partial class TypeParameterSymbol : SymbolBase, ISerializable, IDependentPropertyContainer, DeclarationSymbol, CustomAttributeHostDeclarationSymbol, TypeSymbol
   {
     private mutable _aliases : list[TypeParameterAlias] = [];
 
@@ -25,9 +34,5 @@ namespace DotNet
       def decl = TypeParameter(alias.Location, alias.Name, alias.Attributes, false);
       AddDeclaration(decl);
     }
-  }
-
-  public partial class TypeParameterAliasSymbol : SymbolBase, TypeSymbol
-  {
   }
 }

@@ -10,7 +10,7 @@ namespace DotNet
 {
   //declaration alias TypeParameterAlias = TypeParameter;
 
-  declaration TypeParameter : Type, CustomAttributeHost
+  declaration TypeParameter : Type, CustomAttributeHostDeclaration
   {
     symbol
     {
@@ -23,7 +23,7 @@ namespace DotNet
     }
   }
 
-  declaration TypeParameterAlias : Type, CustomAttributeHost
+  declaration TypeParameterAlias : Type, CustomAttributeHostDeclaration
   {
     symbol
     {

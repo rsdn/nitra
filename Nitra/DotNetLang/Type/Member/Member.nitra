@@ -305,14 +305,14 @@ namespace DotNet
     Type       : QualifiedReference;
   }
 
-  abstract declaration PropertyAccessor : CustomAttributeHost, ModifierHostAndAst
+  abstract declaration PropertyAccessor : CustomAttributeHostDeclaration, ModifierHostAndAst
   {
     // TODO: Map body
     | Get
     | Set
   }
 
-  abstract declaration EventAccessor : CustomAttributeHost
+  abstract declaration EventAccessor : CustomAttributeHostDeclaration
   {
     // TODO: Map body
     | Add
