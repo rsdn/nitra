@@ -120,6 +120,9 @@
     <Compile Include="IDotNetBackEnd.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Scopes\SubstHelper.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Statments\Statement.nitra">
       <SubType>Code</SubType>
     </Compile>

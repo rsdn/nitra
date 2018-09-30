@@ -75,7 +75,7 @@ namespace DotNet
         // Arguments.ParameterScope = ParameterScope;
         // Arguments.Scope = Scope.HideWith(ParameterScope);
         // Arguments.IndexIn = 0;
-        // Arguments.ParentParameterScope = Ref.Symbol.ParameterScope;
+        // Arguments.ParentParameterScope = ???;
         // Arguments.Used = true;
         //
         // stage 1:
@@ -367,9 +367,8 @@ namespace DotNet
         Left.ParameterScope            = ParameterScope;
 
         Arguments.ParameterScope       = ParameterScope;
-        Arguments.ScopeIn              = ScopeIn.HideWith(ParameterScope);
+        Arguments.ScopeIn              = ScopeIn;
         Arguments.IndexIn              = 0;
-        Arguments.ParentParameterScope = Func.Symbol.ParameterScope;
         Arguments.Used                 = true;
 
 
@@ -399,7 +398,7 @@ namespace DotNet
         // Arguments.ParameterScope = ParameterScope;
         // Arguments.Scope = Scope.HideWith(ParameterScope);
         // Arguments.IndexIn = 0;
-        // Arguments.ParentParameterScope = Method.Symbol.ParameterScope;
+        // Arguments.ParentParameterScope = ???;
         // Arguments.Used = true;
         // Type = Method.Symbol.ReturnType;
         Type = context.GetVoidType();
@@ -512,7 +511,6 @@ namespace DotNet
   {
     inout Index : int;
     IndexOut = IndexIn + 1;
-    in ParentParameterScope : TableScope;
     // Name : Reference?;
     // Modifier : ArgumentModifier?;
   }
@@ -524,7 +522,7 @@ namespace DotNet
     Expr.ParameterScope = ParameterScope;
     Expr.ScopeIn = ScopeOut;
     Expr.Used = true;
-    ExpectedType = ParentParameterScope.GetParameterType(IndexIn);
+    //ExpectedType = ???;
     Type = Expr.Type;
   stage 1:
     out ArgumentType : TypeSymbol = Type;

@@ -1,6 +1,5 @@
 ﻿using Nitra;
 using Nitra.Declarations;
-
 using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -8,13 +7,13 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Immutable;
-
 using System.Diagnostics;
+
 using SCG = System.Collections.Generic;
 
 namespace DotNet
 {
-  public class TopSubstScope : Scope
+  public partial class TopSubstScope : Scope
   {
     private _typeInfo      : GenericTypeSymbol;
     private _args          : ImmutableArray[TypeSymbol];
@@ -52,113 +51,6 @@ namespace DotNet
       }
     }
 
-    private TrySubst(type : TypeSymbol) : TypeSymbol
-    {
-      match (type)
-      {
-        | TypeParameterSymbol as parameterSymbol => TrySubstTypeParameterSymbol(parameterSymbol)
-        | ConstructedTypeSymbol as cts =>
-          def typeInfo      = cts.TypeInfo;
-          def args          = cts.Args;
-          def substArgs     = TrySubsts(args);
-          def isNotChanged  = args.Equals(substArgs);
-          match (cts)
-          {
-            | TopConstructedTypeSymbol when isNotChanged => cts
-            | TopConstructedTypeSymbol           => AstUtils.CreateConstructedTypeSymbol(typeInfo, substArgs, DependentPropertyEvalContext(null))
-            //| NestedConstructedTypeSymbol as cts when isNotChanged
-            | NestedConstructedTypeSymbol as cts =>  AstUtils.CreateNestedConstructedTypeSymbol(cts.Parent, typeInfo, substArgs, DependentPropertyEvalContext(null))
-          }
-
-        | _ => type
-      }
-    }
-
-    private TrySubsts(types : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
-    {
-      def builder = ImmutableArray.CreateBuilder(types.Length);
-      foreach (type in types)
-        builder.Add(TrySubst(type));
-      builder.MoveToImmutable()
-    }
-
-    private TrySubstTypeParameters(typeParameters : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
-    {
-      def builder = ImmutableArray.CreateBuilder(typeParameters.Length);
-      foreach (type in typeParameters)
-        builder.Add(TrySubst(type));
-      builder.MoveToImmutable()
-    }
-
-    private SubstMethod(it : Member.MethodSymbol) : Member.MethodSymbol
-    {
-      def subst = Member.MethodSymbol();
-      foreach (decl in it.GetDeclarationsUntyped())
-        subst.AddDeclaration(decl);
-      when (it.IsCustomAttributesEvaluated)
-      {
-        subst.CustomAttributes = it.CustomAttributes;
-        subst.CustomAttributes_Location = it.CustomAttributes_Location;
-      }
-      when (it.IsDeclaredInEvaluated)
-      {
-        subst.DeclaredIn = it.DeclaredIn;
-        subst.DeclaredIn_Location = it.DeclaredIn_Location;
-      }
-      when (it.IsDeclaredInOptEvaluated)
-      {
-        subst.DeclaredInOpt = it.DeclaredInOpt;
-        subst.DeclaredInOpt_Location = it.DeclaredInOpt_Location;
-      }
-      when (it.IsFlagsEvaluated)
-      {
-        subst.Flags = it.Flags;
-        subst.Flags_Location = it.Flags_Location;
-      }
-      when (it.IsKindEvaluated)
-      {
-        subst.Kind = it.Kind;
-        subst.Kind_Location = it.Kind_Location;
-      }
-      when (it.IsScopeEvaluated)
-      {
-        subst.Scope = it.Scope;
-        subst.Scope_Location = it.Scope_Location;
-      }
-      when (it.IsSpanClassEvaluated)
-      {
-        subst.SpanClass = it.SpanClass;
-        subst.SpanClass_Location = it.SpanClass_Location;
-      }
-      // ...... Type subst ......
-      when (it.IsReturnTypeEvaluated)
-      {
-        subst.ReturnType = TrySubst(it.ReturnType);
-        subst.ReturnType_Location = it.ReturnType_Location;
-      }
-      when (it.IsParametersEvaluated)
-      {
-        subst.Parameters = it.Parameters;
-        subst.Parameters_Location = it.Parameters_Location;
-      }
-      //when (it.IsTypeEvaluated)
-      //{
-      //  subst.Type = it.Type;
-      //  subst.Type_Location = it.Type_Location;
-      //}
-      when (it.IsTypeParametersEvaluated)
-      {
-        subst.TypeParameters = TrySubstTypeParameters(it.TypeParameters);
-        subst.TypeParameters_Location = it.TypeParameters_Location;
-      }
-      when (it.IsTypeParametersCountEvaluated)
-      {
-        subst.TypeParametersCount = it.TypeParametersCount;
-        subst.TypeParametersCount_Location = it.TypeParametersCount_Location;
-      }
-      subst
-    }
-
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def result = _typeInfo.Scope.Bind.[TSymbol](reference);
@@ -167,7 +59,8 @@ namespace DotNet
       def res = LightList();
       foreach (x in symbols)
       {
-        | method is Member.MethodSymbol => res.Add(SubstMethod(method) :> TSymbol);
+        | method   is Member.MethodSymbol   => res.Add(SubstMethod(method) :> TSymbol);
+        | property is Member.PropertySymbol => res.Add(SubstProperty(property) :> TSymbol);
         | _ => ()
       }
       res.ToBindResult()
@@ -207,5 +100,5 @@ namespace DotNet
       def (typeInfo, args) = Read(reader, metadataReader);
       TopSubstScope(typeInfo, null, ImmutableArray.Create(args))
     }
-  }
-}
+  } // class
+} // namespace

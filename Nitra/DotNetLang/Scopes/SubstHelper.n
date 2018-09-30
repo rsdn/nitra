@@ -1,0 +1,262 @@
+﻿using Nitra;
+using Nitra.Declarations;
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Immutable;
+using System.Diagnostics;
+
+using System.Linq;
+using SCG = System.Collections.Generic;
+
+namespace DotNet
+{
+  public partial class TopSubstScope : Scope
+  {
+    private TrySubst(ogigin : TypeSymbol) : TypeSymbol
+    {
+      match (ogigin)
+      {
+        | TypeParameterSymbol as parameterSymbol => TrySubstTypeParameterSymbol(parameterSymbol)
+        | FunctionTypeSymbol as func => TrySubst(func)
+        | ConstructedTypeSymbol as cts =>
+          def typeInfo      = cts.TypeInfo;
+          def args          = cts.Args;
+          def substArgs     = TrySubsts(args);
+          def isNotChanged  = args.Equals(substArgs);
+          match (cts)
+          {
+            | TopConstructedTypeSymbol when isNotChanged => cts
+            | TopConstructedTypeSymbol           => AstUtils.CreateConstructedTypeSymbol(typeInfo, substArgs, DependentPropertyEvalContext(null))
+            //| NestedConstructedTypeSymbol as cts when isNotChanged
+            | NestedConstructedTypeSymbol as cts =>  AstUtils.CreateNestedConstructedTypeSymbol(cts.Parent, typeInfo, substArgs, DependentPropertyEvalContext(null))
+            | _ => assert2(false); assert(false)
+          }
+
+        | _ => ogigin
+      }
+    }
+
+    private TrySubsts(types : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(types.Length);
+      foreach (type in types)
+        builder.Add(TrySubst(type));
+      builder.MoveToImmutable()
+    }
+
+    public SubstMethod(ogigin : Member.MethodSymbol) : Member.MethodSymbol
+    {
+      def subst = Member.MethodSymbol();
+      CopyDeclaration         (subst, ogigin);
+      SubstCustomAttributeHost(subst, ogigin);
+      SubstModifierHost       (subst, ogigin);
+      SubstTypeMember         (subst, ogigin);
+      SubstFunctional         (subst, ogigin);
+      SubstGenericEntity      (subst, ogigin);
+      subst
+    }
+
+    public SubstProperty(ogigin : Member.PropertySymbol) : Member.PropertySymbol
+    {
+      def subst = Member.PropertySymbol();
+      CopyDeclaration         (subst, ogigin);
+      SubstCustomAttributeHost(subst, ogigin);
+      SubstModifierHost       (subst, ogigin);
+      SubstTypeMember         (subst, ogigin);
+      when (ogigin.IsTypeEvaluated)
+      {
+        subst.Type = TrySubst(ogigin.Type);
+        subst.Type_Location = ogigin.Type_Location;
+      }
+      when (ogigin.IsGetterEvaluated)
+      {
+        if (ogigin.Getter is Some(value))
+          subst.Getter = Some(SubstMethod(value));
+        else
+          subst.Getter = None();
+        subst.Getter_Location = ogigin.Getter_Location;
+      }
+      when (ogigin.IsSetterEvaluated)
+      {
+        if (ogigin.Setter is Some(value))
+          subst.Getter = Some(SubstMethod(value));
+        else
+          subst.Getter = None();
+        subst.Setter_Location = ogigin.Setter_Location;
+      }
+      subst
+    }
+
+    private TrySubst(ogigin : FunctionTypeSymbol) : FunctionTypeSymbol
+    {
+      mutable isNotChanged;
+      mutable parameterTypesSubsts;
+      mutable returnSubst;
+
+      when (ogigin.IsParametersEvaluated)
+      {
+        parameterTypesSubsts = TrySubsts(ogigin.Parameters);
+
+        isNotChanged = parameterTypesSubsts.SequenceEqual(ogigin.Parameters);
+      }
+
+      when (ogigin.IsReturnEvaluated)
+      {
+        returnSubst = TrySubst(ogigin.Return);
+        isNotChanged &= returnSubst.Equals(ogigin.Return);
+      }
+
+      if (isNotChanged)
+        ogigin
+      else
+      {
+        def subst = FunctionTypeSymbol();
+        CopyDeclaration(subst, ogigin);
+        when (!parameterTypesSubsts.IsDefault)
+          subst.Parameters = parameterTypesSubsts;
+        when (returnSubst != null)
+          subst.Return = returnSubst;
+        subst.EvalProperties(DependentPropertyEvalContext(null));
+        subst
+      }
+    }
+
+    private TrySubstTypeParameters(typeParameters : ImmutableArray[TypeSymbol]) : ImmutableArray[TypeSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(typeParameters.Length);
+      foreach (type in typeParameters)
+        builder.Add(TrySubst(type));
+      builder.MoveToImmutable()
+    }
+
+    private CopyDeclaration(subst : DeclarationSymbol, ogigin : DeclarationSymbol) : void
+    {
+      foreach (decl in ogigin.GetDeclarationsUntyped())
+        subst.AddDeclaration(decl);
+
+      when (ogigin.IsKindEvaluated)
+      {
+        subst.Kind                   = ogigin.Kind;
+        subst.Kind_Location          = ogigin.Kind_Location;
+      }
+      when (ogigin.IsSpanClassEvaluated)
+      {
+        subst.SpanClass              = ogigin.SpanClass;
+        subst.SpanClass_Location     = ogigin.SpanClass_Location;
+      }
+      when (ogigin.IsScopeEvaluated)
+      {
+        subst.Scope                  = ogigin.Scope;
+        subst.Scope_Location         = ogigin.Scope_Location;
+      }
+      when (ogigin.IsDeclaredInOptEvaluated)
+      {
+        subst.DeclaredInOpt          = ogigin.DeclaredInOpt;
+        subst.DeclaredInOpt_Location = ogigin.DeclaredInOpt_Location;
+      }
+    }
+
+    private SubstCustomAttributeHost(subst : CustomAttributeHostDeclarationSymbol, ogigin : CustomAttributeHostDeclarationSymbol) : void
+    {
+      when (ogigin.IsCustomAttributesEvaluated)
+      {
+        subst.CustomAttributes          = ogigin.CustomAttributes;
+        subst.CustomAttributes_Location = ogigin.CustomAttributes_Location;
+      }
+    }
+
+    private SubstModifierHost(subst : ModifierHostSymbol, ogigin : ModifierHostSymbol) : void
+    {
+      when (ogigin.IsFlagsEvaluated)
+      {
+        subst.Flags = ogigin.Flags;
+        subst.Flags_Location = ogigin.Flags_Location;
+      }
+    }
+
+    private SubstFormalParameter(ogigin : FormalParameterSymbol) : FormalParameterSymbol
+    {
+      def subst = FormalParameterSymbol();
+      CopyDeclaration(subst, ogigin);
+      SubstCustomAttributeHost(subst, ogigin);
+      when (ogigin.IsTypeEvaluated)
+      {
+        subst.Type = TrySubst(ogigin.Type);
+        subst.Type_Location = ogigin.Type_Location;
+      }
+      when (ogigin.IsModifierEvaluated)
+      {
+        subst.Modifier = ogigin.Modifier;
+        subst.Modifier_Location = ogigin.Modifier_Location;
+      }
+      when (ogigin.IsIndexEvaluated)
+      {
+        subst.Index = ogigin.Index;
+        subst.Index_Location = ogigin.Index_Location;
+      }
+      subst.EvalProperties(DependentPropertyEvalContext(null));
+      subst
+    }
+
+    private SubstFormalParameters(parameters : ImmutableArray[FormalParameterSymbol]) : ImmutableArray[FormalParameterSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(parameters.Length);
+      foreach (type in parameters)
+        builder.Add(SubstFormalParameter(type));
+      builder.MoveToImmutable()
+    }
+
+    private SubstTypeMember(subst : TypeMemberSymbol, ogigin : TypeMemberSymbol) : void
+    {
+      when (ogigin.IsDeclaredInEvaluated)
+      {
+        subst.DeclaredIn = ogigin.DeclaredIn;
+        subst.DeclaredIn_Location = ogigin.DeclaredIn_Location;
+      }
+    }
+
+    private SubstParametrizable(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
+    {
+      // TODO: Надо сделать подстановку для table ParameterScope;
+      when (ogigin.IsParametersEvaluated)
+      {
+        subst.Parameters = SubstFormalParameters(ogigin.Parameters);
+        subst.Parameters_Location = ogigin.Parameters_Location;
+      }
+    }
+
+    private SubstFunctional(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
+    {
+      SubstParametrizable(subst, ogigin);
+
+      when (ogigin.IsReturnTypeEvaluated)
+      {
+        subst.ReturnType = TrySubst(ogigin.ReturnType);
+        subst.ReturnType_Location = ogigin.ReturnType_Location;
+      }
+      when (ogigin.IsTypeEvaluated)
+      {
+        subst.Type = TrySubst(ogigin.Type);
+        subst.Type_Location = ogigin.Type_Location;
+      }
+    }
+
+    private SubstGenericEntity(subst : GenericEntitySymbol, ogigin : GenericEntitySymbol) : void
+    {
+      when (ogigin.IsTypeParametersCountEvaluated)
+      {
+        subst.TypeParametersCount = ogigin.TypeParametersCount;
+        subst.TypeParametersCount_Location = ogigin.TypeParametersCount_Location;
+      }
+      when (ogigin.IsTypeParametersEvaluated)
+      {
+        subst.TypeParameters = TrySubstTypeParameters(ogigin.TypeParameters);
+        subst.TypeParameters_Location = ogigin.TypeParameters_Location;
+      }
+    }
+} // module
+} // namespace
