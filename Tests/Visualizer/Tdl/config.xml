@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectSupport Caption="" TypeFullName="" Path="" />
+  <Languages>
+    <Language Name="TdlLang" Path="..\..\..\Grammars\Bin\Debug\Tdl.dll">
+      <DynamicExtensions />
+    </Language>
+  </Languages>
+  <References>
+    <Reference>FullName:mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+    <Reference>FullName:System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+    <Reference>FullName:System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+  </References>
+</Config>

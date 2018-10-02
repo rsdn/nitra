@@ -43,17 +43,6 @@ namespace DotNet
       }
     }
 
-    public GetParameterType(this parameterScope : TableScope, parameterIndex : int) : TypeSymbol
-    {
-      def parm = parameterScope
-                       .Symbols
-                       .SelectMany(s => s)
-                       .OfType.[FormalParameterSymbol]()
-                       .FirstOrDefault(s => s.Index == parameterIndex :> (uint));
-
-      parm.Type
-    }
-
     public IsBinaryOpCompatible(this expr : BinaryExpr, left : TypeSymbol, right : TypeSymbol, context : DependentPropertyEvalContext) : bool
     {
       if (left.IsNumeric(context) && right.IsNumeric(context)) true

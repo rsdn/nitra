@@ -1,0 +1,13 @@
+﻿language TdlLang : DotNetLang
+{
+  span class StringEx         { ForegroundColor=Maroon;     }
+
+  extension = .tdl;
+
+  company     = NitraTeam;
+  description = Nitra driven Tdl plugin for Visual Studio;
+  authors     = Vlad Chistyakov;
+  copyright   = NitraTeam;
+
+  syntax module Tdl.Grammar2 start rule CompilationUnit;
+}

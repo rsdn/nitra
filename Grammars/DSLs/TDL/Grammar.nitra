@@ -1,0 +1,37 @@
+﻿namespace Tdl
+{
+  syntax module Grammar2
+  {
+    using Nitra.Core;
+    using CSharp.CsIdentifiers;
+    using CSharp.Literals;
+    using CSharp.TokenNames;
+
+    alias QualifiedName = QualifiedIdentifier;
+
+    [StartRule]
+    syntax CompilationUnit = NamespaceMemberDeclaration*;
+
+    syntax StringLiteral
+    {
+      | RegularStringLiteral;
+      | VerbatimStringLiteral;
+    }
+
+    syntax NamespaceMemberDeclaration
+    {
+      | Alias          = "using" sm Name sm "=" sm QualifiedName ";" nl;
+      | Open           = "using" sm QualifiedName ";" nl;
+      | Platform       = "platform" sm Name ";" nl;
+      | PlatformSet    = "platform" sm Name sm "=" Platforms=(Reference; "," sm)+ ";" nl;
+      | Product        = "product" sm Name nl ProductBody;
+    }
+
+    syntax ProductBody = outline_begin_before "{" inl ProductPropertyDeclaration* d "}" nl outline_end_before;
+
+    syntax ProductPropertyDeclaration
+    {
+      | AutotestBinariesExcludedFilesMasks = Name sm "=" sm StringLiteral ";" nl;
+    }
+  }
+}

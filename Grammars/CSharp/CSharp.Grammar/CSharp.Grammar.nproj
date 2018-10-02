@@ -145,7 +145,6 @@
     <Folder Include="CSharp\CS5" />
     <Folder Include="CSharp\CS6" />
     <Folder Include="CSharp\CS7" />
-    <Folder Include="NewFolder1\" />
     <Folder Include="Preprocessor\" />
     <Folder Include="Properties\" />
   </ItemGroup>

@@ -1,0 +1,127 @@
+﻿
+deployment Mount_Collections script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\mountCollectionsFolder.ps1"
+{
+    CollectionsLocalFolder = "C:\Deployment";
+    CollectionsNetworkPath = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    expect 42
+}
+
+deployment Get_Product_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getProduct.ps1"
+{
+    ProductBinariesToken = ProductBinariesToken;
+    ProductFamily        = ProductFamily;
+    ProductType          = ProductType;
+    ProductBuildNumber   = ProductBuildNumber;
+    ProductionState      = ProductionState;
+    IncludedFilesMasks   = "";
+    ExcludedFilesMasks   = "*_full.exe;*_reduced.exe";
+    TargetFolder         = "C:\install";
+    RecreateTargetFolder = "False";
+    ExtractPackages      = ExtractPackages;
+    expect 42;
+}
+
+deployment Get_Autotests_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getAutotests.ps1"
+{
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    AutotestsSourceType    = AutotestsSourceType;
+    ProductFamily          = ProductFamily;
+    ProductType            = ProductType;
+    ProductBuildNumber     = ProductBuildNumber;
+    ProductionState        = ProductionState;
+    IncludedFilesMasks     = "";
+    ExcludedFilesMasks     = "";
+    TargetFolder           = LocalTestBinariesFolder;
+    RecreateTargetFolder   = "True"
+    expect 42;
+}
+
+deployment Unpack_Test_App script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\deployGuiTestApp.ps1"
+{
+    TestAppPackName = TestAppPackName;
+    expect 42;
+}
+
+deployment NoInstall script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noInstall.ps1"
+{
+    CollectionsLocalFolder             = "C:\Deployment";
+    CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    ProductPropertiesVariable          = "ProductProperties";
+    DistribFolder                      = "C:\install";
+    ProductBinariesToken               = ProductBinariesToken;
+    ProductFamily                      = ProductFamily;
+    ProductType                        = ProductType;
+    ProductBuildNumber                 = ProductBuildNumber;
+    ProductionState                    = ProductionState;
+    AutotestsToken                     = AutotestsBinariesToken;
+    AutotestsSourceType                = AutotestsSourceType;
+    AutotestBinariesExcludedFilesMasks = AutotestBinariesExcludedFilesMasks;
+    ProductBinariesExcludedFilesMasks  = ProductBinariesExcludedFilesMasks;
+    DesiredAutotestPath                = LocalTestBinariesFolder;
+    ForceTraceLevel                    = "700";
+    EnableAppVerifier                  = "True"
+    expect 42;
+}
+
+deployment Install_Product_NoBackdoor script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noBackdoor.ps1"
+{
+    CollectionsLocalFolder             = "C:\Deployment";
+    CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    ProductPropertiesVariable          = "ProductProperties";
+    DistribFolder                      = "C:\install";
+    ProductBinariesToken               = ProductBinariesToken;
+    ProductFamily                      = ProductFamily;
+    ProductType                        = ProductType;
+    ProductBuildNumber                 = ProductBuildNumber;
+    ProductionState                    = ProductionState;
+    AutotestsToken                     = AutotestsBinariesToken;
+    AutotestsSourceType                = AutotestsSourceType;
+    AutotestBinariesExcludedFilesMasks = AutotestBinariesExcludedFilesMasks;
+    ProductBinariesExcludedFilesMasks  = ProductBinariesExcludedFilesMasks;
+    DesiredAutotestPath                = LocalTestBinariesFolder;
+    TestArtefactsFolder                = TestArtefactsFolder;
+    ActivationCode                     = ActivationCode;
+    ForceTraceLevel                    = "700";
+    UseProxy                           = UseProxy;
+    ConfigFilesFamily                  = ConfigFilesFamily;
+    SkipRecommendedSettings            = "False";
+    EnableAppVerifier                  = "True"
+    expect 42;
+}
+
+deployment Install_Product_Backdoor script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.Backdoor.ps1"
+{
+    CollectionsLocalFolder             = "C:\Deployment";
+    CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    ProductPropertiesVariable          = "ProductProperties";
+    DistribFolder                      = "C:\install";
+    ProductBinariesToken               = ProductBinariesToken;
+    ProductFamily                      = ProductFamily;
+    ProductType                        = ProductType;
+    ProductBuildNumber                 = ProductBuildNumber;
+    ProductionState                    = ProductionState;
+    AutotestsToken                     = AutotestsBinariesToken;
+    AutotestsSourceType                = AutotestsSourceType;
+    AutotestBinariesExcludedFilesMasks = AutotestBinariesExcludedFilesMasks;
+    ProductBinariesExcludedFilesMasks  = ProductBinariesExcludedFilesMasks;
+    InstallerExecutableFileMask        = InstallerExecutableFileMask;
+    DesiredAutotestPath                = LocalTestBinariesFolder;
+    TestArtefactsFolder                = TestArtefactsFolder;
+    ActivationCode                     = ActivationCode;
+    SuggestSafeKids                    = "False";
+    ForceTraceLevel                    = "700";
+    UseProxy                           = UseProxy;
+    ConfigFilesFamily                  = ConfigFilesFamily;
+    SkipRecommendedSettings            = "False";
+    EnableAppVerifier                  = EnableAppVerifier;
+    InstallKsdeBundle                  = "False"
+    expect 42;
+};
+
+deployment Deploy_Install_Product_Backdoor sequence Install_Product_Backdoor(EnableAppVerifier=true);
+
+deployment Deploy_Install_Product_Backdoor_Without_AppVerifier sequence Install_Product_Backdoor(EnableAppVerifier=false);
+    
+deployment Deploy_GuiTestApp sequence Mount_Collections, Get_Product_Distributive, Get_Autotests_Distributive, Unpack_Test_App;
+
+
