@@ -3,7 +3,7 @@
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
     ConfigFilesFamily                  = "Kis.";
-    ProductType                        = KFA;
+    ProductType                        = "KFA";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 
@@ -12,7 +12,7 @@ product KIS
   AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
   ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
   ConfigFilesFamily                  = "Kis.";
-  ProductType                        = KIS;
+  ProductType                        = "KIS";
   TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 
@@ -21,7 +21,7 @@ product SAAS
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
     ConfigFilesFamily                  = "Kis.";
-    ProductType                        = SAAS;
+    ProductType                        = "SAAS";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 
@@ -30,7 +30,7 @@ product KSOS_PC
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
     ConfigFilesFamily                  = "Kis.";
-    ProductType                        = KSOS;
+    ProductType                        = "KSOS";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 
@@ -39,7 +39,7 @@ product KSOS_FS
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
     ConfigFilesFamily                  = "Kis.";
-    ProductType                        = KSOS;
+    ProductType                        = "KSOS";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 
@@ -48,7 +48,7 @@ product PURE
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
     ConfigFilesFamily                  = "Kis.";
-    ProductType                        = PURE;
+    ProductType                        = "PURE";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
 }
 

@@ -11,6 +11,8 @@ Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Nitra.Runtime", "Nitra\Nitr
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "DotNetLang", "Nitra\DotNetLang\DotNetLang.nproj", "{D3C87D75-E119-4D30-A8BE-DC28014BB653}"
 EndProject
+Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Tdl", "Grammars\DSLs\TDL\Tdl.nproj", "{82C32D2D-8E24-4975-B606-B2C7BE54C340}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{D3C87D75-E119-4D30-A8BE-DC28014BB653}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3C87D75-E119-4D30-A8BE-DC28014BB653}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3C87D75-E119-4D30-A8BE-DC28014BB653}.Release|Any CPU.Build.0 = Release|Any CPU
+		{82C32D2D-8E24-4975-B606-B2C7BE54C340}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82C32D2D-8E24-4975-B606-B2C7BE54C340}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82C32D2D-8E24-4975-B606-B2C7BE54C340}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82C32D2D-8E24-4975-B606-B2C7BE54C340}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,19 @@
+﻿using DotNet;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  map syntax Grammar.Module -> Module
+  {
+    Name = Name(Location.FromStart(), Location.Source.File.Name);
+    MemberDeclarations -> Members;
+  }
+
+  map syntax Grammar.MemberDeclaration -> NamespaceMember
+  {
+    | Open        -> UsingOpenDirective  {               QualifiedIdentifier -> NamespaceOrTypeName; }
+    | Alias       -> UsingAliasDirective { Name -> Name; QualifiedIdentifier -> NamespaceOrTypeName; }
+    | Platform    -> Platform.Def        { Name -> Name; }
+    | PlatformSet -> Platform.Set        { Name -> Name; Platforms.Item1 -> Platforms; }
+  }
+}

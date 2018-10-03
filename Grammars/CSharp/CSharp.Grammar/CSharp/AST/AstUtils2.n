@@ -68,6 +68,8 @@ namespace DotNet
                 when (!returnType.Equals(m.ReturnType))
                   sameReturnType = false;
               }
+
+            | _ => ()
           }
           if (methodsCount == memberCount)
           {

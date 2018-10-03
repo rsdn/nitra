@@ -9,5 +9,5 @@
   authors     = Vlad Chistyakov;
   copyright   = NitraTeam;
 
-  syntax module Tdl.Grammar2 start rule CompilationUnit;
+  syntax module Tdl.Grammar start rule Module;
 }

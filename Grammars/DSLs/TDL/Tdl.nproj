@@ -102,6 +102,12 @@
     </Compile>
     <Compile Include="Language.nitra">
     </Compile>
+    <Compile Include="Mapping.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ProjectSupport.n">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties" />

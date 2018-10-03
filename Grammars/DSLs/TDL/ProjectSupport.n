@@ -20,12 +20,16 @@ using System.Linq;
 using System.Threading;
 using ND = Nitra.Declarations;
 
-[assembly: ProjectSupport("Nitra C#", typeof(CSharp.CompilationUnit))]
+[assembly: ProjectSupport("TdlLang", typeof(Tdl.ProjectSupport))]
 
-namespace CSharp
+namespace Tdl
 {
-  public partial class CompilationUnit : AstBase, IProjectSupport, NamespaceBody
+  public partial class ProjectSupport : IProjectSupport
   {
+    static NoLocation : Location       = Location(SourceSnapshot.Default.File, NSpan(0));
+    static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
+    static NoSpan : NSpan              = NSpan(0);
+
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       TypeUnifier.InitInstance();
@@ -92,8 +96,7 @@ namespace CSharp
         defineAlias(context, systemNs, rootNamespace, "Char",    "char");
       }
 
-      (backEnd : IDotNetBackEnd, context, rootNamespace)
-    }
+      (backEnd : IDotNetBackEnd, context, rootNamespace)    }
 
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
@@ -113,15 +116,10 @@ namespace CSharp
       when (cancellationToken.IsCancellationRequested)
         return;
 
-      def evalHost = CSharpProjectEvalPropertiesHost(files, rootNamespace);
+      def evalHost = CSharp.CSharpProjectEvalPropertiesHost(files, rootNamespace);
       evalHost.EvalProperties(context, "SymbolHierarchy", 0);
       evalHost.EvalProperties(context, "Scopes", 1);
       evalHost.EvalProperties(context, "Type bodies binding", 2);
-    }
-
-    public Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
-    {
-    	IgnoreParams();
     }
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
@@ -183,38 +181,14 @@ namespace CSharp
       _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
     }
 
+    public Postprocessing(cancellationToken : System.Threading.CancellationToken, project : Nitra.ProjectSystem.Project, asts : System.Collections.Immutable.ImmutableArray[(Nitra.Declarations.IAst * bool)], data : object) : void
+    {
+      IgnoreParams();
+    }
+
     public DecomposeData(data : object) : IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol
     {
       data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
-    }
-  }
-
-  public class CSharpProjectEvalPropertiesHost : ProjectEvalPropertiesHost
-  {
-    private _rootNamespace : NamespaceSymbol;
-
-    public this(files : ImmutableArray[FileEvalPropertiesData], rootNamespace : NamespaceSymbol)
-    {
-      base(files, ImmutableArray.Create(rootNamespace));
-      _rootNamespace = rootNamespace;
-    }
-
-    protected override BeforeStage(context : DependentPropertyEvalContext, _passName : string) : void
-    {
-      match (context.Stage)
-      {
-        | 0 =>
-          foreach (file in _files)
-            when (file.Ast is CompilationUnit as cu)
-              cu.RootNamespace = _rootNamespace;
-
-        | 1 =>
-          foreach (file in _files)
-            when (file.Ast is CompilationUnit as cu)
-              cu.Scope = _rootNamespace.Scope;
-
-        | _ => ()
-      }
     }
   }
 }

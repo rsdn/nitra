@@ -1,12 +1,12 @@
 ﻿
-deployment Mount_Collections script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\mountCollectionsFolder.ps1"
+deployment Mount_Collections script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\mountCollectionsFolder.ps1"
 {
-    CollectionsLocalFolder = "C:\Deployment";
-    CollectionsNetworkPath = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    CollectionsLocalFolder = @"C:\Deployment";
+    CollectionsNetworkPath = @"\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
     expect 42
 }
 
-deployment Get_Product_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getProduct.ps1"
+deployment Get_Product_Distributive script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getProduct.ps1"
 {
     ProductBinariesToken = ProductBinariesToken;
     ProductFamily        = ProductFamily;
@@ -15,13 +15,13 @@ deployment Get_Product_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\TestU
     ProductionState      = ProductionState;
     IncludedFilesMasks   = "";
     ExcludedFilesMasks   = "*_full.exe;*_reduced.exe";
-    TargetFolder         = "C:\install";
+    TargetFolder         = @"C:\install";
     RecreateTargetFolder = "False";
     ExtractPackages      = ExtractPackages;
     expect 42;
 }
 
-deployment Get_Autotests_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getAutotests.ps1"
+deployment Get_Autotests_Distributive script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\getAutotests.ps1"
 {
     AutotestsBinariesToken = AutotestsBinariesToken;
     AutotestsSourceType    = AutotestsSourceType;
@@ -36,18 +36,18 @@ deployment Get_Autotests_Distributive script "\\tis-dfs.avp.ru\Autotests\KIS\Tes
     expect 42;
 }
 
-deployment Unpack_Test_App script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\deployGuiTestApp.ps1"
+deployment Unpack_Test_App script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\deployGuiTestApp.ps1"
 {
     TestAppPackName = TestAppPackName;
     expect 42;
 }
 
-deployment NoInstall script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noInstall.ps1"
+deployment NoInstall script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noInstall.ps1"
 {
-    CollectionsLocalFolder             = "C:\Deployment";
+    CollectionsLocalFolder             = @"C:\Deployment";
     CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
     ProductPropertiesVariable          = "ProductProperties";
-    DistribFolder                      = "C:\install";
+    DistribFolder                      = @"C:\install";
     ProductBinariesToken               = ProductBinariesToken;
     ProductFamily                      = ProductFamily;
     ProductType                        = ProductType;
@@ -58,17 +58,17 @@ deployment NoInstall script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Sc
     AutotestBinariesExcludedFilesMasks = AutotestBinariesExcludedFilesMasks;
     ProductBinariesExcludedFilesMasks  = ProductBinariesExcludedFilesMasks;
     DesiredAutotestPath                = LocalTestBinariesFolder;
-    ForceTraceLevel                    = "700";
-    EnableAppVerifier                  = "True"
+    ForceTraceLevel                    = 700;
+    EnableAppVerifier                  = true;
     expect 42;
 }
 
-deployment Install_Product_NoBackdoor script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noBackdoor.ps1"
+deployment Install_Product_NoBackdoor script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.noBackdoor.ps1"
 {
-    CollectionsLocalFolder             = "C:\Deployment";
+    CollectionsLocalFolder             = @"C:\Deployment";
     CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
     ProductPropertiesVariable          = "ProductProperties";
-    DistribFolder                      = "C:\install";
+    DistribFolder                      = @"C:\install";
     ProductBinariesToken               = ProductBinariesToken;
     ProductFamily                      = ProductFamily;
     ProductType                        = ProductType;
@@ -89,12 +89,12 @@ deployment Install_Product_NoBackdoor script "\\tis-dfs.avp.ru\Autotests\KIS\Tes
     expect 42;
 }
 
-deployment Install_Product_Backdoor script "\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.Backdoor.ps1"
+deployment Install_Product_Backdoor script @"\\tis-dfs.avp.ru\Autotests\KIS\TestUnitedStarter\Scripts\_fullDeploy.Backdoor.ps1"
 {
-    CollectionsLocalFolder             = "C:\Deployment";
-    CollectionsNetworkPath             = "\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
+    CollectionsLocalFolder             = @"C:\Deployment";
+    CollectionsNetworkPath             = @"\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
     ProductPropertiesVariable          = "ProductProperties";
-    DistribFolder                      = "C:\install";
+    DistribFolder                      = @"C:\install";
     ProductBinariesToken               = ProductBinariesToken;
     ProductFamily                      = ProductFamily;
     ProductType                        = ProductType;
@@ -108,13 +108,13 @@ deployment Install_Product_Backdoor script "\\tis-dfs.avp.ru\Autotests\KIS\TestU
     DesiredAutotestPath                = LocalTestBinariesFolder;
     TestArtefactsFolder                = TestArtefactsFolder;
     ActivationCode                     = ActivationCode;
-    SuggestSafeKids                    = "False";
-    ForceTraceLevel                    = "700";
+    SuggestSafeKids                    = false;
+    ForceTraceLevel                    = 700;
     UseProxy                           = UseProxy;
     ConfigFilesFamily                  = ConfigFilesFamily;
-    SkipRecommendedSettings            = "False";
+    SkipRecommendedSettings            = false;
     EnableAppVerifier                  = EnableAppVerifier;
-    InstallKsdeBundle                  = "False"
+    InstallKsdeBundle                  = false;
     expect 42;
 };
 

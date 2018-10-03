@@ -1,3 +1,35 @@
-﻿namespace Tdl
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
 {
+  declaration Module : NamespaceBody
+  {
+  stage 0:
+    in RootNamespace : NamespaceSymbol;
+
+    Members.DeclaredIn = RootNamespace;
+    EnteredScope       = Scope;
+  }
+
+  abstract declaration Platform : NamespaceMember
+  {
+    | Def {}
+    | Set { Platforms : Reference*; }
+  }
+
+  //abstract ast ModuleMember : BindableAst, ScopedAst
+  //{
+  //  in DeclaredIn  : ModuleSymbol;
+  //
+  //stage 1:
+  //  inout Opening           : Scope;
+  //  in    CurrentScope      : Scope;
+  //  in    UsingAliasesScope : TableScope;
+  //
+  //  ContainingTable = DeclaredIn.MemberTable;
+  //}
 }
