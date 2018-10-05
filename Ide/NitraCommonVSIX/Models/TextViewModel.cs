@@ -142,7 +142,7 @@ namespace Nitra.VisualStudio.Models
       var snapshotLine  = snapshot.GetLineFromLineNumber(line);
       var snapshotPoint = snapshotLine.Start + column;
       NavigateTo(snapshotPoint);
-      _wpfTextView.ToVsTextView().SendExplicitFocus();
+      _wpfTextView.ToVsTextView()?.SendExplicitFocus();
     }
 
     internal void GotoRef(SnapshotPoint point)

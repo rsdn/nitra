@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 
 class Program
 {
-  static void Main(string[] args)
+  static void Main(List<int> args)
   {
+    args.Clear();
     List<int> xs = null;
     xs.Add(3);
   }

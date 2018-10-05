@@ -6,14 +6,15 @@
     using CSharp.CsIdentifiers;
     using CSharp.Literals;
     using CSharp.TokenNames;
+    using CSharp.TopDeclarations;
 
     [StartRule]
     syntax Module = MemberDeclaration*;
 
     syntax StringLiteral
     {
-      | RegularStringLiteral;
-      | VerbatimStringLiteral;
+      | RegularStringLiteral  = Lit=RegularStringLiteral
+      | VerbatimStringLiteral = Lit=VerbatimStringLiteral
     }
 
     syntax MemberDeclaration
@@ -22,9 +23,9 @@
       | Open             = "using" sm QualifiedIdentifier ";" nl;
       | Platform         = "platform" sm Name ";" nl;
       | PlatformSet      = "platform" sm Name sm "=" sm Platforms=(Reference; "," sm)+ ";" nl;
+      | DeploymentScript = "deployment" sm Name "(" (FormalParameter; ","sm)* ")" sm "script" ScriptPath=StringLiteral sm  nl Body;
       //| Product          = "product" sm Name nl Body;
       //| ProductSet       = "product" sm Name sm "=" sm Platforms=(Reference; "," sm)+ ";" nl;
-      //| DeploymentScript = "deployment" sm Name sm "script" ScriptPath=StringLiteral sm  nl Body;
     }
 
     syntax Body = outline_begin_before "{" inl DefDeclaration* d "}" nl outline_end_before;
@@ -34,11 +35,13 @@
     syntax DefExpr
     {
       | StringLiteral
-      | "true"
-      | "false"
-      | RealLiteral;
-      | DecimalIntegerLiteral     = Lit=DecimalIntegerLiteral
-      | HexadecimalIntegerLiteral = Lit=HexadecimalIntegerLiteral
+      //| "true"
+      //| "false"
+      //| RealLiteral;
+      //| DecimalIntegerLiteral             = Lit=DecimalIntegerLiteral
+      //| HexadecimalIntegerLiteral         = Lit=HexadecimalIntegerLiteral
+      //| InterpolatedRegularStringLiteral  = Lit=InterpolatedRegularStringLiteral
+      //| InterpolatedVerbatimStringLiteral = Lit=InterpolatedVerbatimStringLiteral
     }
   }
 }

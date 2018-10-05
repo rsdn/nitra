@@ -135,7 +135,7 @@ namespace Nitra.VisualStudio
 
     public static IVsTextView ToVsTextView(this ITextView view)
     {
-      return view.Properties.GetProperty<IVsTextView>(typeof(IVsTextView));
+      return view.Properties.TryGetProperty<IVsTextView>(typeof(IVsTextView), out var vsTextView) ? vsTextView : null;
     }
 
     public static string GetFilePath(this IVsTextView textViewAdapter)

@@ -22,6 +22,7 @@ namespace Nitra.ClientServer.Server
     _spanClassesManager : SpanClassesManager;
     _completeWordPosOpt : int;
     [RecordIgnore] _spanInfos : ImmutableArray[SpanInfo2].Builder = ImmutableArray.CreateBuilder();
+    [RecordIgnore] _refs      : HashSet[IRef] = HashSet();
 
     public GetSpanInfos() : ImmutableArray[SpanInfo2]
     {
@@ -54,12 +55,12 @@ namespace Nitra.ClientServer.Server
 
     public Visit(reference : Reference) : void implements IAstVisitor.Visit
     {
-      IgnoreParams();
+      Visit(reference.Ref)
     }
 
     public Visit(r : IRef) : void
     {
-      when (r == null)
+      when (r == null || !_refs.Add(r))
         return;
       
       when (r.ResolvedTo != null)

@@ -12,6 +12,7 @@ using Nitra.ClientServer.Messages;
 using static Microsoft.VisualStudio.VSConstants;
 
 using IServiceProvider = System.IServiceProvider;
+using System.Diagnostics;
 
 namespace Nitra.VisualStudio.KeyBinding
 {
@@ -34,7 +35,11 @@ namespace Nitra.VisualStudio.KeyBinding
       _wpfTextView     = wpfTextView;
       _textViewModel   = textViewModel;
       var path = wpfTextView.TextBuffer.GetFilePath();
-      AddCommandFilter(wpfTextView.ToVsTextView());
+      IVsTextView viewAdapter = wpfTextView.ToVsTextView();
+      if (viewAdapter != null)
+        AddCommandFilter(viewAdapter);
+      else
+        Trace.WriteLine("wpfTextView.ToVsTextView() == null");
     }
 
     private void AddCommandFilter(IVsTextView viewAdapter)
@@ -166,7 +171,7 @@ namespace Nitra.VisualStudio.KeyBinding
     public void Dispose()
     {
       var view = _wpfTextView.ToVsTextView();
-      view.RemoveCommandFilter(this);
+      view?.RemoveCommandFilter(this);
       _wpfTextView = null;
       _nextTarget = null;
       _serviceProvider = null;

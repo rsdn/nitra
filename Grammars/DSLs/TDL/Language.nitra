@@ -9,5 +9,8 @@
   authors     = Vlad Chistyakov;
   copyright   = NitraTeam;
 
+  span class Platform   { ForegroundColor=LightSeaGreen; }
+  span class Deployment { ForegroundColor=DarkCyan; }
+
   syntax module Tdl.Grammar start rule Module;
 }

@@ -14,6 +14,8 @@ namespace DotNet
       Kind      = "parameter";
       SpanClass = DotNetLang.ParameterSpanClass;
 
+      Scope     = Type.Scope;
+
       in Type     : TypeSymbol;
       in Modifier : ParameterModifier;
       in Index    : uint;

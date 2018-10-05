@@ -1,4 +1,5 @@
-﻿product KFA
+﻿/*
+product KFA
 {
     AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
     ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
@@ -54,3 +55,4 @@ product PURE
 
 product KAVKIS = KFA, KIS, SAAS, KSOS_PC, KSOS_FS, PURE;
 
+*/

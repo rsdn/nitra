@@ -11,9 +11,16 @@ namespace Tdl
 
   map syntax Grammar.MemberDeclaration -> NamespaceMember
   {
-    | Open        -> UsingOpenDirective  {               QualifiedIdentifier -> NamespaceOrTypeName; }
-    | Alias       -> UsingAliasDirective { Name -> Name; QualifiedIdentifier -> NamespaceOrTypeName; }
-    | Platform    -> Platform.Def        { Name -> Name; }
-    | PlatformSet -> Platform.Set        { Name -> Name; Platforms.Item1 -> Platforms; }
+    | Open             -> UsingOpenDirective  {               QualifiedIdentifier -> NamespaceOrTypeName; }
+    | Alias            -> UsingAliasDirective { Name -> Name; QualifiedIdentifier -> NamespaceOrTypeName; }
+    | Platform         -> Platform.Def        { Name -> Name; }
+    | PlatformSet      -> Platform.Set        { Name -> Name; Platforms.Item1 -> Platforms; }
+    | DeploymentScript -> DeploymentScript    { Name -> Name; ScriptPath -> Path; FormalParameters.Item1 -> Parameters; }
+  }
+
+  map syntax Grammar.StringLiteral -> TdlExpr
+  {
+    | RegularStringLiteral  -> RegularStringLiteral  { }
+    | VerbatimStringLiteral -> VerbatimStringLiteral { }
   }
 }

@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <UseDirectReferences>true</UseDirectReferences>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -21,6 +22,9 @@
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\..\..\Common\Nitra.snk</AssemblyOriginatorKeyFile>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\</SolutionDir>
+    <BaseDir Condition="$(BaseDir) == '' ">..\..\..\</BaseDir>
+    <NitraBin>$(BaseDir)bin\$(Configuration)\Stage1\</NitraBin>
+    <NitraGrammarsBin>$(BaseDir)Grammars\Bin\Debug\</NitraGrammarsBin>
     <RestorePackages>true</RestorePackages>
     <!--CustomArguments>-debugger</CustomArguments-->
   </PropertyGroup>
@@ -31,7 +35,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunDebugger>false</RunDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
@@ -45,25 +48,14 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml" />
+    <Reference Include="System.Core" />
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Nemerle.Peg">
-      <HintPath>$(Nemerle)\Nemerle.Peg.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
-      <Private>True</Private>
-    </Reference>
-    <MacroReference Include="Nemerle.Peg.Macros">
-      <HintPath>$(Nemerle)\Nemerle.Peg.Macros.dll</HintPath>
-    </MacroReference>
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(UseDirectReferences)' == ''">
     <MacroProjectReference Include="..\..\..\Nitra\Nitra.Compiler\Nitra.Compiler.nproj">
       <Name>Nitra.Compiler</Name>
       <Project>{a8aaca46-ccc8-429f-b626-4cfc77f3a21a}</Project>
@@ -95,7 +87,52 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup Condition="'$(UseDirectReferences)' == 'true'">
+    <MacroReference Include="Nitra.Compiler">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraBin)Nitra.Compiler.dll</HintPath>
+      <Private>True</Private>
+    </MacroReference>
+    <Reference Include="DotNet.BackEnd.CCI">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraBin)DotNet.BackEnd.CCI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+
+    <Reference Include="DotNetLang">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraBin)DotNetLang.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Nitra.Runtime">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraBin)Nitra.Runtime.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Collections.Immutable.Light">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraBin)System.Collections.Immutable.Light.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="CSharp.Grammar">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(NitraGrammarsBin)CSharp.Grammar.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
+    <Compile Include="Code\DefaultValue.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\ProjectSupport.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\TdlProjectEvalPropertiesHost.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\TdlUtils.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Grammar.nitra">
     </Compile>
     <Compile Include="Ast.nitra">
@@ -105,11 +142,9 @@
     <Compile Include="Mapping.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ProjectSupport.n">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Code" />
     <Folder Include="Properties" />
     <Folder Include="Properties" />
   </ItemGroup>

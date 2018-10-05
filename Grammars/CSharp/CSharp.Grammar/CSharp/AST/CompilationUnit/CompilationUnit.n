@@ -191,7 +191,7 @@ namespace CSharp
 
   public class CSharpProjectEvalPropertiesHost : ProjectEvalPropertiesHost
   {
-    private _rootNamespace : NamespaceSymbol;
+    protected _rootNamespace : NamespaceSymbol;
 
     public this(files : ImmutableArray[FileEvalPropertiesData], rootNamespace : NamespaceSymbol)
     {

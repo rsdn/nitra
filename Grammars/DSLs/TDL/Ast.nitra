@@ -6,30 +6,75 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
-  declaration Module : NamespaceBody
+  declaration Module : NamespaceBody, Container
   {
   stage 0:
     in RootNamespace : NamespaceSymbol;
 
-    Members.DeclaredIn = RootNamespace;
-    EnteredScope       = Scope;
+    Members.DeclaredIn      = RootNamespace;
+    Members.ContainingTable = Symbol.MemberTable;
+    EnteredScope            = Scope.HideWith(Symbol.MemberTable);
   }
 
   abstract declaration Platform : NamespaceMember
   {
-    | Def {}
-    | Set { Platforms : Reference*; }
+    | Def
+      {
+        symbol
+        {
+          Kind      = "platform set";
+          SpanClass = TdlLang.PlatformSpanClass;
+        }
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "platform";
+          SpanClass = TdlLang.PlatformSpanClass;
+        }
+
+        Platforms.Scope = Scope;
+        Platforms : Reference*;
+      }
   }
 
-  //abstract ast ModuleMember : BindableAst, ScopedAst
+  declaration DeploymentScript : NamespaceMember, Parametrizable
+  {
+    symbol
+    {
+      in Path       : string;
+
+      Kind      = "deployment";
+      SpanClass = TdlLang.DeploymentSpanClass;
+
+    }
+
+    Parameters.Scope = Scope;
+
+    Path : TdlExpr;
+    //Definitions : Definition*;
+  }
+
+  abstract ast TdlExpr
+  {
+    | RegularStringLiteral  { }
+    | VerbatimStringLiteral { }
+  }
+
+  //declaration Parameter
   //{
-  //  in DeclaredIn  : ModuleSymbol;
+  //  symbol
+  //  {
+  //    in Type : TypeSymbol;
+  //  }
   //
-  //stage 1:
-  //  inout Opening           : Scope;
-  //  in    CurrentScope      : Scope;
-  //  in    UsingAliasesScope : TableScope;
+  //  Type : Reference;
+  //}
   //
-  //  ContainingTable = DeclaredIn.MemberTable;
+  //ast Definition
+  //{
+  //  ParameterReference : Reference;
+  //  Expr               : DefExpr;
   //}
 }
