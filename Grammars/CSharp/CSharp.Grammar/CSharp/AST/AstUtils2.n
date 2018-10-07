@@ -36,8 +36,9 @@ namespace DotNet
       }
     }
 
-    public GetOverloadedMemberType(this context : DependentPropertyEvalContext, memberCandidats : ImmutableArray[FunctionalSymbol]) : TypeSymbol
+    public GetOverloadedMemberType(this context : DependentPropertyEvalContext, memberCandidats : ImmutableArray[DeclarationSymbol]) : TypeSymbol
     {
+
       def memberCount = memberCandidats.Length;
       match (memberCount)
       {
@@ -51,6 +52,7 @@ namespace DotNet
             | x is Member.ConstantSymbol => x.Type
             | x is LambdaParameterSymbol => x.Type
             | x is EnumMemberSymbol      => x.DeclaredIn
+            | x is LocalVarSymbol        => x.Type
             | _                          => context.CreateFreeTypeVar()
           }
         | _ =>
@@ -243,12 +245,6 @@ namespace DotNet
         | x when x.FullName == float => [double].Any(s => s == to.FullName)
         | _ => false
       }
-    }
-
-    [Memoize]
-    public CreateUnresolved() : Ref[FunctionalSymbol]
-    {
-      null//Ref[FunctionalSymbol].CreateUnresolved(Location.Default)
     }
   } // module
 } // namespace

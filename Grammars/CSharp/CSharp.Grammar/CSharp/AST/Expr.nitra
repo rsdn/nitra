@@ -21,7 +21,7 @@ namespace DotNet
     in ParameterScope : TableScope = TableScope(null, "parameters");
   stage 1:
     out Type : TypeSymbol;
-    out Func : Ref[FunctionalSymbol] = AstUtils2.CreateUnresolved();
+    out Member : Ref[DeclarationSymbol] = null;
 
     unless (Type.IsSubtypeOf(ExpectedType))
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
@@ -50,10 +50,9 @@ namespace DotNet
 
         Key.Scope = ScopeOut.HideWith(ParameterScope);
       stage 1:
-        Func = Key.Ref.Resolve();
-        //out Ref: Ref[DeclarationSymbol] = Key.Ref.Resolve();
+        Member = Key.Ref.Resolve();
         // Результат Ref может быть неоднозначным.
-        Type = context.GetOverloadedMemberType(Func.Symbols);
+        Type = context.GetOverloadedMemberType(Member.Symbols);
       }
     | Parenthesized
       {
@@ -361,8 +360,10 @@ namespace DotNet
       }
     | Invocation
       {
+      stage 1:
+        out Method : Ref[FunctionalSymbol];
 
-        Left.ExpectedType              = ExpectedFunctionType;
+        //Left.ExpectedType              = ExpectedFunctionType;
         Left.ScopeIn                   = ScopeIn;
         Left.ParameterScope            = ParameterScope;
 
@@ -373,17 +374,12 @@ namespace DotNet
 
 
         //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
-        Type                           = Func.Symbol.ReturnType;
-        Func                           = context.InvocationResolveFunc(Left, Left.Func, Arguments.Type, Arguments);
+        Type                           = Method.Symbol.ReturnType;
+        Member                         = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
+        Method                         = Left.Member.Resolve();
 
-        unless (Left.Type.Unify(Func.Symbol.Type))
-          Error(context, $"The $(Left.Type) not unify with $(Func.Symbol.Type)");
-
-        //Left.Type, Func.Symbol.Type
-
-      stage 1:
-        out ExpectedFunctionType : FunctionTypeSymbol = FunctionTypeSymbol();
-        //out Func : Ref[FunctionalSymbol] = this.InvocationResolveFunc(Left, Left.Type, Arguments.Type, context);
+        //unless (Left.Type.Unify(Member.Symbol.Type))
+        //  Error(context, $"The $(Left.Type) not unify with $(Member.Symbol.Type)");
 
         Left      : Expr;
         Arguments : DotNet.Argument*;

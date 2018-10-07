@@ -45,8 +45,10 @@ namespace DotNet
       Kind  = "variable";
 
       Scope = TypeRef.Scope;
+      Type = TypeRef.Symbol;
 
       in TypeRef : Ref[TypeSymbol];
+      out Type : TypeSymbol;
     }
     in Scope : Scope;
 

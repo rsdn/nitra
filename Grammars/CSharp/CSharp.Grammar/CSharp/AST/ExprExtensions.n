@@ -142,12 +142,21 @@ namespace DotNet
       ((convertion :> int) - 1) :> Convertion;
     }
 
-    public InvocationResolveFunc(this context : DependentPropertyEvalContext, funcExpr : Expr, funcRef : Ref[FunctionalSymbol], argumentTypes : ImmutableArray[TypeSymbol], args : Argument.IAstList) : Ref[FunctionalSymbol]
+    public TryGetReturnType(this context : DependentPropertyEvalContext, memberType : DeclarationSymbol) : TypeSymbol
+    {
+      match (memberType)
+      {
+        | method is FunctionalSymbol => method.ReturnType
+        | _ => context.CreateFreeTypeVar()
+      }
+    }
+
+    public InvocationResolveFunc(this context : DependentPropertyEvalContext, funcExpr : Expr, funcRef : Ref[FunctionalSymbol], argumentTypes : ImmutableArray[TypeSymbol], args : Argument.IAstList) : Ref[DeclarationSymbol]
     {
       if (funcRef == null)
         Ref.CreateUnresolved(funcExpr.Location)
       else if (funcRef.IsUnresolved)
-        funcRef
+        funcRef.Resolve()
       else if (funcRef.IsAmbiguous)
       {
         mutable bestFunc;
@@ -317,7 +326,7 @@ namespace DotNet
               str + string(' ', len - str.Length)
         }
 
-        def bestFunctionChoice(candidats : array[FunctionalSymbol], decisionTable : array.[2][Convertion]) : Ref[FunctionalSymbol]
+        def bestFunctionChoice(candidats : array[FunctionalSymbol], decisionTable : array.[2][Convertion]) : Ref[_]
         {
           // Находим максимальное значение преобразование (значение лучшего преобразования).
           // Определяем: а) есть ли другие такие же значения для параметра;
@@ -359,7 +368,7 @@ namespace DotNet
             }
           }
 
-          def res = LightList.[FunctionalSymbol]();
+          def res = LightList();
           foreach (candidat when candidat != null in candidats)
             res.Add(candidat);
 
@@ -376,7 +385,7 @@ namespace DotNet
         bestFunctionChoice(candidats, decisionTable)
       }
       else
-        funcRef
+        funcRef.Resolve()
     }
 
     //private ExprInvocation(leftAst : InitAst, method : Member.MethodSymbol, arguments : array[InitAst]) : InitAst
