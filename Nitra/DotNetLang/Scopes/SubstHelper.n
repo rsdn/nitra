@@ -219,7 +219,7 @@ namespace DotNet
       }
     }
 
-    private SubstParametrizable(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
+    private SubstParameterizable(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
     {
       // TODO: Надо сделать подстановку для table ParameterScope;
       when (ogigin.IsParametersEvaluated)
@@ -231,7 +231,7 @@ namespace DotNet
 
     private SubstFunctional(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
     {
-      SubstParametrizable(subst, ogigin);
+      SubstParameterizable(subst, ogigin);
 
       when (ogigin.IsReturnTypeEvaluated)
       {

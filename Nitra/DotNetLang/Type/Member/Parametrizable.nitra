@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace DotNet
 {
-  abstract declaration Parametrizable
+  abstract declaration Parameterizable
   {
     symbol
     {
