@@ -35,7 +35,7 @@ namespace Tdl
     | ProductType      -> ProductType         { Name -> Name; }
     | Product          -> Product.Def         { Name -> Name; Type -> Type; }
     | ProductSet       -> Product.Set         { Name -> Name; Type -> Type; Products.Item1 -> Products; }
-    | Scenario         -> Scenario.Def        { Name -> Name; }
+    | Scenario         -> Scenario.Def        { Name -> Name; ScenarioBody.ProductType.Reference -> ProductType; }
     | ScenarioSet      -> Scenario.Set        { Name -> Name; Scenarios.Item1 -> Scenarios; }
     | Suite            -> Suite               { Name -> Name; }
   }

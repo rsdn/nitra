@@ -6,14 +6,18 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
-  declaration Module : NamespaceBody, Container
+  declaration Module : NamespaceBody
   {
+    symbol
+    {
+      Kind  = "tdl module";
+    }
   stage 0:
     in RootNamespace : NamespaceSymbol;
 
     Members.DeclaredIn      = RootNamespace;
-    Members.ContainingTable = Symbol.MemberTable;
-    EnteredScope            = Scope.HideWith(Symbol.MemberTable);
+    Members.ContainingTable = RootNamespace.MemberTable;
+    EnteredScope            = Scope;
   }
 
   abstract declaration Platform : NamespaceMember
@@ -86,9 +90,11 @@ namespace Tdl
   {
     symbol
     {
-      SpanClass = TdlLang.ProductSpanClass;
+    stage 1:
       in Type : ProductTypeSymbol;
+      SpanClass = TdlLang.ProductSpanClass;
     }
+  stage 1:
     out TypeRef : Ref[ProductTypeSymbol];
 
     Type.Scope  = Scope;
@@ -124,9 +130,20 @@ namespace Tdl
       {
         symbol
         {
+        stage 1:
+          in ProductType : ProductTypeSymbol;
+
           Kind      = "scenario";
           SpanClass = TdlLang.ScenarioSpanClass;
         }
+      stage 1:
+        out ProductTypeRef : Ref[ProductTypeSymbol];
+
+        ProductType.Scope  = Scope;
+        ProductTypeRef     = ProductType.Ref.Resolve();
+        Symbol.ProductType = ProductTypeRef.Symbol;
+
+        ProductType : Reference;
       }
     | Set
       {
