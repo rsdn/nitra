@@ -357,7 +357,7 @@ namespace DotNet
       TypeUnifier.Instance.TryUnify(symbol1, symbol2)
     }
 
-    public MapParametersToTypes(parameters : ImmutableArray[FormalParameterSymbol]) : ImmutableArray[TypeSymbol]
+    public MapParametersToTypes(parameters : ImmutableArray[FormalParameterSymbol], _dependence : TypeSymbol) : ImmutableArray[TypeSymbol]
     {
         def builder = ImmutableArray.CreateBuilder(parameters.Length);
         foreach (parameter in parameters)

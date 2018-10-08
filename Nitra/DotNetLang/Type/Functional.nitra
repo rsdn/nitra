@@ -10,7 +10,7 @@ namespace DotNet
       in Type       : FunctionTypeSymbol = FunctionTypeSymbol();
 
       Type.Return     = ReturnType;
-      Type.Parameters = AstUtils.MapParametersToTypes(Parameters);
+      Type.Parameters = AstUtils.MapParametersToTypes(Parameters, ReturnType);
     }
   }
 }
