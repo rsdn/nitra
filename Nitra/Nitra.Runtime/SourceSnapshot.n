@@ -73,9 +73,9 @@ namespace Nitra
       {
         | result when result < 0 =>
           def index = ~result;
-          if (index > 0 && index < _lineIndexes.Length)
+          if (index > 0 && index <= _lineIndexes.Length)
             LineColumn(index, pos2 - _lineIndexes[index - 1] + 1)
-          else
+          else 
             LineColumn(1, 1)
 
         | index => LineColumn(index + 1, pos2 - _lineIndexes[index] + 1)

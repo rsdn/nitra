@@ -55,7 +55,8 @@ namespace Nitra.ClientServer.Server
 
     public Visit(reference : Reference) : void implements IAstVisitor.Visit
     {
-      Visit(reference.Ref)
+      when (reference?.IsRefEvaluated)
+        Visit(reference.Ref)
     }
 
     public Visit(r : IRef) : void
