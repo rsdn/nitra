@@ -152,6 +152,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TDL", "TDL", "{33627B59-C95F-4B55-B764-9546F58D07DB}"
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Tdl", "Grammars\DSLs\TDL\Tdl.nproj", "{82C32D2D-8E24-4975-B606-B2C7BE54C340}"
+	ProjectSection(ProjectDependencies) = postProject
+		{249928BB-C446-42B3-BFF3-CA98DABB9609} = {249928BB-C446-42B3-BFF3-CA98DABB9609}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

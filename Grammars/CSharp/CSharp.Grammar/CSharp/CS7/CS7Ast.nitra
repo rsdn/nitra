@@ -27,7 +27,7 @@ namespace DotNet
     TypeName.Scope = ScopeOut;
     Expr1.ScopeIn    = ScopeOut;
     Type = context.GetVoidType();
-  stage 1:
+  stage 2:
     out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
 
     Expr1 : Expr;
@@ -54,7 +54,7 @@ namespace DotNet
 
   abstract ast TupleExprField
   {
-  stage 1:
+  stage 2:
     out Type : TypeSymbol = Expr.Type;
 
     Expr : Expr;

@@ -11,4 +11,5 @@ class Program
   }
   
   static void Foo(int aa, string b, List<int> xs) { }
+  static void Foo(int aa, string b, int x) { }
 }

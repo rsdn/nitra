@@ -46,14 +46,14 @@ namespace DotNet
         | 1 =>
           match (memberCandidats[0])
           {
-            | x is Member.PropertySymbol => x.Type
-            | x is Member.MethodSymbol   => x.Type
-            | x is Member.FieldSymbol    => x.Type
-            | x is Member.ConstantSymbol => x.Type
-            | x is LambdaParameterSymbol => x.Type
-            | x is EnumMemberSymbol      => x.DeclaredIn
-            | x is LocalVarSymbol        => x.Type
-            | _                          => context.CreateFreeTypeVar()
+            | x is Member.PropertySymbol when x.IsTypeEvaluated       => x.Type
+            | x is Member.MethodSymbol   when x.IsTypeEvaluated       => x.Type
+            | x is Member.FieldSymbol    when x.IsTypeEvaluated       => x.Type
+            | x is Member.ConstantSymbol when x.IsTypeEvaluated       => x.Type
+            | x is LambdaParameterSymbol when x.IsTypeEvaluated       => x.Type
+            | x is LocalVarSymbol        when x.IsTypeEvaluated       => x.Type
+            | x is EnumMemberSymbol      when x.IsDeclaredInEvaluated => x.DeclaredIn
+            | _                                                       => context.CreateFreeTypeVar()
           }
         | _ =>
           mutable methodsCount;
@@ -63,16 +63,16 @@ namespace DotNet
           {
             | m is Member.MethodSymbol =>
               methodsCount++;
-              if (returnType == null)
+              if (returnType == null && m.IsReturnTypeEvaluated)
                 returnType = m.ReturnType;
-              else
-              {
-                when (!returnType.Equals(m.ReturnType))
+              else when (m.IsReturnTypeEvaluated && !returnType.Equals(m.ReturnType))
                   sameReturnType = false;
-              }
 
             | _ => ()
           }
+          when (returnType == null)
+            returnType = CreateFreeTypeVar(context);
+
           if (methodsCount == memberCount)
           {
             if (sameReturnType)

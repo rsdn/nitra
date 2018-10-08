@@ -157,7 +157,7 @@ namespace DotNet
         Ref.CreateUnresolved(funcExpr.Location)
       else if (funcRef.IsUnresolved)
         funcRef.Resolve()
-      else if (funcRef.IsAmbiguous)
+      else
       {
         mutable bestFunc;
         mutable prevFunc;
@@ -207,7 +207,10 @@ namespace DotNet
             for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
             {
               def argumentType = argumentTypes[ai];
-              when (!hasImplicitConversions(argumentType, sym.Parameters[ai].Type))
+              def parameter = sym.Parameters[ai];
+              unless (parameter.IsTypeEvaluated)
+                return false;
+              unless (hasImplicitConversions(argumentType, parameter.Type))
                 return false;
             }
 
@@ -384,8 +387,6 @@ namespace DotNet
 
         bestFunctionChoice(candidats, decisionTable)
       }
-      else
-        funcRef.Resolve()
     }
 
     //private ExprInvocation(leftAst : InitAst, method : Member.MethodSymbol, arguments : array[InitAst]) : InitAst

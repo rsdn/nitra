@@ -14,12 +14,12 @@ namespace DotNet
 {
   abstract ast Expr
   {
+  stage 2:
     inout Scope : Scope;
     ScopeOut = ScopeIn;
     in ExpectedType : TypeSymbol;
     in Used : bool = false;
     in ParameterScope : TableScope = TableScope(null, "parameters");
-  stage 1:
     out Type : TypeSymbol;
     out Member : Ref[DeclarationSymbol] = null;
 
@@ -49,7 +49,7 @@ namespace DotNet
         Key: QualifiedReference;
 
         Key.Scope = ScopeOut.HideWith(ParameterScope);
-      stage 1:
+      stage 2:
         Member = Key.Ref.Resolve();
         // Результат Ref может быть неоднозначным.
         Type = context.GetOverloadedMemberType(Member.Symbols);
@@ -77,7 +77,7 @@ namespace DotNet
         // Arguments.ParentParameterScope = ???;
         // Arguments.Used = true;
         //
-        // stage 1:
+        // stage 2:
         // out Ref : Ref[Member.ConstructorSymbol] = this.FindSuitableConstructor(ConstructorType.Ref.Symbol, Arguments.ArgumentType, context);
         //
         // Type = Ref.Symbol.DeclaredIn;
@@ -122,7 +122,7 @@ namespace DotNet
         Expression.ParameterScope = ParameterScope;
         Expression.ScopeIn = ScopeOut;
         Expression.Used = true;
-        stage 1:
+      stage 2:
         out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
         Type = TypeRef.Symbol;
       }
@@ -253,22 +253,23 @@ namespace DotNet
         Expr1.ScopeIn = ScopeOut;
         // TypeName : QualifiedReference;
         // TypeName.Scope = Scope;
-      stage 1:
+      stage 2:
         // out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
         Type = context.GetBooleanType();
       }
     | As
       {
-        Expr1 : Expr;
 
         Expr1.ScopeIn = ScopeOut;
       //    TypeName : QualifiedReference;
       //    TypeName.Scope = Scope;
       //
-      //  stage 1:
+      //  stage 2:
       //    out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
       //  Type = TypeRef.Symbol;
         Type = context.GetVoidType();
+
+        Expr1 : Expr;
       }
     | ShiftLeft       : Arithmetic
       {
@@ -344,7 +345,7 @@ namespace DotNet
         // QualifiedName : Reference;
         // QualifiedName.Scope = Expr1.Type.Scope;
         Type = context.GetVoidType(); //this.GetMemberAccessReturnType(Ref);
-      stage 1:
+      stage 2:
         out Ref : Ref[DeclarationSymbol] = null; // QualifiedName.Ref.Resolve();
       }
     | MemberAccess2
@@ -354,13 +355,13 @@ namespace DotNet
         // QualifiedName : QualifiedReference;
         // QualifiedName.Scope = TypeNameRef.Scope;
         Type = context.GetVoidType(); // this.GetMemberAccessReturnType(QualifiedNameRef);
-      stage 1:
+      stage 2:
         // out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
         // out QualifiedNameRef : Ref[DeclarationSymbol] = TypeName.Ref.Resolve();
       }
     | Invocation
       {
-      stage 1:
+      stage 2:
         out Method : Ref[FunctionalSymbol];
 
         //Left.ExpectedType              = ExpectedFunctionType;
@@ -398,7 +399,7 @@ namespace DotNet
         // Arguments.Used = true;
         // Type = Method.Symbol.ReturnType;
         Type = context.GetVoidType();
-      stage 1:
+      stage 2:
         // out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Expr1, Expr1.Type, Arguments.Type, context);
       }
     | PostIncrement : NumericUnary
@@ -520,7 +521,7 @@ namespace DotNet
     Expr.Used = true;
     //ExpectedType = ???;
     Type = Expr.Type;
-  stage 1:
+  stage 2:
     out ArgumentType : TypeSymbol = Type;
   }
 
@@ -552,7 +553,7 @@ namespace DotNet
     Parameter.TypeScope = TypeScope;
     Expression.ExpectedType = ExpectedType;
     Expression.ScopeIn = TypeScope;
-    //stage 1:
+    //stage 2:
     //out AstValue : BuildResult = this.BuildAstValue(Expression, Expression.Type, Parameter.Symbol.Name, Parameter.Symbol.Type, context);
   }
   declaration LambdaParameter
@@ -578,7 +579,7 @@ namespace DotNet
 
     TypeName.Scope = TypeScope;
     in TypeScope : Scope;
-  stage 1:
+  stage 2:
     out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
   }
 

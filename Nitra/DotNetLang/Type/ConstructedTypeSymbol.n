@@ -70,7 +70,7 @@ namespace DotNet
 
     public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
     {
-      | TopConstructedTypeSymbol as other => this.TypeInfo.Equals(other.TypeInfo) && this.Args.Equals(other.Args)
+      | TopConstructedTypeSymbol as other => this.TypeInfo.Equals(other.TypeInfo) && this.Args.SequenceEqual(other.Args)
       | _ => false
     }
 
