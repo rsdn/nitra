@@ -1,0 +1,12 @@
+﻿using Autotest.Common.Suites.Components.Delivery;
+
+scenario FacadeProductStopStart
+{
+    product type Configurable;
+    deployment DeployWithDeployer_NoReboot;
+    // резолвится в Autotest.Common.Suites.Components.Delivery.FacadeTests.FacadeProductStopStart из Autotest.Common.Components.Suites.dll
+    method FacadeTests.FacadeProductStopStart;
+    environments (win10, PURE_2020) /*; ... */;
+}
+
+scenario ExclusiveTestGroup = FacadeProductStopStart;

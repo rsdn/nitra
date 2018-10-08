@@ -1,21 +1,14 @@
-﻿
-deployment Mount_Collections(int param1) script @"mountCollectionsFolder.ps1"
+deployment DeployWithDeployer(string BuildName, string DeploymentConditions, bool DeployIsNeeded, string InternalTestSettingsDirectory)
+    script @"\\sdfs\Autotests\Components\Temp\Sattarov\HiveStarter\Deploy.ps1"
 {
-    CollectionsLocalFolder = @"C:\Deployment";
-    CollectionsNetworkPath = @"\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main";
-    //expect 42
+    DeployerFlags = DeploymentConditions;
+
+    expected 2;
 }
 
-deployment Get_Product_Distributive(string param2, bool param3) script @"getProduct.ps1"
+deployment DeployCollectors()
+    script @"\\sdfs\Autotests\Components\Temp\Sattarov\HiveStarter\DeployDataCollectors.ps1"
 {
-    IncludedFilesMasks   = "";
-    ExcludedFilesMasks   = "*_full.exe;*_reduced.exe";
-    TargetFolder         = @"C:\install";
-    RecreateTargetFolder = "False";
-
-    //expect 42;
 }
 
-
-
-
+deployment DeployWithDeployer_NoReboot = DeployWithDeployer, DeployCollectors;

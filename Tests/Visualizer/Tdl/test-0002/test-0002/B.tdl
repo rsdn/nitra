@@ -1,58 +1,9 @@
-﻿/*
-product KFA
+﻿product type Configurable
 {
-    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-    ConfigFilesFamily                  = "Kis.";
-    ProductType                        = "KFA";
-    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    string ProductConfigPath;
 }
 
-product KIS
+product PURE_2020 : Configurable
 {
-  AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-  ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-  ConfigFilesFamily                  = "Kis.";
-  ProductType                        = "KIS";
-  TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    ProductConfigPath = @"\\sdfs\Autotests\Components\Delivery\BlackBox\AutotestConfiguration\ProductConfiguration\2020.MP0\PURE.xml";
 }
-
-product SAAS
-{
-    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-    ConfigFilesFamily                  = "Kis.";
-    ProductType                        = "SAAS";
-    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
-}
-
-product KSOS_PC
-{
-    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-    ConfigFilesFamily                  = "Kis.";
-    ProductType                        = "KSOS";
-    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
-}
-
-product KSOS_FS
-{
-    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-    ConfigFilesFamily                  = "Kis.";
-    ProductType                        = "KSOS";
-    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
-}
-
-product PURE
-{
-    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-    ConfigFilesFamily                  = "Kis.";
-    ProductType                        = "PURE";
-    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
-}
-
-product KAVKIS = KFA, KIS, SAAS, KSOS_PC, KSOS_FS, PURE;
-
-*/

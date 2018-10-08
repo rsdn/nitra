@@ -39,42 +39,114 @@ namespace Tdl
       }
   }
 
-  declaration DeploymentScript : NamespaceMember, Parametrizable
-  {
-    symbol
-    {
-      in Path       : string;
-
-      Kind      = "deployment";
-      SpanClass = TdlLang.DeploymentSpanClass;
-
-    }
-
-    Parameters.Scope = Scope;
-
-    Path : TdlExpr;
-    //Definitions : Definition*;
-  }
-
   abstract ast TdlExpr
   {
     | RegularStringLiteral  { }
     | VerbatimStringLiteral { }
   }
 
-  //declaration Parameter
-  //{
-  //  symbol
-  //  {
-  //    in Type : TypeSymbol;
-  //  }
-  //
-  //  Type : Reference;
-  //}
-  //
-  //ast Definition
-  //{
-  //  ParameterReference : Reference;
-  //  Expr               : DefExpr;
-  //}
+  abstract declaration Deployment : NamespaceMember
+  {
+    | Script : Parameterizable
+      {
+        symbol
+        {
+          in Path       : string;
+
+          Kind      = "deployment";
+          SpanClass = TdlLang.DeploymentSpanClass;
+        }
+
+        Path : TdlExpr;
+        //Definitions : Definition*;
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "deployment set";
+          SpanClass = TdlLang.DeploymentSpanClass;
+        }
+
+        Deployments.Scope = Scope;
+        Deployments : Reference*;
+      }
+  } // Deployment
+
+  declaration ProductType : NamespaceMember
+  {
+    symbol
+    {
+      Kind      = "product type";
+      SpanClass = TdlLang.ProductTypeSpanClass;
+    }
+  }
+
+  abstract declaration Product : NamespaceMember
+  {
+    symbol
+    {
+      SpanClass = TdlLang.ProductSpanClass;
+      in Type : ProductTypeSymbol;
+    }
+    out TypeRef : Ref[ProductTypeSymbol];
+
+    Type.Scope  = Scope;
+    TypeRef     = Type.Ref.Resolve();
+    Symbol.Type = TypeRef.Symbol;
+
+    Type : Reference;
+
+    | Def
+      {
+        symbol
+        {
+          Kind      = "product";
+        }
+
+        //Definitions : Definition*;
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "product set";
+        }
+
+        Products.Scope = Scope;
+        Products : Reference*;
+      }
+  } // Product
+
+  abstract declaration Scenario : NamespaceMember
+  {
+    | Def
+      {
+        symbol
+        {
+          Kind      = "scenario";
+          SpanClass = TdlLang.ScenarioSpanClass;
+        }
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "scenario set";
+          SpanClass = TdlLang.ScenarioSpanClass;
+        }
+
+        Scenarios.Scope = Scope;
+        Scenarios : Reference*;
+      }
+  } // Scenario
+
+  declaration Suite : NamespaceMember
+  {
+    symbol
+    {
+      Kind      = "suite";
+      SpanClass = TdlLang.SuiteSpanClass;
+    }
+  }
 }

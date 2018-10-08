@@ -38,23 +38,56 @@
       | Open             = "using" sm QualifiedIdentifier ";" nl;
       | Platform         = "platform" sm Name ";" nl;
       | PlatformSet      = "platform" sm Name sm "=" sm Platforms=(Reference; "," sm)+ ";" nl;
-      | DeploymentScript = "deployment" sm Name "(" (FormalParameter; ","sm)* ")" sm "script" ScriptPath=StringLiteral sm  nl Body;
-      //| Product          = "product" sm Name nl Body;
-      //| ProductSet       = "product" sm Name sm "=" sm Platforms=(Reference; "," sm)+ ";" nl;
+      | DeploymentScript = "deployment" sm Name "(" (FormalParameter; ","sm)* ")" sm "script" ScriptPath=StringLiteral sm  nl DeploymentScriptBody;
+      | DeploymentSet    = "deployment" sm Name sm "=" sm Deployments=(Reference; "," sm)+ ";" nl
+      | ProductType      = "product" sm "type" sm Name nl ProductTypeBody;
+      | Product          = "product"  sm Name sm ":" Type=Reference nl ProductBody;
+      | ProductSet       = "product"  sm Name sm ":" Type=Reference sm "=" sm Products=(Reference; "," sm)+ ";" nl;
+      | Scenario         = "scenario" sm Name sm ScenarioBody;
+      | ScenarioSet      = "scenario" sm Name sm "=" sm Scenarios=(Reference; "," sm)+ ";" nl;
+      | Suite            = "suite"    sm Name sm SuiteBody;
     }
 
-    syntax Body = outline_begin_before "{" inl DefDeclaration* d "}" nl outline_end_before;
+    syntax SuiteBody = outline_begin_before "{" inl Platform Product DefDeclaration* SuiteStatement+ d "}" nl outline_end_before
+    {
+      syntax Platform = "platform" sm Reference ";" nl;
+      syntax Product  = "product"  sm Reference ";" nl;
+      syntax SuiteStatement
+      {
+        | CallTest = Test=Reference "(" ")" ";" nl;
+      }
+    }
 
-    syntax DefDeclaration = Name sm "=" sm DefExpr ";" nl;
+    syntax ScenarioBody = outline_begin_before "{" inl ProductType Deployment Method Environments d "}" nl outline_end_before
+    {
+      syntax ProductType  = "product" sm "type" sm Reference ";" nl;
+      syntax Deployment   = "deployment" sm Reference ";" nl;
+      syntax Method       = "method" sm QualifiedIdentifier ";" nl;
+      syntax Environments = "environments" sm (Environment; "," sm; ?)+ ";" nl;
+      syntax Environment  = "(" Platform=Reference "," sm Product=Reference ")";
+    }
+
+    syntax ProductBody = outline_begin_before "{" inl DefDeclaration* d "}" nl outline_end_before;
+
+    syntax ProductTypeBody = outline_begin_before "{" inl Field* d "}" nl outline_end_before;
+
+    syntax Field = AnyType sm Name ";" nl;
+    
+    syntax DeploymentScriptBody = outline_begin_before "{" inl DefDeclaration* Expected? d "}" nl outline_end_before;
+
+    syntax Expected = "expected" sm Value=DecimalIntegerLiteral ";" nl;
+
+    syntax DefDeclaration = Reference sm "=" sm DefExpr ";" nl;
 
     syntax DefExpr
     {
       | StringLiteral
-      //| "true"
-      //| "false"
-      //| RealLiteral;
-      //| DecimalIntegerLiteral             = Lit=DecimalIntegerLiteral
-      //| HexadecimalIntegerLiteral         = Lit=HexadecimalIntegerLiteral
+      | "true"
+      | "false"
+      | RealLiteral;
+      | DecimalIntegerLiteral     = Lit=DecimalIntegerLiteral
+      | HexadecimalIntegerLiteral = Lit=HexadecimalIntegerLiteral
+      | Reference
       //| InterpolatedRegularStringLiteral  = Lit=InterpolatedRegularStringLiteral
       //| InterpolatedVerbatimStringLiteral = Lit=InterpolatedVerbatimStringLiteral
     }
