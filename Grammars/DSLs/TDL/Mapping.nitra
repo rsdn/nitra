@@ -3,11 +3,26 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Следующий код добавляет в шарповые идентификаторы поддержку идентификаторов в Lisp-стиле и "заковыченых" 
+
+  map syntax Grammar.Name.String    -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
+  map syntax Grammar.Name.ListStyle -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
+
+  map syntax Grammar.Name.String(_tag : CSharp.ImplicitNamespaceTag) -> ImplicitNamespace { this -> Name; }
+  map syntax Grammar.Name.ListStyle(_tag : CSharp.ImplicitNamespaceTag) -> ImplicitNamespace { this -> Name; }
+
+  map syntax Grammar.Reference.String    -> Nitra.Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
+  map syntax Grammar.Reference.ListStyle -> Nitra.Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
+
   map syntax Grammar.Module -> Module
   {
     Name = Name(Location.FromStart(), Location.Source.File.Name);
     MemberDeclarations -> Members;
   }
+
+  //
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   map syntax Grammar.MemberDeclaration -> NamespaceMember
   {

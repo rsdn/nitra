@@ -7,10 +7,25 @@
     using CSharp.Literals;
     using CSharp.TokenNames;
     using CSharp.TopDeclarations;
+    using CSharp.Types;
 
     [StartRule]
     syntax Module = MemberDeclaration*;
 
+    regex LispIdent = (CSharp.CsIdentifiers.IdentifierBody "-"+)+ CSharp.CsIdentifiers.IdentifierBody?;
+
+    extend token Name
+    {
+      | String = '\"' Body=(!NotAllowedRegularStringLiteralChar Any)+ '\"'
+      | ListStyle = Body=LispIdent
+    }
+
+    extend token Reference
+    {
+      | String = '\"' Body=(!NotAllowedRegularStringLiteralChar Any)+ '\"'
+      | ListStyle = Body=LispIdent
+    }
+    
     syntax StringLiteral
     {
       | RegularStringLiteral  = Lit=RegularStringLiteral
