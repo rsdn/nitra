@@ -1,7 +1,2 @@
 ﻿using System;
 
-product KFA
-{
-    AutotestBinariesExcludedFilesMasks = @"ksm*.Product.Config;ksde*.Product.Config";
-    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
-}

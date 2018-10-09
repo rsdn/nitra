@@ -18,7 +18,7 @@ namespace Tdl
           SpanClass = TdlLang.DeploymentSpanClass;
         }
 
-        Path : PathExpr;
+        Path : CSharp.StringLiteral;
         //Definitions : Definition*;
       }
     | Set

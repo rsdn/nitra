@@ -12,7 +12,8 @@
     [StartRule]
     syntax Module = MemberDeclaration*;
 
-    regex LispIdent = (CSharp.CsIdentifiers.IdentifierBody "-"+)+ CSharp.CsIdentifiers.IdentifierBody?;
+    regex TdlIdentifierPartCharacters = CSharp.CsIdentifiers.IdentifierPartCharacters | '-';
+    regex LispIdent                   = CSharp.CsIdentifiers.IdentifierStartCharacter TdlIdentifierPartCharacters*;
 
     extend token Name
     {

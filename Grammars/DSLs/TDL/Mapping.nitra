@@ -32,8 +32,8 @@ namespace Tdl
     | PlatformSet      -> Platform.Set        { Name -> Name; Platforms.Item1 -> Platforms; }
     | DeploymentScript -> Deployment.Script   { Name -> Name; ScriptPath -> Path; FormalParameters.Item1 -> Parameters; }
     | DeploymentSet    -> Deployment.Set      { Name -> Name; Deployments.Item1 -> Deployments; }
-    | ProductType      -> ProductType         { Name -> Name; }
-    | Product          -> Product.Def         { Name -> Name; Type -> Type; }
+    | ProductType      -> ProductType         { Name -> Name; ProductTypeBody.Fields -> Fields; }
+    | Product          -> Product.Def         { Name -> Name; Type -> Type; ProductBody.DefDeclarations -> Definitions; }
     | ProductSet       -> Product.Set         { Name -> Name; Type -> Type; Products.Item1 -> Products; }
     | Scenario         -> Scenario.Def
       {
@@ -53,6 +53,29 @@ namespace Tdl
       }
   }
 
+  map syntax Grammar.DefDeclaration -> Definition
+  {
+    Reference -> Reference;
+    DefExpr   -> Expr;
+  }
+
+  map syntax Grammar.DefExpr -> DefExpr
+  {
+    | StringLiteral             -> String                    { StringLiteral -> Value; }
+    | True                      -> True                      {  }
+    | False                     -> False                     {  }
+    | RealLiteral               -> RealLiteral               {  }
+    | DecimalIntegerLiteral     -> DecimalIntegerLiteral     {  }
+    | HexadecimalIntegerLiteral -> HexadecimalIntegerLiteral {  }
+    | Reference                 -> Reference                 {  }
+  }
+
+  map syntax Grammar.Field -> Field
+  {
+    Name    -> Name;
+    AnyType -> Type;
+  }
+
   map syntax Grammar.SuiteBody.SuiteStatement -> SuiteStatement
   {
     | CallTest -> CallScenario { Scenario -> Scenario; }
@@ -64,9 +87,9 @@ namespace Tdl
     Product  -> Product;
   }
 
-  map syntax Grammar.StringLiteral -> PathExpr
+  map syntax Grammar.StringLiteral -> CSharp.StringLiteral
   {
-    | RegularStringLiteral  -> RegularStringLiteral  { }
-    | VerbatimStringLiteral -> VerbatimStringLiteral { }
+    | RegularStringLiteral  -> this
+    | VerbatimStringLiteral -> this
   }
 }

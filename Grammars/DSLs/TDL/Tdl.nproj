@@ -120,16 +120,22 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ast\DefExpr.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Definition.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Ast\Deployment.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ast\Environment.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Ast\Module.nitra">
+    <Compile Include="Ast\Field.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Ast\PathExpr.nitra">
+    <Compile Include="Ast\Module.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ast\Platform.nitra">

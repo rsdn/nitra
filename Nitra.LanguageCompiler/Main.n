@@ -282,7 +282,7 @@ namespace Nitra.LanguageCompiler
         when (constant.ConstantDeclaratorsData is ([declarator], _))
         when (declarator.ConstantExpression is Expression.RegularStringLiteral as str)
         {
-          def text = str.RegularStringLiteral.RegularStringLiteralParts.GetText();
+          def text = str.RegularStringLiteral.Parts.GetText();
           Result[declarator.Name.ToString()] = text;
         }
         ast.Apply(this);

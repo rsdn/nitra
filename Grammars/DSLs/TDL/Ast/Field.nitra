@@ -1,0 +1,27 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  declaration Field : BindableAst
+  {
+    symbol
+    {
+      Kind      = "field";
+      SpanClass = TdlLang.FieldSpanClass;
+    stage 1:
+      in Type : TypeSymbol;
+    }
+  stage 1:
+    out TypeRef : Ref[TypeSymbol];
+
+    Type.Scope  = Scope;
+    TypeRef     = Type.Ref.Resolve();
+    Symbol.Type = TypeRef.Symbol;
+
+    Type : QualifiedReference;
+  }
+}

@@ -1,0 +1,19 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  abstract ast DefExpr
+  {
+    | String                    { Value : CSharp.StringLiteral; }
+    | True                      { }
+    | False                     { }
+    | RealLiteral               { }
+    | DecimalIntegerLiteral     { }
+    | HexadecimalIntegerLiteral { }
+    | Reference                 { }
+  }
+}

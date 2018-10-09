@@ -30,7 +30,7 @@ namespace Tdl
           Kind      = "product";
         }
 
-        //Definitions : Definition*;
+        Definitions : Definition*;
       }
     | Set
       {

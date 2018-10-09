@@ -1,7 +1,7 @@
 ﻿suite Pure_2020_MP0_Ext_PullRequest
 {
     platform win10;
-    product PURE_2020;
+    product "PURE 2020";
 
     ComponentConfigurationPath = @"\\tis-dfs\Autotests\Components\Delivery\BlackBox\AutotestConfiguration\ComponentConfiguration\2020.MP0\Delivery.xml";
     AutotestAssemblies = @"\\sdfs.avp.ru\Autotests\Components\Delivery\BlackBox\AutotestAssemblies";
@@ -19,7 +19,7 @@
 suite Pure_2020_MP0_Ext_Delivery
 {
     platform win10;
-    product PURE_2020;
+    product "PURE 2020";
 
     ComponentConfigurationPath = @"\\tis-dfs\Autotests\Components\Delivery\BlackBox\AutotestConfiguration\ComponentConfiguration\2020.MP0\Delivery.xml";
     AutotestAssemblies = @"\\sdfs.avp.ru\Autotests\Components\Delivery\BlackBox\AutotestAssemblies";

@@ -1,0 +1,17 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  /// <summary>
+  /// Description of Definition.
+  /// </summary>
+  ast Definition
+  {
+    Reference : Reference;
+    Expr      : DefExpr;
+  }
+}

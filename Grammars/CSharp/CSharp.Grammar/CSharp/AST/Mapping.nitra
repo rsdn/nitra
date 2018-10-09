@@ -738,4 +738,64 @@ namespace CSharp
       | _          => CustomAttributeTarget.AmbiguousOrMissing(this.Location.WithSpan(this.GlobalAttributeTarget))
     }
   }
+
+  map syntax Literals.VerbatimStringLiteral -> StringLiteral.Regula
+  {
+    Parts -> Parts;
+  }
+
+  map syntax Literals.RegularStringLiteral -> StringLiteral.Verbatim
+  {
+    Parts -> Parts;
+  }
+
+  map syntax Literals.RegularStringLiteralPart -> StringLiteralPart
+  {
+    | SimpleEscapeSequenceStrPart           -> SimpleEscape      { }
+    | UnicodeEscapeSequenceStrPart          -> UnicodeEscape     { }
+    | HexadecimalEscapeSequenceStrPart      -> HexadecimalEscape { }
+    | RegularStringLiteralCharacterSequence -> RegulaChars       { }
+  }
+
+  map syntax Literals.VerbatimStringLiteralPart -> StringLiteralPart
+  {
+    | QuoteEscapeSequence                    -> VerbatimEscape { }
+    | VerbatimStringLiteralCharacterSequence -> RegulaChars    { }
+  }
+
+  map syntax CS6Literals.InterpolatedRegularStringLiteral -> StringLiteral.InterpolatedRegula
+  {
+    Parts -> Parts;
+  }
+
+  map syntax CS6Literals.InterpolatedVerbatimStringLiteral -> StringLiteral.InterpolatedVerbatim
+  {
+    Parts -> Parts;
+  }
+
+  map syntax CS6Literals.InterpolatedRegularStringLiteralPart -> StringLiteralPart
+  {
+      | Interpolation1                        -> Interpolation           { Expr -> Expr; }
+      | Interpolation2                        -> InterpolationFormated   { Expr -> Expr; Format -> Format; }
+      | OpenBraceEscapeSequence               -> InterpolatedOpenEscape  { }
+      | CloseBraceEscapeSequence              -> InterpolatedCloseEscape { }
+      | ErrorOpenBrace                        -> Error                   { }
+      | ErrorCloseBrace                       -> Error                   { }
+      | SimpleEscapeSequenceStrPart           -> SimpleEscape            { }
+      | UnicodeEscapeSequenceStrPart          -> UnicodeEscape           { }
+      | HexadecimalEscapeSequenceStrPart      -> HexadecimalEscape       { }
+      | RegularStringLiteralCharacterSequence -> RegulaChars             { }
+  }
+
+  map syntax CS6Literals.InterpolatedVerbatimStringLiteralPart -> StringLiteralPart
+  {
+      | Interpolation1                         -> Interpolation           { Expr -> Expr; }
+      | Interpolation2                         -> InterpolationFormated   { Expr -> Expr; Format -> Format; }
+      | OpenBraceEscapeSequence                -> InterpolatedOpenEscape  { }
+      | CloseBraceEscapeSequence               -> InterpolatedCloseEscape { }
+      | ErrorOpenBrace                         -> Error                   { }
+      | ErrorCloseBrace                        -> Error                   { }
+      | QuoteEscapeSequence                    -> VerbatimEscape          { }
+      | VerbatimStringLiteralCharacterSequence -> RegulaChars             { }
+  }
 }

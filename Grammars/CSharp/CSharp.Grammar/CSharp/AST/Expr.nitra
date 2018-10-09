@@ -27,7 +27,7 @@ namespace DotNet
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
     | String
       {
-        Value : string;
+        Value : CSharp.StringLiteral;
         Type = context.GetStringType();
       }
     | Char
@@ -479,14 +479,6 @@ namespace DotNet
         Type = context.GetVoidType(); // FIXME
       }
     | NameofExpression
-      {
-        Type = context.GetVoidType(); // FIXME
-      }
-    | InterpolatedRegularStringLiteral
-      {
-        Type = context.GetVoidType(); // FIXME
-      }
-    | InterpolatedVerbatimStringLiteral
       {
         Type = context.GetVoidType(); // FIXME
       }

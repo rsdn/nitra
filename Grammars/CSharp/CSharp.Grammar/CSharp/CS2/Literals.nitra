@@ -60,7 +60,7 @@
     }
 
     [SpanClass(String)]
-    token RegularStringLiteral = "\"" RegularStringLiteralPart* "\"";
+    token RegularStringLiteral = "\"" Parts=RegularStringLiteralPart* "\"";
 
     regex DoubleQuote = "\"\"";
 
@@ -71,6 +71,6 @@
     }
 
     [SpanClass(String)]
-    token VerbatimStringLiteral = OpenQuote = "@\"" VerbatimStringLiteralPart* CloseQuote = "\"";
+    token VerbatimStringLiteral = OpenQuote = "@\"" Parts=VerbatimStringLiteralPart* CloseQuote = "\"";
   }
 }

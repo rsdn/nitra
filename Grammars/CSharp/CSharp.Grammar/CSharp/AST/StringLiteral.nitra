@@ -1,0 +1,39 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using System;
+using System.Globalization;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using Nitra;
+using Nitra.Declarations;
+using DotNet;
+
+namespace CSharp
+{
+  abstract ast StringLiteral
+  {
+    Parts : StringLiteralPart*;
+
+    | Regula               { }
+    | Verbatim             { }
+    | InterpolatedRegula   { }
+    | InterpolatedVerbatim { }
+  }
+
+  abstract ast StringLiteralPart
+  {
+    | Interpolation           { Expr : Expr; }
+    | InterpolationFormated   { Expr : Expr; Format : Expr; }
+    | InterpolatedOpenEscape  { }
+    | InterpolatedCloseEscape { }
+    | Error                   { }
+    | SimpleEscape            { }
+    | UnicodeEscape           { }
+    | HexadecimalEscape       { }
+    | RegulaChars             { }
+    | VerbatimEscape          { }
+  }
+}

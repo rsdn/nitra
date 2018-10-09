@@ -15,12 +15,12 @@
     using Literals;
 
     [SpanClass(String)]
-    syntax InterpolatedRegularStringLiteral = "$\"" InterpolatedRegularStringLiteralPart* "\"";
+    syntax InterpolatedRegularStringLiteral = "$\"" Parts=InterpolatedRegularStringLiteralPart* "\"";
 
     syntax InterpolatedRegularStringLiteralPart
     {
-      | Interpolation1 = !"{{" "{" Expression "}"
-      | Interpolation2 = !"{{" "{" Expression "," sm Expression "}"
+      | Interpolation1 = !"{{" "{" Expr=Expression "}"
+      | Interpolation2 = !"{{" "{" Expr=Expression "," sm Format=Expression "}"
       | OpenBraceEscapeSequence = "{{"
       | CloseBraceEscapeSequence = "}}"
       | ErrorOpenBrace
@@ -34,12 +34,12 @@
     regex InterpolatedNotAllowedRegularStringLiteralChar = NotAllowedRegularStringLiteralChar | "{" | "}";
 
     [SpanClass(String)]
-    syntax InterpolatedVerbatimStringLiteral = OpenQuote="$@\"" InterpolatedVerbatimStringLiteralPart* CloseQuote="\"";
+    syntax InterpolatedVerbatimStringLiteral = OpenQuote="$@\"" Parts=InterpolatedVerbatimStringLiteralPart* CloseQuote="\"";
 
     syntax InterpolatedVerbatimStringLiteralPart
     {
-      | Interpolation1 = !"{{" "{" Expression "}"
-      | Interpolation2 = !"{{" "{" Expression "," sm Expression "}"
+      | Interpolation1 = !"{{" "{" Expr=Expression "}"
+      | Interpolation2 = !"{{" "{" Expr=Expression "," sm Format=Expression "}"
       | OpenBraceEscapeSequence = "{{"
       | CloseBraceEscapeSequence = "}}"
       | ErrorOpenBrace

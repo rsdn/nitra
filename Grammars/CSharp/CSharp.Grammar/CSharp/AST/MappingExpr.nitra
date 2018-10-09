@@ -22,12 +22,12 @@ namespace CSharp
 
   map syntax Expressions.Expression.RegularStringLiteral -> DotNet.Expr
   {
-    String         { Value = ParsedValue(RegularStringLiteral.Span, ""); } // FIXME
+    String         { RegularStringLiteral -> Value; }
   }
 
   map syntax Expressions.Expression.VerbatimStringLiteral -> DotNet.Expr
   {
-    String         { Value = ParsedValue(VerbatimStringLiteral.Span, ""); } // FIXME
+    String         { VerbatimStringLiteral -> Value; }
   }
 
   map syntax Expressions.Expression.RealLiteral -> DotNet.Expr
@@ -503,12 +503,12 @@ namespace CSharp
 
   map syntax CS6Expression.Expression.InterpolatedRegularStringLiteral -> DotNet.Expr
   {
-    InterpolatedRegularStringLiteral { }
+    String { InterpolatedRegularStringLiteral -> Value; }
   }
 
   map syntax CS6Expression.Expression.InterpolatedVerbatimStringLiteral -> DotNet.Expr
   {
-    InterpolatedVerbatimStringLiteral { }
+    String { InterpolatedVerbatimStringLiteral -> Value; }
   }
 
   map syntax CS6Expression.Expression.NullConditional1 -> DotNet.Expr

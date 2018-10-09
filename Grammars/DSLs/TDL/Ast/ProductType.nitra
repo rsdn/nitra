@@ -6,12 +6,18 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
-  declaration ProductType : NamespaceMember
+  declaration ProductType : NamespaceMember, Container
   {
     symbol
     {
+      Scope     = MemberTable;
       Kind      = "product type";
       SpanClass = TdlLang.ProductTypeSpanClass;
     }
+
+    Fields.ContainingTable = Symbol.MemberTable;
+    Fields.Scope = Scope;
+    
+    Fields : Field*;
   }
 }

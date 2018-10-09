@@ -265,6 +265,9 @@
     <Compile Include="CSharp\AST\MappingStatement.nitra">
       <SubType>Content</SubType>
     </Compile>
+    <Compile Include="CSharp\AST\StringLiteral.nitra">
+      <SubType>Content</SubType>
+    </Compile>
     <Content Include="packages.config">
       <SubType>Content</SubType>
     </Content>
