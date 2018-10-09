@@ -98,7 +98,6 @@
       <HintPath>$(NitraBin)DotNet.BackEnd.CCI.dll</HintPath>
       <Private>True</Private>
     </Reference>
-
     <Reference Include="DotNetLang">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NitraBin)DotNetLang.dll</HintPath>
@@ -121,6 +120,33 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ast\Deployment.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Environment.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Module.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\PathExpr.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Platform.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Product.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\ProductType.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Scenario.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\Suite.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Code\DefaultValue.n">
       <SubType>Code</SubType>
     </Compile>
@@ -135,8 +161,6 @@
     </Compile>
     <Compile Include="Grammar.nitra">
     </Compile>
-    <Compile Include="Ast.nitra">
-    </Compile>
     <Compile Include="Language.nitra">
     </Compile>
     <Compile Include="Mapping.nitra">
@@ -145,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Code" />
+    <Folder Include="Ast" />
     <Folder Include="Properties" />
     <Folder Include="Properties" />
   </ItemGroup>

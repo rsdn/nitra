@@ -63,7 +63,7 @@
       syntax ProductType  = "product" sm "type" sm Reference ";" nl;
       syntax Deployment   = "deployment" sm Reference ";" nl;
       syntax Method       = "method" sm QualifiedIdentifier ";" nl;
-      syntax Environments = "environments" sm (Environment; "," sm; ?)+ ";" nl;
+      syntax Environments = "environments" sm Elems=(Environment; "," sm; ?)+ ";" nl;
       syntax Environment  = "(" Platform=Reference "," sm Product=Reference ")";
     }
 

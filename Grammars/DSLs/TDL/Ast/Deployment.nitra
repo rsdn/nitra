@@ -1,0 +1,36 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  abstract declaration Deployment : NamespaceMember
+  {
+    | Script : Parameterizable
+      {
+        symbol
+        {
+          in Path       : string;
+
+          Kind      = "deployment";
+          SpanClass = TdlLang.DeploymentSpanClass;
+        }
+
+        Path : PathExpr;
+        //Definitions : Definition*;
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "deployment set";
+          SpanClass = TdlLang.DeploymentSpanClass;
+        }
+
+        Deployments.Scope = Scope;
+        Deployments : Reference*;
+      }
+  } // Deployment
+}

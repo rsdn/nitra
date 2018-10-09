@@ -1,0 +1,17 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  declaration ProductType : NamespaceMember
+  {
+    symbol
+    {
+      Kind      = "product type";
+      SpanClass = TdlLang.ProductTypeSpanClass;
+    }
+  }
+}

@@ -1,0 +1,17 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  declaration Suite : NamespaceMember
+  {
+    symbol
+    {
+      Kind      = "suite";
+      SpanClass = TdlLang.SuiteSpanClass;
+    }
+  }
+}

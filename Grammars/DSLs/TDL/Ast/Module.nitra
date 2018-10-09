@@ -1,0 +1,22 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  declaration Module : NamespaceBody
+  {
+    symbol
+    {
+      Kind  = "tdl module";
+    }
+  stage 0:
+    in RootNamespace : NamespaceSymbol;
+
+    Members.DeclaredIn      = RootNamespace;
+    Members.ContainingTable = RootNamespace.MemberTable;
+    EnteredScope            = Scope;
+  }
+}

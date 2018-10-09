@@ -1,0 +1,59 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  abstract declaration Scenario : NamespaceMember
+  {
+    | Def
+      {
+        symbol
+        {
+        stage 1:
+          in ProductType : ProductTypeSymbol;
+          in Method      : Member.MethodSymbol;
+          in Deployment  : DeploymentSymbol;
+
+          Kind      = "scenario";
+          SpanClass = TdlLang.ScenarioSpanClass;
+        }
+      stage 1:
+        out ProductTypeRef : Ref[ProductTypeSymbol];
+        out MethodRef      : Ref[Member.MethodSymbol];
+        out DeploymentRef  : Ref[DeploymentSymbol];
+
+        ProductType.Scope  = Scope;
+        ProductTypeRef     = ProductType.Ref.Resolve();
+        Symbol.ProductType = ProductTypeRef.Symbol;
+
+        Method.Scope       = Scope;
+        MethodRef          = Method.Ref.Resolve();
+        Symbol.Method      = MethodRef.Symbol;
+
+        Deployment.Scope       = Scope;
+        DeploymentRef          = Deployment.Ref.Resolve();
+        Symbol.Deployment      = DeploymentRef.Symbol;
+
+        Environments.Scope     = Scope;
+
+        ProductType  : Reference;
+        Deployment   : Reference;
+        Method       : QualifiedReference;
+        Environments : Environment*;
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "scenario set";
+          SpanClass = TdlLang.ScenarioSpanClass;
+        }
+
+        Scenarios.Scope = Scope;
+        Scenarios : Reference*;
+      }
+  } // Scenario
+}

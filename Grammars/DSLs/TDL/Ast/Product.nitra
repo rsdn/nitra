@@ -1,0 +1,46 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  abstract declaration Product : NamespaceMember
+  {
+    symbol
+    {
+    stage 1:
+      in Type : ProductTypeSymbol;
+      SpanClass = TdlLang.ProductSpanClass;
+    }
+  stage 1:
+    out TypeRef : Ref[ProductTypeSymbol];
+
+    Type.Scope  = Scope;
+    TypeRef     = Type.Ref.Resolve();
+    Symbol.Type = TypeRef.Symbol;
+
+    Type : Reference;
+
+    | Def
+      {
+        symbol
+        {
+          Kind      = "product";
+        }
+
+        //Definitions : Definition*;
+      }
+    | Set
+      {
+        symbol
+        {
+          Kind      = "product set";
+        }
+
+        Products.Scope = Scope;
+        Products : Reference*;
+      }
+  } // Product
+}
