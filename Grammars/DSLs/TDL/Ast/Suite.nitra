@@ -10,8 +10,28 @@ namespace Tdl
   {
     symbol
     {
+      in Platform : PlatformSymbol;
+      in Product  : ProductSymbol;
+
       Kind      = "suite";
       SpanClass = TdlLang.SuiteSpanClass;
     }
+
+    out PlatformRef : Ref[PlatformSymbol];
+    out ProductRef  : Ref[ProductSymbol];
+
+    Platform.Scope  = Scope;
+    PlatformRef     = Platform.Ref.Resolve();
+    Symbol.Platform = PlatformRef.Symbol;
+
+    Product.Scope  = Scope;
+    ProductRef     = Product.Ref.Resolve();
+    Symbol.Product = ProductRef.Symbol;
+
+    Statements.Scope  = Scope;
+
+    Platform   : Reference;
+    Product    : Reference;
+    Statements : SuiteStatement*;
   }
 }

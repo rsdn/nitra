@@ -54,7 +54,7 @@
       syntax Product  = "product"  sm Reference ";" nl;
       syntax SuiteStatement
       {
-        | CallTest = Test=Reference "(" ")" ";" nl;
+        | CallTest = Scenario=Reference "(" ")" ";" nl;
       }
     }
 

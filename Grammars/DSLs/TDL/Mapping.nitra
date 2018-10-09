@@ -44,7 +44,18 @@ namespace Tdl
         ScenarioBody.Environments.Elems.Item1   -> Environments;
       }
     | ScenarioSet      -> Scenario.Set        { Name -> Name; Scenarios.Item1 -> Scenarios; }
-    | Suite            -> Suite               { Name -> Name; }
+    | Suite            -> Suite
+      {
+        Name                         -> Name;
+        SuiteBody.Platform.Reference -> Platform;
+        SuiteBody.Product.Reference  -> Product;
+        SuiteBody.SuiteStatements    -> Statements;
+      }
+  }
+
+  map syntax Grammar.SuiteBody.SuiteStatement -> SuiteStatement
+  {
+    | CallTest -> CallScenario { Scenario -> Scenario; }
   }
 
   map syntax Grammar.ScenarioBody.Environment -> Environment

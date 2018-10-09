@@ -1,0 +1,21 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  abstract ast SuiteStatement : BindableAst
+  {
+    | CallScenario
+      {
+        out ScenarioRef : Ref[ScenarioSymbol];
+
+        Scenario.Scope  = Scope;
+        ScenarioRef     = Scenario.Ref.Resolve();
+
+        Scenario : Reference;
+      }
+  }
+}

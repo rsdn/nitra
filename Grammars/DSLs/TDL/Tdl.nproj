@@ -147,6 +147,9 @@
     <Compile Include="Ast\Suite.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Ast\SuiteStatement.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Code\DefaultValue.n">
       <SubType>Code</SubType>
     </Compile>
