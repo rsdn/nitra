@@ -453,7 +453,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       mutable index;
       if (_libMap.TryGetValue(name, out index))
-        ServerUtils.Log("Reference '" + name + "' allredy added: " + _libs[index]);
+        ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
         def separatorPos = name.IndexOf(':');
