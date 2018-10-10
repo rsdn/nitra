@@ -13,7 +13,6 @@ namespace Tdl
         symbol
         {
         stage 1:
-          in ProductType : ProductTypeSymbol;
           in Method      : Member.MethodSymbol;
           in Deployment  : DeploymentSymbol;
 
@@ -21,13 +20,8 @@ namespace Tdl
           SpanClass = TdlLang.ScenarioSpanClass;
         }
       stage 1:
-        out ProductTypeRef : Ref[ProductTypeSymbol];
         out MethodRef      : Ref[Member.MethodSymbol];
         out DeploymentRef  : Ref[DeploymentSymbol];
-
-        ProductType.Scope  = Scope;
-        ProductTypeRef     = ProductType.Ref.Resolve();
-        Symbol.ProductType = ProductTypeRef.Symbol;
 
         Method.Scope       = Scope;
         MethodRef          = Method.Ref.Resolve();
@@ -39,7 +33,6 @@ namespace Tdl
 
         Environments.Scope     = Scope;
 
-        ProductType  : Reference;
         Deployment   : Reference;
         Method       : QualifiedReference;
         Environments : Environment*;

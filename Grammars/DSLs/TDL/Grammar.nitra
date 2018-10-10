@@ -59,9 +59,8 @@
       }
     }
 
-    syntax ScenarioBody = outline_begin_before "{" inl ProductType Deployment Method Environments d "}" nl outline_end_before
+    syntax ScenarioBody = outline_begin_before "{" inl Deployment Method Environments d "}" nl outline_end_before
     {
-      syntax ProductType  = "product" sm "type" sm Reference ";" nl;
       syntax Deployment   = "deployment" sm Reference ";" nl;
       syntax Method       = "method" sm QualifiedIdentifier ";" nl;
       syntax Environments = "environments" sm Elems=(Environment; "," sm; ?)+ ";" nl;

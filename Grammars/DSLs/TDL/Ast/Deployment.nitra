@@ -4,10 +4,18 @@ using DotNet.AstUtils;
 using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace Tdl
 {
   abstract declaration Deployment : NamespaceMember
   {
+    symbol
+    {
+    stage 1:
+      in AggregateParametersScope : Scope;
+    }
+
     | Script : Parameterizable
       {
         symbol
@@ -18,17 +26,28 @@ namespace Tdl
           SpanClass = TdlLang.DeploymentSpanClass;
         }
 
+        Symbol.AggregateParametersScope = Symbol.ParameterScope;
+
+        // Definitions.DefinitionScope = parameters scope from script
+        Definitions.Scope = Symbol.ParameterScope;
+        Symbol.Path = TdlUtils.MakePath(Path);
+
         Path : CSharp.StringLiteral;
-        //Definitions : Definition*;
+        Definitions : Definition*;
       }
     | Set
       {
         symbol
         {
+        stage 1:
+          in Deployments : ImmutableArray[DeploymentSymbol];
+
           Kind      = "deployment set";
           SpanClass = TdlLang.DeploymentSpanClass;
         }
 
+        Symbol.AggregateParametersScope = TdlUtils.MakeAggregateParametersScope(Symbol.Deployments);
+        Symbol.Deployments = TdlUtils.MakeDeployments(Deployments.Ref);
         Deployments.Scope = Scope;
         Deployments : Reference*;
       }

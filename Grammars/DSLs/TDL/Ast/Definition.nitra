@@ -9,8 +9,14 @@ namespace Tdl
   /// <summary>
   /// Description of Definition.
   /// </summary>
-  ast Definition
+  ast Definition : BindableAst
   {
+  stage 1:
+    in DefinitionScope : Scope;
+
+    Reference.Scope = DefinitionScope;
+    Expr.Scope      = Scope;
+
     Reference : Reference;
     Expr      : DefExpr;
   }

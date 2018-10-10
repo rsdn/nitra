@@ -6,7 +6,7 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
-  abstract ast DefExpr
+  abstract ast DefExpr : BindableAst
   {
     | String                    { Value : CSharp.StringLiteral; }
     | True                      { }

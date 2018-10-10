@@ -8,9 +8,14 @@ namespace Tdl
 {
   abstract ast SuiteStatement : BindableAst
   {
+    inout Scope : Scope;
+
     | CallScenario
       {
+      stage 1:
         out ScenarioRef : Ref[ScenarioSymbol];
+
+        ScopeOut = ScopeIn.HideWith(ScenarioRef.Scope);
 
         Scenario.Scope  = Scope;
         ScenarioRef     = Scenario.Ref.Resolve();

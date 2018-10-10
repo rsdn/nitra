@@ -4,7 +4,7 @@ using Nitra.Declarations;
 namespace Tdl
 {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Следующий код добавляет в шарповые идентификаторы поддержку идентификаторов в Lisp-стиле и "заковыченых" 
+  // Следующий код добавляет в шарповые идентификаторы поддержку идентификаторов в Lisp-стиле и "заковыченых"
 
   map syntax Grammar.Name.String    -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
   map syntax Grammar.Name.ListStyle -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
@@ -30,15 +30,20 @@ namespace Tdl
     | Alias            -> UsingAliasDirective { Name -> Name; QualifiedIdentifier -> NamespaceOrTypeName; }
     | Platform         -> Platform.Def        { Name -> Name; }
     | PlatformSet      -> Platform.Set        { Name -> Name; Platforms.Item1 -> Platforms; }
-    | DeploymentScript -> Deployment.Script   { Name -> Name; ScriptPath -> Path; FormalParameters.Item1 -> Parameters; }
+    | DeploymentScript -> Deployment.Script
+      {
+        Name                                 -> Name;
+        ScriptPath                           -> Path;
+        FormalParameters.Item1               -> Parameters;
+        DeploymentScriptBody.DefDeclarations -> Definitions;
+      }
     | DeploymentSet    -> Deployment.Set      { Name -> Name; Deployments.Item1 -> Deployments; }
     | ProductType      -> ProductType         { Name -> Name; ProductTypeBody.Fields -> Fields; }
     | Product          -> Product.Def         { Name -> Name; Type -> Type; ProductBody.DefDeclarations -> Definitions; }
     | ProductSet       -> Product.Set         { Name -> Name; Type -> Type; Products.Item1 -> Products; }
     | Scenario         -> Scenario.Def
       {
-        Name -> Name;
-        ScenarioBody.ProductType.Reference      -> ProductType;
+        Name                                    -> Name;
         ScenarioBody.Deployment.Reference       -> Deployment;
         ScenarioBody.Method.QualifiedIdentifier -> Method;
         ScenarioBody.Environments.Elems.Item1   -> Environments;
@@ -87,9 +92,9 @@ namespace Tdl
     Product  -> Product;
   }
 
-  map syntax Grammar.StringLiteral -> CSharp.StringLiteral
-  {
-    | RegularStringLiteral  -> this
-    | VerbatimStringLiteral -> this
-  }
+  map syntax Grammar.StringLiteral -> CSharp.StringLiteral {}
+
+  map syntax Grammar.StringLiteral.RegularStringLiteral -> CSharp.StringLiteral { Lit }
+
+  map syntax Grammar.StringLiteral.VerbatimStringLiteral -> CSharp.StringLiteral { Lit }
 }

@@ -1,16 +1,69 @@
-﻿using Nemerle;
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Tdl
 {
   module TdlUtils
   {
-    
+    public MakeDeployments(deploymentRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[DeploymentSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder();
+      foreach (deploymentRef in deploymentRefs)
+      {
+        def r = deploymentRef.Resolve();
+        when (r.IsSymbolEvaluated)
+          builder.Add(r.Symbol);
+      }
+      builder.ToImmutable()
+    }
+
+    public MakeAggregateParametersScope(deployments : ImmutableArray[DeploymentSymbol]) : Scope
+    {
+      mutable scope;
+
+      foreach (deployment in deployments)
+      {
+        if (scope == null)
+          scope = deployment.AggregateParametersScope;
+        else
+          scope = scope.HideWith(deployment.AggregateParametersScope)
+      }
+
+      scope
+    }
+
+    public MakePath(str : CSharp.StringLiteral) : string
+    {
+      def builder = Text.StringBuilder();
+      foreach (part in str.Parts)
+      {
+        | Interpolation           => ()
+        | InterpolationFormated   => ()
+        | InterpolatedOpenEscape  => _ = builder.Append("{");
+        | InterpolatedCloseEscape => _ = builder.Append("}");
+        | Error                   => ()
+        | SimpleEscape            => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | UnicodeEscape           => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | HexadecimalEscape       => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | RegulaChars             => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | VerbatimEscape          => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | _                       => ()
+      }
+
+      builder.ToString()
+    }
   }
 }

@@ -30,6 +30,9 @@ namespace Tdl
           Kind      = "product";
         }
 
+        Definitions.DefinitionScope = Symbol.Type.Scope;
+        Definitions.Scope           = Scope;
+
         Definitions : Definition*;
       }
     | Set
