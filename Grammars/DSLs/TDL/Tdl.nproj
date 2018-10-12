@@ -135,6 +135,9 @@
     <Compile Include="Ast\Field.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Ast\IntLiteral.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Ast\Module.nitra">
       <SubType>Code</SubType>
     </Compile>
