@@ -78,3 +78,4 @@ Ide/Nitra.LanguageVsPackage/
 .vs/
 *.binlog
 /Tests/Visualizer/Tdl/*.ps1
+/Ide/TdlLangVsPackage/*
