@@ -119,7 +119,8 @@ namespace Tdl
       def evalHost = TdlProjectEvalPropertiesHost(files, rootNamespace);
       evalHost.EvalProperties(context, "SymbolHierarchy", 0);
       evalHost.EvalProperties(context, "Scopes", 1);
-      evalHost.EvalProperties(context, "Type bodies binding", 2);
+      evalHost.EvalProperties(context, "Stage 2", 2);
+      evalHost.EvalProperties(context, "Stage 3", 3);
     }
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]

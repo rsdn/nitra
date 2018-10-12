@@ -104,7 +104,7 @@ namespace Tdl
         | SimpleEscape            => _ = builder.Append(part.Location.GetText()); // FIXME:
         | UnicodeEscape           => _ = builder.Append(part.Location.GetText()); // FIXME:
         | HexadecimalEscape       => _ = builder.Append(part.Location.GetText()); // FIXME:
-        | RegulaChars             => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | RegulaChars             => _ = builder.Append(part.Location.GetText());
         | VerbatimEscape          => _ = builder.Append(part.Location.GetText()); // FIXME:
         | _                       => ()
       }

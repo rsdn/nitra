@@ -8,7 +8,7 @@ namespace Tdl
 {
   abstract ast SuiteStatement : BindableAst
   {
-  stage 2:
+  stage 3:
     inout Scope : Scope;
 
     | CallScenario

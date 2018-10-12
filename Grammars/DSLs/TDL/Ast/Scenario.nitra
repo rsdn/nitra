@@ -12,7 +12,7 @@ namespace Tdl
   {
     symbol
     {
-    stage 2:
+    stage 3:
       in AggregateParametersScope : Scope;
     }
     | Def
