@@ -78,7 +78,7 @@
   <PropertyGroup>
     <Namespace>Tdl</Namespace>
     <Assembly>Tdl.dll</Assembly>
-    <ProjectSupport>Tdl</ProjectSupport>
+    <ProjectSupport>TdlLang</ProjectSupport>
     <LanguageName>TdlLang</LanguageName>
     <VsPackageName>$(LanguageName)VsPackage</VsPackageName>
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
