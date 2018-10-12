@@ -1,4 +1,5 @@
 ﻿using DotNet;
+using Nitra;
 using Nitra.Declarations;
 
 namespace Tdl
@@ -6,14 +7,14 @@ namespace Tdl
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Следующий код добавляет в шарповые идентификаторы поддержку идентификаторов в Lisp-стиле и "заковыченых"
 
-  map syntax Grammar.Name.String    -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
-  map syntax Grammar.Name.ListStyle -> Nitra.Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
+  map syntax Grammar.Name.String    -> Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
+  map syntax Grammar.Name.ListStyle -> Declarations.Name = Nitra.Declarations.Name(this.Location, GetText(this.Body));
 
   map syntax Grammar.Name.String(_tag : CSharp.ImplicitNamespaceTag) -> ImplicitNamespace { this -> Name; }
   map syntax Grammar.Name.ListStyle(_tag : CSharp.ImplicitNamespaceTag) -> ImplicitNamespace { this -> Name; }
 
-  map syntax Grammar.Reference.String    -> Nitra.Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
-  map syntax Grammar.Reference.ListStyle -> Nitra.Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
+  map syntax Grammar.Reference.String    -> Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
+  map syntax Grammar.Reference.ListStyle -> Declarations.Reference = Nitra.Declarations.Reference(this.Location, GetText(this.Body));
 
   map syntax Grammar.Module -> Module
   {
@@ -36,6 +37,11 @@ namespace Tdl
         ScriptPath                           -> Path;
         FormalParameters.Item1               -> Parameters;
         DeploymentScriptBody.DefDeclarations -> Definitions;
+        match (DeploymentScriptBody.ExpectedOpt)
+        {
+          | Some(value) -> value
+          | None()      -> IntLiteral { Value = ParsedValue(0); }
+        } -> Expected;
       }
     | DeploymentSet    -> Deployment.Set      { Name -> Name; Deployments.Item1 -> Deployments; }
     | ProductType      -> ProductType         { Name -> Name; ProductTypeBody.Fields -> Fields; }
@@ -57,6 +63,11 @@ namespace Tdl
         SuiteBody.DefDeclarations    -> Definitions;
         SuiteBody.SuiteStatements    -> Statements;
       }
+  }
+
+  map syntax Grammar.Expected -> IntLiteral
+  {
+    Value = ParsedValue(Value.Span, int.Parse(Value.GetText()));
   }
 
   map syntax Grammar.DefDeclaration -> Definition

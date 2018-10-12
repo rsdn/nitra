@@ -1,0 +1,9 @@
+﻿using Nitra;
+
+namespace Tdl
+{
+  ast IntLiteral
+  {
+    Value : ParsedValue[int];
+  }
+}
