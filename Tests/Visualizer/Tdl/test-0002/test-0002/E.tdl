@@ -12,6 +12,7 @@
     SuiteName = "Pure.2020.MP0.Ext.PullRequest"; // Зачем это?
     DeploymentConditions = "/KSDE";
     BugsRobotStatus = 0;
+    aaa = s;
 
     ExclusiveTestGroup();
 }

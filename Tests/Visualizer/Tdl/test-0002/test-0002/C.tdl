@@ -1,4 +1,4 @@
-deployment DeployWithDeployer(string BuildName, string DeploymentConditions, bool DeployIsNeeded, string InternalTestSettingsDirectory)
+﻿deployment DeployWithDeployer(string BuildName, string DeploymentConditions = "hhh", bool DeployIsNeeded, string InternalTestSettingsDirectory)
     script @"\\sdfs\Autotests\Components\Temp\Sattarov\HiveStarter\Deploy.ps1"
 {
     DeployerFlags = DeploymentConditions;

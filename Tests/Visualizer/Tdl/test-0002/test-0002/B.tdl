@@ -1,4 +1,4 @@
-product type Configurable
+﻿product type Configurable
 {
     string ProductConfigPath;
 }

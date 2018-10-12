@@ -1,10 +1,10 @@
-﻿using Autotest.Common.Suites.Components.Delivery;
+﻿using Autotest.Common.Suites;
 
 scenario FacadeProductStopStart
 {
     deployment DeployWithDeployer_NoReboot;
     // резолвится в Autotest.Common.Suites.Components.Delivery.FacadeTests.FacadeProductStopStart из Autotest.Common.Components.Suites.dll
-    method FacadeTests.FacadeProductStopStart;
+    method Components.Delivery.FacadeTests.FacadeProductStopStart;
     environments (win10, "PURE 2020") /*; ... */;
 }
 

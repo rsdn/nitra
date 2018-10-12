@@ -54,6 +54,7 @@ namespace Tdl
         Name                         -> Name;
         SuiteBody.Platform.Reference -> Platform;
         SuiteBody.Product.Reference  -> Product;
+        SuiteBody.DefDeclarations    -> Definitions;
         SuiteBody.SuiteStatements    -> Statements;
       }
   }
