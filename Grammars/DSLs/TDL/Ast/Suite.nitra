@@ -29,6 +29,7 @@ namespace Tdl
     Symbol.Product = ProductRef.Symbol;
 
     Statements.Scope  = Scope;
+    Statements.ScopeIn  = EmptyScope.Instance;
 
     Platform   : Reference;
     Product    : Reference;

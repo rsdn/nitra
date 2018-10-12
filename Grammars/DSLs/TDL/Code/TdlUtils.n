@@ -6,6 +6,7 @@ using Nitra.Declarations;
 
 using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
 
@@ -30,19 +31,64 @@ namespace Tdl
       builder.ToImmutable()
     }
 
+    public MakeScenarios(scenariosRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[ScenarioSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder();
+      foreach (scenariosRef in scenariosRefs)
+      {
+        def r = scenariosRef.Resolve();
+        when (r.IsSymbolEvaluated)
+          builder.Add(r.Symbol);
+      }
+      builder.ToImmutable()
+    }
+
     public MakeAggregateParametersScope(deployments : ImmutableArray[DeploymentSymbol]) : Scope
     {
-      mutable scope;
+      def visited = HashSet();
+      mutable builder = UnionScopeBuilder();
+      CollectDeployments(visited, ref builder, deployments);
+      builder.ToScope()
+    }
 
+    private CollectDeployments(visited : HashSet[int], builder : ref UnionScopeBuilder, deployments : ImmutableArray[DeploymentSymbol]) : void
+    {
       foreach (deployment in deployments)
       {
-        if (scope == null)
-          scope = deployment.AggregateParametersScope;
-        else
-          scope = scope.HideWith(deployment.AggregateParametersScope)
-      }
+        unless (visited.Add(deployment.Id))
+          return;
 
-      scope
+        match (deployment)
+        {
+          | s is Deployment.ScriptSymbol => UnionScopeBuilder.Add(s.ParameterScope, ref builder);
+          | s is Deployment.SetSymbol => CollectDeployments(visited, ref builder, s.Deployments);
+          | _ => ()
+        }
+      }
+    }
+
+    public MakeAggregateParametersScope(scenarios : ImmutableArray[ScenarioSymbol]) : Scope
+    {
+      def visited = HashSet();
+      mutable builder = UnionScopeBuilder();
+      CollectScenarios(visited, ref builder, scenarios);
+      builder.ToScope()
+    }
+
+    private CollectScenarios(visited : HashSet[int], builder : ref UnionScopeBuilder, scenarios : ImmutableArray[ScenarioSymbol]) : void
+    {
+      foreach (deployment in scenarios)
+      {
+        unless (visited.Add(deployment.Id))
+          return;
+
+        match (deployment)
+        {
+          | s is Scenario.DefSymbol => UnionScopeBuilder.Add(s.Deployment.AggregateParametersScope, ref builder);
+          | s is Scenario.SetSymbol => CollectScenarios(visited, ref builder, s.Scenarios);
+          | _ => ()
+        }
+      }
     }
 
     public MakePath(str : CSharp.StringLiteral) : string

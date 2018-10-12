@@ -4,10 +4,17 @@ using DotNet.AstUtils;
 using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace Tdl
 {
   abstract declaration Scenario : NamespaceMember
   {
+    symbol
+    {
+    stage 2:
+      in AggregateParametersScope : Scope;
+    }
     | Def
       {
         symbol
@@ -22,6 +29,8 @@ namespace Tdl
       stage 1:
         out MethodRef      : Ref[Member.MethodSymbol];
         out DeploymentRef  : Ref[DeploymentSymbol];
+
+        Symbol.AggregateParametersScope = Symbol.Deployment.AggregateParametersScope;
 
         Method.Scope       = Scope;
         MethodRef          = Method.Ref.Resolve();
@@ -41,9 +50,15 @@ namespace Tdl
       {
         symbol
         {
+        stage 1:
+          in Scenarios : ImmutableArray[ScenarioSymbol];
+
           Kind      = "scenario set";
           SpanClass = TdlLang.ScenarioSpanClass;
         }
+
+        Symbol.Scenarios = TdlUtils.MakeScenarios(Scenarios.Ref);
+        Symbol.AggregateParametersScope = TdlUtils.MakeAggregateParametersScope(Symbol.Scenarios);
 
         Scenarios.Scope = Scope;
         Scenarios : Reference*;
