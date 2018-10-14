@@ -504,9 +504,16 @@ namespace DotNet
     // Modifier : ArgumentModifier?;
   }
 
+  abstract ast OptionalName
+  {
+    | Some { Name : Reference; }
+    | None { }
+  }
+
   abstract ast ExprArgument : Argument
   {
     Expr : Expr;
+    ParameterNameOpt : OptionalName;
 
     Expr.ParameterScope = ParameterScope;
     Expr.ScopeIn = ScopeOut;
