@@ -28,13 +28,14 @@ namespace Tdl
           SpanClass = TdlLang.DeploymentSpanClass;
         }
 
-        Symbol.AggregateParametersScope = Symbol.ParameterScope;
 
-        // Definitions.DefinitionScope = parameters scope from script
-        Definitions.Scope = Symbol.ParameterScope;
-        Symbol.Path       = TdlUtils.ConvertStringLiteral(Path);
-        Symbol.Expected   = TdlUtils.MakeExpected(Expected);
-        Symbol.Defs       = TdlUtils.MakeDefinitions(Definitions);
+        //Definitions.DefinitionScope = parameters scope from script
+        Symbol.AggregateParametersScope = Symbol.ParameterScope;
+        Definitions.Scope               = Symbol.ParameterScope;
+        Symbol.Path                     = TdlUtils.ConvertStringLiteral(Path);
+        Symbol.Expected                 = TdlUtils.MakeExpected(Expected);
+        Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
+        Parameters.Scope                = Scope;
 
         Path : CSharp.StringLiteral;
         Definitions : Definition*;
