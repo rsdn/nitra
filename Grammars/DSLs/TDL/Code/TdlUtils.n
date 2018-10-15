@@ -140,5 +140,41 @@ namespace Tdl
       }
       builder.MoveToImmutable()
     }
-  }
-}
+
+    public Resolve(platformRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[Ref[PlatformSymbol]]
+    {
+      def builder = ImmutableArray.CreateBuilder(platformRefs.Length);
+      foreach (platformRef in platformRefs)
+        builder.Add(platformRef.Resolve());
+      builder.MoveToImmutable()
+    }
+
+    public ToSymbol(it : PlatformSymbol, platforms : ImmutableArray[Ref[PlatformSymbol]]) : ImmutableArray[PlatformSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(platforms.Length);
+      def visited = HashSet();
+      _ = visited.Add(it);
+      def loccectAllPlatforms(platforms : ImmutableArray[Ref[PlatformSymbol]])
+      {
+        foreach (platformRef when platformRef.IsSymbolEvaluated in platforms)
+        {
+          unless (visited.Add(platformRef.Symbol))
+            continue;
+          match (platformRef.Symbol)
+          {
+            | s is Platform.DefSymbol => builder.Add(s);
+            | s is Platform.SetSymbol => loccectAllPlatforms(s.PlatformsRefs);
+            | _ => assert(false)
+          }
+        }
+      }
+
+      loccectAllPlatforms(platforms);
+
+      if (builder.Capacity == builder.Count)
+        builder.MoveToImmutable()
+      else
+        builder.ToImmutable()
+    }
+  } // module
+} // namespace

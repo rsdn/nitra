@@ -4,6 +4,8 @@ using DotNet.AstUtils;
 using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace Tdl
 {
   abstract declaration Platform : NamespaceMember
@@ -20,9 +22,16 @@ namespace Tdl
       {
         symbol
         {
+        stage 1:
+          in PlatformsRefs : ImmutableArray[Ref[PlatformSymbol]];
+        stage 2:
+          in Platforms : ImmutableArray[PlatformSymbol];
+
           Kind      = "platform";
           SpanClass = TdlLang.PlatformSpanClass;
         }
+        Symbol.PlatformsRefs = TdlUtils.Resolve(Platforms.Ref);
+        Symbol.Platforms     = TdlUtils.ToSymbol(Symbol, Symbol.PlatformsRefs);
 
         Platforms.Scope = Scope;
         Platforms : Reference*;
