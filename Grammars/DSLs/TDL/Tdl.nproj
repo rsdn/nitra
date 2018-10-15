@@ -159,7 +159,13 @@
     <Compile Include="Ast\SuiteStatement.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Code\Def.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Code\DefaultValue.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\Expr.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Code\ProjectSupport.n">

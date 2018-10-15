@@ -96,7 +96,7 @@ namespace Tdl
       intLiteral.Value
     }
     
-    public MakePath(str : CSharp.StringLiteral) : ParsedValue[string]
+    public ConvertStringLiteral(str : CSharp.StringLiteral) : ParsedValue[string]
     {
       def builder = Text.StringBuilder();
       foreach (part in str.Parts)
@@ -115,6 +115,30 @@ namespace Tdl
       }
 
       ParsedValue(str.Location.Span, builder.ToString())
+    }
+
+    private ConvertDefExpr(expr : DefExpr) : Expr
+    {
+      match (expr)
+      {
+        | x is DefExpr.String                    => Expr.String(ConvertStringLiteral(x.Value).Value)
+        | _ is DefExpr.True                      => Expr.True()
+        | _ is DefExpr.False                     => Expr.False()
+        | x is DefExpr.RealLiteral               => Expr.Integerl(int.Parse(x.Location.GetText()))
+        | x is DefExpr.HexadecimalIntegerLiteral => Expr.Integerl(int.Parse(x.Location.GetText()))
+        | x is DefExpr.Reference                 => Expr.Reference(x.Location.GetText())
+        | _ => assert(false)
+      }
+    }
+    
+    public MakeDefinitions(definitions : Definition.IAstList) : ImmutableArray[Def]
+    {
+      def builder = ImmutableArray.CreateBuilder(definitions.Count);
+      foreach (definition in definitions)
+      {
+        builder.Add(Def(definition.Reference.Text, ConvertDefExpr(definition.Expr)));
+      }
+      builder.MoveToImmutable()
     }
   }
 }

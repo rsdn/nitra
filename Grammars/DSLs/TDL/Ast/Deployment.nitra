@@ -22,6 +22,7 @@ namespace Tdl
         {
           in Path     : ParsedValue[string];
           in Expected : ParsedValue[int];
+          in Defs     : ImmutableArray[Def];
 
           Kind      = "deployment";
           SpanClass = TdlLang.DeploymentSpanClass;
@@ -31,8 +32,9 @@ namespace Tdl
 
         // Definitions.DefinitionScope = parameters scope from script
         Definitions.Scope = Symbol.ParameterScope;
-        Symbol.Path       = TdlUtils.MakePath(Path);
+        Symbol.Path       = TdlUtils.ConvertStringLiteral(Path);
         Symbol.Expected   = TdlUtils.MakeExpected(Expected);
+        Symbol.Defs       = TdlUtils.MakeDefinitions(Definitions);
 
         Path : CSharp.StringLiteral;
         Definitions : Definition*;
