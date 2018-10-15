@@ -159,11 +159,6 @@ namespace DotNet
         funcRef.Resolve()
       else
       {
-        mutable bestFunc;
-        mutable prevFunc;
-        mutable prevParam;
-        mutable funcIndex;
-
         // 6.1.1 Identity conversion
         def hasIdentityConversion(type1 : TypeSymbol, type2 : TypeSymbol) : bool
         {
@@ -206,8 +201,20 @@ namespace DotNet
 
             for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
             {
-              def argumentType = argumentTypes[ai];
-              def parameter = sym.Parameters[ai];
+              def arg = args[ai] :> ExprArgument;
+              def (argumentType, parameter) =
+                if (arg.ParameterNameOpt is OptionalName.Some as arg)
+                {
+                  def argName = arg.Name.Text;
+                  def argName = argName;
+                  def p = sym.Parameters.FirstOrDefault(p => p.Name == argName);
+                  (argumentTypes[ai], p);
+                }
+                else
+                  (argumentTypes[ai], sym.Parameters[ai]);
+              when (parameter == null)
+                return false;
+              
               unless (parameter.IsTypeEvaluated)
                 return false;
               unless (hasImplicitConversions(argumentType, parameter.Type))

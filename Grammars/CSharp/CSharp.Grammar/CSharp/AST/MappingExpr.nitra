@@ -387,9 +387,9 @@ namespace CSharp
   map syntax Expressions.Argument -> Argument
   {
     // TODO: Доделать поддержку именованных аргументов и out/ref-аргументов.
-    | Ref    -> Expr.Argument    { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName? Modfier="ref" sm Expression;
+    | Ref    -> Expr.RefArgument { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName? Modfier="ref" sm Expression;
     | Out    -> Expr.OutArgument { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName? Modfier="out" sm Expression;
-    | Simple -> Expr.RefArgument { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName?                  Expression;
+    | Simple -> Expr.Argument    { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName?                  Expression;
   }
 
   map syntax Expressions.Expression.IndexerAccess -> DotNet.Expr

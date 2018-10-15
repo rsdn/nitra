@@ -4,6 +4,8 @@ using DotNet.AstUtils;
 using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace Tdl
 {
   abstract declaration Product : NamespaceMember
@@ -27,11 +29,13 @@ namespace Tdl
       {
         symbol
         {
-          Kind      = "product";
+          in Defs : ImmutableArray[Def];
+          Kind = "product";
         }
 
         Definitions.DefinitionScope = Symbol.Type.Scope;
         Definitions.Scope           = Scope;
+        Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions);
 
         Definitions : Definition*;
       }
