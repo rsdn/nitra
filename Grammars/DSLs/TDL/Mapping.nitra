@@ -84,7 +84,7 @@ namespace Tdl
     | RealLiteral               -> RealLiteral               {  }
     | DecimalIntegerLiteral     -> DecimalIntegerLiteral     {  }
     | HexadecimalIntegerLiteral -> HexadecimalIntegerLiteral {  }
-    | Reference                 -> Reference                 {  }
+    | Reference                 -> Reference                 { this.Reference -> PatameterName; }
   }
 
   map syntax Grammar.Field -> Field

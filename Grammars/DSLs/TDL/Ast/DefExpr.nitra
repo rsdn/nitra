@@ -14,6 +14,11 @@ namespace Tdl
     | RealLiteral               { }
     | DecimalIntegerLiteral     { }
     | HexadecimalIntegerLiteral { }
-    | Reference                 { }
+    | Reference
+      {
+        PatameterName.Scope = Scope;
+
+        PatameterName : Declarations.Reference;
+      }
   }
 }

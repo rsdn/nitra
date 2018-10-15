@@ -11,7 +11,7 @@ namespace Tdl
   /// </summary>
   ast Definition : BindableAst
   {
-  stage 1:
+  stage 2:
     in DefinitionScope : Scope;
 
     Reference.Scope = DefinitionScope;
