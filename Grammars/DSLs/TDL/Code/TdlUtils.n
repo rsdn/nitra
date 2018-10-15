@@ -91,7 +91,12 @@ namespace Tdl
       }
     }
 
-    public MakePath(str : CSharp.StringLiteral) : string
+    public MakeExpected(intLiteral : IntLiteral) : ParsedValue[int]
+    {
+      intLiteral.Value
+    }
+    
+    public MakePath(str : CSharp.StringLiteral) : ParsedValue[string]
     {
       def builder = Text.StringBuilder();
       foreach (part in str.Parts)
@@ -109,7 +114,7 @@ namespace Tdl
         | _                       => ()
       }
 
-      builder.ToString()
+      ParsedValue(str.Location.Span, builder.ToString())
     }
   }
 }
