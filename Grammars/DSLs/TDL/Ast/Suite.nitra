@@ -4,14 +4,18 @@ using DotNet.AstUtils;
 using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace Tdl
 {
   declaration Suite : NamespaceMember
   {
     symbol
     {
-      in Platform : PlatformSymbol;
-      in Product  : ProductSymbol;
+      in Defs       : ImmutableArray[Def];
+      in Platform   : PlatformSymbol;
+      in Product    : ProductSymbol;
+      in Statements : ImmutableArray[SuiteStatement];
 
       Kind      = "suite";
       SpanClass = TdlLang.SuiteSpanClass;
@@ -30,13 +34,15 @@ namespace Tdl
 
     Statements.Scope            = Scope;
     Statements.ScopeIn          = EmptyScope.Instance;
+    Symbol.Statements           = Statements.Statement;
 
     Definitions.DefinitionScope = Statements.ScopeOut;
     Definitions.Scope           = Scope;
+    Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions);
 
     Platform    : Reference;
     Product     : Reference;
     Definitions : Definition*;
-    Statements  : SuiteStatement*;
+    Statements  : SuiteStatementAst*;
   }
 }

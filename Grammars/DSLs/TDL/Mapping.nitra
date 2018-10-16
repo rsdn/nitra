@@ -93,7 +93,7 @@ namespace Tdl
     AnyType -> Type;
   }
 
-  map syntax Grammar.SuiteBody.SuiteStatement -> SuiteStatement
+  map syntax Grammar.SuiteBody.SuiteStatement -> SuiteStatementAst
   {
     | CallTest -> CallScenario { Scenario -> Scenario; }
   }

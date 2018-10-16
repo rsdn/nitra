@@ -11,6 +11,7 @@ namespace Tdl
 {
   public variant Expr
   {
+    | Error     { Location : Utils.Location; }
     | String    { Value : string; }
     | True      { }
     | False     { }

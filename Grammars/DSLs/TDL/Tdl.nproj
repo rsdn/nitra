@@ -168,7 +168,13 @@
     <Compile Include="Code\Expr.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Code\Location.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Code\ProjectSupport.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\SuiteStatement.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Code\TdlProjectEvalPropertiesHost.n">
