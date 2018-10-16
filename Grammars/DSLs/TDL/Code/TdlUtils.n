@@ -127,7 +127,7 @@ namespace Tdl
         | x is DefExpr.RealLiteral               => Expr.Integerl(int.Parse(x.Location.GetText()))
         | x is DefExpr.HexadecimalIntegerLiteral => Expr.Integerl(int.Parse(x.Location.GetText()))
         | x is DefExpr.Reference                 => Expr.Reference(x.Location.GetText())
-        | _ => assert(false)
+        | x with loc = x.Location                => Expr.Error(Utils.Location(loc.Source.File.FullName, loc.StartPos, loc.EndPos))
       }
     }
     
