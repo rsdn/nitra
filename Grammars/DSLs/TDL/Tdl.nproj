@@ -129,7 +129,7 @@
     <Compile Include="Ast\Deployment.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Ast\Environment.nitra">
+    <Compile Include="Ast\EnvironmentAst.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ast\Field.nitra">
@@ -156,13 +156,16 @@
     <Compile Include="Ast\Suite.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Ast\SuiteStatement.nitra">
+    <Compile Include="Ast\SuiteStatementAst.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Code\Def.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Code\DefaultValue.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Code\Environment.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Code\Expr.n">

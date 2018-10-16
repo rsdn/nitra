@@ -10,9 +10,9 @@ using System.Linq;
 namespace Tdl
 {
   [Record]
-  public struct Def
+  public struct Environment
   {
-    public Name : string;
-    public Expr : Expr;
+    public Platform : PlatformSymbol { get; }
+    public Product  : ProductSymbol  { get; }
   }
 }

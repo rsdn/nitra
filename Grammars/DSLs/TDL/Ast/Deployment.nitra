@@ -57,5 +57,30 @@ namespace Tdl
         Deployments.Scope = Scope;
         Deployments : Reference*;
       }
+
+    | Currying
+      {
+        symbol
+        {
+          in BaseDeployment : DeploymentSymbol;
+          in ExcludedParams : ImmutableArray[FormalParameterSymbol];
+
+          Kind      = "deployment";
+          SpanClass = TdlLang.DeploymentSpanClass;
+        }
+
+        out BaseDeploymentRef : Ref[DeploymentSymbol];
+
+        BaseDeployment.Scope  = Scope;
+        BaseDeploymentRef     = BaseDeployment.Ref.Resolve();
+        Symbol.BaseDeployment = BaseDeploymentRef.Symbol;
+
+        CurredParameters.DefinitionScope = BaseDeploymentRef.Symbol.AggregateParametersScope;
+        Symbol.ExcludedParams            = TdlUtils.MakeExcludedParams(CurredParameters.SymbolRef);
+        Symbol.AggregateParametersScope  = TdlUtils.MakeCurryingScope(CurredParameters.DefinitionScope, Symbol.ExcludedParams);
+
+        BaseDeployment   : Reference;
+        CurredParameters : Definition*;
+      }
   } // Deployment
 }

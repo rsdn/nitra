@@ -1,0 +1,88 @@
+﻿product type Kavkis
+{
+  string AutotestBinariesExcludedFilesMasks;
+  string ProductBinariesExcludedFilesMasks;
+  string ConfigFilesFamily;
+  string ProductType;
+  string TestAppPackName;
+  string DisableAddingTrustedApplications;
+}
+
+product KFA : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "KFA";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product KIS : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "KIS";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product SAAS : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "SAAS";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product KSOS_PC : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "KSOS";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product KSOS_FS : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "KSOS";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product PURE : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "ksm*.Product.Config;ksde*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe;*_reduced.exe";
+    ConfigFilesFamily                  = "Kis.";
+    ProductType                        = "PURE";
+    TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = false;
+}
+
+product KSDE : Kavkis
+{ 
+    AutotestBinariesExcludedFilesMasks = "kis*.Product.Config;ksm*.Product.Config";
+    ProductBinariesExcludedFilesMasks  = "*_full.exe";
+    ConfigFilesFamily                  = "Ksde.";
+    ProductType                        = "KSDE";
+    TestAppPackName                    = "KasperskyLab.Ksde.UI.TestApp.zip";
+    DisableAddingTrustedApplications   = true;
+}
+
+product KAVKIS : Kavkis = KFA, KIS, SAAS, KSOS_PC, KSOS_FS, PURE;
+
+suite Gate_PURE
+{
+    platform win7-x64;
+    product PURE;
+    GateTests();
+}

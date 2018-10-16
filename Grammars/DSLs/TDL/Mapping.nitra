@@ -44,6 +44,7 @@ namespace Tdl
         } -> Expected;
       }
     | DeploymentSet    -> Deployment.Set      { Name -> Name; Deployments.Item1 -> Deployments; }
+    | Currying         -> Deployment.Currying { Name -> Name; Reference -> BaseDeployment; ParameterCurryings.Item1 -> CurredParameters; }
     | ProductType      -> ProductType         { Name -> Name; ProductTypeBody.Fields -> Fields; }
     | Product          -> Product.Def         { Name -> Name; Type -> Type; ProductBody.DefDeclarations -> Definitions; }
     | ProductSet       -> Product.Set         { Name -> Name; Type -> Type; Products.Item1 -> Products; }
@@ -76,6 +77,12 @@ namespace Tdl
     DefExpr   -> Expr;
   }
 
+  map syntax Grammar.ParameterCurrying -> Definition
+  {
+    Reference -> Reference;
+    DefExpr   -> Expr;
+  }
+
   map syntax Grammar.DefExpr -> DefExpr
   {
     | StringLiteral             -> String                    { StringLiteral -> Value; }
@@ -98,7 +105,7 @@ namespace Tdl
     | CallTest -> CallScenario { Scenario -> Scenario; }
   }
 
-  map syntax Grammar.ScenarioBody.Environment -> Environment
+  map syntax Grammar.ScenarioBody.Environment -> EnvironmentAst
   {
     Platform -> Platform;
     Product  -> Product;

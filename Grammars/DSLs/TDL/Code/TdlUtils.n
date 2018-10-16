@@ -176,5 +176,34 @@ namespace Tdl
       else
         builder.ToImmutable()
     }
+
+    public MakeExcludedParams(baseDeploymentRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[FormalParameterSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder(baseDeploymentRefs.Length);
+      foreach (r in baseDeploymentRefs)
+      {
+        def res = r.Resolve.[FormalParameterSymbol]();
+        when (res.IsSymbolEvaluated)
+          builder.Add(res.Symbol);
+      }
+      if (builder.Capacity == builder.Count)
+        builder.MoveToImmutable()
+      else
+        builder.ToImmutable()
+    }
+
+    public MakeCurryingScope(scope : Scope, excludedParams : ImmutableArray[FormalParameterSymbol]) : Scope
+    {
+      def predicate(symbol : DeclarationSymbol) : bool
+      {
+        def id = symbol.Id;
+        foreach (excludedParam in excludedParams)
+          when (excludedParam.Id == id)
+            return false;
+
+        true
+      }
+      FilteringScope(scope, predicate)
+    }
   } // module
 } // namespace

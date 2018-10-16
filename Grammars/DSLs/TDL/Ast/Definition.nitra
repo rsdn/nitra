@@ -13,9 +13,11 @@ namespace Tdl
   {
   stage 2:
     in DefinitionScope : Scope;
+    out SymbolRef : Ref[DeclarationSymbol];
 
     Reference.Scope = DefinitionScope;
     Expr.Scope      = Scope;
+    SymbolRef       = Reference.Ref;
 
     Reference : Reference;
     Expr      : DefExpr;

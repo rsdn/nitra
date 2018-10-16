@@ -1,0 +1,343 @@
+﻿using Autotest.Kis.Suites;
+
+scenario TryDisinfectWithoutRestart
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AdvancedDisinfection.AdvancedDisinfectionAutomaticActionTest.TryDisinfectWithoutRestart;
+    RevertAgentAfter = true;
+}
+
+scenario CheckBlockBannerByUrl
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AntiBanner.BannerCheckBlockingTests.CheckBlockBannerByUrl;
+}
+
+scenario DetectionOnDemandScanHeuristicAnalysisMedium
+{
+      deployment Deploy_Backdoor;
+      environments (all_pc, KAVKIS);
+      method Avs.ScanHeuristicAnalysisTests.DetectionOnDemandScanHeuristicAnalysisMedium;
+}
+
+scenario WindowsConfigProblemFix
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AVZ.AvzWindowsConfigTests.WindowsConfigProblemFix;
+}
+
+scenario BackupAllFilesFromMyDocumentsAndDesktop
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Backup.BackupMyDocumentsAndDesktopTests.BackupAllFilesFromMyDocumentsAndDesktop;
+}
+
+scenario VaultCreationAndPasswordChanging
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Encryption.EncryptionPasswordChanging.VaultCreationAndPasswordChanging;
+}
+
+scenario ShredFileQuick
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method FileShredder.FileShredderTests.ShredFileQuick;
+}
+
+scenario CheckBannedComputerList
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Firewall.IntrusionDetectionSystem.CheckBannedComputerList;
+}
+
+scenario EnableProtection
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method GUI.ProblemListTests.EnableProtection;,
+    RevertAgentAfter = true
+}
+
+scenario CreateFiles
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Hips.HipsCreateFilesTests.CreateFiles;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
+}
+
+scenario StartOtherProcessSmoke
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Hips.HipsTestsProcessInteraction.StartOtherProcessSmoke;,
+    RevertAgentBefore = true
+}
+
+scenario CheckRetrievePhishing
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Imav.ImavTests.CheckRetrievePhishing;,
+    RevertAgentAfter = true,
+    NeedUnsignedAgent = true
+}
+
+scenario CheckAvpDumps
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckAvpDumps;
+}
+
+scenario CheckAvpProcesses
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationTests.CheckAvpProcesses;
+}
+
+scenario CheckComponentsStatus
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckComponentsStatus;,
+    RevertAgentAfter = true,
+    RevertAgentBefore = true
+}
+
+scenario CheckFilesAndFoldersExists
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckFilesAndFoldersExists;
+}
+
+scenario CheckNdisFilter
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationTests.CheckNdisFilter;,
+    RevertAgentAfter = true
+}
+
+scenario CheckRegistryKeysExists
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckRegistryKeysExists;
+}
+
+scenario CheckStartAndStopProduct
+{
+      deployment Deploy_Backdoor;
+      environments (all_pc, KAVKIS);
+      method Installation.InstallationSecondPartTests.CheckStartAndStopProduct;
+}
+scenario CheckTraceWriting
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckTraceWriting;
+}
+
+scenario UninstallProductWithReboot
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.UninstallationTests.UninstallProductWithReboot;
+    AllowReboot = true;
+    RevertAgentAfter = true,
+    Timeout = 900
+}
+
+scenario IpmWithActivation
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, PURE, KIS, KSOS_PC, KSOS_FS);
+    method Ipm.IpmSmokeTests.IpmWithActivation;,
+    RevertAgentBefore = true,
+    Timeout = 600
+}
+
+scenario UpdateFromLocalFolder
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method KashellSuite.KashellUpdateTests.UpdateFromLocalFolder;,
+    RevertAgentAfter = true
+}
+
+scenario ChangeStateFileAntivirusMock
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ManagementConsole.ManagementConsoleProtectionComponentsMockTests.ChangeStateFileAntivirusMock;,
+    RevertAgentAfter = true,
+    RevertAgentBefore = true
+}
+
+scenario InteractiveActionMixed
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Oas.OasTestsActionCheck.InteractiveActionMixed;,
+    Timeout = 3600
+}
+
+scenario ScanByFormat
+{
+    deployment Deploy_Backdoor_Without_AppVerifier;
+    environments (all_pc, KAVKIS);
+    method Oas.OasTestsSecondPart.ScanByFormat;,
+    Timeout = 1800
+}
+
+scenario ScanEmailObjectsSignature
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Ods.KashellScanEmailObjectsTests.ScanEmailObjectsSignature;,
+    RevertAgentAfter = true
+}
+
+scenario ScanVulnerabilityClear
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Ods.KashellScanVulnerabilityTests.ScanVulnerabilityClear;,
+    RevertAgentAfter = true
+}
+
+scenario EnableParentalControl
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ParentalControl.ParentalControlTests.EnableParentalControl;
+}
+
+scenario ScreenshotKeyboardEventUnderSafeBrowser
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SafeBanking.ScreenshotTests.ScreenshotKeyboardEventUnderSafeBrowser;,
+    RevertAgentBefore = true
+}
+
+scenario StartSafeBrowsingFromProduct
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SafeBanking.WebAvSafeBankingTests.StartSafeBrowsingFromProduct;
+}
+
+scenario SelfDefenceDisabledMoveFiles
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SelfDefence.SelfDefenceTestsFiles.SelfDefenceDisabledMoveFiles;
+}
+
+scenario SelfDefenceEnabledKillGuiService
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SelfDefence.SelfDefenceEnableTestsService.SelfDefenceEnabledKillGuiService;,
+    RevertAgentAfter = true
+}
+
+scenario SystemRestart
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Stress.SystemRestartStressTests.SystemRestart;
+    AllowReboot = true
+    Timeout = 450
+}
+
+scenario ProcessLaunchingDetectWithOnlySw
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SystemWatcher.SystemWatcherTests.ProcessLaunchingDetectWithOnlySw;
+}
+
+scenario InventoryOfDifferentFileFormats
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Tam.TamTests.InventoryOfDifferentFileFormats;,
+    RevertAgentBefore = true
+}
+
+scenario RestoreSuspiciousArchivesFromQuarantine
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ThreatsManager.QuarantineFixture.RestoreSuspiciousArchivesFromQuarantine;
+}
+
+scenario ManagementConsole
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method UCP.UCPMockTests.UcpCommonTests.ManagementConsole;,
+    RevertAgentAfter = true,
+    RevertAgentBefore = true
+}
+
+scenario RunCiVisualTests
+{
+    deployment Deploy_Visual;
+    environments (all_pc, KAVKIS);
+    method Visual.VisualTests.RunCiVisualTests;
+}
+
+scenario GateTests = 
+    TryDisinfectWithoutRestart,
+    CheckBlockBannerByUrl,
+    DetectionOnDemandScanHeuristicAnalysisMedium,
+    WindowsConfigProblemFix,
+    BackupAllFilesFromMyDocumentsAndDesktop,
+    VaultCreationAndPasswordChanging,
+    ShredFileQuick,
+    CheckBannedComputerList,
+    EnableProtection,
+    CreateFiles,
+    StartOtherProcessSmoke,
+    CheckRetrievePhishing,
+    CheckAvpDumps,
+    CheckAvpProcesses,
+    CheckComponentsStatus,
+    CheckFilesAndFoldersExists,
+    CheckNdisFilter,
+    CheckRegistryKeysExists,
+    CheckStartAndStopProduct,
+    CheckTraceWriting,
+    UninstallProductWithReboot,
+    IpmWithActivation,
+    UpdateFromLocalFolder,
+    ChangeStateFileAntivirusMock,
+    InteractiveActionMixed,
+    ScanByFormat,
+    ScanEmailObjectsSignature,
+    ScanVulnerabilityClear,
+    EnableParentalControl,
+    ScreenshotKeyboardEventUnderSafeBrowser,
+    StartSafeBrowsingFromProduct,
+    SelfDefenceDisabledMoveFiles,
+    SelfDefenceEnabledKillGuiService,
+    SystemRestart,
+    ProcessLaunchingDetectWithOnlySw,
+    InventoryOfDifferentFileFormats,
+    RestoreSuspiciousArchivesFromQuarantine,
+    ManagementConsole,
+    RunCiVisualTests;

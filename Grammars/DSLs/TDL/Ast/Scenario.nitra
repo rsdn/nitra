@@ -20,8 +20,9 @@ namespace Tdl
         symbol
         {
         stage 1:
-          in Method      : Member.MethodSymbol;
-          in Deployment  : DeploymentSymbol;
+          in Method       : Member.MethodSymbol;
+          in Deployment   : DeploymentSymbol;
+          in Environments : ImmutableArray[Environment];
 
           Kind      = "scenario";
           SpanClass = TdlLang.ScenarioSpanClass;
@@ -41,10 +42,11 @@ namespace Tdl
         Symbol.Deployment      = DeploymentRef.Symbol;
 
         Environments.Scope     = Scope;
+        Symbol.Environments    = Environments.Environment;
 
         Deployment   : Reference;
         Method       : QualifiedReference;
-        Environments : Environment*;
+        Environments : EnvironmentAst*;
       }
     | Set
       {

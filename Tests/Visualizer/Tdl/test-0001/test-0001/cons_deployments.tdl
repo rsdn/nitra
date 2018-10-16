@@ -1,0 +1,75 @@
+deployment Execute_Deploy(
+    string DeploymentSequenceName,
+    string AutotestBinariesExcludedFilesMasks, // из продукта 
+    string LocalTestBinariesFolder, // не задан!
+    string TestAppPackName,
+    string ProductBinariesExcludedFilesMasks,
+    string DisableAddingTrustedApplications,
+    string ConfigFilesFamily,
+    string AutotestBinariesIncludedFilesMasks = "",
+    string CollectionsLocalFolder             = @"C:\Deployment",
+    string CollectionsNetworkFolder           = @"\\tis-dfs.avp.ru\Autotests\KIS\Deployment\Kis.Main",
+    string ProductBinariesIncludedFilesMasks  = "",
+    string DistribFolder                      = @"C:\install",
+    int    CopyBufferSize                     = 819200,
+    string RetryTimeSpan                      = "00:01:00",
+    int    DownloadRetryCount                 = 10,
+    string OperationTimeout                   = "00:15:00",
+    string CertsPath                          = @"C:\install",
+    int    TraceFileMaxLevel                  = 700,
+    string SkipRemoteConnectionCheckMask      = "*Agent*",
+    bool   RunAtSystemStartup                 = false,
+    bool   InstallKisActivationBackdoor       = false,
+    bool   DisableAutomaticKfaDowngrade       = false,
+    bool   ForcePreloadDumpWriter             = false,
+    bool   TurnOffDumpOnAssert                = false,
+    bool   DisableSetProductNameForFacade     = false,
+    bool   DisableAppVerifier                 = false,
+    bool   ForceDisableDriverVerifier         = false,
+    string UpdateSource                       = "",
+    bool   UseProxyForUpdate                  = false,
+    string SetupRegFilePath                   = @"C:\install\setup.reg",
+    string ProtectionSwitch                   = "Default",
+    string AntiSpamSwitch                     = "Default",
+    bool   EnableSslDecoding                  = false,
+    string SetupXmlFilePath                   = @"C:\install\setup.xml",
+    bool   InstallKsdeBundle                  = false,
+    string InstallerExecutableFileMask        = "startup.exe",
+    bool   DisableSkipProductCheck            = false,
+    bool   SkipRecommendedSettings            = false,
+    bool   EnableSelfDefense                  = false,
+    bool   DisablePpl                         = false,
+    bool   DebugMode                          = false,
+    string ActivationCode                     = "",
+    string LocalizationCode                   = "",
+    string TestArtefactsFolder                = "",
+    string AiConfigFolder                     = @"C:\install",
+    string UseProxy                           = "",
+    bool   DisableInstallKashell              = false,
+    bool   DisableInstallKpmTestMediator      = false,
+    bool   DisableInstallPlatformFacade       = false,
+    bool   DisableInstallRemotingFacade       = false,
+    bool   DisableInstallChangeTool           = false,
+    bool   InstallKsnKontroller               = false,
+    bool   InstallTestTransportProvider       = false,
+    string CertHolderDirectoryPath            = @"\\tis-dfs.avp.ru\autotests\ConsTools\KL.CertificateGenerator\Latest"
+    
+) script @"\\tis-dfs.avp.ru\Autotests\KIS\CSharp_Deployer\executeDeploy.ps1"
+{
+    /*external
+    {
+        string ProductBinariesToken;
+        string AutotestsBinariesToken;
+    }*/
+
+    DesiredAutotestsPath = LocalTestBinariesFolder;
+    
+    expected 42;
+}
+
+deployment Deploy_Backdoor                     = Execute_Deploy(DeploymentSequenceName: "backdoor",   DisableAppVerifier: false);
+deployment Deploy_Backdoor_Without_AppVerifier = Execute_Deploy(DeploymentSequenceName: "backdoor",   DisableAppVerifier: true);
+deployment Deploy_NoBackdoor                   = Execute_Deploy(DeploymentSequenceName: "noBackdoor", DisableAppVerifier: false);
+deployment Deploy_NoInstall                    = Execute_Deploy(DeploymentSequenceName: "noInstall",  DisableAppVerifier: false);
+deployment Deploy_Ksde                         = Execute_Deploy(DeploymentSequenceName: "ksde",       DisableAppVerifier: false);
+deployment Deploy_Visual                       = Execute_Deploy(DeploymentSequenceName: "visual",     DisableAppVerifier: false);

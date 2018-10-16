@@ -1,0 +1,31 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+using System.Collections.Immutable;
+
+namespace Tdl
+{
+  abstract ast SuiteStatementAst : BindableAst
+  {
+  stage 3:
+    inout Scope : Scope;
+    out Statement : SuiteStatement;
+
+    | CallScenario
+      {
+      stage 1:
+        out ScenarioRef : Ref[ScenarioSymbol];
+
+        ScopeOut = ScopeIn.UnionWith(ScenarioRef.Symbol.AggregateParametersScope);
+
+        Scenario.Scope  = Scope;
+        ScenarioRef     = Scenario.Ref.Resolve();
+        Statement       = SuiteStatement.CallScenario(ScenarioRef.Symbol);
+
+        Scenario : Reference;
+      }
+  }
+}
