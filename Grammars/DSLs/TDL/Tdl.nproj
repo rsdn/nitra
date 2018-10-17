@@ -162,9 +162,6 @@
     <Compile Include="Code\Def.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Code\DefaultValue.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Code\Environment.n">
       <SubType>Code</SubType>
     </Compile>

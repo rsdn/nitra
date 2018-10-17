@@ -62,7 +62,7 @@
       }
     }
 
-    syntax ScenarioBody = outline_begin_before "{" inl Deployment Environments Method d "}" nl outline_end_before
+    syntax ScenarioBody = outline_begin_before "{" inl Deployment Environments Method DefDeclaration* d "}" nl outline_end_before
     {
       syntax Deployment   = "deployment" sm Reference ";" nl;
       syntax Method       = "method" sm QualifiedIdentifier ";" nl;

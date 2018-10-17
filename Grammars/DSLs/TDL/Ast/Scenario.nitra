@@ -19,6 +19,7 @@ namespace Tdl
       {
         symbol
         {
+          in Defs     : ImmutableArray[Def];
         stage 1:
           in Method       : Member.MethodSymbol;
           in Deployment   : DeploymentSymbol;
@@ -33,20 +34,24 @@ namespace Tdl
 
         Symbol.AggregateParametersScope = Symbol.Deployment.AggregateParametersScope;
 
-        Method.Scope       = Scope;
-        MethodRef          = Method.Ref.Resolve();
-        Symbol.Method      = MethodRef.Symbol;
+        Method.Scope                    = Scope;
+        MethodRef                       = Method.Ref.Resolve();
+        Symbol.Method                   = MethodRef.Symbol;
 
-        Deployment.Scope       = Scope;
-        DeploymentRef          = Deployment.Ref.Resolve();
-        Symbol.Deployment      = DeploymentRef.Symbol;
+        Deployment.Scope                = Scope;
+        DeploymentRef                   = Deployment.Ref.Resolve();
+        Symbol.Deployment               = DeploymentRef.Symbol;
 
-        Environments.Scope     = Scope;
-        Symbol.Environments    = Environments.Environment;
+        Environments.Scope              = Scope;
+        Symbol.Environments             = Environments.Environment;
+
+        //Definitions.DefinitionScope     = Symbol.AggregateParametersScope;
+        Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
 
         Deployment   : Reference;
         Method       : QualifiedReference;
         Environments : EnvironmentAst*;
+        Definitions  : Definition*;
       }
     | Set
       {

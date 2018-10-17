@@ -30,6 +30,11 @@ namespace Tdl
     static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     static NoSpan : NSpan              = NSpan(0);
 
+    public this()
+    {
+      DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParameters;
+    }
+
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       TypeUnifier.InitInstance();

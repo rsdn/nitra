@@ -54,6 +54,7 @@ namespace Tdl
         ScenarioBody.Deployment.Reference       -> Deployment;
         ScenarioBody.Method.QualifiedIdentifier -> Method;
         ScenarioBody.Environments.Elems.Item1   -> Environments;
+        ScenarioBody.DefDeclarations            -> Definitions;
       }
     | ScenarioSet      -> Scenario.Set        { Name -> Name; Scenarios.Item1 -> Scenarios; }
     | Suite            -> Suite

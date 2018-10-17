@@ -1,4 +1,4 @@
-﻿using Autotest.Kis.Suites;
+using Autotest.Kis.Suites;
 
 scenario TryDisinfectWithoutRestart
 {
@@ -61,8 +61,8 @@ scenario EnableProtection
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method GUI.ProblemListTests.EnableProtection;,
-    RevertAgentAfter = true
+    method GUI.ProblemListTests.EnableProtection;
+    RevertAgentAfter = true;
 }
 
 scenario CreateFiles
@@ -79,16 +79,16 @@ scenario StartOtherProcessSmoke
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Hips.HipsTestsProcessInteraction.StartOtherProcessSmoke;,
-    RevertAgentBefore = true
+    RevertAgentBefore = true;
 }
 
 scenario CheckRetrievePhishing
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Imav.ImavTests.CheckRetrievePhishing;,
-    RevertAgentAfter = true,
-    NeedUnsignedAgent = true
+    method Imav.ImavTests.CheckRetrievePhishing;
+    RevertAgentAfter = true;
+    NeedUnsignedAgent = true;
 }
 
 scenario CheckAvpDumps
@@ -109,9 +109,9 @@ scenario CheckComponentsStatus
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Installation.InstallationSecondPartTests.CheckComponentsStatus;,
-    RevertAgentAfter = true,
-    RevertAgentBefore = true
+    method Installation.InstallationSecondPartTests.CheckComponentsStatus;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
 }
 
 scenario CheckFilesAndFoldersExists
@@ -125,8 +125,8 @@ scenario CheckNdisFilter
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Installation.InstallationTests.CheckNdisFilter;,
-    RevertAgentAfter = true
+    method Installation.InstallationTests.CheckNdisFilter;
+    RevertAgentAfter = true;
 }
 
 scenario CheckRegistryKeysExists
@@ -155,66 +155,68 @@ scenario UninstallProductWithReboot
     environments (all_pc, KAVKIS);
     method Installation.UninstallationTests.UninstallProductWithReboot;
     AllowReboot = true;
-    RevertAgentAfter = true,
-    Timeout = 900
+    RevertAgentAfter = true;
+    Timeout = 900;
 }
+
+product activatad : Kavkis = PURE, KIS, KSOS_PC, KSOS_FS;
 
 scenario IpmWithActivation
 {
     deployment Deploy_Backdoor;
-    environments (all_pc, PURE, KIS, KSOS_PC, KSOS_FS);
-    method Ipm.IpmSmokeTests.IpmWithActivation;,
-    RevertAgentBefore = true,
-    Timeout = 600
+    environments (all_pc, activatad);
+    method Ipm.IpmSmokeTests.IpmWithActivation;
+    RevertAgentBefore = true;
+    Timeout = 600;
 }
 
 scenario UpdateFromLocalFolder
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method KashellSuite.KashellUpdateTests.UpdateFromLocalFolder;,
-    RevertAgentAfter = true
+    method KashellSuite.KashellUpdateTests.UpdateFromLocalFolder;
+    RevertAgentAfter = true;
 }
 
 scenario ChangeStateFileAntivirusMock
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method ManagementConsole.ManagementConsoleProtectionComponentsMockTests.ChangeStateFileAntivirusMock;,
-    RevertAgentAfter = true,
-    RevertAgentBefore = true
+    method ManagementConsole.ManagementConsoleProtectionComponentsMockTests.ChangeStateFileAntivirusMock;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
 }
 
 scenario InteractiveActionMixed
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Oas.OasTestsActionCheck.InteractiveActionMixed;,
-    Timeout = 3600
+    method Oas.OasTestsActionCheck.InteractiveActionMixed;
+    Timeout = 3600;
 }
 
 scenario ScanByFormat
 {
     deployment Deploy_Backdoor_Without_AppVerifier;
     environments (all_pc, KAVKIS);
-    method Oas.OasTestsSecondPart.ScanByFormat;,
-    Timeout = 1800
+    method Oas.OasTestsSecondPart.ScanByFormat;
+    Timeout = 1800;
 }
 
 scenario ScanEmailObjectsSignature
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Ods.KashellScanEmailObjectsTests.ScanEmailObjectsSignature;,
-    RevertAgentAfter = true
+    method Ods.KashellScanEmailObjectsTests.ScanEmailObjectsSignature;
+    RevertAgentAfter = true;
 }
 
 scenario ScanVulnerabilityClear
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Ods.KashellScanVulnerabilityTests.ScanVulnerabilityClear;,
-    RevertAgentAfter = true
+    method Ods.KashellScanVulnerabilityTests.ScanVulnerabilityClear;
+    RevertAgentAfter = true;
 }
 
 scenario EnableParentalControl
@@ -228,8 +230,8 @@ scenario ScreenshotKeyboardEventUnderSafeBrowser
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method SafeBanking.ScreenshotTests.ScreenshotKeyboardEventUnderSafeBrowser;,
-    RevertAgentBefore = true
+    method SafeBanking.ScreenshotTests.ScreenshotKeyboardEventUnderSafeBrowser;
+    RevertAgentBefore = true;
 }
 
 scenario StartSafeBrowsingFromProduct
@@ -250,8 +252,8 @@ scenario SelfDefenceEnabledKillGuiService
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method SelfDefence.SelfDefenceEnableTestsService.SelfDefenceEnabledKillGuiService;,
-    RevertAgentAfter = true
+    method SelfDefence.SelfDefenceEnableTestsService.SelfDefenceEnabledKillGuiService;
+    RevertAgentAfter = true;
 }
 
 scenario SystemRestart
@@ -259,8 +261,8 @@ scenario SystemRestart
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Stress.SystemRestartStressTests.SystemRestart;
-    AllowReboot = true
-    Timeout = 450
+    AllowReboot = true;
+    Timeout = 450;
 }
 
 scenario ProcessLaunchingDetectWithOnlySw
@@ -274,8 +276,8 @@ scenario InventoryOfDifferentFileFormats
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Tam.TamTests.InventoryOfDifferentFileFormats;,
-    RevertAgentBefore = true
+    method Tam.TamTests.InventoryOfDifferentFileFormats;
+    RevertAgentBefore = true;
 }
 
 scenario RestoreSuspiciousArchivesFromQuarantine
@@ -289,9 +291,9 @@ scenario ManagementConsole
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method UCP.UCPMockTests.UcpCommonTests.ManagementConsole;,
-    RevertAgentAfter = true,
-    RevertAgentBefore = true
+    method UCP.UCPMockTests.UcpCommonTests.ManagementConsole;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
 }
 
 scenario RunCiVisualTests
