@@ -117,6 +117,9 @@
     <Compile Include="Core\QualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Expr\ExprBase.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="IDotNetBackEnd.n">
       <SubType>Code</SubType>
     </Compile>
@@ -145,6 +148,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\CustomAttributeHost.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\DefaultValue.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\Functional.nitra">

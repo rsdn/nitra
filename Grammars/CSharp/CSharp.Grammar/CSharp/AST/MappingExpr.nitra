@@ -12,12 +12,12 @@ namespace CSharp
 
   map syntax Expressions.Expression.True -> DotNet.Expr
   {
-    BooleanLiteral    { Value = ParsedValue(NSpan(), true); }
+    BooleanLiteral    { Value = ParsedValue(Span, true); }
   }
 
   map syntax Expressions.Expression.False -> DotNet.Expr
   {
-    BooleanLiteral    { Value = ParsedValue(NSpan(), false); }
+    BooleanLiteral    { Value = ParsedValue(Span, false); }
   }
 
   map syntax Expressions.Expression.RegularStringLiteral -> DotNet.Expr

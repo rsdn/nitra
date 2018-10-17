@@ -2,17 +2,19 @@
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+
 using System;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Nitra;
-using Nitra.Declarations;
 
 namespace DotNet
 {
-  abstract ast Expr
+  abstract ast Expr : DotNet.ExprBase
   {
   stage 2:
     inout Scope : Scope;
@@ -25,6 +27,7 @@ namespace DotNet
 
     unless (Type.IsSubtypeOf(ExpectedType))
       Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
+    | Nop { Type = context.GetVoidType(); }
     | String
       {
         Value : CSharp.StringLiteral;

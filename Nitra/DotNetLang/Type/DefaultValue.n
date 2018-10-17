@@ -1,0 +1,16 @@
+﻿namespace DotNet
+{
+  public variant DefaultValue
+  {
+    | None      { }
+    | Error     { }
+    | Overflow  { }
+    | Bool      { Value : bool; }
+    | String    { Value : string; }
+    | Number    { Value : ulong; IsUnsigned : bool; IsLong : bool; }
+    | Reference { name  : string; }
+    | Single    { Value : float; }   // f
+    | Double    { Value : double; }  // d
+    | Decimal   { Value : decimal; } // m
+  }
+}

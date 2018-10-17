@@ -1,0 +1,7 @@
+﻿namespace DotNet
+{
+  // TODO: Временный промежуточный тип пока Expr находится в проекте CSharp. Убрать его после переноса АСТ-а обратно в DotNetLang.
+  abstract ast ExprBase
+  {
+  }
+}

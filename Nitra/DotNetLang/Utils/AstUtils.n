@@ -18,6 +18,8 @@ namespace DotNet
 {
   public module AstUtils
   {
+    public static mutable MakeDefault : ExprBase -> DefaultValue;
+
     public CreateFreeTypeVar() : TypeVarSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
 
     public Append(this lst : QualifiedReference.IAstList, item : QualifiedReference) : QualifiedReference.IAstList

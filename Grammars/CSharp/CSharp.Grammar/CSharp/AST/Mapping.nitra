@@ -459,6 +459,7 @@ namespace CSharp
     Name       -> Name;
     AnyType    -> Type;
     Attributes -> Attributes;
+    match (DefaultArgumentOpt) { Some(value) -> value.Expression | None -> Expr.Nop {} } -> Default;
     Modifier =
       if (this.ParameterModifierOpt.HasValue)
       {

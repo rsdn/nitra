@@ -19,6 +19,49 @@ using System.Text;
 
 namespace DotNet
 {
+  public module Coverters
+  {
+    public MakeDefaultParameters(ast : ExprBase) : DefaultValue
+    {
+      | _ is Expr.Nop                     => DefaultValue.None()
+      | lit is DotNet.Expr.String         => ConvertStringLiteral(lit.Value)
+      | lit is DotNet.Expr.BooleanLiteral => DefaultValue.Bool(lit.Value.ValueOrDefault)
+      | lit is DotNet.IntegerLiteral when lit.Value.Value.Overflow => DefaultValue.Overflow()
+      | lit is DotNet.IntegerLiteral with x = lit.Value.Value => DefaultValue.Number(x.Value, x.IsUnsigned, x.IsLong)
+      | lit is DotNet.RealLiteral =>
+        match (lit.Value.Value)
+        {
+          | x is Nitra.RealLiteralValue.Single   => DefaultValue.Single (x.Value)
+          | x is Nitra.RealLiteralValue.Double   => DefaultValue.Double (x.Value)
+          | x is Nitra.RealLiteralValue.Decimal  => DefaultValue.Decimal(x.Value)
+          | x is Nitra.RealLiteralValue.Overflow => DefaultValue.Overflow()
+          | _                                    => DefaultValue.Error()
+        }
+      | _ => DefaultValue.Error()
+    }
+
+    public ConvertStringLiteral(str : CSharp.StringLiteral) : DefaultValue
+    {
+      def builder = Text.StringBuilder();
+      foreach (part in str.Parts)
+      {
+        | Interpolation           => ()
+        | InterpolationFormated   => ()
+        | InterpolatedOpenEscape  => _ = builder.Append("{");
+        | InterpolatedCloseEscape => _ = builder.Append("}");
+        | Error                   => ()
+        | SimpleEscape            => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | UnicodeEscape           => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | HexadecimalEscape       => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | RegulaChars             => _ = builder.Append(part.Location.GetText());
+        | VerbatimEscape          => _ = builder.Append(part.Location.GetText()); // FIXME:
+        | _                       => ()
+      }
+
+      DefaultValue.String(builder.ToString())
+    }
+  }
+  
   module AstUtils2
   {
     public GetMemberReturnType(this member : DeclarationSymbol, context : DependentPropertyEvalContext) : TypeSymbol
