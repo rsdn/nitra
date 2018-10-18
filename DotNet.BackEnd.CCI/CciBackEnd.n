@@ -452,6 +452,10 @@ namespace Nitra.BackEnd.Cci
 
     CciTypeToTypeSymbol(cciTypeReference : ITypeReference, context : DependentPropertyEvalContext) : TypeSymbol
     {
+      when (cciTypeReference.ResolvedType is Microsoft.Cci.DummyType)
+        return _objectSymbol;
+
+        
       def result : TypeSymbol =
         match (cciTypeReference)
         {
@@ -607,12 +611,14 @@ namespace Nitra.BackEnd.Cci
             foreach (cciBaseClasse in cciType.BaseClasses)
             {
               def typeSymbol = CciTypeToTypeSymbol(cciBaseClasse, context);
-              baseTypeSet.AddParent(typeSymbol);
+              when (typeSymbol != _objectSymbol)
+                baseTypeSet.AddParent(typeSymbol);
             }
             foreach (cciInterface when TypeHelper.IsVisibleOutsideAssembly(cciInterface.ResolvedType) in cciType.Interfaces)
             {
               def typeSymbol = CciTypeToTypeSymbol(cciInterface, context);
-              baseTypeSet.AddParent(typeSymbol);
+              when (typeSymbol != _objectSymbol)
+                baseTypeSet.AddParent(typeSymbol);
             }
           | _ => ()
         }
