@@ -164,6 +164,7 @@ namespace Tdl
         | _ is DefExpr.True                      => Expr.True()
         | _ is DefExpr.False                     => Expr.False()
         | x is DefExpr.RealLiteral               => Expr.Integerl(int.Parse(x.Location.GetText()))
+        | x is DefExpr.DecimalIntegerLiteral     => Expr.Integerl(int.Parse(x.Location.GetText()))
         | x is DefExpr.HexadecimalIntegerLiteral => Expr.Integerl(int.Parse(x.Location.GetText()))
         | x is DefExpr.Reference                 => Expr.Reference(x.Location.GetText())
         | x with loc = x.Location                => Expr.Error(Utils.Location(loc.Source.File.FullName, loc.StartPos, loc.EndPos))

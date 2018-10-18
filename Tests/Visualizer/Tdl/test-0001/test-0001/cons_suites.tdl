@@ -20,6 +20,7 @@ scenario DetectionOnDemandScanHeuristicAnalysisMedium
       deployment Deploy_Backdoor;
       environments (all_pc, KAVKIS);
       method Avs.ScanHeuristicAnalysisTests.DetectionOnDemandScanHeuristicAnalysisMedium;
+      Timeout = 1800;
 }
 
 scenario WindowsConfigProblemFix
