@@ -62,8 +62,9 @@ namespace Tdl
       {
         symbol
         {
-          in BaseDeployment : DeploymentSymbol;
-          in ExcludedParams : ImmutableArray[FormalParameterSymbol];
+          in BaseDeployment  : DeploymentSymbol;
+          in ExcludedParams  : ImmutableArray[FormalParameterSymbol];
+          in ParameterValues : ImmutableArray[Def];
 
           Kind      = "deployment";
           SpanClass = TdlLang.DeploymentSpanClass;
@@ -78,6 +79,8 @@ namespace Tdl
         CurredParameters.DefinitionScope = BaseDeploymentRef.Symbol.AggregateParametersScope;
         Symbol.ExcludedParams            = TdlUtils.MakeExcludedParams(CurredParameters.SymbolRef);
         Symbol.AggregateParametersScope  = TdlUtils.MakeCurryingScope(CurredParameters.DefinitionScope, Symbol.ExcludedParams);
+
+        Symbol.ParameterValues           = TdlUtils.MakeDefinitions(CurredParameters);
 
         BaseDeployment   : Reference;
         CurredParameters : Definition*;
