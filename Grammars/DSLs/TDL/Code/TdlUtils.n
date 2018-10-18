@@ -31,6 +31,45 @@ namespace Tdl
       builder.ToImmutable()
     }
 
+    public MakeAllProducts(it : ProductSymbol, products : ImmutableArray[ProductSymbol]) : ImmutableArray[ProductSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder();
+      def visited = HashSet();
+      _ = visited.Add(it.Id);
+      
+      def collect(products : ImmutableArray[ProductSymbol]) : void
+      {
+        foreach (product in products)
+        {
+          unless (visited.Add(product.Id))
+            continue;
+
+          match (product)
+          {
+            | p   is Product.DefSymbol => builder.Add(p);
+            | set is Product.SetSymbol => collect(set.Products);
+            | _ => ()
+          }
+        }
+      }
+
+      collect(products);
+      
+      builder.ToImmutable()
+    }
+
+    public MakeProducts(deploymentRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[ProductSymbol]
+    {
+      def builder = ImmutableArray.CreateBuilder();
+      foreach (deploymentRef in deploymentRefs)
+      {
+        def r = deploymentRef.Resolve();
+        when (r.IsSymbolEvaluated)
+          builder.Add(r.Symbol);
+      }
+      builder.ToImmutable()
+    }
+
     public MakeScenarios(scenariosRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[ScenarioSymbol]
     {
       def builder = ImmutableArray.CreateBuilder();

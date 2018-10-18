@@ -54,6 +54,7 @@ namespace Tdl
 
         Symbol.AggregateParametersScope = TdlUtils.MakeAggregateParametersScope(Symbol.Deployments);
         Symbol.Deployments = TdlUtils.MakeDeployments(Deployments.Ref);
+
         Deployments.Scope = Scope;
         Deployments : Reference*;
       }

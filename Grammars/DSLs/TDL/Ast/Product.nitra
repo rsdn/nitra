@@ -43,10 +43,18 @@ namespace Tdl
       {
         symbol
         {
+          stage 2:
+            in AllProducts : ImmutableArray[ProductSymbol];
+          stage 1:
+            in Products    : ImmutableArray[ProductSymbol];
+
           Kind      = "product set";
         }
 
-        Products.Scope = Scope;
+        Products.Scope     = Scope;
+        Symbol.Products    = TdlUtils.MakeProducts(Products.Ref);
+        Symbol.AllProducts = TdlUtils.MakeAllProducts(Symbol, Symbol.Products);
+
         Products : Reference*;
       }
   } // Product
