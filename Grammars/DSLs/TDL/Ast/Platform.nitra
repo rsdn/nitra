@@ -14,7 +14,7 @@ namespace Tdl
       {
         symbol
         {
-          Kind      = "platform set";
+          Kind      = "platform";
           SpanClass = TdlLang.PlatformSpanClass;
         }
       }
@@ -29,7 +29,9 @@ namespace Tdl
 
           Kind      = "platform";
           SpanClass = TdlLang.PlatformSpanClass;
+          MakeHint  = TdlUtils.PlatformMakeHint(symbolCache, this);
         }
+
         Symbol.PlatformsRefs = TdlUtils.Resolve(Platforms.Ref);
         Symbol.Platforms     = TdlUtils.ToSymbol(Symbol, Symbol.PlatformsRefs);
 

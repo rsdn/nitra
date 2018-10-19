@@ -14,11 +14,33 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 
 namespace Tdl
 {
   module TdlUtils
   {
+    public PlatformMakeHint(symbolCache : ISymbolCache, symbol : Platform.SetSymbol) : string
+    {
+      def builder = StringBuilder();
+      try
+      {
+        symbolCache?.CacheSymbol(symbol);
+        _ = builder.Append("<keyword>").HintMlEscape(symbol.Kind).Append("</keyword> ")
+          .SymbolToHintMlWithSubHint(symbol)
+          .Append(" = ");
+
+        if (symbol.IsPlatformsEvaluated)
+          _ = builder.Join(symbol.Platforms, HintML.SymbolToHintMlWithSubHint(_, _))
+        else
+          _ = builder.Append(<# <b><font color="Red">The Platforms not evaluated</font></b>.#>);
+
+        _ = builder.MakeLocations(symbol);
+      }
+      catch { e => _ = builder.HintMlException(e); }
+      builder.ToString()
+    }
+    
     public MakeDeployments(deploymentRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[DeploymentSymbol]
     {
       def builder = ImmutableArray.CreateBuilder();
