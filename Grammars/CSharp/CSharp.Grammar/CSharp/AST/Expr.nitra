@@ -16,18 +16,7 @@ namespace DotNet
 {
   abstract ast Expr : DotNet.ExprBase
   {
-  stage 2:
-    inout Scope : Scope;
-    ScopeOut = ScopeIn;
-    in ExpectedType : TypeSymbol;
-    in Used : bool = false;
-    in ParameterScope : TableScope = TableScope(null, "parameters");
-    out Type : TypeSymbol;
-    out Member : Ref[DeclarationSymbol] = null;
-
-    unless (Type.IsSubtypeOf(ExpectedType))
-      Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
-    | Nop { Type = context.GetVoidType(); }
+    | Nop { Type = context.CreateFreeTypeVar(); }
     | String
       {
         Value : CSharp.StringLiteral;

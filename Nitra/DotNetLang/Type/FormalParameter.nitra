@@ -27,15 +27,17 @@ namespace DotNet
     inout Parameters : list[FormalParameterSymbol];
     inout Types      : list[TypeSymbol];
 
-    IndexOut        = IndexIn + 1u;
-    Type.Scope      = Scope;
-    TypeRef         = Type.Ref.Resolve();
-    Symbol.Type     = TypeRef.Symbol;
-    Symbol.Modifier = Modifier.ValueOrDefault;
-    Symbol.Index    = IndexIn;
-    ParametersOut   = Symbol :: ParametersIn;
-    TypesOut        = Symbol.Type :: TypesIn;
-    Symbol.Default  = AstUtils.MakeDefault(Default);
+    IndexOut             = IndexIn + 1u;
+    Type.Scope           = Scope;
+    TypeRef              = Type.Ref.Resolve();
+    Symbol.Type          = TypeRef.Symbol;
+    Symbol.Modifier      = Modifier.ValueOrDefault;
+    Symbol.Index         = IndexIn;
+    ParametersOut        = Symbol :: ParametersIn;
+    TypesOut             = Symbol.Type :: TypesIn;
+    Symbol.Default       = AstUtils.MakeDefault(Default);
+    Default.ExpectedType = TypeRef.Symbol;
+    Default.ScopeIn      = Scope;
 
     Type     : QualifiedReference;
     Modifier : ParameterModifier;
