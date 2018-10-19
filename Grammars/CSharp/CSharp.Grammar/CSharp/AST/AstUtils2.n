@@ -96,7 +96,7 @@ namespace DotNet
             | x is LambdaParameterSymbol when x.IsTypeEvaluated       => x.Type
             | x is LocalVarSymbol        when x.IsTypeEvaluated       => x.Type
             | x is EnumMemberSymbol      when x.IsDeclaredInEvaluated => x.DeclaredIn
-            | _                                                       => context.CreateFreeTypeVar()
+            | _                                                       => context.GetVoidType()
           }
         | _ =>
           mutable methodsCount;
