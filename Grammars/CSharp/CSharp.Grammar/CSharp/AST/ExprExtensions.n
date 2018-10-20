@@ -199,22 +199,41 @@ namespace DotNet
             unless (sym.IsParametersEvaluated && sym.Parameters.Length >= argumentsCount)
               return false;
 
+            mutable namedArgumentUsedOutOfPosition;
+            def usedParams = Dictionary();
+
             for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
             {
               def arg = args[ai] :> ExprArgument;
-              def (argumentType, parameter) =
+              def (argumentType, parameter, argName) =
                 if (arg.ParameterNameOpt is OptionalName.Some as arg)
                 {
                   def argName = arg.Name.Text;
                   def argName = argName;
                   def p = sym.Parameters.FirstOrDefault(p => p.Name == argName);
-                  (argumentTypes[ai], p);
+                  when (namedArgumentUsedOutOfPosition == null && p != sym.Parameters[ai])
+                    namedArgumentUsedOutOfPosition = p;
+                  (argumentTypes[ai], p, argName);
                 }
                 else
-                  (argumentTypes[ai], sym.Parameters[ai]);
+                  (argumentTypes[ai], sym.Parameters[ai], null);
+
               when (parameter == null)
                 return false;
-              
+
+              mutable prevArgName;
+              if (usedParams.TryGetValue(parameter, out prevArgName))
+                if (prevArgName == null)
+                  arg.Error(context, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
+                  //context.Project.CompilerMessages.ReportMessage(CompilerMessageType.Error, arg.Location, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
+                else
+                  arg.Error(context, $"Named argument '$argName' cannot be specified multiple times.", 0);
+              else
+                usedParams.Add(parameter, argName);
+
+              when (namedArgumentUsedOutOfPosition != null && argName == null)
+                arg.Error(context, $"Named argument '$(namedArgumentUsedOutOfPosition.Name)' is used out-of-position but is followed by an unnamed argument", 0);
+
               unless (parameter.IsTypeEvaluated)
                 return false;
               unless (hasImplicitConversions(argumentType, parameter.Type))

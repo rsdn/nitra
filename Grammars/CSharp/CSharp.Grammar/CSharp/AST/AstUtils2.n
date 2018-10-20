@@ -34,7 +34,7 @@ namespace DotNet
           | x is Nitra.RealLiteralValue.Single   => DefaultValue.Single (x.Value)
           | x is Nitra.RealLiteralValue.Double   => DefaultValue.Double (x.Value)
           | x is Nitra.RealLiteralValue.Decimal  => DefaultValue.Decimal(x.Value)
-          | x is Nitra.RealLiteralValue.Overflow => DefaultValue.Overflow()
+          | _ is Nitra.RealLiteralValue.Overflow => DefaultValue.Overflow()
           | _                                    => DefaultValue.Error()
         }
       | _ => DefaultValue.Error()
@@ -61,7 +61,7 @@ namespace DotNet
       DefaultValue.String(builder.ToString())
     }
   }
-  
+
   module AstUtils2
   {
     public GetMemberReturnType(this member : DeclarationSymbol, context : DependentPropertyEvalContext) : TypeSymbol
