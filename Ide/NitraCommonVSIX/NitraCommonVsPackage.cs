@@ -100,6 +100,13 @@ namespace Nitra.VisualStudio
       Debug.Assert(Instance == null);
       Instance = this;
 
+      EnvDTE80.DTE2 dte = (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
+
+      var prjItemsEvents = ((EnvDTE80.Events2)dte.Events).ProjectItemsEvents;
+      prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
+      prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
+      prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
+
       _runningDocTableEventse = new RunningDocTableEvents();
       SubscibeToSolutionEvents();
 
@@ -112,6 +119,18 @@ namespace Nitra.VisualStudio
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
       }
+    }
+
+    private void PrjItemsEvents_ItemRenamed(EnvDTE.ProjectItem ProjectItem, string OldName)
+    {
+    }
+
+    private void PrjItemsEvents_ItemRemoved(EnvDTE.ProjectItem ProjectItem)
+    {
+    }
+
+    private void PrjItemsEvents_ItemAdded(EnvDTE.ProjectItem ProjectItem)
+    {
     }
 
     protected override void Dispose(bool disposing)
