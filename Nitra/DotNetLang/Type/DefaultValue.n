@@ -5,6 +5,7 @@
     | None      { }
     | Error     { }
     | Overflow  { }
+    | Null      { }
     | Bool      { Value : bool; }
     | String    { Value : string; }
     | Number    { Value : ulong; IsUnsigned : bool; IsLong : bool; }

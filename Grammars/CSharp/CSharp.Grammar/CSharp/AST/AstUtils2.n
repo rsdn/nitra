@@ -28,6 +28,7 @@ namespace DotNet
       | lit is DotNet.Expr.BooleanLiteral => DefaultValue.Bool(lit.Value.ValueOrDefault)
       | lit is DotNet.IntegerLiteral when lit.Value.Value.Overflow => DefaultValue.Overflow()
       | lit is DotNet.IntegerLiteral with x = lit.Value.Value => DefaultValue.Number(x.Value, x.IsUnsigned, x.IsLong)
+      | lit is DotNet.Expr.NullLiteral    => DefaultValue.Null()
       | lit is DotNet.RealLiteral =>
         match (lit.Value.Value)
         {

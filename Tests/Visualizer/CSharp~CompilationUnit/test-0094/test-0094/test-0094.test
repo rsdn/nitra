@@ -1,0 +1,18 @@
+﻿class A { }
+class B : A { }
+class C : A { }
+class D : C { }
+
+class Program
+{
+  static void Main()
+  {
+    A a;
+    B b;
+    C c;
+    D d;
+    Bar(d);
+  }
+
+  static void Bar(C p1, A p2 = null, B p3 = null) { }
+}

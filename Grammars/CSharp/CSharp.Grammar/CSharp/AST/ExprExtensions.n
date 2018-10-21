@@ -151,6 +151,15 @@ namespace DotNet
       }
     }
 
+    public HasDefault(this formalParameterSymbol : FormalParameterSymbol) : bool
+    {
+      match (formalParameterSymbol.Default)
+      {
+        | DefaultValue.Overflow | DefaultValue.Error | DefaultValue.None => false
+        | _ => true
+      }
+    }
+
     public InvocationResolveFunc(this context : DependentPropertyEvalContext, funcExpr : Expr, funcRef : Ref[FunctionalSymbol], argumentTypes : ImmutableArray[TypeSymbol], args : Argument.IAstList) : Ref[DeclarationSymbol]
     {
       if (funcRef == null)
@@ -196,54 +205,62 @@ namespace DotNet
         def argumentsCount = argumentTypes.Length;
         def isApplicableFunction(sym : FunctionalSymbol) : bool
         {
-            unless (sym.IsParametersEvaluated && sym.Parameters.Length >= argumentsCount)
-              return false;
+          def argumentsCount = argumentsCount;
+          unless (sym.IsParametersEvaluated && sym.Parameters.Length >= argumentsCount)
+            return false;
 
-            mutable namedArgumentUsedOutOfPosition;
-            def usedParams = Dictionary();
+          mutable namedArgumentUsedOutOfPosition;
+          def usedParams = Dictionary();
 
-            for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
-            {
-              def arg = args[ai] :> ExprArgument;
-              def (argumentType, parameter, argName) =
-                if (arg.ParameterNameOpt is OptionalName.Some as arg)
-                {
-                  def argName = arg.Name.Text;
-                  def argName = argName;
-                  def p = sym.Parameters.FirstOrDefault(p => p.Name == argName);
-                  when (namedArgumentUsedOutOfPosition == null && p != sym.Parameters[ai])
-                    namedArgumentUsedOutOfPosition = p;
-                  (argumentTypes[ai], p, argName);
-                }
-                else
-                  (argumentTypes[ai], sym.Parameters[ai], null);
-
-              when (parameter == null)
-                return false;
-
-              mutable prevArgName;
-              if (usedParams.TryGetValue(parameter, out prevArgName))
-                if (prevArgName == null)
-                  arg.Error(context, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
-                  //context.Project.CompilerMessages.ReportMessage(CompilerMessageType.Error, arg.Location, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
-                else
-                  arg.Error(context, $"Named argument '$argName' cannot be specified multiple times.", 0);
+          for (mutable ai = 0; ai < argumentsCount; ai++) // ai - argument index
+          {
+            def arg = args[ai] :> ExprArgument;
+            def (argumentType, parameter, argName) =
+              if (arg.ParameterNameOpt is OptionalName.Some as arg)
+              {
+                def argName = arg.Name.Text;
+                def argName = argName;
+                def p = sym.Parameters.FirstOrDefault(p => p.Name == argName);
+                when (namedArgumentUsedOutOfPosition == null && p != sym.Parameters[ai])
+                  namedArgumentUsedOutOfPosition = p;
+                (argumentTypes[ai], p, argName);
+              }
               else
-                usedParams.Add(parameter, argName);
+                (argumentTypes[ai], sym.Parameters[ai], null);
 
-              when (namedArgumentUsedOutOfPosition != null && argName == null)
-                arg.Error(context, $"Named argument '$(namedArgumentUsedOutOfPosition.Name)' is used out-of-position but is followed by an unnamed argument", 0);
-
-              unless (parameter.IsTypeEvaluated)
-                return false;
-              unless (hasImplicitConversions(argumentType, parameter.Type))
-                return false;
-            }
-
-            when (sym.IsParametersEvaluated && sym.Parameters.Length != argumentsCount) // TODO: Сделать поддержку опциональных параметров
+            when (parameter == null)
               return false;
 
-            true;
+            mutable prevArgName;
+            if (usedParams.TryGetValue(parameter, out prevArgName))
+              if (prevArgName == null)
+                arg.Error(context, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
+                //context.Project.CompilerMessages.ReportMessage(CompilerMessageType.Error, arg.Location, $"Named argument '$argName' specifies a parameter for which a positional argument has already been given.", 0);
+              else
+                arg.Error(context, $"Named argument '$argName' cannot be specified multiple times.", 0);
+            else
+              usedParams.Add(parameter, argName);
+
+            when (namedArgumentUsedOutOfPosition != null && argName == null)
+              arg.Error(context, $"Named argument '$(namedArgumentUsedOutOfPosition.Name)' is used out-of-position but is followed by an unnamed argument", 0);
+
+            unless (parameter.IsTypeEvaluated)
+              return false;
+            unless (hasImplicitConversions(argumentType, parameter.Type))
+              return false;
+          }
+
+          when (sym.IsParametersEvaluated && sym.Parameters.Length != argumentsCount) // TODO: Сделать поддержку опциональных параметров
+          {
+            def parameters = sym.Parameters;
+            when (argumentsCount > parameters.Length)
+              return false;
+            for (mutable i = argumentsCount; i < parameters.Length; i++)
+              unless (parameters[i].HasDefault())
+                return false;
+          }
+
+          true;
         }
 
         def candidats = funcRef.Symbols.FilterToArray(isApplicableFunction);
