@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 
 using Microsoft.VisualStudio;
@@ -227,6 +227,11 @@ namespace Nitra.VisualStudio
     {
       // Do Nothing.
       //
+
+      if (propid == (int)__VSHPROPID4.VSHPROPID_BuildAction)
+      {
+      }
+
       return VSConstants.S_OK;
     }
 
@@ -330,13 +335,13 @@ namespace Nitra.VisualStudio
     /// <returns>Item Id of the concerned node</returns>
     static uint GetItemId(object variantValue)
     {
-      if (variantValue == null) return VSConstants.VSITEMID_NIL;
+      if (variantValue == null)   return VSConstants.VSITEMID_NIL;
 
-      if (variantValue is int) return (uint)(int)variantValue;
-      if (variantValue is uint) return (uint)variantValue;
-      if (variantValue is short) return (uint)(short)variantValue;
+      if (variantValue is int)    return (uint)(int)variantValue;
+      if (variantValue is uint)   return (uint)variantValue;
+      if (variantValue is short)  return (uint)(short)variantValue;
       if (variantValue is ushort) return (ushort)variantValue;
-      if (variantValue is long) return (uint)(long)variantValue;
+      if (variantValue is long)   return (uint)(long)variantValue;
 
       return VSConstants.VSITEMID_NIL;
     }

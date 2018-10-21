@@ -64,6 +64,7 @@ namespace Nitra.VisualStudio
     Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
     List<EnvDTE.Project>                        _projects = new List<EnvDTE.Project>();
     List<ServerModel>                           _servers = new List<ServerModel>();
+    EnvDTE.ProjectItemsEvents                   _prjItemsEvents;
     StringManager                               _stringManager = new StringManager();
     uint                                        _objectManagerCookie;
     Library                                     _library;
@@ -101,11 +102,11 @@ namespace Nitra.VisualStudio
       Instance = this;
 
       EnvDTE80.DTE2 dte = (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
-
-      var prjItemsEvents = ((EnvDTE80.Events2)dte.Events).ProjectItemsEvents;
-      prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
-      prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
-      prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
+      Debug.Assert(false);
+      _prjItemsEvents = ((EnvDTE80.Events2)dte.Events).ProjectItemsEvents;
+      _prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
+      _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
+      _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
 
       _runningDocTableEventse = new RunningDocTableEvents();
       SubscibeToSolutionEvents();
@@ -121,16 +122,17 @@ namespace Nitra.VisualStudio
       }
     }
 
-    private void PrjItemsEvents_ItemRenamed(EnvDTE.ProjectItem ProjectItem, string OldName)
+    private void PrjItemsEvents_ItemRenamed(EnvDTE.ProjectItem projectItem, string oldName)
     {
     }
 
-    private void PrjItemsEvents_ItemRemoved(EnvDTE.ProjectItem ProjectItem)
+    private void PrjItemsEvents_ItemRemoved(EnvDTE.ProjectItem projectItem)
     {
     }
 
-    private void PrjItemsEvents_ItemAdded(EnvDTE.ProjectItem ProjectItem)
+    private void PrjItemsEvents_ItemAdded(EnvDTE.ProjectItem projectItem)
     {
+      AddFile(projectItem, projectItem.Properties.Item("FullPath").Value);
     }
 
     protected override void Dispose(bool disposing)
@@ -502,11 +504,8 @@ namespace Nitra.VisualStudio
 
     void FileAdded(object sender, HierarchyItemEventArgs e)
     {
-      var path = e.FileName;
-      var ext  = Path.GetExtension(path);
-      var id   = new FileId(_stringManager.GetId(path));
-
-      string action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
+      var action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
+      var path   = e.FileName;
 
       if (action == "Compile" || action == "Nitra" || action == null)
       {
@@ -516,21 +515,8 @@ namespace Nitra.VisualStudio
         var projectItem = obj as EnvDTE.ProjectItem;
         if (ErrorHelper.Succeeded(hr2) && projectItem != null)
         {
-          var project     = projectItem.ContainingProject;
-          var projectPath = project.FullName;
-          var projectId   = new ProjectId(_stringManager.GetId(projectPath));
-
-          if (action == null && project.UniqueName != "<MiscFiles>")
-          {
-            Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}' projectId={projectId})");
-            return;
-          }
-
-          foreach (var server in _servers)
-            if (server.IsSupportedExtension(ext))
-              server.FileAdded(projectId, path, id, new FileVersion());
-
-          Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}' projectId={projectId})");
+          AddFile(projectItem, path);
+          Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
           return;
         }
       }
@@ -538,13 +524,30 @@ namespace Nitra.VisualStudio
       Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
     }
 
+    private void AddFile(EnvDTE.ProjectItem projectItem, string path)
+    {
+      var ext = Path.GetExtension(path);
+      var id = new FileId(_stringManager.GetId(path));
+      var project = projectItem.ContainingProject;
+      var projectPath = project.FullName;
+      var projectId = new ProjectId(_stringManager.GetId(projectPath));
+
+      if (project.UniqueName != "<MiscFiles>")
+        return;
+
+      foreach (var server in _servers)
+        if (server.IsSupportedExtension(ext))
+          server.FileAdded(projectId, path, id, new FileVersion());
+
+      return;
+    }
+
     void FileDeleted(object sender, HierarchyItemEventArgs e)
     {
-      var path = e.FileName;
-      var ext  = Path.GetExtension(path);
-      var id   = new FileId(_stringManager.GetId(path));
-
-      string action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
+      var path      = e.FileName;
+      var ext       = Path.GetExtension(path);
+      var id        = new FileId(_stringManager.GetId(path));
+      var action    = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
       var project   = e.Hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       var projectId = GetProjectId(project);
 
