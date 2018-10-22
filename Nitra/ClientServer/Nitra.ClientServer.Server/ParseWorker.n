@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Imperative;
 using Nemerle.Text;
@@ -187,7 +187,7 @@ namespace Nitra.ClientServer.Server
 
         when (isCompleteWord)
         {
-          // word complate
+          // word complete
           foreach (file when file.FileId == completeWordFileIdOpt in files)
           {
             CompleteWord(solutionId, completeWordPosOpt, file, parseResultOpt);
@@ -405,7 +405,7 @@ namespace Nitra.ClientServer.Server
               def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
               when (!isNameMatch)
                 return false;
-              def isTypeMatch = symbol is INamespace || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
+              def isTypeMatch = (qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
               isTypeMatch
             }
             def br = scope.Bind(matcher);
