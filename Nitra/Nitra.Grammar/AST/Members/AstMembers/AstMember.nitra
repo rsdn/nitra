@@ -34,8 +34,7 @@ namespace Nitra.Ast.AstMembers
       MakeHint = AstUtils.StructuralPropertyMakeHint(symbolCache, this);
     }
 
-  stage 1:
-    out TypeRef : Ref[TypeSymbol] = AstUtils.ResolveStructuralPropertyType(TypeName.Ref, context);
+    TypeRef = AstUtils.ResolveStructuralPropertyType(TypeName.Ref, context);
 
     TypeName.Scope = Scope;
     Symbol.Type    = TypeRef.Symbol;

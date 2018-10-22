@@ -63,7 +63,7 @@ namespace DotNet
     }
   }
 
-  module AstUtils2
+  public module AstUtils2
   {
     public GetMemberReturnType(this member : DeclarationSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {

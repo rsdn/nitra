@@ -6,7 +6,7 @@ using Nitra.Internal;
 
 namespace DotNet
 {
-  declaration FormalParameter : CustomAttributeHostDeclaration
+  declaration FormalParameter : TypedDeclaration, CustomAttributeHostDeclaration
   {
     symbol
     {
@@ -14,17 +14,14 @@ namespace DotNet
       Kind      = "parameter";
       SpanClass = DotNetLang.ParameterSpanClass;
 
-      Scope     = Type.Scope;
-
-      in Type     : TypeSymbol;
       in Modifier : ParameterModifier;
       in Index    : uint;
       in Default  : DefaultValue;
     }
 
     inout Index      : uint;
-    in    TypeRef    : Ref[TypeSymbol];
     inout Parameters : list[FormalParameterSymbol];
+  stage 1:
     inout Types      : list[TypeSymbol];
 
     IndexOut             = IndexIn + 1u;

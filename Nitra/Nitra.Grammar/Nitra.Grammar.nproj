@@ -273,9 +273,6 @@
     <Compile Include="AST\SyntaxModuleCollector.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="AST\TypedDeclaration.nitra">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="AST\WellKnownSymbols.n">
       <SubType>Code</SubType>
     </Compile>

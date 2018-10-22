@@ -1,0 +1,18 @@
+﻿using Nitra.Declarations;
+
+namespace DotNet
+{
+  abstract declaration TypedDeclaration : TypedAst
+  {
+    symbol
+    {
+      Kind  = "typed declaration";
+      Scope = Type.Scope;
+
+    stage 1:
+      in Type : TypeSymbol;
+    }
+
+    Symbol.Type = TypeRef.Symbol;
+  }
+}
