@@ -56,12 +56,6 @@ deployment Execute_Deploy(
     
 ) script @"\\tis-dfs.avp.ru\Autotests\KIS\CSharp_Deployer\executeDeploy.ps1"
 {
-    /*external
-    {
-        string ProductBinariesToken;
-        string AutotestsBinariesToken;
-    }*/
-
     DesiredAutotestsPath = LocalTestBinariesFolder;
     
     expected 42;
