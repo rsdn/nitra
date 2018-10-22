@@ -24,7 +24,7 @@ namespace Tdl
     | Reference
       {
         PatameterName.Scope = Scope;
-        Type = context.CreateFreeTypeVar();
+        Type = context.GetVoidType();
 
         PatameterName : Declarations.Reference;
       }
