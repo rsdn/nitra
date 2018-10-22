@@ -1,4 +1,4 @@
-deployment Execute_Deploy(
+﻿deployment Execute_Deploy(
     string DeploymentSequenceName,
     string AutotestBinariesExcludedFilesMasks, // из продукта 
     string LocalTestBinariesFolder, // не задан!

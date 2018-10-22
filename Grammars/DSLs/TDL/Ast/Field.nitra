@@ -6,17 +6,13 @@ using Nitra.Declarations;
 
 namespace Tdl
 {
-  declaration Field : BindableAst
+  declaration Field : BindableAst, TypedDeclaration
   {
     symbol
     {
       Kind      = "field";
       SpanClass = TdlLang.FieldSpanClass;
-    stage 1:
-      in Type : TypeSymbol;
     }
-  stage 1:
-    out TypeRef : Ref[TypeSymbol];
 
     Type.Scope  = Scope;
     TypeRef     = Type.Ref.Resolve();

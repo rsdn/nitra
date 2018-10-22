@@ -239,7 +239,7 @@ namespace Tdl
         builder.ToImmutable()
     }
 
-    public MakeExcludedParams(baseDeploymentRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[FormalParameterSymbol]
+    public MakeExcludedParams(baseDeploymentRefs : ImmutableArray[Ref[TypedDeclarationSymbol]]) : ImmutableArray[FormalParameterSymbol]
     {
       def builder = ImmutableArray.CreateBuilder(baseDeploymentRefs.Length);
       foreach (r in baseDeploymentRefs)

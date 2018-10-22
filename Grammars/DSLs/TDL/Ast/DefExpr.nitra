@@ -8,15 +8,23 @@ namespace Tdl
 {
   abstract ast DefExpr : BindableAst
   {
-    | String                    { Value : CSharp.StringLiteral; }
-    | True                      { }
-    | False                     { }
-    | RealLiteral               { }
-    | DecimalIntegerLiteral     { }
-    | HexadecimalIntegerLiteral { }
+  stage 2:
+    in  ExpectedType : TypeSymbol;
+    out Type         : TypeSymbol;
+
+    unless (Type.IsSubtypeOf(ExpectedType))
+      Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
+
+    | String                    { Type = context.GetStringType(); Value : CSharp.StringLiteral; }
+    | True                      { Type = context.GetBooleanType(); }
+    | False                     { Type = context.GetBooleanType(); }
+    | RealLiteral               { Type = context.GetDoubleType(); }
+    | DecimalIntegerLiteral     { Type = context.GetInt32Type(); }
+    | HexadecimalIntegerLiteral { Type = context.GetDoubleType(); }
     | Reference
       {
         PatameterName.Scope = Scope;
+        Type = context.CreateFreeTypeVar();
 
         PatameterName : Declarations.Reference;
       }

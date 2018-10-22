@@ -5,7 +5,7 @@
   string ConfigFilesFamily;
   string ProductType;
   string TestAppPackName;
-  string DisableAddingTrustedApplications;
+  bool   DisableAddingTrustedApplications;
 }
 
 product KFA : Kavkis
