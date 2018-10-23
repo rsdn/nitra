@@ -25,6 +25,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft;
+using VSLangProj;
 
 namespace Nitra.VisualStudio
 {
@@ -62,9 +66,9 @@ namespace Nitra.VisualStudio
 
     RunningDocTableEvents                       _runningDocTableEventse;
     Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
-    List<EnvDTE.Project>                        _projects = new List<EnvDTE.Project>();
+    List<Project>                        _projects = new List<Project>();
     List<ServerModel>                           _servers = new List<ServerModel>();
-    EnvDTE.ProjectItemsEvents                   _prjItemsEvents;
+    ProjectItemsEvents _prjItemsEvents;
     StringManager                               _stringManager = new StringManager();
     uint                                        _objectManagerCookie;
     Library                                     _library;
@@ -97,13 +101,15 @@ namespace Nitra.VisualStudio
     /// </summary>
     protected override void Initialize()
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       base.Initialize();
       Debug.Assert(Instance == null);
       Instance = this;
 
-      EnvDTE80.DTE2 dte = (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
+      DTE2 dte = (DTE2)GetService(typeof(DTE));
+      Assumes.Present(dte);
       //Debug.Assert(false);
-      _prjItemsEvents = ((EnvDTE80.Events2)dte.Events).ProjectItemsEvents;
+      _prjItemsEvents = ((Events2)dte.Events).ProjectItemsEvents;
       _prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
       _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
       _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
@@ -122,15 +128,15 @@ namespace Nitra.VisualStudio
       }
     }
 
-    private void PrjItemsEvents_ItemRenamed(EnvDTE.ProjectItem projectItem, string oldName)
+    private void PrjItemsEvents_ItemRenamed(ProjectItem projectItem, string oldName)
     {
     }
 
-    private void PrjItemsEvents_ItemRemoved(EnvDTE.ProjectItem projectItem)
+    private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
     {
     }
 
-    private void PrjItemsEvents_ItemAdded(EnvDTE.ProjectItem projectItem)
+    private void PrjItemsEvents_ItemAdded(ProjectItem projectItem)
     {
       AddFile(projectItem, projectItem.Properties.Item("FullPath").Value);
     }
@@ -163,7 +169,7 @@ namespace Nitra.VisualStudio
     void QueryUnloadProject(object sender, CancelHierarchyEventArgs e)
     {
       var hierarchy = e.Hierarchy;
-      var project = hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       Debug.WriteLine($"tr: QueryUnloadProject(FullName='{project.FullName}')");
     }
 
@@ -175,7 +181,7 @@ namespace Nitra.VisualStudio
     void QueryCloseProject(object sender, QueryCloseProjectEventArgs e)
     {
       var hierarchy = e.Hierarchy;
-      var project = hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       Debug.WriteLine($"tr: QueryCloseProject(IsRemoving='{e.IsRemoving}', Cancel='{e.Cancel}', FullName='{project?.FullName}')");
     }
 
@@ -280,7 +286,7 @@ namespace Nitra.VisualStudio
     void AfterRenameProject(object sender, HierarchyEventArgs e)
     {
       var hierarchy = e.Hierarchy;
-      var project = hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       Debug.WriteLine($"tr: AfterRenameProject(Hierarchy='{hierarchy}', FullName='{project.FullName}')");
     }
 
@@ -317,17 +323,17 @@ namespace Nitra.VisualStudio
       _backgroundLoading = SolutionLoadingSate.Loaded;
     }
 
-    void ScanReferences(EnvDTE.Project project)
+    void ScanReferences(Project project)
     {
       Debug.WriteLine("tr: ScanReferences(started)");
       Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
 
-      var vsproject = project.Object as VSLangProj.VSProject;
+      var vsproject = project.Object as VSProject;
       if (vsproject != null)
       {
         var projectId = GetProjectId(project);
 
-        foreach (VSLangProj.Reference reference in vsproject.References)
+        foreach (Reference reference in vsproject.References)
         {
           var path = reference.Path;
 
@@ -364,7 +370,7 @@ namespace Nitra.VisualStudio
       Debug.WriteLine("tr: ScanReferences(finished)");
     }
 
-    ProjectId GetProjectId(EnvDTE.Project project)
+    ProjectId GetProjectId(Project project)
     {
       return new ProjectId(_stringManager.GetId(project.FullName));
     }
@@ -383,7 +389,7 @@ namespace Nitra.VisualStudio
     void AfterOpenProject(object sender, OpenProjectEventArgs e)
     {
       var hierarchy = e.Hierarchy;
-      var project = hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
 
       if (project == null)
         return; // not supported prfoject type
@@ -486,7 +492,7 @@ namespace Nitra.VisualStudio
         _listenersMap.Remove(hierarchy);
       }
 
-      var project   = hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project   = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
 
       if (project == null)
         return;
@@ -514,7 +520,7 @@ namespace Nitra.VisualStudio
         object obj;
         var hr2 = e.Hierarchy.GetProperty(e.ItemId, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
 
-        if (ErrorHelper.Succeeded(hr2) && obj is EnvDTE.ProjectItem projectItem && projectItem != null)
+        if (ErrorHelper.Succeeded(hr2) && obj is ProjectItem projectItem && projectItem != null)
         {
           if (action == null && projectItem.ContainingProject.UniqueName != "<MiscFiles>")
           {
@@ -530,7 +536,7 @@ namespace Nitra.VisualStudio
       Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
     }
 
-    private void AddFile(EnvDTE.ProjectItem projectItem, string path)
+    private void AddFile(ProjectItem projectItem, string path)
     {
       var ext = Path.GetExtension(path);
       var id = new FileId(_stringManager.GetId(path));
@@ -551,7 +557,7 @@ namespace Nitra.VisualStudio
       var ext       = Path.GetExtension(path);
       var id        = new FileId(_stringManager.GetId(path));
       var action    = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
-      var project   = e.Hierarchy.GetProp<EnvDTE.Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project   = e.Hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       var projectId = GetProjectId(project);
 
       if (action == "Compile" || action == "Nitra" || (action == null && string.IsNullOrEmpty(project.FileName)))
@@ -562,7 +568,7 @@ namespace Nitra.VisualStudio
       Debug.WriteLine($"tr: FileAdded(FileName='{path}' id={id})");
     }
 
-    void AfterOpeningChildren(object sender, Microsoft.VisualStudio.Shell.Events.HierarchyEventArgs e)
+    void AfterOpeningChildren(object sender, HierarchyEventArgs e)
     {
       Debug.WriteLine($"tr: AfterOpeningChildren(Hierarchy='{e.Hierarchy}')");
     }
@@ -582,7 +588,7 @@ namespace Nitra.VisualStudio
       Debug.WriteLine($"tr: AfterLoadProject(RealHierarchy='{e.RealHierarchy}', StubHierarchy='{e.StubHierarchy}')");
     }
 
-    void AfterClosingChildren(object sender, Microsoft.VisualStudio.Shell.Events.HierarchyEventArgs e)
+    void AfterClosingChildren(object sender, HierarchyEventArgs e)
     {
       Debug.WriteLine($"tr: AfterClosingChildren(Hierarchy='{e.Hierarchy}')");
     }
@@ -596,7 +602,7 @@ namespace Nitra.VisualStudio
       _currentSolutionId = InvalidSolutionId;
     }
 
-    void AfterChangeProjectParent(object sender, Microsoft.VisualStudio.Shell.Events.HierarchyEventArgs e)
+    void AfterChangeProjectParent(object sender, HierarchyEventArgs e)
     {
       Debug.WriteLine($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}')");
     }
