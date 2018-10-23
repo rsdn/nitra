@@ -346,10 +346,10 @@ namespace Nitra.ClientServer.Server
           continue;
 
         def pattern = source.Text.Substring(keyword.StartPos, pos - keyword.StartPos);
-        replacementSpan = NSpan(keyword.StartPos, pos);
 
         when (pattern.Length == 0 || StringPatternMatching.MatchPattern(literal, pattern))
         {
+          replacementSpan = NSpan(keyword.StartPos, pos);
           mutable desc;
           if (matchedKeyWordsMap.TryGetValue(literal, out desc))
             matchedKeyWordsMap[literal] = desc + Environment.NewLine + keyword.Keyword.Owner.Description;
