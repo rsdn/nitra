@@ -102,7 +102,7 @@ namespace Nitra.VisualStudio
       Instance = this;
 
       EnvDTE80.DTE2 dte = (EnvDTE80.DTE2)GetService(typeof(EnvDTE.DTE));
-      Debug.Assert(false);
+      //Debug.Assert(false);
       _prjItemsEvents = ((EnvDTE80.Events2)dte.Events).ProjectItemsEvents;
       _prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
       _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;

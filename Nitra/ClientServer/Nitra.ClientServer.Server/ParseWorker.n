@@ -334,34 +334,21 @@ namespace Nitra.ClientServer.Server
         }
       }
 
-      when (reference == null)
-      {
-        def ver = FileVersion(fileData.FileVersion);
-        def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, NSpan(0, 0), ImmutableArray.Empty);
-        SendAsyncResponse(msg);
-        return;
-      }
-
-      // Вычисляем префикс комплита (если есть). Он будет использоваться для фильтрации списка и будет заменен выбранным словом
-      def startPos        = reference.Span.StartPos;
-      def span            = Nitra.NSpan(reference.Span.StartPos, pos);
-      def pattern         = source.Text.Substring(span.StartPos, span.Length);
-      def pattern         = pattern;
-      def isPatternEmpty  = pattern.Length == 0;
-      def replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
-
-      Log($"    replacementSpan=$replacementSpan pattern='$pattern'");
+      mutable replacementSpan = NSpan(pos);
 
       def matchedKeyWordsMap = Hashtable();
 
       foreach (keyword in parseResult.Keywords)
       {
-        when (keyword.StartPos != startPos)
+        def literal = keyword.Keyword.Str;
+        
+        when (pos < keyword.StartPos && pos > keyword.StartPos + literal.Length)
           continue;
 
-        def literal = keyword.Keyword.Str;
+        def pattern = source.Text.Substring(keyword.StartPos, pos - keyword.StartPos);
+        replacementSpan = NSpan(keyword.StartPos, pos);
 
-        when (isPatternEmpty || StringPatternMatching.MatchPattern(literal, pattern))
+        when (pattern.Length == 0 || StringPatternMatching.MatchPattern(literal, pattern))
         {
           mutable desc;
           if (matchedKeyWordsMap.TryGetValue(literal, out desc))
@@ -370,59 +357,71 @@ namespace Nitra.ClientServer.Server
             matchedKeyWordsMap[literal] = keyword.Keyword.Owner.Description;
         }
       }
-
+      
       def symbolsSet = HashSet.[DeclarationSymbol]();
-
-      def filter(_ : Reference, nodes : array[IAst]) : bool
+      
+      when (reference != null)
       {
-        foreach (node in nodes)
+        // Вычисляем префикс комплита (если есть). Он будет использоваться для фильтрации списка и будет заменен выбранным словом
+        def startPos        = reference.Span.StartPos;
+        def span            = Nitra.NSpan(reference.Span.StartPos, pos);
+        def pattern         = source.Text.Substring(span.StartPos, span.Length);
+        def pattern         = pattern;
+        def isPatternEmpty  = pattern.Length == 0;
+        replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
+
+        Log($"    replacementSpan=$replacementSpan pattern='$pattern'");
+
+        def filter(_ : Reference, nodes : array[IAst]) : bool
         {
-          | qr is IQualifiedReference when !qr.Span.IsEmpty => return true;
-          | _ is IQualifiedReference => ()
-          | _ => return false;
+          foreach (node in nodes)
+          {
+            | qr is IQualifiedReference when !qr.Span.IsEmpty => return true;
+            | _ is IQualifiedReference => ()
+            | _ => return false;
+          }
+          false
         }
-        false
-      }
-      def qualified = visitor.Result.Where(filter).ToList();
-      def candidats = if (qualified.Count > 0) qualified else visitor.Result;
+        def qualified = visitor.Result.Where(filter).ToList();
+        def candidats = if (qualified.Count > 0) qualified else visitor.Result;
 
-      // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
-      foreach ((ast, _) in candidats)
-      {
-        match (ast)
+        // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
+        foreach ((ast, _) in candidats)
         {
-          | Reference(IsScopeEvaluated=true, IsRefEvaluated=true, Scope=scope, Ref=r) when ast.Span.IntersectsWith(span) =>
-            mutable r2 = r : IRef;
-            while (r2.ResolvedTo != null)
-              r2 = r2.ResolvedTo;
+          match (ast)
+          {
+            | Reference(IsScopeEvaluated=true, IsRefEvaluated=true, Scope=scope, Ref=r) when ast.Span.IntersectsWith(span) =>
+              mutable r2 = r : IRef;
+              while (r2.ResolvedTo != null)
+                r2 = r2.ResolvedTo;
 
-            def symbolTypeOpt = if (r2 == null) null else r2.GetType().GetGenericArguments()[0];
+              def symbolTypeOpt = if (r2 == null) null else r2.GetType().GetGenericArguments()[0];
 
-            def matcher(symbol : DeclarationSymbol) : bool
-            {
-              def symbolTypeOpt = symbolTypeOpt;
-              def pattern = pattern;
-              def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
-              when (!isNameMatch)
-                return false;
-              def isTypeMatch = (qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
-              isTypeMatch
-            }
-            def br = scope.Bind(matcher);
-
-            foreach (symbol : DeclarationSymbol in br.GetSymbols())
-            {
-              def name = symbol.Name;
-              when (StringPatternMatching.MatchPattern(name, pattern))
+              def matcher(symbol : DeclarationSymbol) : bool
               {
-                _ = symbolsSet.Add(symbol);
+                def symbolTypeOpt = symbolTypeOpt;
+                def pattern = pattern;
+                def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
+                when (!isNameMatch)
+                  return false;
+                def isTypeMatch = (qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
+                isTypeMatch
               }
-            }
+              def br = scope.Bind(matcher);
 
-          | _ => ()
+              foreach (symbol : DeclarationSymbol in br.GetSymbols())
+              {
+                def name = symbol.Name;
+                when (StringPatternMatching.MatchPattern(name, pattern))
+                {
+                  _ = symbolsSet.Add(symbol);
+                }
+              }
+
+            | _ => ()
+          }
         }
       }
-
       def builder = ImmutableArray.CreateBuilder(symbolsSet.Count + matchedKeyWordsMap.Count);
       foreach (symbol in symbolsSet)
       {
@@ -445,7 +444,6 @@ namespace Nitra.ClientServer.Server
       def ver = FileVersion(fileData.FileVersion);
       def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
       SendAsyncResponse(msg);
-
     }
 
     ConvertParseTreeReflection(node : R.ReflectionStruct, objectMap : Hashtable[R.ReflectionStruct, ParseTreeReflectionStruct]) : ParseTreeReflectionStruct
