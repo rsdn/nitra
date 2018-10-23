@@ -113,26 +113,35 @@ namespace Nitra.VisualStudio.Highlighting
 
       for (int i = 0; i < _spanInfos.Length; i++)
       {
-        var snapshot  = _snapshots[i];
+        var oldSnapshot  = _snapshots[i];
         var spanInfos = _spanInfos[i];
-        var translatesSnapshot = processedSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
-        var processedSpanInfo = new SpanInfo(new NSpan(translatesSnapshot.Span.Start, translatesSnapshot.Span.End), -1);
+        var translaterSpan = processedSpan.TranslateTo(oldSnapshot, SpanTrackingMode.EdgeExclusive);
+        NSpan translaterNSpan = new NSpan(translaterSpan.Span.Start, translaterSpan.Span.End);
+        var processedSpanInfo = new SpanInfo(translaterNSpan, -1);
         var index = spanInfos.BinarySearch(processedSpanInfo, SpanInfo.Comparer);
         if (index < 0)
+        {
           index = ~index;
-        var oldSpan = default(NSpan);
+          if (index > 0)
+            index--;
+        }
+        var prevSpan = default(NSpan);
         for (int k = index; k < spanInfos.Length; k++)
         {
           var spanInfo = spanInfos[k];
-          var span     = spanInfo.Span;
-          if (oldSpan == span)
-            continue;
-          oldSpan = span;
-          var newSpan  = new SnapshotSpan(snapshot, new Span(span.StartPos, span.Length))
-                              .TranslateTo(currentSnapshot, SpanTrackingMode.EdgeExclusive);
+          var nSpan     = spanInfo.Span;
 
-          if (!newSpan.IntersectsWith(processedSpan))
+          if (nSpan.EndPos < translaterNSpan.StartPos)
+            continue;
+          if (nSpan.StartPos > translaterNSpan.EndPos)
             break;
+
+          if (prevSpan == nSpan)
+            continue;
+          prevSpan = nSpan;
+
+          var newSpan = new SnapshotSpan(oldSnapshot, new Span(nSpan.StartPos, nSpan.Length))
+                        .TranslateTo(currentSnapshot, SpanTrackingMode.EdgeExclusive);
 
           if (ClassificationMap.TryGetValue(spanInfo.SpanClassId, out var classificationType))
             result.Add(new ClassificationSpan(newSpan, classificationType));
