@@ -109,6 +109,7 @@ namespace Nitra.VisualStudio
       DTE2 dte = (DTE2)GetService(typeof(DTE));
       Assumes.Present(dte);
       //Debug.Assert(false);
+      // We must cache ProjectItemsEvents in a field to prevent free it by GC. Don't in-line the _prjItemsEvents!
       _prjItemsEvents = ((Events2)dte.Events).ProjectItemsEvents;
       _prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
       _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
