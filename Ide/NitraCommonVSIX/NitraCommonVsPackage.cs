@@ -30,6 +30,8 @@ using EnvDTE80;
 using Microsoft;
 using VSLangProj;
 
+using SolutionEvents = Microsoft.VisualStudio.Shell.Events.SolutionEvents;
+
 namespace Nitra.VisualStudio
 {
   /// <summary>
