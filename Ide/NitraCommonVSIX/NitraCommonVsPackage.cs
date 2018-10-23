@@ -224,7 +224,7 @@ namespace Nitra.VisualStudio
     private void InitServers()
     {
       if (_servers.Count > 0)
-        return; // allredy initialised
+        return; // already initialized
 
       if (NitraCommonPackage.Configs.Count == 0)
       {
@@ -389,32 +389,34 @@ namespace Nitra.VisualStudio
 
     void AfterOpenProject(object sender, OpenProjectEventArgs e)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
       var hierarchy = e.Hierarchy;
       var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
 
       if (project == null)
-        return; // not supported prfoject type
+        return; // not supported project type
 
       if (project.Name == VsProjectTypes.NuGetSolutionSettingsFolder)
-        return; // not supported prfoject type
+        return; // not supported project type
 
       var isMiscFiles = false;
 
       switch (project.Kind)
       {
         case VsProjectTypes.VsProjectItemKindSolutionItem:
-          Debug.Assert(false, "Unexopected project kind: VsProjectItemKindSolutionItem");
+          Debug.Assert(false, "Unexpected project kind: VsProjectItemKindSolutionItem");
           break;
         case VsProjectTypes.VsProjectItemKindPhysicalFolder:
         case VsProjectTypes.VsProjectItemKindSolutionFolder:
         case VsProjectTypes.UnloadedProjectTypeGuid:
-          return; // not supported prfoject kinds
+          return; // not supported project kinds
         case VsProjectTypes.VsProjectKindMisc:
           isMiscFiles = true;
           break;
       }
       if (Constants.SolutionFolderGuid == new Guid(project.Kind))
-        return; // not supported prfoject kind
+        return; // not supported project kind
 
       var projectPath = project.FullName;
       var projectId = new ProjectId(_stringManager.GetId(projectPath));
@@ -443,7 +445,7 @@ namespace Nitra.VisualStudio
 
       _listenersMap.Add(hierarchy, listener);
 
-      // We need apdate all references when a project adding in exist solution
+      // We need update all references when a project adding in exist solution
       if (e.IsAdded)
       {
       }
@@ -655,32 +657,32 @@ namespace Nitra.VisualStudio
 
     void SubscibeToSolutionEvents()
     {
-      SolutionEvents.OnAfterAsynchOpenProject += AfterAsynchOpenProject;
-      SolutionEvents.OnAfterBackgroundSolutionLoadComplete += AfterBackgroundSolutionLoadComplete;
-      SolutionEvents.OnAfterChangeProjectParent += AfterChangeProjectParent;
-      SolutionEvents.OnAfterCloseSolution += AfterCloseSolution;
-      SolutionEvents.OnAfterClosingChildren += AfterClosingChildren;
-      SolutionEvents.OnAfterLoadProject += AfterLoadProject;
-      SolutionEvents.OnAfterLoadProjectBatch += AfterLoadProjectBatch;
-      SolutionEvents.OnAfterMergeSolution += SolutionEvents_OnAfterMergeSolution;
-      SolutionEvents.OnAfterOpeningChildren += AfterOpeningChildren;
-      SolutionEvents.OnAfterOpenProject += AfterOpenProject;
-      SolutionEvents.OnAfterOpenSolution += AfterOpenSolution;
-      SolutionEvents.OnAfterRenameProject += AfterRenameProject;
-      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins += BeforeBackgroundSolutionLoadBegins;
-      SolutionEvents.OnBeforeCloseProject += SolutionEvents_OnBeforeCloseProject;
-      SolutionEvents.OnBeforeCloseSolution += BeforeCloseSolution;
-      SolutionEvents.OnBeforeClosingChildren += BeforeClosingChildren;
-      SolutionEvents.OnBeforeLoadProjectBatch += BeforeLoadProjectBatch;
-      SolutionEvents.OnBeforeOpeningChildren += BeforeOpeningChildren;
-      SolutionEvents.OnBeforeOpenProject += BeforeOpenProject;
-      SolutionEvents.OnBeforeOpenSolution += BeforeOpenSolution;
-      SolutionEvents.OnBeforeUnloadProject += BeforeUnloadProject;
-      SolutionEvents.OnQueryBackgroundLoadProjectBatch += QueryBackgroundLoadProjectBatch;
-      SolutionEvents.OnQueryChangeProjectParent += QueryChangeProjectParent;
-      SolutionEvents.OnQueryCloseProject += QueryCloseProject;
-      SolutionEvents.OnQueryCloseSolution += SolutionEvents_OnQueryCloseSolution;
-      SolutionEvents.OnQueryUnloadProject += QueryUnloadProject;
+      SolutionEvents.OnAfterAsynchOpenProject               += AfterAsynchOpenProject;
+      SolutionEvents.OnAfterBackgroundSolutionLoadComplete  += AfterBackgroundSolutionLoadComplete;
+      SolutionEvents.OnAfterChangeProjectParent             += AfterChangeProjectParent;
+      SolutionEvents.OnAfterCloseSolution                   += AfterCloseSolution;
+      SolutionEvents.OnAfterClosingChildren                 += AfterClosingChildren;
+      SolutionEvents.OnAfterLoadProject                     += AfterLoadProject;
+      SolutionEvents.OnAfterLoadProjectBatch                += AfterLoadProjectBatch;
+      SolutionEvents.OnAfterMergeSolution                   += SolutionEvents_OnAfterMergeSolution;
+      SolutionEvents.OnAfterOpeningChildren                 += AfterOpeningChildren;
+      SolutionEvents.OnAfterOpenProject                     += AfterOpenProject;
+      SolutionEvents.OnAfterOpenSolution                    += AfterOpenSolution;
+      SolutionEvents.OnAfterRenameProject                   += AfterRenameProject;
+      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins   += BeforeBackgroundSolutionLoadBegins;
+      SolutionEvents.OnBeforeCloseProject                   += SolutionEvents_OnBeforeCloseProject;
+      SolutionEvents.OnBeforeCloseSolution                  += BeforeCloseSolution;
+      SolutionEvents.OnBeforeClosingChildren                += BeforeClosingChildren;
+      SolutionEvents.OnBeforeLoadProjectBatch               += BeforeLoadProjectBatch;
+      SolutionEvents.OnBeforeOpeningChildren                += BeforeOpeningChildren;
+      SolutionEvents.OnBeforeOpenProject                    += BeforeOpenProject;
+      SolutionEvents.OnBeforeOpenSolution                   += BeforeOpenSolution;
+      SolutionEvents.OnBeforeUnloadProject                  += BeforeUnloadProject;
+      SolutionEvents.OnQueryBackgroundLoadProjectBatch      += QueryBackgroundLoadProjectBatch;
+      SolutionEvents.OnQueryChangeProjectParent             += QueryChangeProjectParent;
+      SolutionEvents.OnQueryCloseProject                    += QueryCloseProject;
+      SolutionEvents.OnQueryCloseSolution                   += SolutionEvents_OnQueryCloseSolution;
+      SolutionEvents.OnQueryUnloadProject                   += QueryUnloadProject;
 
       _runningDocTableEventse.DocumentWindowOnScreenChanged += DocumentWindowOnScreenChanged;
       _runningDocTableEventse.DocumentWindowDestroy         += DocumentWindowDestroy;
@@ -688,32 +690,32 @@ namespace Nitra.VisualStudio
 
     void UnsubscibeToSolutionEvents()
     {
-      SolutionEvents.OnAfterAsynchOpenProject -= AfterAsynchOpenProject;
+      SolutionEvents.OnAfterAsynchOpenProject              -= AfterAsynchOpenProject;
       SolutionEvents.OnAfterBackgroundSolutionLoadComplete -= AfterBackgroundSolutionLoadComplete;
-      SolutionEvents.OnAfterChangeProjectParent -= AfterChangeProjectParent;
-      SolutionEvents.OnAfterCloseSolution -= AfterCloseSolution;
-      SolutionEvents.OnAfterClosingChildren -= AfterClosingChildren;
-      SolutionEvents.OnAfterLoadProject -= AfterLoadProject;
-      SolutionEvents.OnAfterLoadProjectBatch -= AfterLoadProjectBatch;
-      SolutionEvents.OnAfterMergeSolution -= SolutionEvents_OnAfterMergeSolution;
-      SolutionEvents.OnAfterOpeningChildren -= AfterOpeningChildren;
-      SolutionEvents.OnAfterOpenProject -= AfterOpenProject;
-      SolutionEvents.OnAfterOpenSolution -= AfterOpenSolution;
-      SolutionEvents.OnAfterRenameProject -= AfterRenameProject;
-      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins -= BeforeBackgroundSolutionLoadBegins;
-      SolutionEvents.OnBeforeCloseProject -= SolutionEvents_OnBeforeCloseProject;
-      SolutionEvents.OnBeforeCloseSolution -= BeforeCloseSolution;
-      SolutionEvents.OnBeforeClosingChildren -= BeforeClosingChildren;
-      SolutionEvents.OnBeforeLoadProjectBatch -= BeforeLoadProjectBatch;
-      SolutionEvents.OnBeforeOpeningChildren -= BeforeOpeningChildren;
-      SolutionEvents.OnBeforeOpenProject -= BeforeOpenProject;
-      SolutionEvents.OnBeforeOpenSolution -= BeforeOpenSolution;
-      SolutionEvents.OnBeforeUnloadProject -= BeforeUnloadProject;
-      SolutionEvents.OnQueryBackgroundLoadProjectBatch -= QueryBackgroundLoadProjectBatch;
-      SolutionEvents.OnQueryChangeProjectParent -= QueryChangeProjectParent;
-      SolutionEvents.OnQueryCloseProject -= QueryCloseProject;
-      SolutionEvents.OnQueryCloseSolution -= SolutionEvents_OnQueryCloseSolution;
-      SolutionEvents.OnQueryUnloadProject -= QueryUnloadProject;
+      SolutionEvents.OnAfterChangeProjectParent            -= AfterChangeProjectParent;
+      SolutionEvents.OnAfterCloseSolution                  -= AfterCloseSolution;
+      SolutionEvents.OnAfterClosingChildren                -= AfterClosingChildren;
+      SolutionEvents.OnAfterLoadProject                    -= AfterLoadProject;
+      SolutionEvents.OnAfterLoadProjectBatch               -= AfterLoadProjectBatch;
+      SolutionEvents.OnAfterMergeSolution                  -= SolutionEvents_OnAfterMergeSolution;
+      SolutionEvents.OnAfterOpeningChildren                -= AfterOpeningChildren;
+      SolutionEvents.OnAfterOpenProject                    -= AfterOpenProject;
+      SolutionEvents.OnAfterOpenSolution                   -= AfterOpenSolution;
+      SolutionEvents.OnAfterRenameProject                  -= AfterRenameProject;
+      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins  -= BeforeBackgroundSolutionLoadBegins;
+      SolutionEvents.OnBeforeCloseProject                  -= SolutionEvents_OnBeforeCloseProject;
+      SolutionEvents.OnBeforeCloseSolution                 -= BeforeCloseSolution;
+      SolutionEvents.OnBeforeClosingChildren               -= BeforeClosingChildren;
+      SolutionEvents.OnBeforeLoadProjectBatch              -= BeforeLoadProjectBatch;
+      SolutionEvents.OnBeforeOpeningChildren               -= BeforeOpeningChildren;
+      SolutionEvents.OnBeforeOpenProject                   -= BeforeOpenProject;
+      SolutionEvents.OnBeforeOpenSolution                  -= BeforeOpenSolution;
+      SolutionEvents.OnBeforeUnloadProject                 -= BeforeUnloadProject;
+      SolutionEvents.OnQueryBackgroundLoadProjectBatch     -= QueryBackgroundLoadProjectBatch;
+      SolutionEvents.OnQueryChangeProjectParent            -= QueryChangeProjectParent;
+      SolutionEvents.OnQueryCloseProject                   -= QueryCloseProject;
+      SolutionEvents.OnQueryCloseSolution                  -= SolutionEvents_OnQueryCloseSolution;
+      SolutionEvents.OnQueryUnloadProject                  -= QueryUnloadProject;
     }
   }
 }
