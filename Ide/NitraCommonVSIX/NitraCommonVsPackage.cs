@@ -504,6 +504,8 @@ namespace Nitra.VisualStudio
 
     void FileAdded(object sender, HierarchyItemEventArgs e)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
       var action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
       var path   = e.FileName;
 
@@ -512,9 +514,13 @@ namespace Nitra.VisualStudio
         object obj;
         var hr2 = e.Hierarchy.GetProperty(e.ItemId, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
 
-        var projectItem = obj as EnvDTE.ProjectItem;
-        if (ErrorHelper.Succeeded(hr2) && projectItem != null)
+        if (ErrorHelper.Succeeded(hr2) && obj is EnvDTE.ProjectItem projectItem && projectItem != null)
         {
+          if (action == null && projectItem.ContainingProject.UniqueName != "<MiscFiles>")
+          {
+            Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}') (skipped)");
+            return;
+          }
           AddFile(projectItem, path);
           Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
           return;
@@ -531,9 +537,6 @@ namespace Nitra.VisualStudio
       var project = projectItem.ContainingProject;
       var projectPath = project.FullName;
       var projectId = new ProjectId(_stringManager.GetId(projectPath));
-
-      if (project.UniqueName != "<MiscFiles>")
-        return;
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
