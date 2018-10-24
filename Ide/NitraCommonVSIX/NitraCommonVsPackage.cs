@@ -23,12 +23,14 @@ using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft;
 using VSLangProj;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.LanguageServices;
+using System.Linq;
 
 using SolutionEvents = Microsoft.VisualStudio.Shell.Events.SolutionEvents;
 
@@ -68,14 +70,15 @@ namespace Nitra.VisualStudio
 
     RunningDocTableEvents                       _runningDocTableEventse;
     Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
-    List<Project>                        _projects = new List<Project>();
+    List<Project>                               _projects = new List<Project>();
     List<ServerModel>                           _servers = new List<ServerModel>();
-    ProjectItemsEvents _prjItemsEvents;
+    ProjectItemsEvents                          _prjItemsEvents;
     StringManager                               _stringManager = new StringManager();
     uint                                        _objectManagerCookie;
     Library                                     _library;
     SolutionLoadingSate                         _backgroundLoading;
     SolutionId                                  _currentSolutionId = InvalidSolutionId;
+    private RoslynSymbolReader _roslynSymbolReader;
 
     internal List<ServerModel> Servers { get => _servers; }
 
@@ -324,6 +327,10 @@ namespace Nitra.VisualStudio
       _projects.Clear();
 
       _backgroundLoading = SolutionLoadingSate.Loaded;
+
+      var _componentModel = (IComponentModel)GetGlobalService(typeof(SComponentModel));
+      _roslynSymbolReader = new RoslynSymbolReader(_componentModel)
+      _roslynSymbolReader.InitRoslyn();
     }
 
     void ScanReferences(Project project)
