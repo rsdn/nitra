@@ -417,7 +417,6 @@ namespace Nitra.ClientServer.Server
                 when (!isNameMatch)
                   return false;
                 def isTypeMatch = validSymbolTypes.IsEmpty || validSymbolTypes.Exists(t => t.IsInstanceOfType(symbol)) || (qualified.Count > 0 && symbol is INamespace);
-                //(qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
                 isTypeMatch
               }
               def br = scope.Bind(matcher);

@@ -28,6 +28,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             _files                                   : Hashtable[int, File]   = Hashtable();
             _libMap                                  : Hashtable[string, int] = Hashtable();
             _libs                                    : List[NSP.LibReference] = List();
+            _watchers                                : List[FileSystemWatcher] = List();
     public  Parent                                   : Solution;
     public  Id                                       : ProjectId;
     public  Path                                     : string                       { get; }
@@ -203,8 +204,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
-      when (IsOpened && IsAllAstCreated && SemanticAvailableForAllDependsOnProjects && this._files.Count > 0)
+      when (IsOpened && IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
       {
+        when (this._files.Count == 0)
+        {
+          IsSemanticAvailable = true;
+          return;
+        }
+        
         CancelSemanticAnalysisCancellation();
         def cancellationTokenSource              = CancellationTokenSource();
         def cancellationToken                    = cancellationTokenSource.Token;
@@ -431,24 +438,48 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       TryStartSemanticAnalysis();
     }
 
+    private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
+    {
+      IsSemanticAvailable = false;
+      this.Data = null;
+      TryStartSemanticAnalysis();
+    }
+
     public AddProjectReference(projectId : int, path : string) : void
     {
       def name = projectId.ToString();
       mutable index;
       if (_libMap.TryGetValue(name, out index))
-        ServerUtils.Log("Reference '" + name + "' allredy added: " + _libs[index]);
+        ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
         _libMap[name] = _libs.Count;
         def r = NSP.ProjectReference(projectId, path);
         assert2(!string.IsNullOrEmpty(r.Path));
         _libs.Add(r);
+        AddWatcher(path);
         def dependOn = Parent.GetProject(projectId);
         DependsOnProjects ::= dependOn;
         dependOn.DependantProjects ::= this;
       }
     }
 
+    private AddWatcher(filePath : string) : void
+    {
+				def path = Path.GetDirectoryName(filePath);
+
+				unless (Directory.Exists(path))
+					return;
+
+				def name = Path.GetFileName(filePath);
+				def watcher = FileSystemWatcher(path, name);
+				watcher.NotifyFilter = NotifyFilters.LastWrite;
+        watcher.Created += OnReferenceChanged;
+        watcher.Changed += OnReferenceChanged;
+				watcher.EnableRaisingEvents = true;
+        _watchers.Add(watcher);
+    }
+    
     public AddLib(name : string) : void
     {
       mutable index;
@@ -464,7 +495,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           if (name.StartsWith("FullName:", StringComparison.InvariantCulture))
             NSP.FullNameLibReference(value)
           else if (name.StartsWith("File:", StringComparison.InvariantCulture))
+          {
+            AddWatcher(value);
             NSP.FileLibReference(value);
+          }
           else
           {
             assert(false, "Unsupported LibReference kind: " + name.Substring(0, separatorPos));
