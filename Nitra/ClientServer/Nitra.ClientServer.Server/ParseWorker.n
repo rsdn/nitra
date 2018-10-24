@@ -383,6 +383,7 @@ namespace Nitra.ClientServer.Server
           false
         }
         def qualified = visitor.Result.Where(filter).ToList();
+        def qualified = qualified;
         def candidats = if (qualified.Count > 0) qualified else visitor.Result;
 
         // Находим первую ветку AST в которой есть зависимое свойство Scope и вычисляем по этому Scope список автодополнения
@@ -396,15 +397,27 @@ namespace Nitra.ClientServer.Server
                 r2 = r2.ResolvedTo;
 
               def symbolTypeOpt = if (r2 == null) null else r2.GetType().GetGenericArguments()[0];
+              def getValidSymbolTypes(symbolType : System.Type, acc : list[System.Type]) : list[System.Type]
+              {
+                  def property = symbolType.GetProperty("DeclaredIn");
+                  if (property == null)
+                    symbolType :: acc
+                  else
+                    getValidSymbolTypes(property.PropertyType, symbolType :: acc)
+              }
+              def validSymbolTypes = if (symbolTypeOpt == null) [] else getValidSymbolTypes(symbolTypeOpt, []);
+              def validSymbolTypes = validSymbolTypes;
 
               def matcher(symbol : DeclarationSymbol) : bool
               {
-                def symbolTypeOpt = symbolTypeOpt;
+                //def qualified = qualified;
+                def validSymbolTypes = validSymbolTypes;
                 def pattern = pattern;
                 def isNameMatch = !symbol.IsNameValid || StringPatternMatching.MatchPattern(symbol.Name, pattern);
                 when (!isNameMatch)
                   return false;
-                def isTypeMatch = (qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
+                def isTypeMatch = validSymbolTypes.IsEmpty || validSymbolTypes.Exists(t => t.IsInstanceOfType(symbol)) || (qualified.Count > 0 && symbol is INamespace);
+                //(qualified.Count > 0 && symbol is INamespace) || symbolTypeOpt == null || symbolTypeOpt.IsInstanceOfType(symbol);
                 isTypeMatch
               }
               def br = scope.Bind(matcher);
