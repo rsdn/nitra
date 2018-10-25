@@ -134,6 +134,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsOpened = false;
       _files.Clear();
       _projects.Clear();
+
+      IsDisposed = true;
     }
   }
 }

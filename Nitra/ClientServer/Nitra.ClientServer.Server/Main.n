@@ -71,7 +71,7 @@ module Program
             }
             catch
             {
-              | _ is EndOfStreamException when !requestPipe.IsConnected => ServerUtils.Log("Session has been terminated."); Environment.Exit(1);
+              | _ is EndOfStreamException when !requestPipe.IsConnected => ServerUtils.Log("Session has been terminated."); return;
               | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
             }
           }

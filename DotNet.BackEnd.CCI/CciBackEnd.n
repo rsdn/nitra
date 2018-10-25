@@ -35,13 +35,14 @@ namespace Nitra.BackEnd.Cci
 
     public CciHost : IMetadataHost { get; protected set; }
 
-    [RecordIgnore] public PlatformType                : DotNet.IPlatformType { get; private set; }
+    [RecordIgnore] public  PlatformType               : DotNet.IPlatformType { get; private set; }
+    [RecordIgnore] public  CancellationToken          : CancellationToken { get; set; }
     [RecordIgnore] mutable _cciInternedKeyToSymbolMap : Hashtable.[uint, TypeSymbol];
     [RecordIgnore] mutable _cciInternedKeyToGenericSymbolMap : ConcurrentDictionary.[uint, TypeSymbol];
     [RecordIgnore] mutable _singleDimensionArray      : SingleDimensionArraySymbol;
     [RecordIgnore] mutable _cciObject                 : INamespaceTypeDefinition;
     [RecordIgnore] mutable _objectSymbol              : TypeSymbol;
-    [RecordIgnore] public  CancellationToken          : CancellationToken { get; set; }
+    [RecordIgnore]         _tempAssemblies            : List[string] = List();
 
     public this() { this(PeReader.DefaultHost()) }
 
@@ -94,6 +95,7 @@ namespace Nitra.BackEnd.Cci
           def tempFullPath = IO.Path.ChangeExtension(IO.Path.GetTempFileName(), IO.Path.GetExtension(fullPath));
           IO.File.Copy(fullPath, tempFullPath);
           def unit         = host.LoadUnitFrom(tempFullPath);
+          _tempAssemblies.Add(tempFullPath);
 
           when (unit == null || unit.Equals(Dummy.Module) || unit.Equals(Dummy.Assembly) || !(unit is IAssembly))
           {
@@ -318,6 +320,9 @@ namespace Nitra.BackEnd.Cci
     {
       when ((CciHost : object) is IDisposable as d)
         d.Dispose();
+      foreach (tempAssembly in _tempAssemblies)
+        try File.Delete(tempAssembly)
+        catch { e => Debug.WriteLine($"Can't delete temporary assembly '$tempAssembly': $(e.Message)"); }
     }
 
     MakeModifiers(visibility : TypeMemberVisibility) : Modifiers

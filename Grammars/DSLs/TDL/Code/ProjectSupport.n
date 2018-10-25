@@ -24,11 +24,13 @@ using ND = Nitra.Declarations;
 
 namespace Tdl
 {
-  public partial class ProjectSupport : IProjectSupport
+  public partial class ProjectSupport : IProjectSupport, IDisposable
   {
     static NoLocation : Location       = Location(SourceSnapshot.Default.File, NSpan(0));
     static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     static NoSpan : NSpan              = NSpan(0);
+
+    mutable _backEnd : CciBackEnd;
 
     public this()
     {
@@ -74,7 +76,10 @@ namespace Tdl
         alias.EvalProperties(context);
       }
 
+      when (_backEnd != null)
+        _backEnd.Dispose();
       def backEnd = CciBackEnd();
+      _backEnd = backEnd;
       backEnd.CancellationToken = cancellationToken;
       def context = DependentPropertyEvalContext(project);
       def rootNamespace = backEnd.LoadExternalSymbols(project.Libs, project.ProjectDir, project.CompilerMessages, context);
@@ -195,6 +200,12 @@ namespace Tdl
     public DecomposeData(data : object) : IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol
     {
       data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
+    }
+    
+    public Dispose() : void
+    {
+      when (_backEnd != null)
+        _backEnd.Dispose();
     }
   }
 }

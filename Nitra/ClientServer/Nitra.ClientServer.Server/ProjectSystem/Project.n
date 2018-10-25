@@ -691,6 +691,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       ServerUtils.DisposeCancellationTokenSource(ref _semanticAnalysisCancellationTokenSource);
       ServerUtils.DisposeCancellationTokenSource(ref _findDeclarationsCancellationTokenSource);
 
+      when ((_projectSupport : object) is IDisposable as disp)
+        disp.Dispose();
+
       IsDisposed = true;
     }
 
