@@ -15,7 +15,6 @@ namespace Nitra.VisualStudio
     public ReferenceEventArgs(IVsHierarchy hierarchy, uint itemId, VSLangProj.Reference reference)
     {
       ErrorHelper.ThrowIsNull(hierarchy, nameof(hierarchy));
-      ErrorHelper.ThrowIsNull(reference, nameof(reference));
 
       Hierarchy = hierarchy;
       ItemId    = itemId;

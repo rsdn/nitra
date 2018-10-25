@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 using Microsoft.VisualStudio;
@@ -107,6 +108,7 @@ namespace Nitra.VisualStudio
     public event EventHandler<HierarchyItemEventArgs> ItemDeleted;
 
     public event EventHandler<ReferenceEventArgs> ReferenceAdded;
+    public event EventHandler<ReferenceEventArgs> ReferenceDeleted;
 
     #endregion
 
@@ -167,6 +169,8 @@ namespace Nitra.VisualStudio
 
     private bool TryFierOnAddReference(uint currentItem)
     {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
       if (ReferenceAdded == null)
         return false;
 
@@ -201,7 +205,10 @@ namespace Nitra.VisualStudio
       string name;
 
       if (!IsFile(itemid, out name))
+      {
+        TryFierOnDeletedReference(itemid);
         return VSConstants.S_OK;
+      }
 
       if (ItemDeleted != null)
       {
@@ -210,6 +217,14 @@ namespace Nitra.VisualStudio
       }
 
       return VSConstants.S_OK;
+    }
+
+    private bool TryFierOnDeletedReference(uint currentItem)
+    {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
+      ReferenceDeleted(this, new ReferenceEventArgs(Hierarchy, currentItem, null));
+      return true;
     }
 
     public int OnItemsAppended(uint itemidParent)

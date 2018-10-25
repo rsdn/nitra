@@ -4,30 +4,27 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using EnvDTE;
+using EnvDTE80;
+
+using Microsoft;
 using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Events;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
 
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
-using Nitra.VisualStudio;
 using NitraCommonIde;
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Globalization;
+using System.Linq;
 using System.Runtime.InteropServices;
-using EnvDTE;
-using EnvDTE80;
-using Microsoft;
 using VSLangProj;
 
 using SolutionEvents = Microsoft.VisualStudio.Shell.Events.SolutionEvents;
@@ -66,16 +63,17 @@ namespace Nitra.VisualStudio
 
     public static NitraCommonVsPackage Instance;
 
-    RunningDocTableEvents                       _runningDocTableEventse;
-    Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
-    List<Project>                        _projects = new List<Project>();
-    List<ServerModel>                           _servers = new List<ServerModel>();
-    ProjectItemsEvents _prjItemsEvents;
-    StringManager                               _stringManager = new StringManager();
-    uint                                        _objectManagerCookie;
-    Library                                     _library;
-    SolutionLoadingSate                         _backgroundLoading;
-    SolutionId                                  _currentSolutionId = InvalidSolutionId;
+    readonly Dictionary<ProjectId, HashSet<string>>      _referenceMap  = new Dictionary<ProjectId, HashSet<string>>();
+    readonly Dictionary<IVsHierarchy, HierarchyListener> _listenersMap  = new Dictionary<IVsHierarchy, HierarchyListener>();
+    readonly List<Project>                               _projects      = new List<Project>();
+    readonly List<ServerModel>                           _servers       = new List<ServerModel>();
+    readonly StringManager                               _stringManager = new StringManager();
+    RunningDocTableEvents _runningDocTableEventse;
+    ProjectItemsEvents    _prjItemsEvents;
+    uint                  _objectManagerCookie;
+    Library               _library;
+    SolutionLoadingSate   _backgroundLoading;
+    SolutionId            _currentSolutionId = InvalidSolutionId;
 
     internal List<ServerModel> Servers { get => _servers; }
 
@@ -321,24 +319,28 @@ namespace Nitra.VisualStudio
         foreach (var server in _servers)
           server.ProjectLoaded(GetProjectId(project));
 
-      _projects.Clear();
-
       _backgroundLoading = SolutionLoadingSate.Loaded;
     }
 
     void ScanReferences(Project project)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
       Debug.WriteLine("tr: ScanReferences(started)");
       Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
 
-      var vsproject = project.Object as VSProject;
-      if (vsproject != null)
+      if (project.Object is VSProject vsproject)
       {
         var projectId = GetProjectId(project);
+        var references = new HashSet<string>();
+        _referenceMap.Add(projectId, references);
 
         foreach (Reference reference in vsproject.References)
         {
           var path = reference.Path;
+
+          if (!string.IsNullOrEmpty(path))
+            references.Add(path);
 
           if (reference.SourceProject == null)
           {
@@ -375,6 +377,7 @@ namespace Nitra.VisualStudio
 
     ProjectId GetProjectId(Project project)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       return new ProjectId(_stringManager.GetId(project.FullName));
     }
 
@@ -428,8 +431,7 @@ namespace Nitra.VisualStudio
 
       var isDelayLoading = _backgroundLoading != SolutionLoadingSate.AsynchronousLoading && !isMiscFiles;
 
-      if (isDelayLoading)
-        _projects.Add(project);
+      _projects.Add(project);
 
       foreach (var server in _servers)
         server.ProjectStartLoading(projectId, projectPath);
@@ -441,9 +443,10 @@ namespace Nitra.VisualStudio
 
       var listener = new HierarchyListener(hierarchy);
 
-      listener.ItemAdded      += FileAdded;
-      listener.ItemDeleted    += FileDeleted;
-      listener.ReferenceAdded += ReferenceAdded;
+      listener.ItemAdded        += FileAdded;
+      listener.ItemDeleted      += FileDeleted;
+      listener.ReferenceAdded   += ReferenceAdded;
+      listener.ReferenceDeleted += ReferenceDeleted;
 
       _listenersMap.Add(hierarchy, listener);
 
@@ -461,17 +464,41 @@ namespace Nitra.VisualStudio
       }
     }
 
+    private void ReferenceDeleted(object sender, ReferenceEventArgs e)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      foreach (var project in _projects)
+      {
+        var projectId = GetProjectId(project);
+        if (!_referenceMap.TryGetValue(projectId, out var references))
+          continue;
+        if (!(project.Object is VSProject vsproject))
+          continue;
+        var currentReferences = vsproject.References.OfType<Reference>().Select(r => r.Path).ToArray();
+        var removedReferences = references.Except(currentReferences).ToArray();
+
+        foreach (var server in _servers)
+          foreach (var path in removedReferences)
+            server.ReferenceDeleted(projectId, path);
+
+        foreach (var path in removedReferences)
+          Debug.WriteLine($"tr: ReferenceDeleted(FileName='{path}' projectId={projectId})");
+      }
+    }
+
     void ReferenceAdded(object sender, ReferenceEventArgs e)
     {
-      if (_backgroundLoading != SolutionLoadingSate.AsynchronousLoading)
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      if (_backgroundLoading == SolutionLoadingSate.SynchronousLoading)
         return;
 
-      var r = e.Reference;
+      var r             = e.Reference;
       var sourceProject = r.SourceProject; // TODO: Add support of project reference
-      var path = r.Path;
-
-      var projectPath = r.ContainingProject.FullName;
-      var projectId = new ProjectId(_stringManager.GetId(projectPath));
+      var path          = r.Path;
+      var projectPath   = r.ContainingProject.FullName;
+      var projectId     = new ProjectId(_stringManager.GetId(projectPath));
 
       if (string.IsNullOrEmpty(path))
       {
@@ -487,6 +514,7 @@ namespace Nitra.VisualStudio
 
     void SolutionEvents_OnBeforeCloseProject(object sender, CloseProjectEventArgs e)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       var hierarchy = e.Hierarchy;
 
       if (_listenersMap.ContainsKey(hierarchy))
@@ -502,10 +530,11 @@ namespace Nitra.VisualStudio
       if (project == null)
         return;
 
-      Debug.Assert(_projects.Count == 0);
-
       var path      = project.FullName;
       var id        = new ProjectId(_stringManager.GetId(path));
+
+      _projects.Remove(project);
+      _referenceMap.Remove(id);
 
       Debug.WriteLine($"tr: BeforeCloseProject(IsRemoved='{e.IsRemoved}', FullName='{project.FullName}' id={id})");
 
@@ -600,6 +629,9 @@ namespace Nitra.VisualStudio
 
     void AfterCloseSolution(object sender, EventArgs e)
     {
+      _projects.Clear();
+      _listenersMap.Clear();
+      _referenceMap.Clear();
       Debug.Assert(_currentSolutionId != InvalidSolutionId);
       _backgroundLoading = SolutionLoadingSate.NotLoaded;
       var path = _stringManager.GetPath(_currentSolutionId);

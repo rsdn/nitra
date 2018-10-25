@@ -144,6 +144,12 @@ namespace Nitra.VisualStudio
       Client.Send(new ClientMessage.ReferenceLoaded(projectId, "File:" + referencePath));
     }
 
+    internal void ReferenceDeleted(ProjectId projectId, string referencePath)
+    {
+      Debug.Assert(IsSolutionCreated);
+      Client.Send(new ClientMessage.ReferenceUnloaded(projectId, "File:" + referencePath));
+    }
+
     internal void ProjectReferenceAdded(ProjectId projectId, ProjectId referencedProjectId, string referencePath)
     {
       Debug.Assert(IsSolutionCreated);

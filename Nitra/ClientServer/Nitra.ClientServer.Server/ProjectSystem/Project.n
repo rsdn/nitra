@@ -438,11 +438,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       TryStartSemanticAnalysis();
     }
 
-    private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
+    private RefrashReference() : void
     {
       IsSemanticAvailable = false;
       this.Data = null;
       TryStartSemanticAnalysis();
+    }
+    
+    private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
+    {
+      RefrashReference();
     }
 
     public AddProjectReference(projectId : int, path : string) : void
@@ -479,7 +484,29 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 				watcher.EnableRaisingEvents = true;
         _watchers.Add(watcher);
     }
-    
+
+    private DeleteWatcher(fullPath : string) : void
+    {
+			def path = Path.GetDirectoryName(fullPath);
+			def name = Path.GetFileName(fullPath);
+
+      def matchWatcher(watcher : FileSystemWatcher) : bool
+      {
+        def path = path;
+        def name = name;
+        watcher.Path == path && watcher.Filter == name
+      }
+      def index = _watchers.FindIndex(matchWatcher);
+      if (index >= 0)
+      {
+        def watcher = _watchers[index];
+        _watchers.RemoveAt(index);
+        watcher.Dispose();
+      }
+      else
+        ServerUtils.Log("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
+    }
+
     public AddLib(name : string) : void
     {
       mutable index;
@@ -496,7 +523,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             NSP.FullNameLibReference(value)
           else if (name.StartsWith("File:", StringComparison.InvariantCulture))
           {
-            AddWatcher(value);
             NSP.FileLibReference(value);
           }
           else
@@ -505,15 +531,37 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           };
 
         assert2(!string.IsNullOrEmpty(r.Path));
+        AddWatcher(r.Path);
 
         _libs.Add(r);
+        
+        when (IsOpened)
+          RefrashReference();
       }
     }
 
-    public RemoveLib(fullPath : string) : void
+    public RemoveLib(name : string) : void
     {
-      IgnoreParams();
-      throw NotImplementedException()
+      def separatorPos = name.IndexOf(':');
+      assert2(separatorPos > 0);
+      def fullPath = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
+      def fullPath = fullPath;
+      
+      def matchLibReference(libRef : NSP.LibReference) : bool
+      {
+        def fullPath = fullPath;
+        libRef.Path == fullPath
+      }
+      def index = _libs.FindIndex(matchLibReference);
+      if (index >= 0)
+      {
+        def r = _libs[index];
+        _libs.RemoveAt(index);
+        DeleteWatcher(r.Path);
+        RefrashReference();
+      }
+      else
+        ServerUtils.Log("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
     }
 
     public GetSymbolHint(symbolId : int) : void
