@@ -205,6 +205,7 @@ namespace Nitra.LanguageCompiler
         ("XXRequireLicenseAcceptanceXX", lang.RequireLicenseAcceptance.ToString().ToLower()),
         ("XXLanguageInstanceXX",         "global::" + lang.GetType().FullName + ".Instance"),
         ("XXFileExtensionsXX",           $<#..$(config.Language.FileExtensions; ", "; e => "\"" + e + "\"")#>),
+        ("XXPackageVersionXX",           config.PackageVersion),
         MakeXXFilesXXVar(config),
       ]
     }
