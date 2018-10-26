@@ -36,6 +36,7 @@ namespace Nitra.LanguageCompiler
     public Success             : bool             { get; }
     public CompilerMessages    : CompilerMessages { get; }
     public UserDefinedVars     : list[string]     { get { _userDefinedVars.ToNList() } }
+    public PackageVersion      : string           { get; private set;}
     _userDefinedVars           : List[string]     = List();
 
     public this()
@@ -79,6 +80,10 @@ namespace Nitra.LanguageCompiler
                     aliases = [],
                     help = <#User defined variable. Usage: -var:"XXX<some name>XXX" (without <>)#>,
                     handler = variable => _userDefinedVars.Add(variable)),
+        CliOption.String(name = "-packageVersion",
+                    aliases = ["-ver"],
+                    help = "VS package version.",
+                    handler = v => PackageVersion = v),
         ];
 
       Getopt.Parse(options);
@@ -143,6 +148,11 @@ namespace Nitra.LanguageCompiler
         def projectSupportAttributes = asm.GetCustomAttributes(typeof(ProjectSupportAttribute));
         foreach (projectSupportAttribute is ProjectSupportAttribute when projectSupportAttribute.Caption == ProjectSupport in projectSupportAttributes)
           matchedProjectSupportTypes ::= projectSupportAttribute.Type;
+      }
+
+      when (string.IsNullOrWhiteSpace(PackageVersion))
+      {
+        PackageVersion = "1.0";
       }
 
       match (matchedLanguages)

@@ -86,7 +86,8 @@
     <NuGetSource>https://www.nuget.org/api/v2</NuGetSource>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="AfterBuild">
+  <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
+  <Target Name="AfterBuild" DependsOnTargets="GetNitraBuildVersion">
     <ItemGroup>
       <!-- Add links to the necessary assembly in this project. It will be copied to the Templates\XXLanguageFullNameXXVsPackage\Languages -->
       <Languages Include="$(TargetDir)*.*" Exclude="$(TargetDir)$(TargetName).*;$(TargetDir)Nitra.LanguageCompiler.*" />
@@ -96,7 +97,7 @@
     <Message Text="Copy references: '@(Languages)' -&gt; '$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages'" Importance="high" />
     <RemoveDir Directories="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
     <Copy SourceFiles="@(Languages)" DestinationFolder="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
-    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
+    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /ver:&quot;$(NitraBuildVersion)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>
