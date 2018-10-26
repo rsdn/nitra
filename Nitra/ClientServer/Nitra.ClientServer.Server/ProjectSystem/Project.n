@@ -454,13 +454,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       def name = projectId.ToString();
       mutable index;
-      if (_libMap.TryGetValue(name, out index))
+      if (_libMap.TryGetValue(path, out index))
         ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
-        _libMap[name] = _libs.Count;
+        assert2(!string.IsNullOrEmpty(path));
+        _libMap[path] = _libs.Count;
         def r = NSP.ProjectReference(projectId, path);
-        assert2(!string.IsNullOrEmpty(r.Path));
         _libs.Add(r);
         AddWatcher(path);
         def dependOn = Parent.GetProject(projectId);
@@ -509,30 +509,24 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public AddLib(name : string) : void
     {
+      def separatorPos = name.IndexOf(':');
+      assert2(separatorPos > 0);
+      def value = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
+      def r : NSP.LibReference =
+        if (name.StartsWith("FullName:", StringComparison.InvariantCulture))
+          NSP.FullNameLibReference(value)
+        else if (name.StartsWith("File:", StringComparison.InvariantCulture))
+          NSP.FileLibReference(value);
+        else
+          assert(false, "Unsupported LibReference kind: " + name.Substring(0, separatorPos));
+      assert2(!string.IsNullOrEmpty(r.Path));
       mutable index;
-      if (_libMap.TryGetValue(name, out index))
+      if (_libMap.TryGetValue(r.Path, out index))
         ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
-        def separatorPos = name.IndexOf(':');
-        assert2(separatorPos > 0);
-        def value = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
-        _libMap[name] = _libs.Count;
-        def r : NSP.LibReference =
-          if (name.StartsWith("FullName:", StringComparison.InvariantCulture))
-            NSP.FullNameLibReference(value)
-          else if (name.StartsWith("File:", StringComparison.InvariantCulture))
-          {
-            NSP.FileLibReference(value);
-          }
-          else
-          {
-            assert(false, "Unsupported LibReference kind: " + name.Substring(0, separatorPos));
-          };
-
-        assert2(!string.IsNullOrEmpty(r.Path));
+        _libMap[r.Path] = _libs.Count;
         AddWatcher(r.Path);
-
         _libs.Add(r);
         
         when (IsOpened)
@@ -556,8 +550,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (index >= 0)
       {
         def r = _libs[index];
+        def path = r.Path;
         _libs.RemoveAt(index);
-        DeleteWatcher(r.Path);
+        _libMap.Remove(path);
+        DeleteWatcher(path);
         RefrashReference();
       }
       else

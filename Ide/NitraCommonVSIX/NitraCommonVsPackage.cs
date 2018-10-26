@@ -478,6 +478,9 @@ namespace Nitra.VisualStudio
         var currentReferences = vsproject.References.OfType<Reference>().Select(r => r.Path).ToArray();
         var removedReferences = references.Except(currentReferences).ToArray();
 
+        foreach (var path in removedReferences)
+          references.Remove(path);
+
         foreach (var server in _servers)
           foreach (var path in removedReferences)
             server.ReferenceDeleted(projectId, path);
@@ -499,12 +502,16 @@ namespace Nitra.VisualStudio
       var path          = r.Path;
       var projectPath   = r.ContainingProject.FullName;
       var projectId     = new ProjectId(_stringManager.GetId(projectPath));
+      if (!_referenceMap.TryGetValue(projectId, out var references))
+        return;
 
       if (string.IsNullOrEmpty(path))
       {
         Debug.WriteLine($"tr: Error: ReferenceAdded(FileName='null' Name={r.Name} projectId={projectId})");
         return;
       }
+
+      references.Add(path);
 
       foreach (var server in _servers)
         server.ReferenceAdded(projectId, path);
