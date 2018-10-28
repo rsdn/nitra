@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nemerle.Collections;
 
@@ -18,15 +18,18 @@ namespace DotNet
     {
       SpanClass = DotNetLang.TypeSpanClass;
 
-      out IsPartial       : bool             = AstUtils.IsPartial(this.Declarations);
+      out IsPartial          : bool             = AstUtils.IsPartial(this.Declarations);
+      in  HasExtensionMethod : bool;
     stage 1:
       in NestedTypes : SCG.IList[NestedTypeSymbol];
     }
 
-    Symbol.BaseTypeSet |= AstUtils.FilterResolved(TypeBase.Ref);
-    TypeBase.Scope     = TypeParameterConstraints.Scope;
-    Members.DeclaredIn = Symbol;
-    Symbol.NestedTypes = AstUtils.FilterDeclaredTypeSymbol(Symbol.MemberTable);
+    Symbol.BaseTypeSet           |= AstUtils.FilterResolved(TypeBase.Ref);
+    TypeBase.Scope               = TypeParameterConstraints.Scope;
+    Members.DeclaredIn           = Symbol;
+    Members.HasExtensionMethodIn = false;
+    Symbol.HasExtensionMethod    = Members.HasExtensionMethodOut;
+    Symbol.NestedTypes           = AstUtils.FilterDeclaredTypeSymbol(Symbol.MemberTable);
 
 
     Members                  : TypeMember*;
@@ -97,7 +100,9 @@ namespace DotNet
                          .HideWith(Symbol.MemberTable);
   }
 
-  abstract declaration TopGenericContainerType : GenericContainerType, TopGenericType, TopType { }
+  abstract declaration TopGenericContainerType : GenericContainerType, TopGenericType, TopType
+  {
+  }
 
   declaration TopClass             : Class,     TopGenericContainerType
   {

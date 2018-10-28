@@ -38,5 +38,6 @@ namespace DotNet
 
     Type     : QualifiedReference;
     Modifier : ParameterModifier;
-    Default  : ExprBase;  }
+    Default  : ExprBase;
+  }
 }

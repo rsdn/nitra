@@ -28,26 +28,22 @@ namespace DotNet
 
         Initializer : ConstructorInitializer?;
       }
-    | Destructor : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Destructor : Parameterizable, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "destructor";
           SpanClass = DotNetLang.MethodSpanClass;
-
-          table ParameterScope;
         }
 
-        Parameters.ContainingTable = Symbol.ParameterScope;
         Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
-
-        Parameters : FormalParameter*;
       }
     | Method : Functional, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
+          in IsExtensionMethod : bool;
+
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
         }
@@ -55,13 +51,15 @@ namespace DotNet
       stage 1:
         out ReturnTypeRef : Ref[TypeSymbol] = ReturnType.Ref.Resolve();
 
-        InterfaceType.Scope   = Scope;
-        ReturnType.Scope      = TypeParameterConstraints.Scope;
-        Parameters.Scope      = TypeParameterConstraints.Scope;
-        Symbol.ReturnType     = ReturnTypeRef.Symbol;
-        Body.LocalVarsScopeIn = TableScope(null, "LocalVars");
-        Body.ParameterScope   = Symbol.ParameterScope;
-        Body.ScopeIn          = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
+        InterfaceType.Scope      = Scope;
+        ReturnType.Scope         = TypeParameterConstraints.Scope;
+        Parameters.Scope         = TypeParameterConstraints.Scope;
+        Symbol.ReturnType        = ReturnTypeRef.Symbol;
+        Body.LocalVarsScopeIn    = TableScope(null, "LocalVars");
+        Body.ParameterScope      = Symbol.ParameterScope;
+        Body.ScopeIn             = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
+        Symbol.IsExtensionMethod = AstUtils.IsExtensionMethod(Symbol.Parameters);
+        HasExtensionMethodOut    = HasExtensionMethodIn || Symbol.IsExtensionMethod;
 
         InterfaceType : QualifiedReference?;
         IsPartial     : bool;

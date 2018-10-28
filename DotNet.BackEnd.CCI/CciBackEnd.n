@@ -199,7 +199,12 @@ namespace Nitra.BackEnd.Cci
                     else if (type.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsEnum)      ExternalTopTypeDeclaration.[TopEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable);
                     else if (type.IsValueType) ExternalTopTypeDeclaration.[TopStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
-                    else                       ExternalTopTypeDeclaration.[TopClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
+                    else
+                    {
+                      def cls = ExternalTopTypeDeclaration.[TopClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
+                      cls.HasExtensionMethod = type.IsStatic && HasExtensionAttribute(type.Attributes);
+                      cls
+                    }
 
                 unless (symbol.IsDeclaredInEvaluated)
                   symbol.DeclaredIn = declaredIn;
@@ -339,6 +344,11 @@ namespace Nitra.BackEnd.Cci
       modifiers
     }
 
+    internal HasExtensionAttribute(attributes : Seq[ICustomAttribute]) : bool
+    {
+      AttributeHelper.Contains(attributes, CciHost.PlatformType.SystemRuntimeCompilerServicesExtensionAttribute);
+    }
+
     internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
       def builder = ImmutableArray.CreateBuilder();
@@ -410,6 +420,8 @@ namespace Nitra.BackEnd.Cci
             unless (method.IsTypeParametersEvaluated)
               method.TypeParameters = CreateGenericParameters(m.GenericParameterCount, m.GenericParameters, context);
 
+            method.IsExtensionMethod = m.IsStatic && HasExtensionAttribute(m.Attributes);
+
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
             method.EvalProperties(context);
 
@@ -462,7 +474,7 @@ namespace Nitra.BackEnd.Cci
       when (cciTypeReference.ResolvedType is Microsoft.Cci.DummyType)
         return _objectSymbol;
 
-        
+
       def result : TypeSymbol =
         match (cciTypeReference)
         {

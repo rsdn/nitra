@@ -48,6 +48,10 @@
       <Project>{5b187ce9-5655-4d43-bfec-0d77b5c63818}</Project>
       <Name>Nitra.LanguageCompiler</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Nitra\ClientServer\Nitra.ClientServer.Server\Nitra.ClientServer.Server.nproj">
+      <Project>{705d1c4f-0ac8-4bdc-80cd-e3d26cfa5397}</Project>
+      <Name>Nitra.ClientServer.Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
       <Name>Nitra.Runtime</Name>
@@ -59,6 +63,10 @@
     <ProjectReference Include="..\NitraCommonIde\NitraCommonIde.csproj">
       <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
       <Name>NitraCommonIde</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NitraCommonVSIX\NitraCommonVSIX.csproj">
+      <Project>{1dc85bbe-138a-4bce-9e25-b076bd4d2dbe}</Project>
+      <Name>NitraCommonVSIX</Name>
     </ProjectReference>
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
