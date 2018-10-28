@@ -436,6 +436,13 @@
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
+  <PropertyGroup>
+    <CreateVsixContainerDependsOn>$(CreateVsixContainerDependsOn);SetVsixManifestExtensionVersion</CreateVsixContainerDependsOn>
+  </PropertyGroup>
+  <Target Name="SetVsixManifestExtensionVersion" DependsOnTargets="DetokenizeVsixManifestFile;GetNemerleBuildVersion">
+    <XmlPoke XmlInputPath="$(IntermediateVsixManifest)" Query="//*[local-name()='Identifier']/*[local-name()='Version']" Value="$(NitraBuildVersion)" />
+  </Target>
   <Target Name="BeforeBuild">
   </Target>
   <Target Name="AfterBuild">
