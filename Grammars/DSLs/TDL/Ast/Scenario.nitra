@@ -45,7 +45,7 @@ namespace Tdl
         Environments.Scope              = Scope;
         Symbol.Environments             = Environments.Environment;
 
-        //Definitions.DefinitionScope     = Symbol.AggregateParametersScope;
+        Definitions.DefinitionScope     = ProjectSupport.ScenarioParameterScope;
         Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
 
         Deployment   : Reference;

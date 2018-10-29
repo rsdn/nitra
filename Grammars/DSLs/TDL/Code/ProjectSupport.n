@@ -30,6 +30,8 @@ namespace Tdl
     static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     static NoSpan : NSpan              = NSpan(0);
 
+    public static mutable ScenarioParameterScope : TableScope;
+
     mutable _backEnd : CciBackEnd;
 
     public this()
@@ -106,7 +108,10 @@ namespace Tdl
         defineAlias(context, systemNs, rootNamespace, "Char",    "char");
       }
 
-      (backEnd : IDotNetBackEnd, context, rootNamespace)    }
+      MakeScenarioParametersScope(backEnd, context);
+      
+      (backEnd : IDotNetBackEnd, context, rootNamespace)
+    }
 
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
@@ -202,10 +207,49 @@ namespace Tdl
       data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
     }
     
+    public MakeScenarioParametersScope(backEnd : IDotNetBackEnd, context : DependentPropertyEvalContext) : void
+    {
+      ScenarioParameterScope = TableScope("ScenarioParameterScope");
+      
+      mutable index;
+      
+      def defineParameter(context : DependentPropertyEvalContext, name : string, type : TypeSymbol, required : bool) : void
+      {
+        def parameterName = Name(NoLocation, name); // TODO: type.Name.UniqueKey
+        def parameter = ScenarioParameterDeclaration(parameterName, required).DefineSymbol(ScenarioParameterScope);
+        parameter.Type = type;
+        parameter.Modifier = ParameterModifier.None;
+        parameter.Index = index;
+        index++;
+        parameter.EvalProperties(context);
+      }
+
+      def platformType = backEnd.PlatformType;
+      
+      defineParameter(context, "Area",                    platformType.String,  required=false);
+      defineParameter(context, "NeedUnsignedAgent",       platformType.Boolean, required=false);
+      defineParameter(context, "RequireInternet",         platformType.Int32,   required=false);
+      defineParameter(context, "RerunCountOnTestFailure", platformType.Int32,   required=false);
+      defineParameter(context, "RerunCountOnTestSuccess", platformType.Int32,   required=false);
+      defineParameter(context, "Responsible",             platformType.String,  required=false);
+      defineParameter(context, "RevertAgentAfter",        platformType.Boolean, required=false);
+      defineParameter(context, "RevertAgentBefore",       platformType.Boolean, required=false);
+      defineParameter(context, "TfsId",                   platformType.Int32,   required=false);
+      defineParameter(context, "Timeout",                 platformType.Int32,   required=true);
+      defineParameter(context, "UniqueId",                platformType.String,  required=true);
+    }
+    
     public Dispose() : void
     {
       when (_backEnd != null)
         _backEnd.Dispose();
     }
+  }
+  
+  [Record]
+  public class ScenarioParameterDeclaration : ExternalDeclaration[FormalParameterSymbol]
+  {
+    public Required : bool;
+    public override CreateSymbol() : DeclarationSymbol { FormalParameterSymbol() }
   }
 }
