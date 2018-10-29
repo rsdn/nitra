@@ -145,7 +145,8 @@ namespace Tdl
 
         match (deployment)
         {
-          | s is Scenario.DefSymbol when s.IsDeploymentEvaluated => UnionScopeBuilder.Add(s.Deployment.AggregateParametersScope, ref builder);
+          | s is Scenario.DefSymbol when s.IsDeploymentEvaluated && s.Deployment.IsAggregateParametersScopeEvaluated =>
+            UnionScopeBuilder.Add(s.Deployment.AggregateParametersScope, ref builder);
           | s is Scenario.SetSymbol when s.IsScenariosEvaluated  => CollectScenarios(visited, ref builder, s.Scenarios);
           | _ => ()
         }
