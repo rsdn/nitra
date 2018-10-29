@@ -29,20 +29,23 @@ namespace Nitra.BackEnd.Cci
   [Record]
   public partial class CciBackEnd : DotNet.IDotNetBackEnd
   {
-    public static NoLocation : Location       = Location(SourceSnapshot.Default.File, NSpan(0));
-    public static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
-    public static NoSpan : NSpan              = NSpan(0);
+    private static mutable _loadTypesTime : TimeSpan;
+    public static          LoadTypesTime  : TimeSpan           { get { _loadTypesTime } }
+    public static          NoLocation     : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
+    public static          NoFile         : ProjectSystem.File = SourceSnapshot.Default.File;
+    public static          NoSpan         : NSpan              = NSpan(0);
 
     public CciHost : IMetadataHost { get; protected set; }
 
-    [RecordIgnore] public  PlatformType               : DotNet.IPlatformType { get; private set; }
-    [RecordIgnore] public  CancellationToken          : CancellationToken { get; set; }
-    [RecordIgnore] mutable _cciInternedKeyToSymbolMap : Hashtable.[uint, TypeSymbol];
-    [RecordIgnore] mutable _cciInternedKeyToGenericSymbolMap : ConcurrentDictionary.[uint, TypeSymbol];
-    [RecordIgnore] mutable _singleDimensionArray      : SingleDimensionArraySymbol;
-    [RecordIgnore] mutable _cciObject                 : INamespaceTypeDefinition;
-    [RecordIgnore] mutable _objectSymbol              : TypeSymbol;
-    [RecordIgnore]         _tempAssemblies            : List[string] = List();
+    [RecordIgnore] public  PlatformType              : DotNet.IPlatformType                   { get; private set; }
+    [RecordIgnore] public  CancellationToken         : CancellationToken                      { get; set; }
+    [RecordIgnore] _cciInternedKeyToCCiSymbolMap     : Hashtable[uint, ITypeDefinition]       = Hashtable();
+    [RecordIgnore] _cciInternedKeyToSymbolMap        : Hashtable[uint, TypeSymbol]            = Hashtable();
+    [RecordIgnore] _cciInternedKeyToGenericSymbolMap : ConcurrentDictionary[uint, TypeSymbol] = ConcurrentDictionary();
+    [RecordIgnore] mutable _singleDimensionArray     : SingleDimensionArraySymbol;
+    [RecordIgnore] mutable _cciObject                : INamespaceTypeDefinition;
+    [RecordIgnore] mutable _objectSymbol             : TypeSymbol;
+    [RecordIgnore]         _tempAssemblies           : List[string]                           = List();
 
     public this() { this(PeReader.DefaultHost()) }
 
@@ -71,10 +74,9 @@ namespace Nitra.BackEnd.Cci
       _cciObject = null;
       _objectSymbol = null;
 
-      def cciInternedKeyToSymbolMap = Hashtable.[uint, TypeSymbol]();
-      _cciInternedKeyToSymbolMap = cciInternedKeyToSymbolMap;
-
-      _cciInternedKeyToGenericSymbolMap = ConcurrentDictionary();
+      _cciInternedKeyToSymbolMap.Clear();
+      _cciInternedKeyToCCiSymbolMap.Clear();
+      _cciInternedKeyToGenericSymbolMap.Clear();
 
       def rootNamespace = NamespaceSymbol();
       rootNamespace.DeclaredIn  = null;
@@ -106,16 +108,13 @@ namespace Nitra.BackEnd.Cci
           def asm = unit :> IAssembly;
 
           unless (loadedAsmsSet.Add(asm.AssemblyIdentity))
-            continue; // alredy loaded
+            continue; // already loaded
 
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
-            //def name = typeSymbol.Name;
-            //when (name == "Int32")
-            //{
-            //  assert(true);
-            //}
-            cciInternedKeyToSymbolMap[type.InternedKey] = typeSymbol;
+            def internedKey = type.InternedKey;
+            _cciInternedKeyToSymbolMap[internedKey]     = typeSymbol;
+            _cciInternedKeyToCCiSymbolMap[internedKey] = type;
 
             when (typeSymbol is GenericTypeSymbol as genericSymbol)
               MakeTypeParameters(context, genericSymbol, type);
@@ -459,17 +458,19 @@ namespace Nitra.BackEnd.Cci
 
     CciTypeToTypeSymbol(cciTypeReference : ITypeReference, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      when (cciTypeReference.ResolvedType is Microsoft.Cci.DummyType)
+      def cciTypeDef = ResolvedType(cciTypeReference);
+      when (cciTypeDef == null)
         return _objectSymbol;
 
-        
       def result : TypeSymbol =
         match (cciTypeReference)
         {
           | t is IGenericTypeParameter =>
             def typeInfo = CciTypeToTypeSymbol(t.DefiningType, context) :> GenericTypeSymbol;
-            def tp = typeInfo.TypeParameters[t.Index];
-            tp
+            if (typeInfo : object == _objectSymbol)
+              typeInfo
+            else
+              typeInfo.TypeParameters[t.Index];
 
           | t is IArrayTypeReference =>
             def args = ImmutableArray.Create(CciTypeToTypeSymbol(t.ElementType, context));
@@ -513,7 +514,7 @@ namespace Nitra.BackEnd.Cci
               def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
               def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
               def name = Name(NoLocation, t.GenericType.Name.Value);
-              def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, t.ResolvedType).DefineSymbol(null);
+              def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, ResolvedType(t)).DefineSymbol(null);
 
               constructedType.TypeInfo = typeInfo;
               constructedType.Args = args;
@@ -524,18 +525,12 @@ namespace Nitra.BackEnd.Cci
             }
 
           | _ =>
-            //resolvs++;
             mutable typeSymbol;
 
             if (_cciInternedKeyToSymbolMap.TryGetValue(cciTypeReference.InternedKey, out typeSymbol))
-            {
-              //resolvedByKey++;
               typeSymbol
-            }
             else
-            {
               _objectSymbol
-            }
         };
 
         assert2(result != null);
@@ -592,6 +587,13 @@ namespace Nitra.BackEnd.Cci
       tps
     }
 
+    ResolvedType(ccTypeRef : ITypeReference) : ITypeDefinition
+    {
+      mutable result;
+      _ = _cciInternedKeyToCCiSymbolMap.TryGetValue(ccTypeRef.InternedKey, out result);
+      result
+    }
+
     InitBaseTypeSet(context : DependentPropertyEvalContext) : void
     {
       when (_objectSymbol == null)
@@ -618,14 +620,18 @@ namespace Nitra.BackEnd.Cci
             foreach (cciBaseClasse in cciType.BaseClasses)
             {
               def typeSymbol = CciTypeToTypeSymbol(cciBaseClasse, context);
-              when (typeSymbol != _objectSymbol)
+              when (typeSymbol : object != _objectSymbol)
                 baseTypeSet.AddParent(typeSymbol);
             }
-            foreach (cciInterface when TypeHelper.IsVisibleOutsideAssembly(cciInterface.ResolvedType) in cciType.Interfaces)
+            foreach (cciInterface in cciType.Interfaces)
             {
-              def typeSymbol = CciTypeToTypeSymbol(cciInterface, context);
-              when (typeSymbol != _objectSymbol)
-                baseTypeSet.AddParent(typeSymbol);
+              def cciInterfaceDef = ResolvedType(cciInterface);
+              when (cciInterfaceDef != null && TypeHelper.IsVisibleOutsideAssembly(cciInterfaceDef))
+              {
+                def typeSymbol = CciTypeToTypeSymbol(cciInterfaceDef, context);
+                when (typeSymbol : object != _objectSymbol)
+                  baseTypeSet.AddParent(typeSymbol);
+              }
             }
           | _ => ()
         }

@@ -1,16 +1,21 @@
-﻿using DotNet;
+﻿//#define MEASUREMENT
+//#define LAZY
+using DotNet;
 
 using Microsoft.Cci;
 
 using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Text;
 using Nemerle.Utility;
 
 using Nitra.Declarations;
+using Nitra.Internal;
 using Nitra.Serialization2;
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +24,29 @@ namespace Nitra.BackEnd.Cci
 {
   public class TypeMemberScope : TableScope
   {
-    _cciBackEnd : CciBackEnd;
-    mutable _isLoaded : bool;
+#if MEASUREMENT
+    private static mutable _materializeMembersTime : TimeSpan;
+    private static mutable _materializeMemberCount : int;
+    private static mutable _loadMembersTime        : TimeSpan;
+    private static mutable _loadMemberTypeCount    : int;
+    private static _timer                          : Stopwatch = Stopwatch.StartNew();
+
+    public static MaterializeMembersTime : TimeSpan { get { _materializeMembersTime } }
+    public static LoadMembersTime        : TimeSpan { get { _loadMembersTime } }
+    public static MaterializeMemberCount : int { get { _materializeMemberCount } }
+    public static LoadMemberTypeCount    : int { get { _loadMemberTypeCount } }
+    public static ResetTime() : void
+    {
+      _materializeMembersTime = _loadMembersTime     <- default(TimeSpan);
+      _materializeMemberCount = _loadMemberTypeCount <- 0;
+    }
+#endif
+    
+    _cciBackEnd               : CciBackEnd;
+    mutable _isLoaded         : bool;
+#if LAZY
+    mutable _backundNameTable : Hashtable[int, list[ITypeDefinitionMember]];
+#endif
 
     public this(owner : ContainerSymbol, name : string, cciBackEnd : CciBackEnd)
     {
@@ -28,9 +54,20 @@ namespace Nitra.BackEnd.Cci
       _cciBackEnd = cciBackEnd;
     }
 
+#if LAZY
+    Init() : void
+    {
+      _backundNameTable = Hashtable();
+    }
+#endif
+
     Load() : void
     {
       _isLoaded = true;
+#if LAZY
+      Init();
+#endif
+      
       def context = DependentPropertyEvalContext(null);
       def owner = Owner :> ContainerSymbol;
       def type = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
@@ -44,7 +81,30 @@ namespace Nitra.BackEnd.Cci
         | _ => type.Scope
       }
 
-      foreach (m in type.Members)
+#if MEASUREMENT
+      _timer.Restart();
+#endif
+      def members : array[ITypeDefinitionMember] = type.Members.ToArray();
+#if MEASUREMENT
+      _loadMemberTypeCount++;
+      _materializeMemberCount += members.Length;
+#endif
+#if LAZY
+      foreach (m in members)
+      {
+        def id = StringIndex.GetId(m.Name.Value);
+        mutable backendSymbols;
+        unless (_backundNameTable.TryGetValue(id, out backendSymbols))
+          backendSymbols = [];
+        _backundNameTable[id] = m :: backendSymbols;
+      }
+#endif
+#if MEASUREMENT
+      _materializeMembersTime += _timer.Elapsed;
+      _timer.Restart();
+#endif
+      
+      foreach (m in members)
       {
         | _ is ITypeDefinition => ()
         | member =>
@@ -74,6 +134,10 @@ namespace Nitra.BackEnd.Cci
         propSym.Getter = if (propDef.Getter != null) Some(methods[propDef.Getter.Name.UniqueKey]) else None();
         propSym.Setter = if (propDef.Setter != null) Some(methods[propDef.Setter.Name.UniqueKey]) else None();
       }
+
+#if MEASUREMENT
+      _loadMembersTime += _timer.Elapsed;
+#endif
     }
 
     public override AllSymbols : Seq[DeclarationSymbol]
