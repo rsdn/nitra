@@ -21,6 +21,9 @@ namespace DotNet
       DeclaredInOpt = if (DeclaredIn == null) VNone() else VSome(DeclaredIn);
     }
     in DeclaredIn : GenericContainerTypeSymbol;
+    inout HasExtensionMethod : bool;
+
+    HasExtensionMethodOut = HasExtensionMethodIn;
 
     Symbol.DeclaredIn = DeclaredIn;
     ContainingTable   = DeclaredIn.MemberTable;

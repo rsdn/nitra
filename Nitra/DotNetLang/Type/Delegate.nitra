@@ -11,23 +11,23 @@ using SCG = System.Collections.Generic;
 
 namespace DotNet
 {
-  abstract declaration Delegate : GenericType
+  abstract declaration Delegate : Functional, GenericType
   {
     symbol
     {
       Kind = "delegate";
       SpanClass = DotNetLang.TypeSpanClass;
-
-      table ParameterScope;
-      in  ReturnType     : TypeSymbol;
     }
 
+    in ReturnTypeRef : Ref[TypeSymbol];
+
     ReturnType.Scope           = TypeParameterConstraints.Scope;
+    ReturnTypeRef              = ReturnType.Ref.Resolve();
+    Symbol.ReturnType          = ReturnTypeRef.Symbol;
     Parameters.ContainingTable = Symbol.ParameterScope;
     Parameters.Scope           = TypeParameterConstraints.Scope;
 
     ReturnType               : QualifiedReference;
-    Parameters               : FormalParameter*;
   }
 
   declaration TopDelegate    : Delegate, TopGenericType

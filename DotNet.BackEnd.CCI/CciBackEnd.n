@@ -29,11 +29,9 @@ namespace Nitra.BackEnd.Cci
   [Record]
   public partial class CciBackEnd : DotNet.IDotNetBackEnd
   {
-    private static mutable _loadTypesTime : TimeSpan;
-    public static          LoadTypesTime  : TimeSpan           { get { _loadTypesTime } }
-    public static          NoLocation     : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
-    public static          NoFile         : ProjectSystem.File = SourceSnapshot.Default.File;
-    public static          NoSpan         : NSpan              = NSpan(0);
+    public static NoLocation : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
+    public static NoFile     : ProjectSystem.File = SourceSnapshot.Default.File;
+    public static NoSpan     : NSpan              = NSpan(0);
 
     public CciHost : IMetadataHost { get; protected set; }
 
@@ -113,7 +111,7 @@ namespace Nitra.BackEnd.Cci
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
             def internedKey = type.InternedKey;
-            _cciInternedKeyToSymbolMap[internedKey]     = typeSymbol;
+            _cciInternedKeyToSymbolMap[internedKey]    = typeSymbol;
             _cciInternedKeyToCCiSymbolMap[internedKey] = type;
 
             when (typeSymbol is GenericTypeSymbol as genericSymbol)
@@ -198,7 +196,12 @@ namespace Nitra.BackEnd.Cci
                     else if (type.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsEnum)      ExternalTopTypeDeclaration.[TopEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable);
                     else if (type.IsValueType) ExternalTopTypeDeclaration.[TopStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
-                    else                       ExternalTopTypeDeclaration.[TopClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
+                    else
+                    {
+                      def cls = ExternalTopTypeDeclaration.[TopClassSymbol] (name, type).DefineSymbol(declaredIn.MemberTable);
+                      cls.HasExtensionMethod = type.IsStatic && HasExtensionAttribute(type.Attributes);
+                      cls
+                    }
 
                 unless (symbol.IsDeclaredInEvaluated)
                   symbol.DeclaredIn = declaredIn;
@@ -338,6 +341,11 @@ namespace Nitra.BackEnd.Cci
       modifiers
     }
 
+    internal HasExtensionAttribute(attributes : Seq[ICustomAttribute]) : bool
+    {
+      AttributeHelper.Contains(attributes, CciHost.PlatformType.SystemRuntimeCompilerServicesExtensionAttribute);
+    }
+
     internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
       def builder = ImmutableArray.CreateBuilder();
@@ -409,6 +417,8 @@ namespace Nitra.BackEnd.Cci
             unless (method.IsTypeParametersEvaluated)
               method.TypeParameters = CreateGenericParameters(m.GenericParameterCount, m.GenericParameters, context);
 
+            method.IsExtensionMethod = m.IsStatic && HasExtensionAttribute(m.Attributes);
+
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
             method.EvalProperties(context);
 
@@ -461,6 +471,7 @@ namespace Nitra.BackEnd.Cci
       def cciTypeDef = ResolvedType(cciTypeReference);
       when (cciTypeDef == null)
         return _objectSymbol;
+
 
       def result : TypeSymbol =
         match (cciTypeReference)

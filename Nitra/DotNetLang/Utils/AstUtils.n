@@ -372,5 +372,15 @@ namespace DotNet
 
         builder.MoveToImmutable()
     }
+
+    public IsExtensionMethod(parameters : ImmutableArray[FormalParameterSymbol]) : bool
+    {
+      when (parameters.IsEmpty)
+        return false;
+      if (parameters[0].IsModifierEvaluated)
+        parameters[0].Modifier == ParameterModifier.This
+      else
+        false
+    }
   } // module
 } // namespace
