@@ -20,6 +20,10 @@ namespace Tdl
 {
   module TdlUtils
   {
+    public NoLocation : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
+    public NoFile     : ProjectSystem.File = SourceSnapshot.Default.File;
+    public NoSpan     : NSpan              = NSpan(0);
+    
     public PlatformMakeHint(symbolCache : ISymbolCache, symbol : Platform.SetSymbol) : string
     {
       def builder = StringBuilder();
@@ -267,6 +271,27 @@ namespace Tdl
         true
       }
       FilteringScope(scope, predicate)
+    }
+    
+    public IsMissingRequiredOptions(options : ImmutableArray[Ref[TypedDeclarationSymbol]]) : bool
+    {
+      GetMissingRequiredOptionNames(options).Any()
+    }
+
+    GetMissingRequiredOptionNames(options : ImmutableArray[Ref[TypedDeclarationSymbol]]) : Seq[string]
+    {
+      def optionSet = HashSet();
+      foreach (option when option.IsSymbolEvaluated in options)
+        _ = optionSet.Add(option.Symbol.Id);
+
+      foreach (required in ProjectSupport.RequiredScenarioParameters)
+        unless (optionSet.Contains(required.Id))
+          yield required.Name;
+    }
+    
+    public GetMissingRequiredOptionMessage(options : ImmutableArray[Ref[TypedDeclarationSymbol]]) : string
+    {
+      string.Join(", ", GetMissingRequiredOptionNames(options))
     }
   } // module
 } // namespace

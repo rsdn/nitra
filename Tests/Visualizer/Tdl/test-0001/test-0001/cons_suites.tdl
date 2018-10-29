@@ -5,6 +5,8 @@ scenario TryDisinfectWithoutRestart
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method AdvancedDisinfection.AdvancedDisinfectionAutomaticActionTest.TryDisinfectWithoutRestart;
+    UniqueId = "C9E7C8CF-9C40-4F10-A8CE-08FAA7E99BB9";
+    Timeout = 1800;
     RevertAgentAfter = true;
 }
 
@@ -13,6 +15,8 @@ scenario CheckBlockBannerByUrl
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method AntiBanner.BannerCheckBlockingTests.CheckBlockBannerByUrl;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
 }
 
 scenario DetectionOnDemandScanHeuristicAnalysisMedium

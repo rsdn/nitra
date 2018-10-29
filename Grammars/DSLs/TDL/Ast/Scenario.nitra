@@ -19,7 +19,7 @@ namespace Tdl
       {
         symbol
         {
-          in Defs     : ImmutableArray[Def];
+          in Defs         : ImmutableArray[Def];
         stage 1:
           in Method       : Member.MethodSymbol;
           in Deployment   : DeploymentSymbol;
@@ -47,6 +47,9 @@ namespace Tdl
 
         Definitions.DefinitionScope     = ProjectSupport.ScenarioParameterScope;
         Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
+
+        when (TdlUtils.IsMissingRequiredOptions(Definitions.SymbolRef))
+          Name.Error(context, $"Missing required option: $(TdlUtils.GetMissingRequiredOptionMessage(Definitions.SymbolRef))");
 
         Deployment   : Reference;
         Method       : QualifiedReference;

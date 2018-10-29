@@ -30,7 +30,10 @@ namespace Tdl
     static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     static NoSpan : NSpan              = NSpan(0);
 
-    public static mutable ScenarioParameterScope : TableScope;
+    internal static ScenarioParameterScope : Scope { get { _scenarioParameterScope } }
+    static mutable _scenarioParameterScope : TableScope;
+    internal static RequiredScenarioParameters : ImmutableArray[FormalParameterSymbol] { get { _requiredScenarioParameters } }
+    static mutable _requiredScenarioParameters : ImmutableArray[FormalParameterSymbol];
 
     mutable _backEnd : CciBackEnd;
 
@@ -209,14 +212,17 @@ namespace Tdl
     
     public MakeScenarioParametersScope(backEnd : IDotNetBackEnd, context : DependentPropertyEvalContext) : void
     {
-      ScenarioParameterScope = TableScope("ScenarioParameterScope");
+      _scenarioParameterScope = TableScope("ScenarioParameterScope");
+      def requiredScenarioParametersBuilder = ImmutableArray.CreateBuilder();
       
       mutable index;
       
       def defineParameter(context : DependentPropertyEvalContext, name : string, type : TypeSymbol, required : bool) : void
       {
         def parameterName = Name(NoLocation, name); // TODO: type.Name.UniqueKey
-        def parameter = ScenarioParameterDeclaration(parameterName, required).DefineSymbol(ScenarioParameterScope);
+        def parameter = ScenarioParameterDeclaration(parameterName).DefineSymbol(_scenarioParameterScope);
+        when (required)
+          _ = requiredScenarioParametersBuilder.Add(parameter);
         parameter.Type = type;
         parameter.Modifier = ParameterModifier.None;
         parameter.Index = index;
@@ -237,6 +243,8 @@ namespace Tdl
       defineParameter(context, "TfsId",                   platformType.Int32,   required=false);
       defineParameter(context, "Timeout",                 platformType.Int32,   required=true);
       defineParameter(context, "UniqueId",                platformType.String,  required=true);
+
+      _requiredScenarioParameters = requiredScenarioParametersBuilder.ToImmutable();
     }
     
     public Dispose() : void
@@ -249,7 +257,6 @@ namespace Tdl
   [Record]
   public class ScenarioParameterDeclaration : ExternalDeclaration[FormalParameterSymbol]
   {
-    public Required : bool;
     public override CreateSymbol() : DeclarationSymbol { FormalParameterSymbol() }
   }
 }

@@ -204,14 +204,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
-      when (IsOpened && IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
+      unless (IsOpened)
+        return;
+
+      when (this._files.Count == 0)
       {
-        when (this._files.Count == 0)
-        {
-          IsSemanticAvailable = true;
-          return;
-        }
+        IsSemanticAvailable = true;
+        return;
+      }
         
+      when (IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
+      {
         CancelSemanticAnalysisCancellation();
         def cancellationTokenSource              = CancellationTokenSource();
         def cancellationToken                    = cancellationTokenSource.Token;
