@@ -1,7 +1,7 @@
-﻿using System.Text;
+﻿using Nitra.CompilerMessagesExtensions;
+using Nitra.Internal;
 using Nitra.ProjectSystem;
 using Nitra.Serialization2;
-using Nitra.Internal;
 
 using Nemerle;
 using Nemerle.Collections;
@@ -10,10 +10,12 @@ using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Nitra.Declarations
 {
@@ -50,7 +52,7 @@ namespace Nitra.Declarations
       when (name != null)
         (declaration :> DeclarationBase).UpdateName(name);
 
-      def     name2            = declaration.Name;
+      def     name2  : Name    = declaration.Name;
       def     candidateSymbols = LightList();
       mutable ambiguousSymbols : HashSet[DeclarationSymbol];
 
@@ -82,11 +84,22 @@ namespace Nitra.Declarations
         def realAmbiguousSymbols = ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsSameIdentity(declaration));
         when (realAmbiguousSymbols.Length > 0)
         {
-          def cm = declaration.Source.File.TypingMessages;
-          using (nested = cm.RootError(name2, $"Redefinition of '$name2'"))
-            foreach (ambiguous in realAmbiguousSymbols)
-              foreach (d in ambiguous.Declarations)
-                nested.Hint(d.Name, "previous definition.");
+          try
+          {
+            if (context == null)
+            {
+              Debug.WriteLine($"Redefinition of '$name2'. FIXME: Forward context!")
+            }
+            else
+            {
+              def cm = declaration.Source.File.TypingMessages;
+              using (nested = GetCompilerMessage(context, name2).ReportRootMessage(CompilerMessageType.Error, name2.Location, $"Redefinition of '$name2'", -1))
+                foreach (ambiguous in realAmbiguousSymbols)
+                  foreach (d in ambiguous.Declarations)
+                    nested.Hint(d.Name, "previous definition.");
+            }
+          }
+          catch { _ => assert2(false); }
         }
         _nameTable[name2.Id] = ambiguousSymbols.NToList();
       }
