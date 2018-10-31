@@ -1,0 +1,421 @@
+﻿using Autotest.Kis.Suites;
+
+scenario TryDisinfectWithoutRestart
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AdvancedDisinfection.AdvancedDisinfectionAutomaticActionTest.TryDisinfectWithoutRestart;
+    UniqueId = "C9E7C8CF-9C40-4F10-A8CE-08FAA7E99BB9";
+    Timeout = 1800;
+    RevertAgentAfter = true;
+}
+
+scenario CheckBlockBannerByUrl
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AntiBanner.BannerCheckBlockingTests.CheckBlockBannerByUrl;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario DetectionOnDemandScanHeuristicAnalysisMedium
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Avs.ScanHeuristicAnalysisTests.DetectionOnDemandScanHeuristicAnalysisMedium;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario WindowsConfigProblemFix
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method AVZ.AvzWindowsConfigTests.WindowsConfigProblemFix;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario BackupAllFilesFromMyDocumentsAndDesktop
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Backup.BackupMyDocumentsAndDesktopTests.BackupAllFilesFromMyDocumentsAndDesktop;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario VaultCreationAndPasswordChanging
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Encryption.EncryptionPasswordChanging.VaultCreationAndPasswordChanging;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ShredFileQuick
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method FileShredder.FileShredderTests.ShredFileQuick;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckBannedComputerList
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Firewall.IntrusionDetectionSystem.CheckBannedComputerList;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario EnableProtection
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method GUI.ProblemListTests.EnableProtection;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CreateFiles
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Hips.HipsCreateFilesTests.CreateFiles;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario StartOtherProcessSmoke
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Hips.HipsTestsProcessInteraction.StartOtherProcessSmoke;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckRetrievePhishing
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Imav.ImavTests.CheckRetrievePhishing;
+    RevertAgentAfter = true;
+    NeedUnsignedAgent = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckAvpDumps
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckAvpDumps;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckAvpProcesses
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationTests.CheckAvpProcesses;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckComponentsStatus
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckComponentsStatus;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckFilesAndFoldersExists
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckFilesAndFoldersExists;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckNdisFilter
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationTests.CheckNdisFilter;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckRegistryKeysExists
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckRegistryKeysExists;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckStartAndStopProduct
+{
+      deployment Deploy_Backdoor;
+      environments (all_pc, KAVKIS);
+      method Installation.InstallationSecondPartTests.CheckStartAndStopProduct;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario CheckTraceWriting
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.InstallationSecondPartTests.CheckTraceWriting;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario UninstallProductWithReboot
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Installation.UninstallationTests.UninstallProductWithReboot;
+    //AllowReboot = true;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 900;
+}
+
+product activatad : Kavkis = PURE, KIS, KSOS_PC, KSOS_FS;
+
+scenario IpmWithActivation
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, activatad);
+    method Ipm.IpmSmokeTests.IpmWithActivation;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 600;
+}
+
+scenario UpdateFromLocalFolder
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method KashellSuite.KashellUpdateTests.UpdateFromLocalFolder;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ChangeStateFileAntivirusMock
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ManagementConsole.ManagementConsoleProtectionComponentsMockTests.ChangeStateFileAntivirusMock;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario InteractiveActionMixed
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Oas.OasTestsActionCheck.InteractiveActionMixed;
+    Timeout = 3600;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ScanByFormat
+{
+    deployment Deploy_Backdoor_Without_AppVerifier;
+    environments (all_pc, KAVKIS);
+    method Oas.OasTestsSecondPart.ScanByFormat;
+    Timeout = 1800;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ScanEmailObjectsSignature
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Ods.KashellScanEmailObjectsTests.ScanEmailObjectsSignature;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ScanVulnerabilityClear
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Ods.KashellScanVulnerabilityTests.ScanVulnerabilityClear;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario EnableParentalControl
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ParentalControl.ParentalControlTests.EnableParentalControl;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ScreenshotKeyboardEventUnderSafeBrowser
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SafeBanking.ScreenshotTests.ScreenshotKeyboardEventUnderSafeBrowser;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario StartSafeBrowsingFromProduct
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SafeBanking.WebAvSafeBankingTests.StartSafeBrowsingFromProduct;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario SelfDefenceDisabledMoveFiles
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SelfDefence.SelfDefenceTestsFiles.SelfDefenceDisabledMoveFiles;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario SelfDefenceEnabledKillGuiService
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SelfDefence.SelfDefenceEnableTestsService.SelfDefenceEnabledKillGuiService;
+    RevertAgentAfter = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario SystemRestart
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Stress.SystemRestartStressTests.SystemRestart;
+    //AllowReboot = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 450;
+}
+
+scenario ProcessLaunchingDetectWithOnlySw
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method SystemWatcher.SystemWatcherTests.ProcessLaunchingDetectWithOnlySw;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario InventoryOfDifferentFileFormats
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method Tam.TamTests.InventoryOfDifferentFileFormats;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario RestoreSuspiciousArchivesFromQuarantine
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method ThreatsManager.QuarantineFixture.RestoreSuspiciousArchivesFromQuarantine;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario ManagementConsole
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc, KAVKIS);
+    method UCP.UCPMockTests.UcpCommonTests.ManagementConsole;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario RunCiVisualTests
+{
+    deployment Deploy_Visual;
+    environments (all_pc, KAVKIS);
+    method Visual.VisualTests.RunCiVisualTests;
+    UniqueId = "9365B31B-28BA-4D40-A116-304B022A2946";
+    Timeout = 1800;
+}
+
+scenario GateTests = 
+    TryDisinfectWithoutRestart,
+    CheckBlockBannerByUrl,
+    DetectionOnDemandScanHeuristicAnalysisMedium,
+    WindowsConfigProblemFix,
+    BackupAllFilesFromMyDocumentsAndDesktop,
+    VaultCreationAndPasswordChanging,
+    ShredFileQuick,
+    CheckBannedComputerList,
+    EnableProtection,
+    CreateFiles,
+    StartOtherProcessSmoke,
+    CheckRetrievePhishing,
+    CheckAvpDumps,
+    CheckAvpProcesses,
+    CheckComponentsStatus,
+    CheckFilesAndFoldersExists,
+    CheckNdisFilter,
+    CheckRegistryKeysExists,
+    CheckStartAndStopProduct,
+    CheckTraceWriting,
+    UninstallProductWithReboot,
+    IpmWithActivation,
+    UpdateFromLocalFolder,
+    ChangeStateFileAntivirusMock,
+    InteractiveActionMixed,
+    ScanByFormat,
+    ScanEmailObjectsSignature,
+    ScanVulnerabilityClear,
+    EnableParentalControl,
+    ScreenshotKeyboardEventUnderSafeBrowser,
+    StartSafeBrowsingFromProduct,
+    SelfDefenceDisabledMoveFiles,
+    SelfDefenceEnabledKillGuiService,
+    SystemRestart,
+    ProcessLaunchingDetectWithOnlySw,
+    InventoryOfDifferentFileFormats,
+    RestoreSuspiciousArchivesFromQuarantine,
+    ManagementConsole,
+    RunCiVisualTests;

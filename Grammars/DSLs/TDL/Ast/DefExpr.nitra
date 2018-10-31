@@ -23,8 +23,11 @@ namespace Tdl
     | HexadecimalIntegerLiteral { Type = context.GetDoubleType(); }
     | Reference
       {
+        out TypedRef : Ref[TypedDeclarationSymbol];
+        
         PatameterName.Scope = Scope;
-        Type = context.GetVoidType();
+        TypedRef            = PatameterName.Ref.Resolve();
+        Type                = TypedRef.Symbol.Type;
 
         PatameterName : Declarations.Reference;
       }

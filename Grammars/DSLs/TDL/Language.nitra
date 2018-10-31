@@ -1,6 +1,5 @@
 ﻿language TdlLang : DotNetLang
 {
-  span class StringEx         { ForegroundColor=Maroon;     }
 
   extension = .tdl;
 
@@ -9,12 +8,14 @@
   authors     = Vlad Chistyakov;
   copyright   = NitraTeam;
 
+  span class StringEx    { ForegroundColor=Maroon;     }
   span class Platform    { ForegroundColor=BlueViolet; }
   span class Deployment  { ForegroundColor=DarkCyan; }
   span class Product     { ForegroundColor=Chocolate; }
   span class ProductType { ForegroundColor=DarkRed; }
   span class Scenario    { ForegroundColor=OliveDrab; }
   span class Suite       { ForegroundColor=DarkBlue; }
+  span class External    { ForegroundColor=LightSkyBlue; }
 
   syntax module Tdl.Grammar start rule Module;
 }

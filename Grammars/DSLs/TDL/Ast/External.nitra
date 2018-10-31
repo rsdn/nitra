@@ -1,0 +1,18 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  declaration External : NamespaceMember, Container
+  {
+    symbol
+    {
+      Scope     = MemberTable;
+      Kind      = "external";
+      SpanClass = TdlLang.ExternalSpanClass;
+    }
+  }
+}

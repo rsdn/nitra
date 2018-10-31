@@ -6,6 +6,7 @@
   string ProductType;
   string TestAppPackName;
   bool   DisableAddingTrustedApplications;
+  string Version;
 }
 
 product KFA : Kavkis
@@ -16,6 +17,7 @@ product KFA : Kavkis
     ProductType                        = "KFA";
     TestAppPackName                    = "KasperskyLab.Kis.UI.TestApp.zip";
     DisableAddingTrustedApplications   = false;
+    Version                            = ProductVersion;
 }
 
 product KIS : Kavkis
@@ -79,10 +81,3 @@ product KSDE : Kavkis
 }
 
 product KAVKIS : Kavkis = KFA, KIS, SAAS, KSOS_PC, KSOS_FS, PURE;
-
-suite Gate_PURE
-{
-    platform win7-x64;
-    product PURE;
-    GateTests();
-}

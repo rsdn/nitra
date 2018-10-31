@@ -34,7 +34,7 @@ namespace Tdl
         }
 
         Definitions.DefinitionScope = Symbol.Type.Scope;
-        Definitions.Scope           = Scope;
+        Definitions.Scope           = ProjectSupport.ExternalSymbolTable;
         Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions);
 
         Definitions : Definition*;

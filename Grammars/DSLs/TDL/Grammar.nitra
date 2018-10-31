@@ -48,6 +48,7 @@
       | Scenario         = "scenario" sm Name sm ScenarioBody;
       | ScenarioSet      = "scenario" sm Name sm "=" sm Scenarios=(Reference; "," sm)+ ";" nl;
       | Suite            = "suite"    sm Name sm SuiteBody;
+      | External         = "external" sm ExternalBody;
     }
 
     syntax ParameterCurrying = Reference ":" sm DefExpr;
@@ -73,6 +74,8 @@
     syntax ProductBody = outline_begin_before "{" inl DefDeclaration* d "}" nl outline_end_before;
 
     syntax ProductTypeBody = outline_begin_before "{" inl Field* d "}" nl outline_end_before;
+
+    syntax ExternalBody = outline_begin_before "{" inl Field* d "}" nl outline_end_before;
 
     syntax Field = AnyType sm Name ";" nl;
     

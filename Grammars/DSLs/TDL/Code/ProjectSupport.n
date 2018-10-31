@@ -34,6 +34,8 @@ namespace Tdl
     static mutable _scenarioParameterScope : TableScope;
     internal static RequiredScenarioParameters : ImmutableArray[FormalParameterSymbol] { get { _requiredScenarioParameters } }
     static mutable _requiredScenarioParameters : ImmutableArray[FormalParameterSymbol];
+    internal static ExternalSymbolTable : TableScope { get { _externalSymbol.MemberTable } }
+    static mutable _externalSymbol : ExternalSymbol;
 
     mutable _backEnd : CciBackEnd;
 
@@ -111,6 +113,7 @@ namespace Tdl
         defineAlias(context, systemNs, rootNamespace, "Char",    "char");
       }
 
+      MakeExternalSymbol(context, rootNamespace);
       MakeScenarioParametersScope(backEnd, context);
       
       (backEnd : IDotNetBackEnd, context, rootNamespace)
@@ -124,12 +127,13 @@ namespace Tdl
 
       def removeParsedSymbols(tableScope : TableScope)
       {
-        tableScope.Undefine(_.IsParsed);
+        tableScope.Undefine(x => x.IsParsed);
         foreach (symbols in tableScope.Symbols)
         foreach (symbol is NamespaceSymbol in symbols)
           removeParsedSymbols(symbol.MemberTable);
       }
       removeParsedSymbols(rootNamespace.MemberTable);
+      removeParsedSymbols(ExternalSymbolTable);
 
       when (cancellationToken.IsCancellationRequested)
         return;
@@ -209,6 +213,14 @@ namespace Tdl
     {
       data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
     }
+
+    public MakeExternalSymbol(context : DependentPropertyEvalContext, rootNamespace : NamespaceSymbol) : void
+    {
+      def parameterName = Name(NoLocation, "external");
+      def symbol = ExternalSymbolDeclaration(parameterName).DefineSymbol(rootNamespace.MemberTable);
+      symbol.EvalProperties(context);
+      _externalSymbol = symbol;
+    }
     
     public MakeScenarioParametersScope(backEnd : IDotNetBackEnd, context : DependentPropertyEvalContext) : void
     {
@@ -253,7 +265,16 @@ namespace Tdl
         _backEnd.Dispose();
     }
   }
+
+  // Predeclaration
+  public partial class ExternalSymbol : SymbolBase, DeclarationSymbol, ContainerSymbol { }
   
+  [Record]
+  public class ExternalSymbolDeclaration : ExternalDeclaration[ExternalSymbol]
+  {
+    public override CreateSymbol() : DeclarationSymbol { ExternalSymbol() }
+  }
+
   [Record]
   public class ScenarioParameterDeclaration : ExternalDeclaration[FormalParameterSymbol]
   {

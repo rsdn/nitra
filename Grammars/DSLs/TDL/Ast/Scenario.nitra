@@ -45,6 +45,7 @@ namespace Tdl
         Environments.Scope              = Scope;
         Symbol.Environments             = Environments.Environment;
 
+        Definitions.Scope               = ProjectSupport.ExternalSymbolTable;
         Definitions.DefinitionScope     = ProjectSupport.ScenarioParameterScope;
         Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
 
