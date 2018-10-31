@@ -201,10 +201,8 @@ namespace Tdl
     public MakeDefinitions(definitions : Definition.IAstList) : ImmutableArray[Def]
     {
       def builder = ImmutableArray.CreateBuilder(definitions.Count);
-      foreach (definition in definitions)
-      {
-        builder.Add(Def(definition.Reference.Text, ConvertDefExpr(definition.Expr)));
-      }
+      foreach (definition when definition.IsSymbolRefEvaluated && definition.SymbolRef.IsSymbolEvaluated in definitions)
+        builder.Add(Def(definition.SymbolRef.Symbol, ConvertDefExpr(definition.Expr)));
       builder.MoveToImmutable()
     }
 

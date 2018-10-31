@@ -1,18 +1,11 @@
-﻿using Nemerle;
-using Nemerle.Collections;
-using Nemerle.Text;
-using Nemerle.Utility;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using DotNet;
 
 namespace Tdl
 {
   [Record]
   public struct Def
   {
-    public Name : string;
-    public Expr : Expr;
+    public Symbol : TypedDeclarationSymbol;
+    public Expr   : Expr;
   }
 }
