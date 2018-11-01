@@ -203,7 +203,7 @@ namespace Tdl
       def builder = ImmutableArray.CreateBuilder(definitions.Count);
       foreach (definition when definition.IsSymbolRefEvaluated && definition.SymbolRef.IsSymbolEvaluated in definitions)
         builder.Add(Def(definition.SymbolRef.Symbol, ConvertDefExpr(definition.Expr)));
-      builder.MoveToImmutable()
+      builder.TryMoveToImmutable()
     }
 
     public Resolve(platformRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[Ref[PlatformSymbol]]
@@ -211,7 +211,7 @@ namespace Tdl
       def builder = ImmutableArray.CreateBuilder(platformRefs.Length);
       foreach (platformRef in platformRefs)
         builder.Add(platformRef.Resolve());
-      builder.MoveToImmutable()
+      builder.TryMoveToImmutable()
     }
 
     public ToSymbol(it : PlatformSymbol, platforms : ImmutableArray[Ref[PlatformSymbol]]) : ImmutableArray[PlatformSymbol]
@@ -236,10 +236,7 @@ namespace Tdl
 
       loccectAllPlatforms(platforms);
 
-      if (builder.Capacity == builder.Count)
-        builder.MoveToImmutable()
-      else
-        builder.ToImmutable()
+      builder.TryMoveToImmutable()
     }
 
     public MakeExcludedParams(baseDeploymentRefs : ImmutableArray[Ref[TypedDeclarationSymbol]]) : ImmutableArray[FormalParameterSymbol]
@@ -251,10 +248,7 @@ namespace Tdl
         when (res.IsSymbolEvaluated)
           builder.Add(res.Symbol);
       }
-      if (builder.Capacity == builder.Count)
-        builder.MoveToImmutable()
-      else
-        builder.ToImmutable()
+      builder.TryMoveToImmutable()
     }
 
     public MakeCurryingScope(scope : Scope, excludedParams : ImmutableArray[FormalParameterSymbol]) : Scope
@@ -290,6 +284,14 @@ namespace Tdl
     public GetMissingRequiredOptionMessage(options : ImmutableArray[Ref[TypedDeclarationSymbol]]) : string
     {
       string.Join(", ", GetMissingRequiredOptionNames(options))
+    }
+
+    public TryMoveToImmutable[T](this builder : ImmutableArray[T].Builder) : ImmutableArray[T]
+    {
+      if (builder.Capacity == builder.Count)
+        builder.MoveToImmutable()
+      else
+        builder.ToImmutable()
     }
   } // module
 } // namespace

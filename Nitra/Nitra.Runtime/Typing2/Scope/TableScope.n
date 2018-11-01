@@ -21,9 +21,10 @@ namespace Nitra.Declarations
 {
   public class TableScope : Scope
   {
-    protected _owner     : DeclarationSymbol;
-    protected _name      : string;
-    protected _nameTable : Hashtable[int, list[DeclarationSymbol]]; //TODO: replace with LightList[DeclarationSymbol]?
+    protected         _owner                   : DeclarationSymbol;
+    protected         _name                    : string;
+    protected         _nameTable               : Hashtable[int, list[DeclarationSymbol]];
+    protected mutable _extensionMethodsModules : list[DeclarationSymbol] = [];
 
     public this(name : string)
     {
