@@ -26,7 +26,8 @@ namespace DotNet
     public GetArithmeticType(this host : Expr, e1Type : TypeSymbol, e2Type : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {
       // TODO: Переделать на типах.
-      match (host, e1Type.FullName, e2Type.FullName) {
+      match (host, if (e1Type.IsFullNameEvaluated) e1Type.FullName  else "", if (e2Type.IsFullNameEvaluated) e2Type.FullName  else "")
+      {
         | (Expr.Sum, "System.String", _) => e1Type
         | (Expr.Sum, _, "System.String") => e2Type
         | (Expr.Sum, "System.Char", "System.Char") => context.GetStringType()
