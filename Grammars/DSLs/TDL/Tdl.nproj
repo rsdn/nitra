@@ -120,6 +120,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Ast\External.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Ast\DefExpr.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -130,6 +133,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ast\EnvironmentAst.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Ast\ExternalAst.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Ast\Field.nitra">
@@ -184,8 +190,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Grammar.nitra">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="Language.nitra">
+      <SubType>Code</SubType>
     </Compile>
     <Compile Include="Mapping.nitra">
       <SubType>Code</SubType>

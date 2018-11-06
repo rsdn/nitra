@@ -1,6 +1,6 @@
 ﻿deployment Execute_Deploy(
     string DeploymentSequenceName,
-    string AutotestBinariesExcludedFilesMasks, // из продукта 
+    long   AutotestBinariesExcludedFilesMasks, // из продукта 
     string LocalTestBinariesFolder, // не задан!
     string TestAppPackName,
     string ProductBinariesExcludedFilesMasks,

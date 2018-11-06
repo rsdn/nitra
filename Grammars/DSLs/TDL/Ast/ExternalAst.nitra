@@ -1,0 +1,16 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+
+namespace Tdl
+{
+  ast ExternalAst : NamespaceMember
+  {
+    Fields.ContainingTable = ProjectSupport.ExternalSymbolTable;
+    Fields.Scope = Scope;
+    
+    Fields : Field*;
+  }
+}

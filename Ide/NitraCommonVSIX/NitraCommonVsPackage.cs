@@ -135,10 +135,24 @@ namespace Nitra.VisualStudio
 
     private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      var filePath    = (string)projectItem.Properties.Item("FullPath").Value;
+      var project     = projectItem.ContainingProject;
+      var projectPath = project.FullName;
+      var ext         = Path.GetExtension(filePath);
+      var id          = new FileId(_stringManager.GetId(filePath));
+      var projectId   = GetProjectId(project);
+
+      foreach (var server in _servers)
+        if (server.IsSupportedExtension(ext))
+          server.FileUnloaded(projectId, id);
+
+      Debug.WriteLine($"tr: FileAdded(FileName='{filePath}' id={id} projectPath='{projectPath}')");
     }
 
     private void PrjItemsEvents_ItemAdded(ProjectItem projectItem)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       AddFile(projectItem, projectItem.Properties.Item("FullPath").Value);
     }
 
@@ -549,6 +563,11 @@ namespace Nitra.VisualStudio
         server.BeforeCloseProject(id);
     }
 
+    static bool CanIncludeInProject(string action)
+    {
+      return action == "Compile" || action == "Nitra" || action == "None" || string.IsNullOrEmpty(action);
+    }
+
     void FileAdded(object sender, HierarchyItemEventArgs e)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
@@ -556,18 +575,13 @@ namespace Nitra.VisualStudio
       var action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
       var path   = e.FileName;
 
-      if (action == "Compile" || action == "Nitra" || action == null)
+      if (CanIncludeInProject(action))
       {
         object obj;
         var hr2 = e.Hierarchy.GetProperty(e.ItemId, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
 
         if (ErrorHelper.Succeeded(hr2) && obj is ProjectItem projectItem && projectItem != null)
         {
-          if (action == null && projectItem.ContainingProject.UniqueName != "<MiscFiles>")
-          {
-            Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}') (skipped)");
-            return;
-          }
           AddFile(projectItem, path);
           Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
           return;
@@ -579,6 +593,7 @@ namespace Nitra.VisualStudio
 
     private void AddFile(ProjectItem projectItem, string path)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       var ext = Path.GetExtension(path);
       var id = new FileId(_stringManager.GetId(path));
       var project = projectItem.ContainingProject;
@@ -601,7 +616,7 @@ namespace Nitra.VisualStudio
       var project   = e.Hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
       var projectId = GetProjectId(project);
 
-      if (action == "Compile" || action == "Nitra" || (action == null && string.IsNullOrEmpty(project.FileName)))
+      if (CanIncludeInProject(action))
         foreach (var server in _servers)
           if (server.IsSupportedExtension(ext))
             server.FileUnloaded(projectId, id);

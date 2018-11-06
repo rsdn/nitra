@@ -1,4 +1,4 @@
-platform win7-x86;
+﻿platform win7-x86;
 platform win7-x64;
 platform win_7 = win7-x86, win7-x64;
 platform win811-x86;
