@@ -344,6 +344,28 @@ namespace Nitra.BackEnd.Cci
     internal HasExtensionAttribute(attributes : Seq[ICustomAttribute]) : bool
     {
       AttributeHelper.Contains(attributes, CciHost.PlatformType.SystemRuntimeCompilerServicesExtensionAttribute);
+
+    LoadDefaultValue(defaultValue : IMetadataConstant) : DefaultValue
+    {
+      when (defaultValue == null)
+        return DefaultValue.None();
+      //ResolvedType(defaultValue.Type);
+      match (defaultValue.Value)
+      {
+        | null                => DefaultValue.Null()
+        | x is string         => DefaultValue.String(x)
+        | x is System.Int16   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.Int32   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.Int64   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.UInt16  => DefaultValue.Number(x :> ulong, true, false)
+        | x is System.UInt32  => DefaultValue.Number(x :> ulong, true, false)
+        | x is System.UInt64  => DefaultValue.Number(x, true, false)
+        | x is System.Single  => DefaultValue.Single(x)
+        | x is System.Double  => DefaultValue.Double(x)
+        | x is System.Decimal => DefaultValue.Decimal(x)
+        | x is System.Boolean => DefaultValue.Bool(x)
+        | _                   => DefaultValue.Error()
+      }
     }
 
     internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
