@@ -1,0 +1,9 @@
+﻿using System.Linq;
+
+class Program
+{
+    static void Main(string x)
+    {
+        x.Count();
+    }
+}

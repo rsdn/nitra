@@ -6,13 +6,13 @@ namespace DotNet
   // TODO: Временный промежуточный тип пока Expr находится в проекте CSharp. Убрать его после переноса АСТ-а обратно в DotNetLang.
   abstract ast ExprBase
   {
+    in    Options        : ExprOptions            = ExprOptions.None;
   stage 2:
-    in ExpectedType : TypeSymbol;
-    in Used : bool = false;
-    in ParameterScope : TableScope = TableScope(null, "parameters");
-    inout Scope : Scope;
-    out Type : TypeSymbol;
-    out Member : Ref[DeclarationSymbol] = null;
+    in    ExpectedType   : TypeSymbol;
+    in    Used           : bool                   = false;
+    inout Scope          : Scope;
+    out   Type           : TypeSymbol;
+    out   Member         : Ref[DeclarationSymbol] = null;
 
     ScopeOut = ScopeIn;
 

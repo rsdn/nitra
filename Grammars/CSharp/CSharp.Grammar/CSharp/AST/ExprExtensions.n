@@ -160,6 +160,51 @@ namespace DotNet
       }
     }
 
+    public TryBind(this context : DependentPropertyEvalContext, options : ExprOptions, scope : Scope, ast : QualifiedReference, r : Ref[DeclarationSymbol]) : Ref[DeclarationSymbol]
+    {
+      //def name1 = r.Name;
+      when (ast is QualifiedReference.Qualified as q)
+      {
+        def qualifier = q.Qualifier;
+        assert2(qualifier.IsRefEvaluated);
+        def symbols = qualifier.Ref.Symbols;
+        def types = List(symbols.Length);
+        foreach (s is TypedDeclarationSymbol when s.IsTypeEvaluated in symbols)
+          types.Add(s.Type);
+        def name = q.Name;
+        //def name = r.Name;
+        def matchContainers(symbol : GenericContainerTypeSymbol) : bool
+        {
+          when (!symbol.IsHasExtensionMethodEvaluated || !symbol.HasExtensionMethod)
+            return false;
+          def name = name;
+          def br1 = symbol.MemberTable.Bind.[Member.MethodSymbol](name)
+                      .Filter.[Member.MethodSymbol](m => m.IsIsExtensionMethodEvaluated
+                                                      && m.IsExtensionMethod);
+          br1.HasResult
+        }
+        def name = name;
+        def res2 = scope.Bind(matchContainers);
+        def result = LightList();
+        when (r.Result.HasResult)
+          result.AddRange(r.Result.GetSymbols());
+        foreach (container in res2.GetSymbols())
+        {
+          def br2 = container.MemberTable.Bind.[Member.MethodSymbol](name)
+                      .Filter.[Member.MethodSymbol](m => m.IsIsExtensionMethodEvaluated
+                                                      && m.IsExtensionMethod);
+          when (br2.HasResult)
+            result.AddRange(br2.GetSymbols());
+        }
+        when (result.Count > 0)
+        {
+          def br3 = result.ToBindResult();
+          return Ref.CreateBind(r.Location, br3);
+        }
+      }
+      r
+    }
+
     public InvocationResolveFunc(this context : DependentPropertyEvalContext, funcExpr : Expr, funcRef : Ref[FunctionalSymbol], argumentTypes : ImmutableArray[TypeSymbol], args : Argument.IAstList) : Ref[DeclarationSymbol]
     {
       if (funcRef == null)

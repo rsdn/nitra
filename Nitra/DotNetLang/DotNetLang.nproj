@@ -120,6 +120,9 @@
     <Compile Include="Expr\ExprBase.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Expr\ExprOptions.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="IDotNetBackEnd.n">
       <SubType>Code</SubType>
     </Compile>

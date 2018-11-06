@@ -40,9 +40,9 @@ namespace DotNet
       {
         Key: QualifiedReference;
 
-        Key.Scope = ScopeOut.HideWith(ParameterScope);
+        Key.Scope = ScopeIn;
       stage 2:
-        Member = Key.Ref.Resolve();
+        Member = context.TryBind(Options, ScopeIn, Key, Key.Ref);
         // Результат Ref может быть неоднозначным.
         Type = context.GetOverloadedMemberType(Member.Symbols);
       }
@@ -50,7 +50,7 @@ namespace DotNet
       {
         Expression : Expr;
 
-        Expression.ScopeIn = ScopeOut;
+        Expression.ScopeIn = ScopeIn;
         Type = Expression.Type;
       }
     | Argument : ExprArgument { }
@@ -61,12 +61,10 @@ namespace DotNet
       {
         ConstructorType : QualifiedReference;
 
-        ConstructorType.Scope = ScopeOut;
+        ConstructorType.Scope = ScopeIn;
         // Arguments : Expr.Argument*;
-        // Arguments.ParameterScope = ParameterScope;
-        // Arguments.Scope = Scope.HideWith(ParameterScope);
+        // Arguments.Scope = ScopeIn;
         // Arguments.IndexIn = 0;
-        // Arguments.ParentParameterScope = ???;
         // Arguments.Used = true;
         //
         // stage 2:
@@ -81,27 +79,23 @@ namespace DotNet
         Expr1     : Expr;
         Expr2     : Expr;
 
-        Condition.ParameterScope = ParameterScope;
-        Condition.ScopeIn = ScopeOut;
+        Condition.ScopeIn = ScopeIn;
         Condition.Used = true;
-        Expr1.ParameterScope = ParameterScope;
-        Expr1.ScopeIn = ScopeOut;
+        Expr1.ScopeIn = ScopeIn;
         Expr1.Used = true;
-        Expr2.ParameterScope = ParameterScope;
-        Expr2.ScopeIn = ScopeOut;
+        Expr2.ScopeIn = ScopeIn;
         Expr2.Used = true;
         Type = Expr1.Type;
+        ScopeOut = Condition.ScopeOut;
       }
     | NullCoalescing
       {
         Expr1 : Expr;
         Expr2 : Expr;
 
-        Expr1.ParameterScope = ParameterScope;
-        Expr1.ScopeIn = ScopeOut;
+        Expr1.ScopeIn = ScopeIn;
         Expr1.Used = true;
-        Expr2.ParameterScope = ParameterScope;
-        Expr2.ScopeIn = ScopeOut;
+        Expr2.ScopeIn = ScopeIn;
         Expr2.Used = true;
         Type = Expr1.Type;
       }
@@ -110,10 +104,9 @@ namespace DotNet
         TypeName   : QualifiedReference;
         Expression : Expr;
 
-        TypeName.Scope = ScopeOut;
-        Expression.ParameterScope = ParameterScope;
-        Expression.ScopeIn = ScopeOut;
-        Expression.Used = true;
+        TypeName.Scope     = ScopeIn;
+        Expression.ScopeIn = ScopeIn;
+        Expression.Used    = true;
       stage 2:
         out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
         Type = TypeRef.Symbol;
@@ -242,7 +235,7 @@ namespace DotNet
       {
         Expr1 : Expr;
 
-        Expr1.ScopeIn = ScopeOut;
+        Expr1.ScopeIn = ScopeIn;
         // TypeName : QualifiedReference;
         // TypeName.Scope = Scope;
       stage 2:
@@ -252,7 +245,7 @@ namespace DotNet
     | As
       {
 
-        Expr1.ScopeIn = ScopeOut;
+        Expr1.ScopeIn = ScopeIn;
       //    TypeName : QualifiedReference;
       //    TypeName.Scope = Scope;
       //
@@ -275,9 +268,8 @@ namespace DotNet
       {
         Expr1 : Expr;
 
-        Expr1.ScopeIn = ScopeOut;
+        Expr1.ScopeIn = ScopeIn;
         Expr1.Used = true;
-        Expr1.ParameterScope = ParameterScope;
         Type = Expr1.Type; // FIXME
       }
     | Greater : Comparison
@@ -332,10 +324,9 @@ namespace DotNet
       {
         Expr1 : Expr;
 
-        Expr1.ScopeIn = ScopeOut;
-        Expr1.ParameterScope = ParameterScope;
+        Expr1.ScopeIn = ScopeIn;
         // QualifiedName : Reference;
-        // QualifiedName.Scope = Expr1.Type.Scope;
+        // QualifiedName.ScopeIn = Expr1.Type.Scope;
         Type = context.GetVoidType(); //this.GetMemberAccessReturnType(Ref);
       stage 2:
         out Ref : Ref[DeclarationSymbol] = null; // QualifiedName.Ref.Resolve();
@@ -343,9 +334,9 @@ namespace DotNet
     | MemberAccess2
       {
         // TypeName : QualifiedReference;
-        // TypeName.Scope = Scope;
+        // TypeName.ScopeIn = ScopeIn;
         // QualifiedName : QualifiedReference;
-        // QualifiedName.Scope = TypeNameRef.Scope;
+        // QualifiedName.ScopeIn = TypeNameRef.ScopeIn;
         Type = context.GetVoidType(); // this.GetMemberAccessReturnType(QualifiedNameRef);
       stage 2:
         // out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
@@ -357,10 +348,9 @@ namespace DotNet
         out Method : Ref[FunctionalSymbol];
 
         //Left.ExpectedType              = ExpectedFunctionType;
+        Left.Options                   = ExprOptions.Invocation;
         Left.ScopeIn                   = ScopeIn;
-        Left.ParameterScope            = ParameterScope;
 
-        Arguments.ParameterScope       = ParameterScope;
         Arguments.ScopeIn              = ScopeIn;
         Arguments.IndexIn              = 0;
         Arguments.Used                 = true;
@@ -381,13 +371,10 @@ namespace DotNet
       {
         Expr1 : Expr;
 
-        Expr1.ScopeIn = ScopeOut;
-        Expr1.ParameterScope = ParameterScope;
+        Expr1.ScopeIn = ScopeIn;
         // Arguments : Expr.Argument*;
-        // Arguments.ParameterScope = ParameterScope;
-        // Arguments.Scope = Scope.HideWith(ParameterScope);
+        // Arguments.Scope = Scope;
         // Arguments.IndexIn = 0;
-        // Arguments.ParentParameterScope = ???;
         // Arguments.Used = true;
         // Type = Method.Symbol.ReturnType;
         Type = context.GetVoidType();
@@ -507,8 +494,7 @@ namespace DotNet
     Expr : Expr;
     ParameterNameOpt : OptionalName;
 
-    Expr.ParameterScope = ParameterScope;
-    Expr.ScopeIn = ScopeOut;
+    Expr.ScopeIn = ScopeIn;
     Expr.Used = true;
     //ExpectedType = ???;
     Type = Expr.Type;
@@ -535,12 +521,13 @@ namespace DotNet
 
   ast LambdaExpr
   {
+    // TODO: Convert to declaration
     Parameter : LambdaParameter;
     Expression : Expr;
 
     in TypeScope : Scope;
     in ExpectedType : TypeSymbol;
-    Parameter.ContainingTable = Expression.ParameterScope;
+    //Parameter.ContainingTable = ???; // TODO: Make separate TableScope for parameters.
     Parameter.TypeScope = TypeScope;
     Expression.ExpectedType = ExpectedType;
     Expression.ScopeIn = TypeScope;
@@ -584,9 +571,8 @@ namespace DotNet
   {
     Expr1 : Expr;
 
-    Expr1.ScopeIn = ScopeOut;
+    Expr1.ScopeIn = ScopeIn;
     Expr1.Used = true;
-    Expr1.ParameterScope = ParameterScope;
     Type = Expr1.Type;
     out Operation : UnaryOp;
   }
@@ -606,12 +592,10 @@ namespace DotNet
     Expr1 : Expr;
     Expr2 : Expr;
 
-    Expr1.ScopeIn = ScopeOut;
-    Expr2.ScopeIn = ScopeOut;
+    Expr1.ScopeIn = ScopeIn;
+    Expr2.ScopeIn = ScopeIn;
     Expr1.Used = true;
     Expr2.Used = true;
-    Expr1.ParameterScope = ParameterScope;
-    Expr2.ParameterScope = ParameterScope;
     out Operation : BinaryOp;
   }
   abstract ast SameTypesExpr : BinaryExpr { }
