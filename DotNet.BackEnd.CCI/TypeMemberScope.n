@@ -41,7 +41,7 @@ namespace Nitra.BackEnd.Cci
       _materializeMemberCount = _loadMemberTypeCount <- 0;
     }
 #endif
-    
+
     _cciBackEnd               : CciBackEnd;
     mutable _isLoaded         : bool;
 #if LAZY
@@ -67,7 +67,7 @@ namespace Nitra.BackEnd.Cci
 #if LAZY
       Init();
 #endif
-      
+
       def context = DependentPropertyEvalContext(null);
       def owner = Owner :> ContainerSymbol;
       def type = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
@@ -77,7 +77,7 @@ namespace Nitra.BackEnd.Cci
       def getTypeScope(type : TypeSymbol)
       {
         | x is TopConstructedTypeSymbol => x.TypeInfo.Scope
-        | null => assert2(false); assert(false)
+        | null => assert2(false); EmptyScope.Instance
         | _ => type.Scope
       }
 
@@ -103,7 +103,7 @@ namespace Nitra.BackEnd.Cci
       _materializeMembersTime += _timer.Elapsed;
       _timer.Restart();
 #endif
-      
+
       foreach (m in members)
       {
         | _ is ITypeDefinition => ()

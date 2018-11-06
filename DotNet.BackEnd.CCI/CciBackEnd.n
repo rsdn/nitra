@@ -44,6 +44,8 @@ namespace Nitra.BackEnd.Cci
     [RecordIgnore] mutable _cciObject                : INamespaceTypeDefinition;
     [RecordIgnore] mutable _objectSymbol             : TypeSymbol;
     [RecordIgnore]         _tempAssemblies           : List[string]                           = List();
+    [RecordIgnore] mutable _cciExtensionAttribute    : INamespaceTypeDefinition;
+    [RecordIgnore] mutable _cciExtensionAttributeKey : uint;
 
     public this() { this(PeReader.DefaultHost()) }
 
@@ -83,6 +85,9 @@ namespace Nitra.BackEnd.Cci
 
       def host = CciHost;
       def loadedAsmsSet = HashSet();
+
+      _cciExtensionAttribute    = host.PlatformType.SystemRuntimeCompilerServicesExtensionAttribute.ResolvedType;
+      _cciExtensionAttributeKey = _cciExtensionAttribute.InternedKey;
 
       foreach(lib in libs)
       {
@@ -343,7 +348,11 @@ namespace Nitra.BackEnd.Cci
 
     internal HasExtensionAttribute(attributes : Seq[ICustomAttribute]) : bool
     {
-      AttributeHelper.Contains(attributes, CciHost.PlatformType.SystemRuntimeCompilerServicesExtensionAttribute);
+      foreach (a when a != null in attributes)
+        when (a.Type.InternedKey == _cciExtensionAttributeKey)
+          return true;
+      false
+    }
 
     LoadDefaultValue(defaultValue : IMetadataConstant) : DefaultValue
     {
@@ -386,6 +395,7 @@ namespace Nitra.BackEnd.Cci
           parameterModifier |= ParameterModifier.Params;
         parameter.Modifier = parameterModifier;
         parameter.Index = p.Index;
+        parameter.Default = LoadDefaultValue(p.DefaultValue);
         parameter.EvalProperties(context);
         builder.Add(parameter);
       }
@@ -490,11 +500,6 @@ namespace Nitra.BackEnd.Cci
 
     CciTypeToTypeSymbol(cciTypeReference : ITypeReference, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      def cciTypeDef = ResolvedType(cciTypeReference);
-      when (cciTypeDef == null)
-        return _objectSymbol;
-
-
       def result : TypeSymbol =
         match (cciTypeReference)
         {
@@ -545,16 +550,21 @@ namespace Nitra.BackEnd.Cci
             else
             {
               def typeInfo = CciTypeToTypeSymbol(t.GenericType, context) :> GenericTypeSymbol;
-              def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
-              def name = Name(NoLocation, t.GenericType.Name.Value);
-              def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, ResolvedType(t)).DefineSymbol(null);
+              if (typeInfo.Id == _objectSymbol.Id)
+                _objectSymbol
+              else
+              {
+                def args = t.GenericArguments.Select(CciTypeToTypeSymbol(_, context)).ToImmutableArray();
+                def name = Name(NoLocation, t.GenericType.Name.Value);
+                def constructedType = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol] (name, ResolvedType(t)).DefineSymbol(null);
 
-              constructedType.TypeInfo = typeInfo;
-              constructedType.Args = args;
-              constructedType.EvalProperties(context);
-              def ok = _cciInternedKeyToGenericSymbolMap.TryAdd(cciTypeReference.InternedKey, constructedType);
-              assert2(ok);
-              constructedType
+                constructedType.TypeInfo = typeInfo;
+                constructedType.Args = args;
+                constructedType.EvalProperties(context);
+                def ok = _cciInternedKeyToGenericSymbolMap.TryAdd(cciTypeReference.InternedKey, constructedType);
+                assert2(ok);
+                constructedType
+              }
             }
 
           | _ =>
