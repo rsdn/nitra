@@ -1,0 +1,126 @@
+
+suite Gate_KFA
+{
+    platform win7-x64;
+    product KFA;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    GateTests_KFA();
+}
+
+suite Gate_SAAS
+{
+    platform win7-x64;
+    product SAAS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    GateTests_SAAS();
+}
+
+suite Gate_KSDE
+{
+    platform win7-x64;
+    product KSDE;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    GateTests_KSDE();
+}
+
+suite Smoke_PURE
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product PURE;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_PURE();
+}
+
+suite Smoke_Webpack_PURE
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product PURE_Webpack;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeWebpackTests_PURE();
+}
+
+suite Smoke_KIS
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product KIS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KIS();
+}
+
+suite Smoke_KAV
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product KAV;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KAV();
+}
+
+suite Smoke_KFA
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product KFA;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KFA();
+}
+
+suite Smoke_KSOS
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product KSOS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KSOS();
+}
+
+suite Smoke_KSOS_FS
+{
+    platform win2012r2;
+    product KSOS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KSOS_FS();
+}
+
+suite Smoke_SAAS
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product SAAS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_SAAS();
+}
+
+suite Smoke_KSDE
+{
+    platform w10rs4-x64__win7-x64__win811-x86;
+    product KSDE;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    SmokeTests_KSDE();
+}
+
+suite Gate_KSOS_FS
+{
+    platform win2012r2;
+    product KSOS;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    GateTests_KSOS_FS();
+}
+
+suite Gate_PURE
+{
+    platform win7-x64;
+    product PURE;
+    AutotestsBinariesToken = AutotestsBinariesToken;
+    ProductBinariesToken = ProductBinariesToken;
+    GateTests_PURE();
+}

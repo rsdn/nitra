@@ -1,0 +1,44 @@
+platform win7-x86;
+platform win7-x64;
+platform win_7 =
+    win7-x86,
+    win7-x64;
+platform win811-x86;
+platform win811-x64;
+platform win_811 =
+    win811-x86,
+    win811-x64;
+platform w10rs3-x86;
+platform w10rs3-x64;
+platform win_10_rs3 =
+    w10rs3-x86,
+    w10rs3-x64;
+platform w10rs4-x86;
+platform w10rs4-x64;
+platform win_10_rs4 =
+    w10rs4-x86,
+    w10rs4-x64;
+platform w10rs5-x86;
+platform w10rs5-x64;
+platform win_10_rs5 =
+    w10rs5-x86,
+    w10rs5-x64;
+platform win_10 =
+    win_10_rs3,
+    win_10_rs4,
+    win_10_rs5;
+platform win2008r2;
+platform win2012r2;
+platform sbs2008;
+platform sbs2011;
+platform xs-14393;
+platform all_pc =
+    win_7,
+    win_811,
+    win_10;
+platform all_servers =
+    win2008r2,
+    win2012r2,
+    sbs2008,
+    sbs2011,
+    xs-14393;

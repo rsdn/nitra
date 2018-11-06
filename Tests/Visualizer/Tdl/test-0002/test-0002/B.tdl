@@ -1,9 +1,0 @@
-﻿product type Configurable
-{
-    string ProductConfigPath;
-}
-
-product "PURE 2020" : Configurable
-{
-    ProductConfigPath = @"\\sdfs\Autotests\Components\Delivery\BlackBox\AutotestConfiguration\ProductConfiguration\2020.MP0\PURE.xml";
-}

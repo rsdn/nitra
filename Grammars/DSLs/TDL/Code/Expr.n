@@ -17,6 +17,6 @@ namespace Tdl
     | False     { }
     | Real      { Value : double; }
     | Integerl  { Value : int; }
-    | Reference { Name: string; }
+    | Reference { Name  : string; }
   }
 }
