@@ -1,6 +1,6 @@
 ﻿external
 {
   string ProductVersion;
-  long   AutotestsBinariesToken;
-  long   ProductBinariesToken;
+  string AutotestsBinariesToken;
+  string ProductBinariesToken;
 }
