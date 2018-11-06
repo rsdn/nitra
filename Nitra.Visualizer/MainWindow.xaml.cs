@@ -445,10 +445,11 @@ namespace Nitra.Visualizer
       var doc             = _textEditor.Document;
 
       errorNodes.Clear();
+      var regex = new Regex("<.*?>");
 
       foreach (var message in cmpilerMessages)
       {
-        var text     = message.Text;
+        var text     = regex.Replace(message.Text, "");
         var location = message.Location;
         var file     = location.File;
         var span     = location.Span;

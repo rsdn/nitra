@@ -247,7 +247,7 @@ namespace Tdl
       defineParameter(context, "AllowReboot",             platformType.Boolean, required=false);
       defineParameter(context, "Area",                    platformType.String,  required=false);
       defineParameter(context, "NeedUnsignedAgent",       platformType.Boolean, required=false);
-      defineParameter(context, "RequireInternet",         platformType.Int32,   required=false);
+      defineParameter(context, "RequireInternet",         platformType.Boolean, required=false);
       defineParameter(context, "RerunCountOnTestFailure", platformType.Int32,   required=false);
       defineParameter(context, "RerunCountOnTestSuccess", platformType.Int32,   required=false);
       defineParameter(context, "Responsible",             platformType.String,  required=false);
