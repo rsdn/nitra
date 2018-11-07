@@ -1,0 +1,13 @@
+﻿using DotNet;
+
+namespace Tdl
+{
+  [Record]
+  public struct Def2
+  {
+    public Name : string;
+    public Expr : Expr;
+
+    public override ToString() : string { Name + " = " + Expr }
+  }
+}

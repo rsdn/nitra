@@ -197,8 +197,8 @@ namespace Tdl
         | x with loc = x.Location                => Expr.Error(Utils.Location(loc.Source.File.FullName, loc.StartPos, loc.EndPos))
       }
     }
-    
-    public MakeDefinitions(definitions : Definition.IAstList) : ImmutableArray[Def]
+
+    public MakeDefinitions(definitions : Definition.IAstList, _dependence : ImmutableArray[Ref[TypedDeclarationSymbol]]) : ImmutableArray[Def]
     {
       def builder = ImmutableArray.CreateBuilder(definitions.Count);
       foreach (definition when definition.IsSymbolRefEvaluated && definition.SymbolRef.IsSymbolEvaluated in definitions)
@@ -206,6 +206,14 @@ namespace Tdl
       builder.TryMoveToImmutable()
     }
 
+    public MakeDefinitions(definitions : Definition.IAstList) : ImmutableArray[Def2]
+    {
+      def builder = ImmutableArray.CreateBuilder(definitions.Count);
+      foreach (definition in definitions)
+        builder.Add(Def2(definition.Reference.Text, ConvertDefExpr(definition.Expr)));
+      builder.TryMoveToImmutable()
+    }
+    
     public Resolve(platformRefs : ImmutableArray[Ref[DeclarationSymbol]]) : ImmutableArray[Ref[PlatformSymbol]]
     {
       def builder = ImmutableArray.CreateBuilder(platformRefs.Length);

@@ -18,5 +18,19 @@ namespace Tdl
     | Real      { Value : double; }
     | Integerl  { Value : int; }
     | Reference { Name  : string; }
+
+    public override ToString() : string
+    {
+      match (this)
+      {
+        | Error          => "<Error>"
+        | String(value)  => "@\"" + value + '"'
+        | True           => "true"
+        | False          => "false"
+        | Real      as x => x.Value.ToString()
+        | Integerl  as x => x.Value.ToString()
+        | Reference as x => x.Name 
+      }
+    }
   }
 }

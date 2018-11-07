@@ -7,5 +7,7 @@ namespace Tdl
   {
     public Symbol : TypedDeclarationSymbol;
     public Expr   : Expr;
+
+    public override ToString() : string { Symbol?.Name + " = " + Expr }
   }
 }

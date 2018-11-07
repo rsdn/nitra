@@ -38,7 +38,7 @@ namespace Tdl
 
     Definitions.DefinitionScope = Statements.ScopeOut;
     Definitions.Scope           = ProjectSupport.ExternalSymbolTable;
-    Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions);
+    Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions, Definitions.SymbolRef);
 
     Platform    : Reference;
     Product     : Reference;

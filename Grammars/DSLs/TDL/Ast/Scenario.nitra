@@ -47,7 +47,7 @@ namespace Tdl
 
         Definitions.Scope               = ProjectSupport.ExternalSymbolTable;
         Definitions.DefinitionScope     = ProjectSupport.ScenarioParameterScope;
-        Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions);
+        Symbol.Defs                     = TdlUtils.MakeDefinitions(Definitions, Definitions.SymbolRef);
 
         when (TdlUtils.IsMissingRequiredOptions(Definitions.SymbolRef))
           Name.Error(context, $"Missing required option: $(TdlUtils.GetMissingRequiredOptionMessage(Definitions.SymbolRef))");

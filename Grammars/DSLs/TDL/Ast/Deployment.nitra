@@ -22,7 +22,7 @@ namespace Tdl
         {
           in Path     : ParsedValue[string];
           in Expected : ParsedValue[int];
-          in Defs     : ImmutableArray[Def];
+          in Defs     : ImmutableArray[Def2];
 
           Kind      = "deployment";
           SpanClass = TdlLang.DeploymentSpanClass;
@@ -82,7 +82,7 @@ namespace Tdl
         Symbol.ExcludedParams            = TdlUtils.MakeExcludedParams(CurredParameters.SymbolRef);
         Symbol.AggregateParametersScope  = TdlUtils.MakeCurryingScope(CurredParameters.DefinitionScope, Symbol.ExcludedParams);
 
-        Symbol.ParameterValues           = TdlUtils.MakeDefinitions(CurredParameters);
+        Symbol.ParameterValues           = TdlUtils.MakeDefinitions(CurredParameters, CurredParameters.SymbolRef);
 
         BaseDeployment   : Reference;
         CurredParameters : Definition*;
