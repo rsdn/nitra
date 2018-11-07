@@ -468,6 +468,7 @@ scenario DefaultRightForStartProcess
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Hips.StartOtherProcessTests.DefaultRightForStartProcess;
     RevertAgentBefore = true;
+    RevertAgentAfter = true;
     Area = @"Hips";
     UniqueId = @"F954F9CD-8B35-469B-86C1-C968B982B43C";
     TfsId = 186940;
