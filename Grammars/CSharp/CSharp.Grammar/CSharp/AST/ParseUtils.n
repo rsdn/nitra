@@ -79,14 +79,7 @@ namespace Nitra
       mutable result = CharToDigit(text[startPos]) : ulong;
 
       for (mutable i = startPos + 1; i < endPos; i++)
-      {
-        def ch = CharToDigit(text[i]);
-
-        when (ch == 0)
-          continue;
-
         checked result = (result * (radix :> ulong)) + CharToDigit(text[i]);
-      }
 
       result
     }
