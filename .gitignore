@@ -80,3 +80,4 @@ Ide/Nitra.LanguageVsPackage/
 /Tests/Visualizer/Tdl/*.ps1
 /Ide/TdlLangVsPackage/*
 /Tests/Visualizer/Tdl/test-0002/*.json
+/Tests/Visualizer/Tdl/**/*.json
