@@ -1,4 +1,4 @@
-product KSOS__PURE : Kavkis  = KSOS, PURE;
+﻿product KSOS__PURE__PURE_Webpack : Kavkis  = KSOS, PURE, PURE_Webpack;
 platform all_pc__win2012r2 = all_pc, win2012r2;
 platform win7-x64__win811-x86 = win7-x64, win811-x86;
 platform w10rs4-x64__win7-x64__win811-x86 = w10rs4-x64, win7-x64, win811-x86;
@@ -12,7 +12,7 @@ scenario TryDisinfectWithoutRestart
     UniqueId = @"C9E7C8CF-9C40-4F10-A8CE-08FAA7E99BB9";
     TfsId = 2145098;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckBlockBannerByUrl
@@ -23,7 +23,7 @@ scenario CheckBlockBannerByUrl
     Area = @"AntiBanner";
     UniqueId = @"9365B31B-28BA-4D40-A116-304B022A2946";
     TfsId = 1638532;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckBlockingBannerOnHttps
@@ -34,7 +34,7 @@ scenario CheckBlockingBannerOnHttps
     Area = @"AntiBanner";
     UniqueId = @"E3CA10BC-5C2A-4391-9FC3-A8DC08CDC25C";
     TfsId = 1651464;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckBlockingBannersFromWhiteList
@@ -45,7 +45,7 @@ scenario CheckBlockingBannersFromWhiteList
     Area = @"AntiBanner";
     UniqueId = @"9BB07505-9BBF-4095-8483-448EA1BCE668";
     TfsId = 1638660;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckBlockingBlackBannersOnWhitePage
@@ -56,7 +56,7 @@ scenario CheckBlockingBlackBannersOnWhitePage
     Area = @"AntiBanner";
     UniqueId = @"6CB32662-4287-43A1-9B2E-08D5609CD623";
     TfsId = 1653437;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario AntiPhishingAndKsnCombinedWmufTestMock
@@ -69,7 +69,7 @@ scenario AntiPhishingAndKsnCombinedWmufTestMock
     Area = @"AntiSpam";
     UniqueId = @"5DCFE386-9C7D-466D-AAC4-A0EB9181BC49";
     TfsId = 184726;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario AntiPhishingSearchByHashBvt
@@ -81,7 +81,7 @@ scenario AntiPhishingSearchByHashBvt
     Area = @"WebAv";
     UniqueId = @"A576AFE9-7D13-465B-AF61-391969A48D1B";
     TfsId = 187942;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario AntiPhishingSearchByLinkBvt
@@ -93,7 +93,7 @@ scenario AntiPhishingSearchByLinkBvt
     Area = @"WebAv";
     UniqueId = @"FC232752-A3E8-4A4E-BFD4-B8C33ADA3A95";
     TfsId = 187941;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario FtpDetectEicarFileLessThan1MbBlock
@@ -105,7 +105,7 @@ scenario FtpDetectEicarFileLessThan1MbBlock
     Area = @"WebAv";
     UniqueId = @"BA7484E0-4C09-4F54-9376-13F4DDF566EB";
     TfsId = 184150;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckCombinedOperationAntiFishingMessage
@@ -116,7 +116,7 @@ scenario CheckCombinedOperationAntiFishingMessage
     Area = @"AntiSpam";
     UniqueId = @"827CCC11-4961-470A-BA82-1E0B4D95381B";
     TfsId = 187549;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckCombinedOperationAntiFishingVirus
@@ -127,7 +127,7 @@ scenario CheckCombinedOperationAntiFishingVirus
     Area = @"AntiSpam";
     UniqueId = @"1C1842C8-087B-442C-A538-248CB0ADA8C7";
     TfsId = 187549;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckCombinedOperationAntiFishingWmuf
@@ -138,7 +138,7 @@ scenario CheckCombinedOperationAntiFishingWmuf
     Area = @"AntiSpam";
     UniqueId = @"4E7D35BB-7FA9-4782-8C6F-75475115DFD3";
     TfsId = 187549;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario TrafficMonitorEnableDisableEicarHamTest
@@ -149,7 +149,7 @@ scenario TrafficMonitorEnableDisableEicarHamTest
     Area = @"AntiSpam";
     UniqueId = @"1D2B4779-A8B9-4877-878C-F34A56EF4C0F";
     TfsId = 187550;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario TrafficMonitorEnableDisableEicarProbableSpamTest
@@ -160,7 +160,7 @@ scenario TrafficMonitorEnableDisableEicarProbableSpamTest
     Area = @"AntiSpam";
     UniqueId = @"3E14E1B5-D44B-4DFB-A124-891F84077775";
     TfsId = 187550;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario TrafficMonitorEnableDisableEicarSpamTest
@@ -171,7 +171,7 @@ scenario TrafficMonitorEnableDisableEicarSpamTest
     Area = @"AntiSpam";
     UniqueId = @"9CDA2B3D-15CF-4A01-9206-2BCF809AD30F";
     TfsId = 187550;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DetectionDependingOnEmulationLevelScanFilesMedium
@@ -182,7 +182,7 @@ scenario DetectionDependingOnEmulationLevelScanFilesMedium
     Area = @"Avs";
     UniqueId = @"CB373FFE-0A2E-4AB1-B82E-BA0D1358D469";
     TfsId = 186320;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario HeuristicAnalysisHigh
@@ -193,7 +193,7 @@ scenario HeuristicAnalysisHigh
     Area = @"Avs";
     UniqueId = @"1C0980BF-20EF-4B92-9831-21FE6EF4AC09";
     TfsId = 187443;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DeleteLocalStorageTest
@@ -204,7 +204,7 @@ scenario DeleteLocalStorageTest
     Area = @"Backup";
     UniqueId = @"59295CE6-71F4-436E-B656-08CB56512F86";
     TfsId = 1042235;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DeleteTaskWithDataFromLocalStorage
@@ -215,7 +215,7 @@ scenario DeleteTaskWithDataFromLocalStorage
     Area = @"Backup";
     UniqueId = @"0A464A55-84E3-4F89-A21B-1EA9D555E3E2";
     TfsId = 1042305;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DeleteTaskWithoutDataFromLocalStorage
@@ -226,7 +226,7 @@ scenario DeleteTaskWithoutDataFromLocalStorage
     Area = @"Backup";
     UniqueId = @"1B873686-99B7-42CD-A5CA-DFFD6EC067C7";
     TfsId = 1042305;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BlockAnalytics
@@ -237,7 +237,7 @@ scenario BlockAnalytics
     Area = @"Dnt";
     UniqueId = @"AD793953-A78C-49DC-8129-3F4D2DF61A13";
     TfsId = 1075088;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BlockTwitter
@@ -248,7 +248,7 @@ scenario BlockTwitter
     Area = @"Dnt";
     UniqueId = @"02AC7E95-34A1-407E-AFA7-7F5B3F9DC9C7";
     TfsId = 1075086;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BlockFacebook
@@ -259,7 +259,7 @@ scenario BlockFacebook
     Area = @"Dnt";
     UniqueId = @"6B50BE6E-B070-43CD-9B71-A8347DD1DE80";
     TfsId = 1075086;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SupportSystemReportAssistance
@@ -270,7 +270,7 @@ scenario SupportSystemReportAssistance
     Area = @"AVZ";
     UniqueId = @"62FDA2CA-1B42-47AF-9890-F3F5446B7B02";
     TfsId = 184838;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckCreateDump
@@ -281,7 +281,7 @@ scenario CheckCreateDump
     Area = @"Dump";
     UniqueId = @"7D5FC027-48CC-4807-B94D-CA02DA945701";
     TfsId = 182944;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DetectAndDeleteThreatsFromVault
@@ -292,7 +292,7 @@ scenario DetectAndDeleteThreatsFromVault
     Area = @"Encryption";
     UniqueId = @"36E42BCC-9B4B-4235-8642-FBB339FD9C38";
     TfsId = 1058598;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckSendingDumpOnOneFtpServerTest
@@ -303,7 +303,7 @@ scenario CheckSendingDumpOnOneFtpServerTest
     Area = @"Dump";
     UniqueId = @"9849AE4E-4CFB-4442-913B-81034D43F8D6";
     TfsId = 182944;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredFileInUse
@@ -314,7 +314,7 @@ scenario ShredFileInUse
     Area = @"FileShredder";
     UniqueId = @"C5CC0271-4339-44BD-9AED-2CF24AD6CE97";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredFolderWithFileInUse
@@ -325,7 +325,7 @@ scenario ShredFolderWithFileInUse
     Area = @"FileShredder";
     UniqueId = @"F3A30F31-2EE3-44BA-8D68-261084D57260";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredNonAccessibleFiles
@@ -336,7 +336,7 @@ scenario ShredNonAccessibleFiles
     Area = @"FileShredder";
     UniqueId = @"063CB789-EFD2-4E22-8BA4-59A36DA7657C";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredNonExistentFiles
@@ -347,7 +347,7 @@ scenario ShredNonExistentFiles
     Area = @"FileShredder";
     UniqueId = @"86AAF994-9CD2-4913-B773-9B821CA77460";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredProgramFiles
@@ -358,7 +358,7 @@ scenario ShredProgramFiles
     Area = @"FileShredder";
     UniqueId = @"45784AAD-C2CA-4B33-8E0E-E62BE0C41B20";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredSystemFile
@@ -369,7 +369,7 @@ scenario ShredSystemFile
     Area = @"FileShredder";
     UniqueId = @"F11E4824-CAEB-4761-98F0-F7997F84E7C3";
     TfsId = 1651464;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario AppRuleTcpIpv4BlockedRemoteHostNotInList
@@ -380,7 +380,7 @@ scenario AppRuleTcpIpv4BlockedRemoteHostNotInList
     Area = @"Firewall";
     UniqueId = @"964173B8-3A12-4EEB-AB7B-3F84518584BA";
     TfsId = 187752;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckIdsForTcpIpV4
@@ -388,10 +388,11 @@ scenario CheckIdsForTcpIpV4
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Firewall.IdsSmokeTests.CheckIdsForTcpIpV4;
+    RevertAgentBefore = true;
     Area = @"Firewall";
     UniqueId = @"EB4E3773-48AE-4D1B-8C5D-93277A0F58AE";
     TfsId = 187198;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckSilentDetectForTcpIpV4
@@ -402,7 +403,7 @@ scenario CheckSilentDetectForTcpIpV4
     Area = @"Firewall";
     UniqueId = @"69EB081F-8F6F-4A40-9B62-F00360B0AC85";
     TfsId = 185009;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario HighRestrictedGroupOutcomingIcmpIpv4Blocked
@@ -413,7 +414,7 @@ scenario HighRestrictedGroupOutcomingIcmpIpv4Blocked
     Area = @"Firewall";
     UniqueId = @"EBDC0143-8CDE-4C63-8F98-E48F00B1DC94";
     TfsId = 187644;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario PriorityOfNetworkPackageRulesAllow
@@ -424,7 +425,7 @@ scenario PriorityOfNetworkPackageRulesAllow
     Area = @"Firewall";
     UniqueId = @"DA5214D4-4059-4B74-B24C-83D400E593A3";
     TfsId = 187628;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario PriorityOfNetworkPackageRulesBlock
@@ -435,7 +436,7 @@ scenario PriorityOfNetworkPackageRulesBlock
     Area = @"Firewall";
     UniqueId = @"FC4E180C-66B9-48D2-89E9-CC45AB237E80";
     TfsId = 187628;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckLocalizationFullyTranslated
@@ -446,7 +447,7 @@ scenario CheckLocalizationFullyTranslated
     Area = @"GUI";
     UniqueId = @"94A6C362-A525-4B4D-B018-3BA84EC02BEA";
     TfsId = 3004163;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SomeComponentsAreDisabled
@@ -454,10 +455,11 @@ scenario SomeComponentsAreDisabled
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.GUI.ProblemListTests.SomeComponentsAreDisabled;
+    RevertAgentAfter = true;
     Area = @"GUI";
     UniqueId = @"25DFB578-FBFA-4B0B-A11C-BF93D7316E94";
     TfsId = 187871;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DefaultRightForStartProcess
@@ -465,10 +467,11 @@ scenario DefaultRightForStartProcess
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Hips.StartOtherProcessTests.DefaultRightForStartProcess;
+    RevertAgentBefore = true;
     Area = @"Hips";
     UniqueId = @"F954F9CD-8B35-469B-86C1-C968B982B43C";
     TfsId = 186940;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario HipsObjectsProcessing
@@ -476,10 +479,12 @@ scenario HipsObjectsProcessing
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Hips.ObjectsProcessingTests.HipsObjectsProcessing;
+    RevertAgentBefore = true;
+    RevertAgentAfter = true;
     Area = @"Hips";
     UniqueId = @"2F57045E-8C79-477F-B758-BC6745DA59B8";
     TfsId = 1055377;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ProcessStartBlockedWhenActionBlockSelected
@@ -487,10 +492,24 @@ scenario ProcessStartBlockedWhenActionBlockSelected
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Hips.StartOtherProcessTests.ProcessStartBlockedWhenActionBlockSelected;
+    RevertAgentAfter = true;
     Area = @"Hips";
     UniqueId = @"1BAAE8CD-0B10-4D2F-826E-C978FB2DE86D";
     TfsId = 186940;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
+}
+
+scenario ProcessStartBlocked
+{
+    deployment Deploy_Backdoor;
+    environments (all_pc__win2012r2, KAVKIS);
+    method Autotest.Kis.Suites.Hips.StartOtherProcessTests.ProcessStartBlocked;
+    RevertAgentBefore = true;
+    RevertAgentAfter = true;
+    Area = @"Hips";
+    UniqueId = @"DC373CE9-3565-453C-9001-34D63A88A385";
+    TfsId = 186940;
+    Timeout = @"00:15:00";
 }
 
 scenario ScanKlCategoriesCategorizedObject
@@ -501,7 +520,7 @@ scenario ScanKlCategoriesCategorizedObject
     Area = @"Hips";
     UniqueId = @"90FA4364-62C6-4BA1-8BAE-FE2712707863";
     TfsId = 2206758;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanKlCategoriesUncategorizedObject
@@ -512,7 +531,7 @@ scenario ScanKlCategoriesUncategorizedObject
     Area = @"Hips";
     UniqueId = @"65CDE9DB-0B92-44DD-A3A8-C03CE3BDD146";
     TfsId = 2206887;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckRetrieveWmuf
@@ -520,10 +539,12 @@ scenario CheckRetrieveWmuf
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Imav.ImavTests.CheckRetrieveWmuf;
+    RevertAgentAfter = true;
+    NeedUnsignedAgent = true;
     Area = @"Imav";
     UniqueId = @"E472A0E5-AB35-4A01-8568-4EDA541B5A32";
     TfsId = 183764;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckSendPhishing
@@ -531,10 +552,12 @@ scenario CheckSendPhishing
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Imav.ImavTests.CheckSendPhishing;
+    RevertAgentAfter = true;
+    NeedUnsignedAgent = true;
     Area = @"Imav";
     UniqueId = @"995E8340-3544-48FF-A3B1-0145B7DC3AD6";
     TfsId = 183765;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckSendWmuf
@@ -542,21 +565,23 @@ scenario CheckSendWmuf
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Imav.ImavTests.CheckSendWmuf;
+    RevertAgentAfter = true;
+    NeedUnsignedAgent = true;
     Area = @"Imav";
     UniqueId = @"AB0DA1C3-6B71-4179-8B49-0E179EB9EAB5";
     TfsId = 183764;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckAdditionalFilesAndFoldersExists
 {
-    deployment Deploy_Backdoor;
+    deployment Deploy_Backdoor_Without_AppVerifier;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Installation.InstallationSecondPartTests.CheckAdditionalFilesAndFoldersExists;
     Area = @"Installation";
     UniqueId = @"E7859823-05F5-4E85-969E-DEA460F647E8";
     TfsId = 186770;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckAdditionalRegistryKeysExists
@@ -578,7 +603,7 @@ scenario CheckDownloaderFileSize
     Area = @"Installation";
     UniqueId = @"B7011228-6B6B-48C5-BD0E-700B724E8E95";
     TfsId = 1698119;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckImportOfExportedSettings
@@ -586,10 +611,12 @@ scenario CheckImportOfExportedSettings
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Installation.SettingsImportForKts.CheckImportOfExportedSettings;
+    RevertAgentBefore = true;
+    RevertAgentAfter = true;
     Area = @"Installation";
     UniqueId = @"36242311-4368-4537-9692-E34B2B0863C4";
     TfsId = 1010106;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckInstallationGui
@@ -601,7 +628,7 @@ scenario CheckInstallationGui
     Area = @"Installation";
     UniqueId = @"4F6A4B0E-619B-4BFA-9E60-7637BDD29BE4";
     TfsId = 187373;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ImportMaxSettingsFromOlderVersionsKts
@@ -613,7 +640,7 @@ scenario ImportMaxSettingsFromOlderVersionsKts
     Area = @"Installation";
     UniqueId = @"A650DE37-9E1B-4152-9A62-2EB7DDC1340B";
     TfsId = 1010106;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ImportMinSettingsFromOlderVersionsKts
@@ -625,7 +652,7 @@ scenario ImportMinSettingsFromOlderVersionsKts
     Area = @"Installation";
     UniqueId = @"49B10D98-5F18-461C-9D78-A1240F0A5F5F";
     TfsId = 1010106;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ImportOffSettingsFromOlderVersionsKts
@@ -637,7 +664,7 @@ scenario ImportOffSettingsFromOlderVersionsKts
     Area = @"Installation";
     UniqueId = @"49B10D98-5F18-461C-9D78-A1240F0A5F5F";
     TfsId = 1010106;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario KsnOdsEicarSmoke
@@ -650,7 +677,7 @@ scenario KsnOdsEicarSmoke
     Area = @"Ksn";
     UniqueId = @"FBE9A35A-38CD-4ACD-A633-ED60EE2AC8B5";
     TfsId = 185669;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ActivateCommercialSmoke
@@ -663,7 +690,7 @@ scenario ActivateCommercialSmoke
     Area = @"License";
     UniqueId = @"6658B774-7A8F-484F-9BFA-73E9B5882681";
     TfsId = 187372;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ActivateTrialSmoke
@@ -676,7 +703,7 @@ scenario ActivateTrialSmoke
     Area = @"License";
     UniqueId = @"455BC9FE-186C-4FDE-B889-2A2208FF9E7E";
     TfsId = 187371;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ActivateCommercial
@@ -689,7 +716,7 @@ scenario ActivateCommercial
     Area = @"LicenseBackdoor";
     UniqueId = @"8A299376-A84C-4BA0-833E-130D1D395A80";
     TfsId = 183592;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RepeatActualTrialActivation
@@ -702,7 +729,7 @@ scenario RepeatActualTrialActivation
     Area = @"LicenseBackdoor";
     UniqueId = @"2C702393-AB18-4FC8-A255-934ACF8F5822";
     TfsId = 183575;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DetectAllTypesOfBodyEicar
@@ -713,18 +740,18 @@ scenario DetectAllTypesOfBodyEicar
     Area = @"MailAv";
     UniqueId = @"31F707B4-4E28-4098-AA51-A77CD2D08325";
     TfsId = 187956;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DetectAllTypesOfEicar
 {
-    deployment Deploy_Backdoor;
+    deployment Deploy_Backdoor_Without_AppVerifier;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.MailAv.TrafficMonitorTests.DetectAllTypesOfEicar;
     Area = @"MailAv";
     UniqueId = @"1811B4BF-99D7-4527-99D6-4466C2D9568D";
     TfsId = 188011;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SendInfoApplicationControlMock
@@ -736,7 +763,7 @@ scenario SendInfoApplicationControlMock
     Area = @"ManagementConsole";
     UniqueId = @"BFAEF220-B650-4472-A4FD-F0382D3A80D2";
     TfsId = 180481;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ActionNoSuspicious
@@ -747,7 +774,7 @@ scenario ActionNoSuspicious
     Area = @"Oas";
     UniqueId = @"10706BE7-319F-4BB3-AE54-EB38DF33F208";
     TfsId = 2610101;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DetectWithUnpackingLargeCompound
@@ -769,18 +796,19 @@ scenario DetectWithoutUnpackingLargeCompound
     Area = @"Oas";
     UniqueId = @"E13FCA25-5AB5-486C-9FDB-85D9D84B7592";
     TfsId = 187450;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanFilesByExtension
 {
-    deployment Deploy_Backdoor;
+    deployment Deploy_Backdoor_Without_AppVerifier;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Oas.OasTestsSecondPart.ScanFilesByExtension;
+    RevertAgentAfter = true;
     Area = @"Oas";
     UniqueId = @"38914011-E432-4032-8EB6-C82844BFBDFE";
     TfsId = 187453;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanEmailObjectsHeuristic
@@ -788,10 +816,11 @@ scenario ScanEmailObjectsHeuristic
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Ods.KashellScanEmailObjectsTests.ScanEmailObjectsHeuristic;
+    RevertAgentAfter = true;
     Area = @"Ods";
     UniqueId = @"D3BCF576-DBA7-4A56-8819-BC131E56CD13";
     TfsId = 2206640;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanVulnerabilityAllDetection
@@ -799,10 +828,11 @@ scenario ScanVulnerabilityAllDetection
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Ods.KashellScanVulnerabilityTests.ScanVulnerabilityAllDetection;
+    RevertAgentAfter = true;
     Area = @"Ods";
     UniqueId = @"55B7BD4E-DABA-4EF1-A9BB-34F9142CE07A";
     TfsId = 2206597;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanVulnerabilityPartialDetection
@@ -810,10 +840,11 @@ scenario ScanVulnerabilityPartialDetection
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Ods.KashellScanVulnerabilityTests.ScanVulnerabilityPartialDetection;
+    RevertAgentAfter = true;
     Area = @"Ods";
     UniqueId = @"E5BF4C5E-9D2C-4DC5-825D-3AE13156BB7A";
     TfsId = 2206598;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BadWordsInMetaDescriptionViaInternetExplorer
@@ -824,7 +855,7 @@ scenario BadWordsInMetaDescriptionViaInternetExplorer
     Area = @"ParentalControl";
     UniqueId = @"01AE536C-285F-45A9-9EA0-7A435E7C84A0";
     TfsId = 186636;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario StartApplicationFromWhiteList
@@ -835,7 +866,7 @@ scenario StartApplicationFromWhiteList
     Area = @"ParentalControl";
     UniqueId = @"D53AC245-58C6-46F5-A066-E5C9FAC0EB0F";
     TfsId = 186719;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario StartBlockedApplication
@@ -846,7 +877,7 @@ scenario StartBlockedApplication
     Area = @"ParentalControl";
     UniqueId = @"D8923816-2E40-48C8-8B8D-492428488E1D";
     TfsId = 186718;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScreenshotCreateDcUnderSafeBrowser
@@ -854,10 +885,11 @@ scenario ScreenshotCreateDcUnderSafeBrowser
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.SafeBanking.ScreenshotTests.ScreenshotCreateDcUnderSafeBrowser;
+    RevertAgentBefore = true;
     Area = @"SafeBanking";
     UniqueId = @"DE0AF29E-D1CE-49CF-8FD1-5768F05026C9";
     TfsId = 235537;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScreenshotCreateDcUnderUnsafeBrowser
@@ -868,7 +900,7 @@ scenario ScreenshotCreateDcUnderUnsafeBrowser
     Area = @"SafeBanking";
     UniqueId = @"864A98D5-F1E1-45EF-9700-FAFFC2D9995C";
     TfsId = 235537;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScreenshotKeyboardEventUnderUnsafeBrowser
@@ -879,7 +911,7 @@ scenario ScreenshotKeyboardEventUnderUnsafeBrowser
     Area = @"SafeBanking";
     UniqueId = @"66FDE918-0C11-4836-A8CB-7D56E32DCDED";
     TfsId = 235533;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario StartSafeBankingFirefox
@@ -890,7 +922,7 @@ scenario StartSafeBankingFirefox
     Area = @"SafeBanking";
     UniqueId = @"4D555ACD-12DC-4F7B-ABED-01B775A89B07";
     TfsId = 182168;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CaptureMetadata
@@ -902,7 +934,7 @@ scenario CaptureMetadata
     Area = @"Screenshotting";
     UniqueId = @"19D00403-EDA4-4794-85C1-F2EB74A1BD4A";
     TfsId = 737236;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CaptureScreenshot
@@ -910,10 +942,11 @@ scenario CaptureScreenshot
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.Screenshotting.ScreenshottingSmoke.CaptureScreenshot;
+    RevertAgentAfter = true;
     Area = @"Screenshotting";
     UniqueId = @"DD22957F-ACE5-494B-878A-94101F524344";
     TfsId = 737236;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SelfDefenceEnabledMoveFiles
@@ -924,7 +957,7 @@ scenario SelfDefenceEnabledMoveFiles
     Area = @"SelfDefence";
     UniqueId = @"E81E677B-B7C1-40A1-9EE6-BECD4BBA33FD";
     TfsId = 187685;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ProductDisablesPupInCheckboxWhenSccEnabledX86
@@ -935,7 +968,7 @@ scenario ProductDisablesPupInCheckboxWhenSccEnabledX86
     Area = @"SysChangeControl";
     UniqueId = @"0FC90012-0FC4-42B0-90B5-AC2789FB3DE2";
     TfsId = 1682717;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ProductShowsAlertWhenUserTryingToInstallPupX86
@@ -946,7 +979,7 @@ scenario ProductShowsAlertWhenUserTryingToInstallPupX86
     Area = @"SysChangeControl";
     UniqueId = @"425FCB8C-7F97-45DD-AFE7-C92C534A2338";
     TfsId = 1682719;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BssStabilityTestMock
@@ -959,7 +992,7 @@ scenario BssStabilityTestMock
     Area = @"SystemWatcher";
     UniqueId = @"28FFAEC1-4534-45B6-A259-739668BC81D2";
     TfsId = 1879219;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ExactBssDetectAutoActionNoRollback
@@ -970,7 +1003,7 @@ scenario ExactBssDetectAutoActionNoRollback
     Area = @"SystemWatcher";
     UniqueId = @"FB2B8643-0F4A-4C82-861C-A4FCEF7E013C";
     TfsId = 181503;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RunUtilityFromUntrustedSourceMock
@@ -983,7 +1016,7 @@ scenario RunUtilityFromUntrustedSourceMock
     Area = @"SystemWatcher";
     UniqueId = @"B42C8C49-67A7-457F-B23E-C00D5992291A";
     TfsId = 181477;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario WhitelistDetectAutoActionMock
@@ -991,10 +1024,12 @@ scenario WhitelistDetectAutoActionMock
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.SystemWatcher.SystemWatcherKsnMockTests.WhitelistDetectAutoActionMock;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
     Area = @"SystemWatcher";
     UniqueId = @"D4974C21-6E2E-45E4-B506-1E183A3542EB";
     TfsId = 181512;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario DistinguishModulesLoads
@@ -1002,10 +1037,12 @@ scenario DistinguishModulesLoads
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Tam.TamTests.DistinguishModulesLoads;
+    RevertAgentAfter = true;
+    RevertAgentBefore = true;
     Area = @"Tam";
     UniqueId = @"1215EDD9-B686-40C5-A380-6B590B343B27";
     TfsId = 846251;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckDetectedThreatsActions
@@ -1016,7 +1053,7 @@ scenario CheckDetectedThreatsActions
     Area = @"ThreatsManager";
     UniqueId = @"D2D6A6CE-5DE7-4355-9726-7E50816E2E68";
     TfsId = 187473;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario IgnoreDetectedThreats
@@ -1027,7 +1064,7 @@ scenario IgnoreDetectedThreats
     Area = @"ThreatsManager";
     UniqueId = @"C24A74B9-DBF2-4681-8EF4-E4AB38F394C8";
     TfsId = 184530;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RestoreUncurableArchivesFromQuarantine
@@ -1038,19 +1075,19 @@ scenario RestoreUncurableArchivesFromQuarantine
     Area = @"ThreatsManager";
     UniqueId = @"1A33A4EB-B769-4DBC-93E9-5D7CFE18ECC0";
     TfsId = 185784;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CommercialLicenseChange
 {
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
-    method Autotest.Kis.Suites.License.UCPMockTests.UcpCommonTests.CommercialLicenseChange;
+    method Autotest.Kis.Suites.License.UCPMockTests.UcpLicenseTests.CommercialAfterTrial;
     RevertAgentBefore = true;
     Area = @"UCPMockTests";
     UniqueId = @"EB78DEC4-A5CF-4010-B6A4-57B85999EF66";
     TfsId = 181234;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario AntiPhishingSearchByLinkSmoke
@@ -1058,6 +1095,8 @@ scenario AntiPhishingSearchByLinkSmoke
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.WebAv.WebAvCommonTests.AntiPhishingSearchByLinkSmoke;
+    RevertAgentAfter = true;
+    RequireInternet = true;
     Area = @"WebAv";
     UniqueId = @"BAB44989-98DC-4A38-BAA8-75870BE4A894";
     TfsId = 187941;
@@ -1069,6 +1108,7 @@ scenario CheckIconOnExternalUrl
     deployment Deploy_Backdoor;
     environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.WebAv.WebAvUrlAdvisorTests.CheckIconOnExternalUrl;
+    RequireInternet = true;
     Area = @"WebAv";
     UniqueId = @"7179E53F-F7A6-445A-BC2B-365C8097D553";
     TfsId = 183954;
@@ -1080,6 +1120,8 @@ scenario HttpDetectEicarFileLessThan1MbBlock
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.WebAv.WebAvCommonTests.HttpDetectEicarFileLessThan1MbBlock;
+    RevertAgentAfter = true;
+    RequireInternet = true;
     Area = @"WebAv";
     UniqueId = @"77D890BD-593D-4ADD-9AF6-C516027095AE";
     TfsId = 182884;
@@ -1091,6 +1133,8 @@ scenario WmufSearchByHashSmoke
     deployment Deploy_Backdoor;
     environments (all_pc__win2012r2, KAVKIS);
     method Autotest.Kis.Suites.WebAv.WebAvCommonTests.WmufSearchByHashSmoke;
+    RevertAgentAfter = true;
+    RequireInternet = true;
     Area = @"WebAv";
     UniqueId = @"C5C953A8-7F4F-41B1-8FEE-D220F34B7FED";
     TfsId = 183836;
@@ -1105,7 +1149,7 @@ scenario DetectionOnDemandScanHeuristicAnalysisMedium
     Area = @"Avs";
     UniqueId = @"7DAA02C9-814A-4670-879A-F5C55A4946DC";
     TfsId = 187917;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario WindowsConfigProblemFix
@@ -1116,7 +1160,7 @@ scenario WindowsConfigProblemFix
     Area = @"AVZ";
     UniqueId = @"DBA2CD3F-4487-492A-9DA5-503D0838E35B";
     TfsId = 186314;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BackupAllFilesFromMyDocumentsAndDesktop
@@ -1127,7 +1171,7 @@ scenario BackupAllFilesFromMyDocumentsAndDesktop
     Area = @"Backup";
     UniqueId = @"59BFF7EF-EBFE-4A13-AC00-BBBE7ABE8CF1";
     TfsId = 1042345;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario VaultCreationAndPasswordChanging
@@ -1138,7 +1182,7 @@ scenario VaultCreationAndPasswordChanging
     Area = @"Encryption";
     UniqueId = @"E540787C-4767-4916-A520-EB2E3A73C62B";
     TfsId = 1058553;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ShredFileQuick
@@ -1149,7 +1193,7 @@ scenario ShredFileQuick
     Area = @"FileShredder";
     UniqueId = @"4DA1A1A1-9C55-47D1-AC74-7464552D972F";
     TfsId = 1065393;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckBannedComputerList
@@ -1160,7 +1204,7 @@ scenario CheckBannedComputerList
     Area = @"Firewall";
     UniqueId = @"F90AED43-B9DC-4508-9EA1-B4A396C457C1";
     TfsId = 187374;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario EnableProtection
@@ -1172,7 +1216,7 @@ scenario EnableProtection
     UniqueId = @"FE4C1475-F4E4-4E38-A63F-1B21FCA338F3";
     TfsId = 187597;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CreateFiles
@@ -1185,7 +1229,7 @@ scenario CreateFiles
     TfsId = 186453;
     RevertAgentAfter = true;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario StartOtherProcessSmoke
@@ -1197,7 +1241,7 @@ scenario StartOtherProcessSmoke
     UniqueId = @"581370DA-8DB5-42BE-8397-94B08E809FE8";
     TfsId = 186940;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckRetrievePhishing
@@ -1210,7 +1254,7 @@ scenario CheckRetrievePhishing
     TfsId = 183765;
     RevertAgentAfter = true;
     NeedUnsignedAgent = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckAvpDumps
@@ -1221,7 +1265,7 @@ scenario CheckAvpDumps
     Area = @"Installation";
     UniqueId = @"F63603DE-0BEE-440B-B0D8-E26D34640338";
     TfsId = 241237;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckAvpProcesses
@@ -1232,7 +1276,7 @@ scenario CheckAvpProcesses
     Area = @"Installation";
     UniqueId = @"44E3B89A-9E88-43D3-8CEC-C0CCCE0BD143";
     TfsId = 814554;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckComponentsStatus
@@ -1245,7 +1289,7 @@ scenario CheckComponentsStatus
     TfsId = 241245;
     RevertAgentAfter = true;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckFilesAndFoldersExists
@@ -1256,7 +1300,7 @@ scenario CheckFilesAndFoldersExists
     Area = @"Installation";
     UniqueId = @"FEA5AF30-D0DC-4ED8-850E-8E568DE19367";
     TfsId = 186770;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckNdisFilter
@@ -1268,7 +1312,7 @@ scenario CheckNdisFilter
     UniqueId = @"062CFC64-0C23-4194-96F0-548A7020E13A";
     TfsId = 814562;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckRegistryKeysExists
@@ -1279,7 +1323,7 @@ scenario CheckRegistryKeysExists
     Area = @"Installation";
     UniqueId = @"4C3C0781-37F2-48FC-9B48-F2DB2B6DF247";
     TfsId = 186576;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckStartAndStopProduct
@@ -1290,7 +1334,7 @@ scenario CheckStartAndStopProduct
     Area = @"Installation";
     UniqueId = @"F5A9A511-1FEA-4835-85F8-51E1FDE31A31";
     TfsId = 180698;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckTraceWriting
@@ -1301,7 +1345,7 @@ scenario CheckTraceWriting
     Area = @"Installation";
     UniqueId = @"D3641601-6852-48A9-AA2D-21EA9F4E47D9";
     TfsId = 241239;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario UninstallProductWithReboot
@@ -1320,7 +1364,7 @@ scenario UninstallProductWithReboot
 scenario IpmWithActivation
 {
     deployment Deploy_Backdoor;
-    environments (all_pc, KSOS__PURE);
+    environments (all_pc, KSOS__PURE__PURE_Webpack);
     method Autotest.Kis.Suites.Ipm.IpmSmokeTests.IpmWithActivation;
     Area = @"Ipm";
     UniqueId = @"1060FD55-6134-4E45-899F-5A580E8798FD";
@@ -1338,7 +1382,7 @@ scenario UpdateFromLocalFolder
     UniqueId = @"C71E2BC2-F5ED-43D9-BB3E-7DAF2DC97673";
     TfsId = 2206798;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ChangeStateFileAntivirusMock
@@ -1351,7 +1395,7 @@ scenario ChangeStateFileAntivirusMock
     TfsId = 879655;
     RevertAgentAfter = true;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario InteractiveActionMixed
@@ -1385,7 +1429,7 @@ scenario ScanEmailObjectsSignature
     UniqueId = @"4999ECEC-F1CD-4B02-9E0A-601F57DDE0E0";
     TfsId = 2206641;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScanVulnerabilityClear
@@ -1397,7 +1441,7 @@ scenario ScanVulnerabilityClear
     UniqueId = @"391C869F-32E1-43D7-BAAB-FDFE0442D13C";
     TfsId = 2206599;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario EnableParentalControl
@@ -1408,7 +1452,7 @@ scenario EnableParentalControl
     Area = @"ParentalControl";
     UniqueId = @"F76463EC-78FF-460F-AF4A-607DFC721B35";
     TfsId = 186737;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ScreenshotKeyboardEventUnderSafeBrowser
@@ -1420,7 +1464,7 @@ scenario ScreenshotKeyboardEventUnderSafeBrowser
     UniqueId = @"7958499D-2687-4A2F-A0A9-00A5AD4DD9B4";
     TfsId = 235533;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario StartSafeBrowsingFromProduct
@@ -1431,7 +1475,7 @@ scenario StartSafeBrowsingFromProduct
     Area = @"SafeBanking";
     UniqueId = @"CA194858-D0B8-4CBE-80F5-97BA32A8EA79";
     TfsId = 182165;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SelfDefenceDisabledMoveFiles
@@ -1442,7 +1486,7 @@ scenario SelfDefenceDisabledMoveFiles
     Area = @"SelfDefence";
     UniqueId = @"68B3E6EE-D416-4A6D-833B-615348783924";
     TfsId = 187417;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SelfDefenceEnabledKillGuiService
@@ -1454,7 +1498,7 @@ scenario SelfDefenceEnabledKillGuiService
     UniqueId = @"A21D04EF-89D9-4B2C-B1B8-18E29816B751";
     TfsId = 187686;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario SystemRestart
@@ -1477,7 +1521,7 @@ scenario ProcessLaunchingDetectWithOnlySw
     Area = @"SystemWatcher";
     UniqueId = @"A34569D6-AF65-436B-9212-C31871A43181";
     TfsId = 181488;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario InventoryOfDifferentFileFormats
@@ -1489,7 +1533,7 @@ scenario InventoryOfDifferentFileFormats
     UniqueId = @"3A2CF8B5-E60F-47C6-B6CE-9487D2DB1DBD";
     TfsId = 301486;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RestoreSuspiciousArchivesFromQuarantine
@@ -1500,7 +1544,7 @@ scenario RestoreSuspiciousArchivesFromQuarantine
     Area = @"ThreatsManager";
     UniqueId = @"D94617CA-0FD5-4DC1-B67D-964DA20D32B5";
     TfsId = 185784;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ManagementConsole
@@ -1513,7 +1557,7 @@ scenario ManagementConsole
     TfsId = 894109;
     RevertAgentAfter = true;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario InteractiveProtection
@@ -1525,7 +1569,7 @@ scenario InteractiveProtection
     UniqueId = @"AF2D63E4-5A94-4D05-B376-B0DEBC3CC25F";
     TfsId = 185121;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario VerifyDetection
@@ -1536,7 +1580,7 @@ scenario VerifyDetection
     Area = @"Ods";
     UniqueId = @"1D0ED9C7-F70C-4E08-BC46-97A4AC9A7B3D";
     TfsId = 187930;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario BlockGooglePlus
@@ -1547,7 +1591,7 @@ scenario BlockGooglePlus
     Area = @"Dnt";
     UniqueId = @"E8DC00CD-72FB-429A-9001-85898EE6CE83";
     TfsId = 1075086;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RunCiVisualTests
@@ -1558,18 +1602,18 @@ scenario RunCiVisualTests
     Area = @"Visual";
     UniqueId = @"2BA143A2-7CCA-49B3-86D2-4A8A5120ED19";
     TfsId = 3019601;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RunSmokeVisualTests
 {
     deployment Deploy_Visual;
-    environments (win7-x64, KAVKIS);
+    environments (all_pc, KAVKIS);
     method Autotest.Kis.Suites.Visual.VisualTests.RunSmokeVisualTests;
     Area = @"Visual";
     UniqueId = @"B11440C6-3EA9-4B23-A345-2E2A1CD580E0";
     TfsId = 3019601;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario ExitProductFromTray
@@ -1580,7 +1624,7 @@ scenario ExitProductFromTray
     Area = @"Gui";
     UniqueId = @"D72A6E34-F928-406A-BF9B-25AB9358821A";
     TfsId = 1935131;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario OpenMainWindowFromTray
@@ -1591,7 +1635,7 @@ scenario OpenMainWindowFromTray
     Area = @"Gui";
     UniqueId = @"C3D13378-F1EF-44C1-8641-71DCF2B9622D";
     TfsId = 1935130;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckDownloaderFileSize_KSDE
@@ -1602,7 +1646,7 @@ scenario CheckDownloaderFileSize_KSDE
     Area = @"Installation";
     UniqueId = @"D560243B-D537-4AF2-801F-C7E2A0479337";
     TfsId = 1698119;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckDumps
@@ -1613,7 +1657,7 @@ scenario CheckDumps
     Area = @"Installation";
     UniqueId = @"06C825BB-DB2D-4B31-A1E3-F60A8E31C2B8";
     TfsId = 1582284;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckInstallationGui_KSDE
@@ -1625,7 +1669,7 @@ scenario CheckInstallationGui_KSDE
     UniqueId = @"C98214FB-B928-42D0-9119-55734F09A983";
     TfsId = 1582253;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckProcess
@@ -1636,7 +1680,7 @@ scenario CheckProcess
     Area = @"Installation";
     UniqueId = @"E8D1D399-1BC3-4D21-9B4B-E7B187EF5E8C";
     TfsId = 1582280;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckProductFilesAndFolders
@@ -1647,7 +1691,7 @@ scenario CheckProductFilesAndFolders
     Area = @"Installation";
     UniqueId = @"E41AFE92-396A-4627-82A5-BA4C73268033";
     TfsId = 1582408;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckProductRegistry
@@ -1658,7 +1702,7 @@ scenario CheckProductRegistry
     Area = @"Installation";
     UniqueId = @"7637BEEF-E818-4824-8478-C860B81A44D5";
     TfsId = 1583119;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckServiceState
@@ -1670,7 +1714,7 @@ scenario CheckServiceState
     UniqueId = @"F633D57E-A193-4314-9AE8-07E3BFF9FC6F";
     TfsId = 1582268;
     RevertAgentBefore = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckShortcuts
@@ -1681,7 +1725,7 @@ scenario CheckShortcuts
     Area = @"Installation";
     UniqueId = @"D269B89B-CE80-43B3-8920-BE9630692925";
     TfsId = 1582273;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckSilentMode
@@ -1692,7 +1736,7 @@ scenario CheckSilentMode
     Area = @"Installation";
     UniqueId = @"8A677A2E-7FFA-46C8-B829-9DBB08149C80";
     TfsId = 1583270;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckStartStopProcess
@@ -1703,7 +1747,7 @@ scenario CheckStartStopProcess
     Area = @"Installation";
     UniqueId = @"CFDD83E0-570A-40D7-8893-06A148D66AA3";
     TfsId = 1582290;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario CheckTraces
@@ -1714,7 +1758,7 @@ scenario CheckTraces
     Area = @"Installation";
     UniqueId = @"95FCFC15-5F76-40E8-BF69-928F27BE6217";
     TfsId = 1582275;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario UninstallProductWithReboot_KSDE
@@ -1727,7 +1771,7 @@ scenario UninstallProductWithReboot_KSDE
     UniqueId = @"65F6712D-BAAA-4D74-A2D5-400062ABF8E8";
     TfsId = 1582304;
     RevertAgentAfter = true;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RunCiVisualTests_KSDE
@@ -1738,7 +1782,7 @@ scenario RunCiVisualTests_KSDE
     Area = @"Visual";
     UniqueId = @"C89A6C28-958D-4DD0-B58A-0FFD73025DAB";
     TfsId = 737236;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario RunSmokeVisualTests_KSDE
@@ -1749,7 +1793,7 @@ scenario RunSmokeVisualTests_KSDE
     Area = @"Visual";
     UniqueId = @"5E15629F-265D-4F65-9980-AFD0044C7C77";
     TfsId = 737236;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario UpdateFromLocalFolder_KSDE
@@ -1760,7 +1804,7 @@ scenario UpdateFromLocalFolder_KSDE
     Area = @"KashellSuite";
     UniqueId = @"8EF18634-F318-4051-95E5-FE04C65937BE";
     TfsId = 2206798;
-    Timeout = @"00:10:00";
+    Timeout = @"00:15:00";
 }
 
 scenario GateTests_KFA =
@@ -1906,7 +1950,7 @@ scenario SmokeTests_PURE =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     ScanKlCategoriesCategorizedObject,
     ScanKlCategoriesUncategorizedObject,
     CheckRetrievePhishing,
@@ -2040,7 +2084,7 @@ scenario SmokeWebpackTests_PURE =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     ScanKlCategoriesCategorizedObject,
     ScanKlCategoriesUncategorizedObject,
     CheckRetrievePhishing,
@@ -2055,7 +2099,6 @@ scenario SmokeWebpackTests_PURE =
     CheckDownloaderFileSize,
     CheckFilesAndFoldersExists,
     CheckImportOfExportedSettings,
-    CheckInstallationGui,
     CheckNdisFilter,
     CheckRegistryKeysExists,
     CheckStartAndStopProduct,
@@ -2138,7 +2181,7 @@ scenario SmokeTests_SAAS =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     CheckAdditionalFilesAndFoldersExists,
     CheckAdditionalRegistryKeysExists,
     CheckAvpDumps,
@@ -2187,7 +2230,7 @@ scenario SmokeTests_KIS =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     CheckAdditionalFilesAndFoldersExists,
     CheckAdditionalRegistryKeysExists,
     CheckAvpDumps,
@@ -2242,7 +2285,7 @@ scenario SmokeTests_KSOS =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     CheckAdditionalFilesAndFoldersExists,
     CheckAdditionalRegistryKeysExists,
     CheckAvpDumps,
@@ -2293,7 +2336,7 @@ scenario SmokeTests_KSOS_FS =
     CreateFiles,
     DefaultRightForStartProcess,
     HipsObjectsProcessing,
-    ProcessStartBlockedWhenActionBlockSelected,
+    ProcessStartBlocked,
     CheckAdditionalFilesAndFoldersExists,
     CheckAdditionalRegistryKeysExists,
     CheckAvpDumps,
