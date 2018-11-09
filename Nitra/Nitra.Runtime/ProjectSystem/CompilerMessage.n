@@ -29,7 +29,18 @@ namespace Nitra.ProjectSystem
       get { if (HasNestedMessages) ReadOnlyCollection(_nestedMessages) else EmptyCompilerMessages }
     }
 
-    public override ToString() : string { this.Location.ToMessageString() + Text }
+    public override ToString() : string
+    {
+      def type =
+        match (Type)
+        {
+          | FatalError
+          | Error      => "error: "
+          | Warning    => "warning: "
+          | Hint       => "hint: "
+        }
+      this.Location.ToMessageString() + type + Text
+    }
 
     public CompareTo(other : Nitra.ProjectSystem.CompilerMessage) : int
     {
