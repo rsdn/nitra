@@ -433,8 +433,8 @@ namespace Nitra.BackEnd.Cci
             method.Flags = flags;
             unless (method.IsDeclaredInEvaluated)
               method.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-            method.EvalProperties(context);
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.EvalProperties(context);
             method
 
           | m is IMethodDefinition   =>
@@ -452,9 +452,8 @@ namespace Nitra.BackEnd.Cci
             method.IsExtensionMethod = m.IsStatic && HasExtensionAttribute(m.Attributes);
 
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
-            method.EvalProperties(context);
-
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.EvalProperties(context);
             method
 
           | m is IFieldDefinition    =>
@@ -526,10 +525,11 @@ namespace Nitra.BackEnd.Cci
             def constructedType = TopConstructedTypeSymbol();
             constructedType.TypeInfo = typeInfo;
             constructedType.Args = args;
-            constructedType.EvalProperties(context);
             //constructedType.Scope = typeInfo.Scope;
+            constructedType.EvalProperties(context);
             constructedType
 
+          | gp is IGenericParameter => CreateGenericParameter(gp, context)
           | t is ITypeDefinition =>
             mutable typeSymbol;
             if (_cciInternedKeyToSymbolMap.TryGetValue(t.InternedKey, out typeSymbol))
@@ -580,6 +580,14 @@ namespace Nitra.BackEnd.Cci
         result
     }
 
+    CreateGenericParameter(genericParam : IGenericParameter, context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      def name  = NRB.Name(NoLocation, genericParam.Name.Value); // TODO: type.Name.UniqueKey
+      def tps   = TypeParameterDeclaration(name, genericParam).DefineSymbol();
+      tps.EvalProperties(context);
+      tps
+    }
+
     CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeSymbol]
     {
       if (genericParameterCount == 0)
@@ -588,12 +596,7 @@ namespace Nitra.BackEnd.Cci
       {
         def result = ImmutableArray.CreateBuilder(genericParameterCount : int);
         foreach (tp in genericParams with i)
-        {
-          def name  = NRB.Name(NoLocation, tp.Name.Value); // TODO: type.Name.UniqueKey
-          def tps   = TypeParameterDeclaration(name, tp).DefineSymbol();
-          tps.EvalProperties(context);
-          result.Add(tps);
-        }
+          result.Add(CreateGenericParameter(tp, context));
         result.MoveToImmutable()
       }
     }
