@@ -264,9 +264,10 @@ namespace Nitra.BackEnd.Cci
     public LoadCustomAttribute(cciCustomAttribute : ICustomAttribute, context : DependentPropertyEvalContext) : CustomAttributeSymbol
     {
       def customAttributeSymbol = CustomAttributeSymbol();
-      def attrType = CciTypeToTypeSymbol(cciCustomAttribute.Type, context);
+      def cciAtrType = cciCustomAttribute.Type :> INamedTypeReference;
+      def attrType = CciTypeToTypeSymbol(cciAtrType, context);
       customAttributeSymbol.Type = attrType;
-      customAttributeSymbol.FullName = attrType.FullName;
+      customAttributeSymbol.FullName = cciAtrType.ToString();
       def cciCtorKey = cciCustomAttribute.Constructor.InternedKey;
       def filter(sym : Member.ConstructorSymbol) : bool
       {
@@ -317,7 +318,7 @@ namespace Nitra.BackEnd.Cci
       }
       customAttributeSymbol.NamedArguments = cciCustomAttribute.NamedArguments.MapToArray(cciNamedArgToCustomAttributeExpression);
 
-      def name   = NRB.Name(NoLocation, customAttributeSymbol.Name); // TODO: ns.Name.UniqueKey
+      def name   = NRB.Name(NoLocation, cciAtrType.Name.Value);
       customAttributeSymbol.AddDeclaration(ExternalCustomAttributeDeclaration(name, cciCustomAttribute));
       customAttributeSymbol.EvalProperties(context);
       customAttributeSymbol
@@ -433,7 +434,6 @@ namespace Nitra.BackEnd.Cci
             method.Flags = flags;
             unless (method.IsDeclaredInEvaluated)
               method.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-            method.EvalProperties(context);
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
             method
 
@@ -452,8 +452,7 @@ namespace Nitra.BackEnd.Cci
             method.IsExtensionMethod = m.IsStatic && HasExtensionAttribute(m.Attributes);
 
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
-            method.EvalProperties(context);
-
+    
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
             method
 
