@@ -96,7 +96,11 @@ namespace Nitra.BackEnd.Cci
         | file is FileLibReference     with filePath = file.Path =>
           this.CancellationToken.ThrowIfCancellationRequested();
 
-          def fullPath     = IO.Path.Combine(libPath, filePath);
+          def fullPath = IO.Path.Combine(libPath, filePath);
+
+          unless (IO.File.Exists(fullPath))
+            continue;
+          
           def tempFullPath = IO.Path.ChangeExtension(IO.Path.GetTempFileName(), IO.Path.GetExtension(fullPath));
           IO.File.Copy(fullPath, tempFullPath);
           def unit         = host.LoadUnitFrom(tempFullPath);
