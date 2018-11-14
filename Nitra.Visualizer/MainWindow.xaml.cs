@@ -1149,7 +1149,7 @@ namespace Nitra.Visualizer
 
     private void CompleteWord(AsyncServerMessage.CompleteWord result)
     {
-      Debug.Assert(false);
+      //Debug.Assert(false);
       var replacementSpan = result.replacementSpan;
       var isOpenNewWindow = false;
 
