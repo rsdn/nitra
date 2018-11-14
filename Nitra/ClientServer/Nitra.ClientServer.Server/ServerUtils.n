@@ -100,22 +100,12 @@ namespace Nitra.ClientServer.Server
       def threadId        = Padding(Thread.CurrentThread.ManagedThreadId.ToString(), 3);
       def msg3            = msg2 + "took: " + milliseconds + " ms  ThreadId:" + threadId;
 
-      lock (_sync)
-      {
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg3);
-        Console.ResetColor();
-      }
+      Log(msg3, color);
     }
 
     public LogCanceled(e : OperationCanceledException) : void
     {
-      lock (_sync)
-      {
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine(e.Message);
-        Console.ResetColor();
-      }
+      Log(e.Message, ConsoleColor.Yellow);
     }
 
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
@@ -129,30 +119,17 @@ namespace Nitra.ClientServer.Server
 
     public LogException(e : Exception) : void
     {
-      lock (_sync)
-      {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("Exception: " + e);
-        Console.ResetColor();
-      }
+      Log("Exception: " + e, ConsoleColor.Red);
     }
 
     public Log(msg : string) : void
     {
-      lock (_sync)
-      {
-        Console.WriteLine(msg)
-      }
+      LoggerWorker.Log(msg, ConsoleColor.Gray);
     }
 
     public Log(msg : string, color : ConsoleColor) : void
     {
-      lock (_sync)
-      {
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg);
-        Console.ResetColor();
-      }
+      LoggerWorker.Log(msg, color);
     }
 
     public GetCoreCount() : int

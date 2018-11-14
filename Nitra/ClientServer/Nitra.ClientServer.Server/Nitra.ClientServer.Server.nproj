@@ -68,6 +68,9 @@
     <Compile Include="HtmlPrettyPrintWriter.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="LoggerWorker.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main.n" />
     <Compile Include="Messages.n">
       <SubType>Code</SubType>
