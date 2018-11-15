@@ -99,7 +99,10 @@ namespace Nitra.BackEnd.Cci
           def fullPath = IO.Path.Combine(libPath, filePath);
 
           unless (IO.File.Exists(fullPath))
+          {
+            addError(NoLocation, "The referenced file '" + fullPath + "' is not found.");
             continue;
+          }
           
           def tempFullPath = IO.Path.ChangeExtension(IO.Path.GetTempFileName(), IO.Path.GetExtension(fullPath));
           IO.File.Copy(fullPath, tempFullPath);
