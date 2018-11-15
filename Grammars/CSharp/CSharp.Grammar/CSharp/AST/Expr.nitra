@@ -38,12 +38,11 @@ namespace DotNet
       }
     | QualifiedName
       {
-        Key: QualifiedReference;
+        Key : QualifiedReference;
 
-        Key.Scope = ScopeIn;
+        Key.Scope = if (Options == ExprOptions.Invocation) ExtensionScope(ScopeIn, Key) else ScopeIn;
       stage 2:
-        Member = context.TryBind(Options, ScopeIn, Key, Key.Ref);
-        // Результат Ref может быть неоднозначным.
+        Member = Key.Ref.Resolve(); // Результат Ref может быть неоднозначным.
         Type = context.GetOverloadedMemberType(Member.Symbols);
       }
     | Parenthesized

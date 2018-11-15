@@ -1,0 +1,97 @@
+﻿using Nemerle;
+using Nemerle.Imperative;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+
+using Nitra;
+using Nitra.Declarations;
+using DotNet;
+
+namespace DotNet
+{
+  [Record]
+  class ExtensionScope : Scope
+  {
+    _scope : Scope;
+    _ast   : QualifiedReference;
+
+    public override AllSymbols : System.Collections.Generic.IEnumerable[DeclarationSymbol]
+    {
+      get { throw System.NotImplementedException() }
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      def br =  _scope.Bind(reference) : BindResult[TSymbol];
+      match (_ast)
+      {
+        | s is QualifiedReference.Simple    when s.IsRefEvaluated           with (r = s.Ref,           name = s.Name)
+        | q is QualifiedReference.Qualified when q.Qualifier.IsRefEvaluated with (r = q.Qualifier.Ref, name = q.Name) =>
+          def symbols = r.Symbols;
+          def types = List(symbols.Length);
+          foreach (s is TypedDeclarationSymbol when s.IsTypeEvaluated in symbols)
+            types.Add(s.Type);
+          def matchContainers(symbol : GenericContainerTypeSymbol) : bool
+          {
+            when (!symbol.IsHasExtensionMethodEvaluated || !symbol.HasExtensionMethod)
+              return false;
+            def name = name;
+            def br1 = symbol.MemberTable.Bind.[Member.MethodSymbol](name)
+                        .Filter.[Member.MethodSymbol](m => m.IsIsExtensionMethodEvaluated
+                                                        && m.IsExtensionMethod);
+            br1.HasResult
+          }
+          def name = name;
+          def res2 = _scope.Bind(matchContainers);
+          def result = LightList();
+          when (br.HasResult)
+            result.AddRange(br.GetSymbols());
+          foreach (container in res2.GetSymbols())
+          {
+            def br2 = container.MemberTable.Bind.[Member.MethodSymbol](name)
+                        .Filter.[Member.MethodSymbol](m => m.IsIsExtensionMethodEvaluated
+                                                        && m.IsExtensionMethod);
+            when (br2.HasResult)
+              foreach (sym in br2.GetSymbols())
+                // TODO: Преобразовать методы-расширения в редуцированную форму пригодную для резолва.
+                result.Add(sym :> TSymbol);
+          }
+          when (result.Count > 0)
+          {
+            def br3 = result.ToBindResult();
+            return br3;
+          }
+        | _ is QualifiedReference.Aliased => () // TODO: Отбросить префикс и вызвать данный метод рекурсивно.
+        | _ is QualifiedReference.Generic => ()
+        | _ is QualifiedReference.Open => ()
+        | _ => ()
+      }
+      br
+    }
+
+    public override Bind[TSymbol](isMatch : System.Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      _ = isMatch;
+      throw System.NotImplementedException()
+    }
+
+    public override Serialize(writer : System.IO.BinaryWriter, metadataWriter : Nitra.Serialization2.MetadataWriter) : void
+    {
+      IgnoreParams();
+    }
+
+    public override ToDot(nodeToIdMap : System.Collections.Generic.Dictionary[object, int], nodes : System.Collections.Generic.List[string], edges : System.Collections.Generic.List[string]) : void
+    {
+      IgnoreParams();
+    }
+
+  }
+}

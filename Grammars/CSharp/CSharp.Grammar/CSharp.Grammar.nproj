@@ -85,6 +85,9 @@
     <Compile Include="CSharp\AST\ExprExtensions.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CSharp\AST\ExtensionScope.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CSharp\AST\IntegerLiteralValue.n">
       <SubType>Code</SubType>
     </Compile>
