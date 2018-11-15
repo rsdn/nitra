@@ -1149,6 +1149,7 @@ namespace Nitra.Visualizer
 
     private void CompleteWord(AsyncServerMessage.CompleteWord result)
     {
+      //Debug.Assert(false);
       var replacementSpan = result.replacementSpan;
       var isOpenNewWindow = false;
 
@@ -1213,10 +1214,6 @@ namespace Nitra.Visualizer
       else
       {
         _completionWindow.CompletionList.OnApplyTemplate();
-        //_completionWindow.CompletionList.SelectItem(_textEditor.Document.GetText(replacementSpan.StartPos, replacementSpan.Length));
-        //var source = _completionWindow.CompletionList.ListBox.ItemsSource;
-        //_completionWindow.CompletionList.ListBox.ItemsSource = null;
-        //_completionWindow.CompletionList.ListBox.ItemsSource = source;
       }
     }
 

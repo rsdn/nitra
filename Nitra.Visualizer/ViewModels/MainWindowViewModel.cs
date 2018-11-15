@@ -126,7 +126,7 @@ namespace Nitra.Visualizer.ViewModels
       _history.Add(currentLoc);
       _historyIndex = _history.Count;
 
-      if (msg.definitions.Length == 0)
+      if (msg.definitions.Length == 0 || msg.definitions.Length == 1 && msg.definitions[0].Location.File.FileId == -1)
         StatusText = "No symbols found!";
       else if (msg.definitions.Length == 1)
         Editor.SelectText(msg.definitions[0].Location);

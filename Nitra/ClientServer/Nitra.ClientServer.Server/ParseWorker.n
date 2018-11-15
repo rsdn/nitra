@@ -342,7 +342,7 @@ namespace Nitra.ClientServer.Server
       {
         def literal = keyword.Keyword.Str;
         
-        when (pos < keyword.StartPos && pos > keyword.StartPos + literal.Length)
+        when (pos < keyword.StartPos || pos >= keyword.StartPos + literal.Length)
           continue;
 
         def pattern = source.Text.Substring(keyword.StartPos, pos - keyword.StartPos);

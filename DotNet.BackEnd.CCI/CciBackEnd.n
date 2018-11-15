@@ -96,7 +96,11 @@ namespace Nitra.BackEnd.Cci
         | file is FileLibReference     with filePath = file.Path =>
           this.CancellationToken.ThrowIfCancellationRequested();
 
-          def fullPath     = IO.Path.Combine(libPath, filePath);
+          def fullPath = IO.Path.Combine(libPath, filePath);
+
+          unless (IO.File.Exists(fullPath))
+            continue;
+          
           def tempFullPath = IO.Path.ChangeExtension(IO.Path.GetTempFileName(), IO.Path.GetExtension(fullPath));
           IO.File.Copy(fullPath, tempFullPath);
           def unit         = host.LoadUnitFrom(tempFullPath);
@@ -264,9 +268,10 @@ namespace Nitra.BackEnd.Cci
     public LoadCustomAttribute(cciCustomAttribute : ICustomAttribute, context : DependentPropertyEvalContext) : CustomAttributeSymbol
     {
       def customAttributeSymbol = CustomAttributeSymbol();
-      def attrType = CciTypeToTypeSymbol(cciCustomAttribute.Type, context);
+      def cciAtrType = cciCustomAttribute.Type :> INamedTypeReference;
+      def attrType = CciTypeToTypeSymbol(cciAtrType, context);
       customAttributeSymbol.Type = attrType;
-      customAttributeSymbol.FullName = attrType.FullName;
+      customAttributeSymbol.FullName = cciAtrType.ToString();
       def cciCtorKey = cciCustomAttribute.Constructor.InternedKey;
       def filter(sym : Member.ConstructorSymbol) : bool
       {
@@ -317,7 +322,7 @@ namespace Nitra.BackEnd.Cci
       }
       customAttributeSymbol.NamedArguments = cciCustomAttribute.NamedArguments.MapToArray(cciNamedArgToCustomAttributeExpression);
 
-      def name   = NRB.Name(NoLocation, customAttributeSymbol.Name); // TODO: ns.Name.UniqueKey
+      def name   = NRB.Name(NoLocation, cciAtrType.Name.Value);
       customAttributeSymbol.AddDeclaration(ExternalCustomAttributeDeclaration(name, cciCustomAttribute));
       customAttributeSymbol.EvalProperties(context);
       customAttributeSymbol
@@ -434,7 +439,6 @@ namespace Nitra.BackEnd.Cci
             unless (method.IsDeclaredInEvaluated)
               method.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
-            method.EvalProperties(context);
             method
 
           | m is IMethodDefinition   =>
@@ -453,7 +457,6 @@ namespace Nitra.BackEnd.Cci
 
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
             method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
-            method.EvalProperties(context);
             method
 
           | m is IFieldDefinition    =>

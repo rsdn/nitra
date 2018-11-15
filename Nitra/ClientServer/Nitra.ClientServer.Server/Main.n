@@ -38,6 +38,7 @@ module Program
     using (asyncResponsePipe = NamedPipeServerStream(asyncResponsePipeName, PipeDirection.Out))
     using (responsePipe      = NamedPipeServerStream(responsePipeName,      PipeDirection.Out))
     using (requestPipe       = NamedPipeServerStream(requestPipeName,       PipeDirection.In))
+    using (LoggerWorker())
     {
       // Connect to the pipe or wait until the pipe is available.
       Write("Attempting to connect to pipes...");

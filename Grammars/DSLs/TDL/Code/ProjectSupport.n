@@ -47,6 +47,7 @@ namespace Tdl
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       TypeUnifier.InitInstance();
+      TdlUtils.ResetMetodScopeFactoryCach();
 
       def bindNs(scope : Scope, name : string) : Ref[NamespaceSymbol]
       {

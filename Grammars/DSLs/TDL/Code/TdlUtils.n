@@ -23,7 +23,15 @@ namespace Tdl
     public NoLocation : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
     public NoFile     : ProjectSystem.File = SourceSnapshot.Default.File;
     public NoSpan     : NSpan              = NSpan(0);
-    
+    public MetodScopeFactory : ScopeFactory = MetodScopeFactoryImpl;
+
+    _metodScopeFactoryCache : Dictionary[int, bool] = Dictionary();
+
+    public ResetMetodScopeFactoryCach() : void
+    {
+      _metodScopeFactoryCache.Clear();
+    }
+
     public PlatformMakeHint(symbolCache : ISymbolCache, symbol : Platform.SetSymbol) : string
     {
       def builder = StringBuilder();
@@ -300,6 +308,61 @@ namespace Tdl
         builder.MoveToImmutable()
       else
         builder.ToImmutable()
+    }
+
+    MetodScopeFactoryImpl(scope : Scope) : Scope
+    {
+      def filter(symbol : DeclarationSymbol) : bool
+      {
+        mutable result;
+        when (_metodScopeFactoryCache.TryGetValue(symbol.Id, out result))
+          return result;
+        
+        def isTestMethod(m : Member.MethodSymbol) : bool
+        {
+          foreach (a in m.CustomAttributes)
+          {
+            def name = a.Name;
+            when (name == "TestMethodAttribute" || name == "TestMethod" )
+              return true;
+          }
+          false
+        }
+
+        def isTestClass(c : TopClassSymbol) : bool
+        {
+          foreach (a in c.CustomAttributes)
+          {
+            def name = a.Name;
+            when (name == "TestClassKisExtended" || name == "TestClassExtension" || name == "TestClassKisExtendedAttribute" || name == "TestClassExtensionAttribute")
+              return true;
+          }
+          false
+        }
+
+        def isNamespaceContainsTestClasses(ns : NamespaceSymbol) : bool
+        {
+          foreach (m when filter(m) in ns.MemberTable.Symbols.SelectMany(x => x))
+            return true;
+          false
+        }
+
+        result =
+          match (symbol)
+          {
+            | NamespaceSymbol     as ns when isNamespaceContainsTestClasses(ns) => true
+            | TopClassSymbol      as c  when isTestClass(c)                     => true
+            | Member.MethodSymbol as m  when isTestMethod(m)                    => true
+            | _                                                                 => false
+          };
+
+        _metodScopeFactoryCache[symbol.Id] = result;
+        
+        result
+      }
+
+      def filteringScope = FilteringScope(scope, filter);
+      filteringScope
     }
   } // module
 } // namespace
