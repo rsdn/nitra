@@ -16,7 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-
+using System.Xml.Linq;
 using D = System.Drawing;
 
 namespace Nitra.VisualStudio
@@ -482,5 +482,44 @@ namespace Nitra.VisualStudio
       return D.Color.FromArgb(bytes[3], bytes[2], bytes[1], bytes[0]);
     }
     public static D.Color ToDColor(this SpanClassInfo spanClass) => ToDColor(spanClass.ForegroundColor);
-  }
-}
+
+    public static string ToText(string text)
+    {
+      if (!text.StartsWith("<hint>", StringComparison.InvariantCultureIgnoreCase))
+        return text;
+
+      var builder = new StringBuilder();
+      XmlToString(builder, XElement.Parse(text));
+      return builder.ToString();
+    }
+
+    static void XmlToString(StringBuilder builder, XContainer container)
+    {
+      foreach (var n in container.Nodes())
+      {
+        switch (n)
+        {
+          case XElement e when e.Name == "br" || e.Name == "bl": builder.AppendLine(); break;
+          case XContainer c:                                     XmlToString(builder, c); break;
+          case XText t:                                          builder.Append(t.Value); break;
+        }
+      }
+    }
+    public static TaskErrorCategory ConvertMessageType(CompilerMessageType type)
+    {
+      switch (type)
+      {
+        case CompilerMessageType.FatalError:
+          return TaskErrorCategory.Error;
+        case CompilerMessageType.Error:
+          return TaskErrorCategory.Error;
+        case CompilerMessageType.Warning:
+          return TaskErrorCategory.Warning;
+        case CompilerMessageType.Hint:
+          return TaskErrorCategory.Message;
+        default:
+          return TaskErrorCategory.Error;
+      }
+    }
+  } // class
+} // namespace

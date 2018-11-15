@@ -21,25 +21,28 @@ using M = Nitra.ClientServer.Messages;
 using Microsoft.VisualStudio.Language.NavigateTo.Interfaces;
 using Nitra.VisualStudio.NavigateTo;
 using System.IO;
+using Microsoft.VisualStudio.Shell;
 
 namespace Nitra.VisualStudio
 {
   /// <summary>Represent a server (Nitra.ClientServer.Server) instance.</summary>
   internal class ServerModel : IDisposable
   {
-              Ide.Config                    _config;
-    public    IServiceProvider              ServiceProvider   { get; }
-    public    NitraClient                   Client            { get; private set; }
-    public    Hint                          Hint              { get; } = new Hint() { WrapWidth = 900.1 };
-    public    ImmutableHashSet<string>      Extensions        { get; }
+              Ide.Config                               _config;
+    public    IServiceProvider                         ServiceProvider   { get; }
+    public    NitraClient                              Client            { get; private set; }
+    public    Hint                                     Hint              { get; } = new Hint() { WrapWidth = 900.1 };
+    public    ImmutableHashSet<string>                 Extensions        { get; }
+                                                       
+    public    bool                                     IsLoaded          { get; private set; }
+    public    bool                                     IsSolutionCreated { get; private set; }
+    public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
 
-    public    bool                          IsLoaded          { get; private set; }
-    public    bool                          IsSolutionCreated { get; private set; }
-              ImmutableArray<SpanClassInfo> _spanClassInfos   = ImmutableArray<SpanClassInfo>.Empty;
-    readonly  HashSet<FileModel>            _fileModels       = new HashSet<FileModel>();
-    readonly  Dictionary<FileId, FileModel> _filIdToFileModelMap = new Dictionary<FileId, FileModel>();
-    private   INavigateToCallback           _callback;
-    private   NitraNavigateToItemProvider   _nitraNavigateToItemProvider;
+    readonly HashSet<FileModel>                        _fileModels          = new HashSet<FileModel>();
+    readonly  Dictionary<FileId, FileModel>            _filIdToFileModelMap = new Dictionary<FileId, FileModel>();
+    readonly  Dictionary<ProjectId, ErrorListProvider> _errorListProviders  = new Dictionary<ProjectId, ErrorListProvider>();
+    private   INavigateToCallback                      _callback;
+    private   NitraNavigateToItemProvider              _nitraNavigateToItemProvider;
 
     public ServerModel(StringManager stringManager, Ide.Config config, IServiceProvider serviceProvider)
     {
@@ -62,14 +65,12 @@ namespace Nitra.VisualStudio
       Extensions = builder.ToImmutable();
     }
 
-    public ImmutableArray<SpanClassInfo> SpanClassInfos { get { return _spanClassInfos; } }
-
     public SpanClassInfo? GetSpanClassOpt(int id)
     {
-      if (_spanClassInfos.IsDefaultOrEmpty)
+      if (SpanClassInfos.IsDefaultOrEmpty)
         return null;
 
-      foreach (var spanClassInfo in _spanClassInfos)
+      foreach (var spanClassInfo in SpanClassInfos)
       {
         if (spanClassInfo.Id == id)
           return spanClassInfo;
@@ -166,6 +167,11 @@ namespace Nitra.VisualStudio
     {
       Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ProjectUnloaded(id));
+      if (_errorListProviders.TryGetValue(id, out var errorListProvider))
+      {
+        errorListProvider.Dispose();
+        _errorListProviders.Remove(id);
+      }
     }
 
     internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version)
@@ -223,16 +229,19 @@ namespace Nitra.VisualStudio
     {
       switch (msg)
       {
+        case AsyncServerMessage.ProjectLoadingMessages projectLoadingMessages:
+            ShowProjectMessages(projectLoadingMessages.projectId, projectLoadingMessages.messages);
+          break;
         case AsyncServerMessage.LanguageLoaded languageInfo:
           var spanClassInfos = languageInfo.spanClassInfos;
-          if (_spanClassInfos.IsDefaultOrEmpty)
-            _spanClassInfos = spanClassInfos;
+          if (SpanClassInfos.IsDefaultOrEmpty)
+            SpanClassInfos = spanClassInfos;
           else if (!spanClassInfos.IsDefaultOrEmpty)
           {
-            var bilder = ImmutableArray.CreateBuilder<SpanClassInfo>(_spanClassInfos.Length + spanClassInfos.Length);
-            bilder.AddRange(_spanClassInfos);
+            var bilder = ImmutableArray.CreateBuilder<SpanClassInfo>(SpanClassInfos.Length + spanClassInfos.Length);
+            bilder.AddRange(SpanClassInfos);
             bilder.AddRange(spanClassInfos);
-            _spanClassInfos = bilder.MoveToImmutable();
+            SpanClassInfos = bilder.MoveToImmutable();
           }
           break;
 
@@ -281,6 +290,46 @@ namespace Nitra.VisualStudio
       }
     }
 
+    private void ShowProjectMessages(ProjectId projectId, CompilerMessage[] messages)
+    {
+      if (!_errorListProviders.TryGetValue(projectId, out var errorListProvider))
+      {
+        errorListProvider              = new NitraErrorListProvider(ServiceProvider);
+        _errorListProviders[projectId] = errorListProvider;
+      }
+      errorListProvider.MaintainInitialTaskOrder = true;
+      errorListProvider.DisableAutoRoute         = true;
+      errorListProvider.SuspendRefresh();
+      try
+      {
+        var tasks = errorListProvider.Tasks;
+        tasks.Clear();
+        foreach (var msg in messages)
+          AddTask(errorListProvider, msg);
+      }
+      finally
+      {
+        errorListProvider.ResumeRefresh();
+      }
+    }
+
+    private void AddTask(ErrorListProvider errorListProvider, CompilerMessage msg)
+    {
+      var text = VsUtils.ToText(msg.Text);
+      var task = new ErrorTask()
+      {
+        Text          = text,
+        Category      = TaskCategory.CodeSense,
+        ErrorCategory = VsUtils.ConvertMessageType(msg.Type),
+        Priority      = TaskPriority.High,
+      };
+
+      errorListProvider.Tasks.Add(task);
+
+      foreach (var nested in msg.NestedMessages)
+        AddTask(errorListProvider, nested);
+    }
+
     internal SpanClassInfo? GetSpanClassOpt(string spanClass)
     {
       foreach (var spanClassInfo in SpanClassInfos)
@@ -325,6 +374,11 @@ namespace Nitra.VisualStudio
 
     public void Dispose()
     {
+      foreach (var errorListProvider in _errorListProviders.Values)
+        if (errorListProvider != null)
+          errorListProvider.Dispose();
+      _errorListProviders.Clear();
+
       var fileModels = _fileModels.ToArray();
       foreach (var fileModel in fileModels)
         fileModel.Dispose();

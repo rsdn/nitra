@@ -61,13 +61,13 @@ namespace Nitra.Visualizer
     bool _doTreeOperation;
     bool _doChangeCaretPos;
 
-    readonly TextMarkerService _textMarkerService;
-    readonly NitraFoldingStrategy _foldingStrategy;
-    readonly FoldingManager _foldingManager;
-    readonly ToolTip _textBox1Tooltip;
-    readonly List<ITextMarker> _matchedBracketsMarkers = new List<ITextMarker>();
+    readonly TextMarkerService          _textMarkerService;
+    readonly NitraFoldingStrategy       _foldingStrategy;
+    readonly FoldingManager             _foldingManager;
+    readonly ToolTip                    _textBox1Tooltip;
+    readonly List<ITextMarker>          _matchedBracketsMarkers = new List<ITextMarker>();
     readonly Action<AsyncServerMessage> _responseDispatcher;
-    readonly Timer _fillAstTimer;
+    readonly Timer                      _fillAstTimer;
 
     public MainWindow()
     {
@@ -433,15 +433,22 @@ namespace Nitra.Visualizer
         return;
 
       var cmpilerMessages = new List<CompilerMessage>();
-      cmpilerMessages.AddRange(ViewModel.CurrentFile.ParsingMessages);
-      cmpilerMessages.AddRange(ViewModel.CurrentFile.SemanticAnalysisMessages);
+      var projectMessages = ViewModel.CurrentProject.Messages;
+      if (projectMessages != null && projectMessages.Length > 0)
+      cmpilerMessages.AddRange(projectMessages);
+      if (ViewModel.CurrentFile != null)
+      {
+        cmpilerMessages.AddRange(ViewModel.CurrentFile.ParsingMessages);
+        cmpilerMessages.AddRange(ViewModel.CurrentFile.SemanticAnalysisMessages);
+      }
       cmpilerMessages.Sort();
 
-      ClearMarkers();
+      if (ViewModel.CurrentFile != null)
+        ClearMarkers();
 
       var errorNodes      = _errorsTreeView.Items;
-      var currentFileId   = ViewModel.CurrentFile.Id;
-      var fullName        = ViewModel.CurrentFile.FullPath;
+      var currentFileId   = ViewModel.CurrentFile?.Id ?? -1;
+      var fullName        = ViewModel.CurrentFile.FullPath ?? "<project>";
       var doc             = _textEditor.Document;
 
       errorNodes.Clear();
@@ -470,9 +477,14 @@ namespace Nitra.Visualizer
 
         var errorNode = new TreeViewItem();
         var pos = doc.GetLocation(span.StartPos);
-        errorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + pos.Line + "," + pos.Column  + "): " + text;
         errorNode.Tag = message;
-        errorNode.MouseDoubleClick += errorNode_MouseDoubleClick;
+        if (currentFileId != -1 && currentFileId == file.FileId)
+        {
+          errorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + pos.Line + "," + pos.Column + "): " + text;
+          errorNode.MouseDoubleClick += errorNode_MouseDoubleClick;
+        }
+        else
+          errorNode.Header = text;
 
         if (message.NestedMessages != null)
         {
@@ -500,10 +512,13 @@ namespace Nitra.Visualizer
         return;
       var error = (CompilerMessage)node.Tag;
 
-      ViewModel.Editor.SelectText(error.Location);
-
       e.Handled = true;
-      _textEditor.Focus();
+
+      if (error.Location.File.FileId != FileId.Invalid)
+      {
+        ViewModel.Editor.SelectText(error.Location);
+        _textEditor.Focus();
+      }
     }
 
     private bool IsAstReflectionTabItemActive()
@@ -1073,6 +1088,17 @@ namespace Nitra.Visualizer
 
       switch (msg)
       {
+        case AsyncServerMessage.ProjectLoadingMessages projectLoadingMessages:
+          {
+            var project = solution.Children.SingleOrDefault(p => p.Id == projectLoadingMessages.projectId);
+            if (project == null)
+              return;
+
+            project.Messages = projectLoadingMessages.messages;
+            if (ViewModel.CurrentProject == project)
+              TryReportError();
+          }
+          break;
         case AsyncServerMessage.ParsingMessages parsingMessages:
           {
             FileVm file = ViewModel.CurrentSolution.GetFile(msg.FileId);

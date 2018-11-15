@@ -27,22 +27,22 @@ namespace Nitra.VisualStudio.Models
   internal class FileModel : IDisposable
   {
     public const int KindCount = 3;
-    readonly ITextBuffer _textBuffer;
-    public ServerModel Server { get; }
-    public FileId Id { get; }
-    public IVsHierarchy Hierarchy { get; }
-    public string FullPath { get; }
-    public string Ext { get; }
-    public CompilerMessage[][] CompilerMessages { get; private set; }
-    public ITextSnapshot[] CompilerMessagesSnapshots { get; private set; }
-    ErrorListProvider[] _errorListProviders;
+    public ServerModel         Server                    { get; }
+    public FileId              Id                        { get; }
+    public IVsHierarchy        Hierarchy                 { get; }
+    public string              FullPath                  { get; }
+    public string              Ext                       { get; }
+    public CompilerMessage[][] CompilerMessages          { get; private set; }
+    public ITextSnapshot[]     CompilerMessagesSnapshots { get; private set; }
 
+    readonly ITextBuffer                             _textBuffer;
     readonly Dictionary<IWpfTextView, TextViewModel> _textViewModelsMap = new Dictionary<IWpfTextView, TextViewModel>();
-    TextViewModel _activeTextViewModelOpt;
-    TextViewModel _mouseHoverTextViewModelOpt;
-    bool _fileIsRemoved;
-    ICompletionSession _completionSession;
-    VersionedPos _caretPosition;
+    ErrorListProvider[]                              _errorListProviders;
+    TextViewModel                                    _activeTextViewModelOpt;
+    TextViewModel                                    _mouseHoverTextViewModelOpt;
+    bool                                             _fileIsRemoved;
+    ICompletionSession                               _completionSession;
+    VersionedPos                                     _caretPosition;
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
@@ -167,6 +167,7 @@ namespace Nitra.VisualStudio.Models
 
     public ProjectId GetProjectId()
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
       var project = this.Hierarchy.GetProject();
       return new ProjectId(this.Server.Client.StringManager.GetId(project.FullName));
     }
@@ -284,9 +285,7 @@ namespace Nitra.VisualStudio.Models
           var tasks = errorListProvider.Tasks;
           tasks.Clear();
           foreach (var msg in messages)
-          {
             AddTask(snapshot, errorListProvider, msg);
-          }
         }
         finally
         {
@@ -302,18 +301,18 @@ namespace Nitra.VisualStudio.Models
         return;
 
       var line = snapshot.GetLineFromPosition(startPos);
-      var col = startPos - line.Start.Position;
-      var text = ToText(msg.Text);
+      var col  = startPos - line.Start.Position;
+      var text = VsUtils.ToText(msg.Text);
       var task = new ErrorTask()
       {
-        Text = text,
-        Category = TaskCategory.CodeSense,
-        ErrorCategory = ConvertMessageType(msg.Type),
-        Priority = TaskPriority.High,
+        Text          = text,
+        Category      = TaskCategory.CodeSense,
+        ErrorCategory = VsUtils.ConvertMessageType(msg.Type),
+        Priority      = TaskPriority.High,
         HierarchyItem = Hierarchy,
-        Line = line.LineNumber,
-        Column = col,
-        Document = FullPath,
+        Line          = line.LineNumber,
+        Column        = col,
+        Document      = FullPath,
       };
 
       task.Navigate += Task_Navigate;
@@ -322,29 +321,6 @@ namespace Nitra.VisualStudio.Models
 
       foreach (var nested in msg.NestedMessages)
         AddTask(snapshot, errorListProvider, nested);
-    }
-
-    static string ToText(string text)
-    {
-      if (!text.StartsWith("<hint>", StringComparison.InvariantCultureIgnoreCase))
-        return text;
-
-      var builder = new StringBuilder();
-      XmlToString(builder, XElement.Parse(text));
-      return builder.ToString();
-    }
-
-    static void XmlToString(StringBuilder builder, XContainer container)
-    {
-      foreach (var n in container.Nodes())
-      {
-        switch (n)
-        {
-          case XElement e when e.Name == "br" || e.Name == "bl": builder.AppendLine(); break;
-          case XContainer c: XmlToString(builder, c); break;
-          case XText t: builder.Append(t.Value); break;
-        }
-      }
     }
 
     TextViewModel GetTextViewModel()
@@ -371,23 +347,6 @@ namespace Nitra.VisualStudio.Models
       }
 
       textViewModel.Navigate(task.Line, task.Column);
-    }
-
-    static TaskErrorCategory ConvertMessageType(CompilerMessageType type)
-    {
-      switch (type)
-      {
-        case CompilerMessageType.FatalError:
-          return TaskErrorCategory.Error;
-        case CompilerMessageType.Error:
-          return TaskErrorCategory.Error;
-        case CompilerMessageType.Warning:
-          return TaskErrorCategory.Warning;
-        case CompilerMessageType.Hint:
-          return TaskErrorCategory.Message;
-        default:
-          return TaskErrorCategory.Error;
-      }
     }
 
     NitraEditorClassifier GetClassifierOpt()

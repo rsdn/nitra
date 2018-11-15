@@ -227,6 +227,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           {
             ServerUtils.Log("Project support: RefreshReferences " + this.Name + " ");
             def timer = Stopwatch.StartNew();
+            def messages = CompilerMessages :> NSP.CompilerMessageList;
+            messages.Clear();
             def data =
               try projectSupport.RefreshReferences(Router.ProjectLoadCancellationToken, this)
               catch
@@ -241,6 +243,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             this.Data = data;
 
             Router.ProjectLoadFinish();
+
+            def cm = ServerUtils.ConvertCompilerMessages(CompilerMessageSource.ProjectLoading, messages);
+            Router.SendAsyncResponse(AsyncServerMessage.ProjectLoadingMessages(FileId.Invalid, FileVersion.Invalid, Parent.Id, Id, cm));
+
             LogMsgHandled("RefreshReferences " + this.Name + " ", timer, 1000);
 
             when (data == null)
