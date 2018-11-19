@@ -125,7 +125,7 @@ namespace Nitra.Declarations
       get
       {
         if (IsUnresolved)
-          true
+          false
         else if (IsAmbiguous)
         {
           foreach (s when s.IsScopeEvaluated in Symbols)
