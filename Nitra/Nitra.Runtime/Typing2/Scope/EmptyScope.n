@@ -21,6 +21,8 @@ namespace Nitra.Declarations
 
     public override AllSymbols : Seq[DeclarationSymbol] { get { [] } }
 
+    public override GetAllSymbols() : Seq[DeclarationSymbol] { [] }
+    
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       IgnoreParams();

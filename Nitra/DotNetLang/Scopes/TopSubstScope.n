@@ -37,7 +37,7 @@ namespace DotNet
     }
 
     // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } }
+    public override GetAllSymbols() : Seq[DeclarationSymbol]{ _typeInfo.Scope.GetAllSymbols() }
 
     public virtual TrySubstTypeParameterSymbol(parameterSymbol : TypeParameterSymbol) : TypeSymbol
     {

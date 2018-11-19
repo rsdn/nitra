@@ -30,8 +30,7 @@ namespace Nitra.Ast
     {
     }
 
-    // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { [] } }
+    public override GetAllSymbols() : Seq[DeclarationSymbol] { [] }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {

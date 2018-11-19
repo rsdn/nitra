@@ -1,4 +1,4 @@
-using Nitra;
+﻿using Nitra;
 using Nitra.Declarations;
 using Nitra.Serialization2;
 
@@ -28,14 +28,11 @@ namespace Nitra.Ast
 
     public Scope : Scope { get; }
 
-    public override AllSymbols : Seq[DeclarationSymbol]
+    public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
-      get
-      {
         def res1 = Scope.Bind(_ => true);
         def res2 = res1.Prefer(_isNitraSymbol);
-        res2.GetSymbols().OrderBy(s => s.InitialName)
-      }
+        res2.GetSymbols()
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]

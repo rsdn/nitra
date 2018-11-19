@@ -20,13 +20,10 @@ namespace Nitra.Declarations
     public Scope     : Scope                         { get; }
     public Predicate : Predicate[DeclarationSymbol] { get; }
 
-    public override AllSymbols : Seq[DeclarationSymbol]
+    public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
-      get
-      {
-        foreach (symbol when this.Predicate(symbol) in this.Scope.AllSymbols)
+        foreach (symbol when this.Predicate(symbol) in this.Scope.GetAllSymbols())
           yield symbol;
-      }
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]

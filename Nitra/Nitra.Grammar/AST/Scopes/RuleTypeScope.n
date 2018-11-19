@@ -26,14 +26,10 @@ namespace Nitra.Ast
         _members = CreateMembers();
     }
 
-    // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol]
+    public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
-      get
-      {
-        Init();
-        _members.GetSymbols().OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
-      }
+      Init();
+      _members.GetSymbols()
     }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
