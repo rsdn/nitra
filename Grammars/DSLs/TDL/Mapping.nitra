@@ -18,7 +18,7 @@ namespace Tdl
 
   map syntax Grammar.Module -> Module
   {
-    Name = Name(Location.FromStart(), Location.Source.File.Name);
+    Name = Name(Location.FromStart(), Location.Source.File.Name + ".tdl");
     MemberDeclarations -> Members;
   }
 
