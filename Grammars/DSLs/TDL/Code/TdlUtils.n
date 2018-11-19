@@ -364,5 +364,23 @@ namespace Tdl
       def filteringScope = FilteringScope(scope, filter);
       filteringScope
     }
+
+    public HasUndefinedFieldsInProduct(type : ProductTypeSymbol, defs : ImmutableArray[Def]) : bool
+    {
+      CollectUndefinedFieldsInProduct(type, defs).Any()
+    }
+    
+    public ReportProduct(type : ProductTypeSymbol, defs : ImmutableArray[Def]) : string
+    {
+      def undefinedFields = CollectUndefinedFieldsInProduct(type, defs).Select(x => x.Name).OrderBy(x => x);
+      "The product does not have fields declared in the product type: " + string.Join(", ", undefinedFields) + "."
+    }
+
+    CollectUndefinedFieldsInProduct(type : ProductTypeSymbol, defs : ImmutableArray[Def]) : Seq[DeclarationSymbol]
+    {
+      def fieldSet = type.MemberTable.GetAllSymbols();
+      def defSet   = defs.Select(d => d.Symbol);
+      fieldSet.Except(defSet)
+    }
   } // module
 } // namespace

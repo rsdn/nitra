@@ -37,6 +37,9 @@ namespace Tdl
         Definitions.Scope           = ProjectSupport.ExternalSymbolTable;
         Symbol.Defs                 = TdlUtils.MakeDefinitions(Definitions, Definitions.SymbolRef);
 
+        when (TdlUtils.HasUndefinedFieldsInProduct(Symbol.Type, Symbol.Defs))
+          Name.Error(context, TdlUtils.ReportProduct(Symbol.Type, Symbol.Defs));
+
         Definitions : Definition*;
       }
     | Set
