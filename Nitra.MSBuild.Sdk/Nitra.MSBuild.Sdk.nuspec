@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Nitra.MSBuild.Sdk</id>
+    <version>1.0.0</version>
+    <description>Nitra MSBuild SDK package</description>
+    <authors>RSDN</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://opensource.org/licenses/BSD-3-Clause</licenseUrl>
+    <iconUrl>https://github.com/rsdn/nitra/raw/master/Doc/Imgs/nitra-logo.png</iconUrl>
+    <projectUrl>https://github.com/rsdn/nitra</projectUrl>
+    <packageTypes>
+      <packageType name="MSBuildSdk" />
+    </packageTypes>
+  </metadata>
+  <files>
+    <file target="sdk" src="Sdk.props" />
+    <file target="sdk" src="Sdk.targets" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\Stage1\*.exe" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\Stage1\*.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\Stage1\*.targets" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\Stage1\*.config" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\Linq\Nemerle.Linq.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\TestFramework\Nemerle.Diff.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\TestFramework\Nemerle.Test.Framework.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\PowerPack\Nemerle.Peg.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\PowerPack\Nemerle.Peg.Macros.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\PowerPack\CSharpParser.dll" />
+    <file target="tools" src="..\..\nemerle\bin\$configuration$\net-4.0\PowerPack\ncc.parser.csharp.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\System.Collections.Immutable.Light.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\Nitra.Runtime.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\DotNetLang.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\Nitra.Compiler.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\Nitra.Grammar.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\policy.*" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\DotNet.BackEnd.CCI.dll" />
+    <file target="tools" src="..\bin\$configuration$\Stage1\Microsoft.Cci.*" />
+    <file target="tools" src="..\Grammars\Bin\$configuration$\CSharp.Grammar.dll" />
+  </files>
+</package>
