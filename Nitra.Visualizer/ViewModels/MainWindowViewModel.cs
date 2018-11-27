@@ -53,7 +53,7 @@ namespace Nitra.Visualizer.ViewModels
 
       NavigateForkward = ReactiveCommand.Create(canFindSymbolDefinitions);
       NavigateForkward.ThrownExceptions.Subscribe(e =>
-        StatusText = "Navigate forkward!");
+        StatusText = "Navigate forward!");
       NavigateForkward.Subscribe(OnNavigateForkward);
 
       FindSymbolReferences = ReactiveCommand.Create(canFindSymbolDefinitions);
@@ -87,6 +87,8 @@ namespace Nitra.Visualizer.ViewModels
         foreach (var definition in s.Definitions)
         {
           var f = definition.Location.File;
+          if (f.FileId != FileId.Invalid)
+            continue;
           var file = CurrentSolution.GetFile(f.FileId);
           if (file.Version != f.FileVersion)
             continue;
@@ -140,6 +142,10 @@ namespace Nitra.Visualizer.ViewModels
           int symbolId = definition.SymbolId;
           var loc      = definition.Location;
           var f        = loc.File;
+
+          if (f.FileId == FileId.Invalid)
+            continue;
+
           var file     = CurrentSolution.GetFile(f.FileId);
 
           if (file.Version != f.FileVersion)
