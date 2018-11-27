@@ -248,7 +248,12 @@ namespace Nitra.VisualStudio.Models
 
     void ShowInFindResultWindow(FileModel fileModel, NSpan span, Location[] locations)
     {
+      Microsoft.VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
       CheckDisposed();
+
+      if (locations.Length == 0)
+        return;
 
       if (locations.Length == 1)
       {
