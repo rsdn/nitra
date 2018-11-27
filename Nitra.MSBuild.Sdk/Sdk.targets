@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Nemerle">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
+    </Reference>
+    <Reference Include="Nitra.Runtime">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>$(NitraPath)\Nitra.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable.Light">
+      <SpecificVersion>False</SpecificVersion>
+      <Private>True</Private>
+      <HintPath>$(NitraPath)\System.Collections.Immutable.Light.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <MacroReference Include="Nitra.Compiler">
+      <HintPath>$(NitraPath)\Nitra.Compiler.dll</HintPath>
+    </MacroReference>
+  </ItemGroup>
+
+  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
+
+  <PropertyGroup>
+    <AssemblySearchPaths>$(AssemblySearchPaths);$(NitraPath)</AssemblySearchPaths>
+  </PropertyGroup>
+</Project>

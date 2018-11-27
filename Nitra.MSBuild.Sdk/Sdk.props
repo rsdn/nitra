@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_NitraUserFile>Nitra.user</_NitraUserFile>
+    <_NitraUserBasePath>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildProjectDirectory), '$(_NitraUserFile)'))</_NitraUserBasePath>
+    <NitraUserPath>$([System.IO.Path]::Combine('$(_NitraUserBasePath)', '$(_NitraUserFile)'))</NitraUserPath>
+  </PropertyGroup>
+
+  <Import Condition=" Exists('$(NitraUserPath)') " Project="$(NitraUserPath)" />
+
+  <PropertyGroup>
+    <NoStdLib>true</NoStdLib>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(NitraAndNemerleSourcesPath)' == '' ">
+    <NitraPath Condition=" '$(NitraPath)' == '' ">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\tools'))</NitraPath>
+    <NitraGrammarsPath Condition=" '$(NitraGrammarsPath)' == '' ">$(NitraPath)</NitraGrammarsPath>
+    <Nemerle Condition=" '$(Nemerle)' == '' ">$(NitraPath)</Nemerle>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(NitraAndNemerleSourcesPath)' != '' ">
+    <NitraPath>$([System.IO.Path]::GetFullPath('$(NitraAndNemerleSourcesPath)\nitra\bin\Debug\Stage1'))</NitraPath>
+    <NitraGrammarsPath>$([System.IO.Path]::GetFullPath('$(NitraAndNemerleSourcesPath)\nitra\Grammars\bin\Debug'))</NitraGrammarsPath>
+    <Nemerle>$([System.IO.Path]::GetFullPath('$(NitraAndNemerleSourcesPath)\nemerle\bin\Debug\net-4.0\Stage1'))</Nemerle>
+  </PropertyGroup>
+</Project>
