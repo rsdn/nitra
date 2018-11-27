@@ -56,7 +56,7 @@ namespace Nitra.ClientServer.Server
 body {
   background-color: black;
   text-align: left;
-  font-family: "Consolas", Monaco, monospace;
+  font-family: Consolas, Monaco, monospace;
   white-space: pre;
 }
 </style>
@@ -90,10 +90,30 @@ body {
       }
     }
 
+    static TranslateColor(color : ConsoleColor) : string
+    {
+		  | Black       => "Black"
+		  | DarkBlue    => "DarkBlue"
+		  | DarkGreen   => "DarkGreen"
+		  | DarkCyan    => "DarkCyan"
+		  | DarkRed     => "DarkRed"
+		  | DarkMagenta => "DarkMagenta"
+		  | DarkYellow  => "olive"
+		  | Gray        => "Gray"
+		  | DarkGray    => "DarkGray"
+		  | Blue        => "Blue"
+		  | Green       => "limegreen"
+		  | Cyan        => "Cyan"
+		  | Red         => "Red"
+		  | Magenta     => "Magenta"
+		  | Yellow      => "Yellow"
+		  | White       => "White"
+    }
+    
     WriteMessage(msg : string, color : ConsoleColor) : void
     {
       _logFile.Write(<#<span style="color:#>);
-      _logFile.Write(color.ToString().ToLower(CultureInfo.InvariantCulture));
+      _logFile.Write(TranslateColor(color));
       _logFile.Write(<#">#>);
       _logFile.Write(msg);
       _logFile.WriteLine(<#</span>#>);
