@@ -37,6 +37,7 @@ namespace Nitra.LanguageCompiler
     public CompilerMessages    : CompilerMessages { get; }
     public UserDefinedVars     : list[string]     { get { _userDefinedVars.ToNList() } }
     public PackageVersion      : string           { get; private set;}
+    public ProjectOutputPath   : string           { get; private set; default "" }
     _userDefinedVars           : List[string]     = List();
 
     public this()
@@ -84,6 +85,10 @@ namespace Nitra.LanguageCompiler
                     aliases = ["-ver"],
                     help = "VS package version.",
                     handler = v => PackageVersion = v),
+        CliOption.String(name = "-projectOutput",
+                    help = "Project output path",
+                    required = false,
+                    handler = p => ProjectOutputPath = p)
         ];
 
       Getopt.Parse(options);
