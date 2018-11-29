@@ -1,7 +1,0 @@
-﻿suite Gate_PURE
-{
-    platform win7-x64;
-    product PURE;
-    AutotestBinariesExcludedFilesMasks = AutotestsBinariesToken;
-    GateTests();
-}
