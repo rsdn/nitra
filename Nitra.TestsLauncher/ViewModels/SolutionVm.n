@@ -63,6 +63,8 @@ namespace Nitra.ViewModels
       _client = client;
       def config = this.Suite.GetConfigWithFullPaths();
       def references = config.References;
+      unless (File.Exists(config.ProjectSupport.Path))
+        return;
       client.Send(ClientMessage.SolutionStartLoading(Id, FullPath));
       foreach(project in Children)
       {
