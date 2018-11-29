@@ -140,14 +140,11 @@ namespace Nitra.BackEnd.Cci
 #endif
     }
 
-    public override AllSymbols : Seq[DeclarationSymbol]
+    public override GetAllSymbols() : System.Collections.Generic.IEnumerable[Nitra.Declarations.DeclarationSymbol]
     {
-      get
-      {
-        unless (_isLoaded)
-          Load();
-        base.AllSymbols
-      }
+      unless (_isLoaded)
+        Load();
+      base.GetAllSymbols()
     }
 
     public override Symbols : Hashtable[int, list[DeclarationSymbol]].ValueCollection
@@ -188,11 +185,13 @@ namespace Nitra.BackEnd.Cci
 
     public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
     {
+      IgnoreParams();
       assert(false)
     }
 
-    public static Deserialize(_reader : BinaryReader, _metadataReader : MetadataReader) : this
+    public static new Deserialize(_reader : BinaryReader, _metadataReader : MetadataReader) : this
     {
+      IgnoreParams();
       assert(false, "TypeMemberScope must be used only in backend")
     }
   }
