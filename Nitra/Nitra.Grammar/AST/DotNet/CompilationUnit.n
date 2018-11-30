@@ -336,11 +336,18 @@ namespace DotNet
 
     private static SaveNitraMetadata(project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
     {
-      def metadataFileName = manager.Options.OutputFileName + ".nitrametadata2";
-      def metadataWriter   = Nitra.Serialization2.MetadataWriter(project);
-      using (stream = IO.File.OpenWrite(metadataFileName))
-        metadataWriter.WriteRoot(rootNamespace, stream);
-      manager.Options.EmbeddedResources ::= metadataFileName + "," + NitraMetadataStreamName;
+      try
+      {
+        def metadataFileName = manager.Options.OutputFileName + ".nitrametadata2";
+        def metadataWriter   = Nitra.Serialization2.MetadataWriter(project);
+        using (stream = IO.File.OpenWrite(metadataFileName))
+          metadataWriter.WriteRoot(rootNamespace, stream);
+        manager.Options.EmbeddedResources ::= metadataFileName + "," + NitraMetadataStreamName;
+      }
+      catch
+      {
+        | x is Nitra.Serialization2.InvalidSymbolException => Message.Error(x.Message);
+      }
     }
 
     private static CreateNemerleSymbols(cancellationToken : CancellationToken, manager : ManagerClass, rootNamespace : NamespaceSymbol, context : DependentPropertyEvalContext) : Scope

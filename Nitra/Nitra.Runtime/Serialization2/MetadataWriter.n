@@ -174,8 +174,10 @@ namespace Nitra.Serialization2
     {
       if (BeginWriteObject(obj, writer))
       {
+        def owner = obj.Owner;
+
         writer.Write(obj.InitialName);
-        WriteObject(obj.Owner, writer);
+        WriteObject(owner, writer);
 
         def parsedDeclaration = obj.FirstParsedDeclarationOrDefault;
         def symbolKind =
@@ -184,7 +186,11 @@ namespace Nitra.Serialization2
           else if (!obj.HasDeclarations)
             SymbolKind.WithoutDeclarations
           else
+          {
+            when (owner == null)
+              throw InvalidSymbolException(obj, $"Reference to external symbol '$obj' of type '$(obj.GetType())' is not serializable because symbol is not declared in any table scope");
             SymbolKind.External;
+          }
 
         writer.Write(symbolKind :> byte);
         symbolKind != SymbolKind.External

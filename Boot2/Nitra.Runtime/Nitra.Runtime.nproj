@@ -341,6 +341,9 @@
     <Compile Include="Serialization2\ExternalDeclaration.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Serialization2\InvalidSymbolException.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Serialization2\ISerializable.n">
       <SubType>Code</SubType>
     </Compile>
