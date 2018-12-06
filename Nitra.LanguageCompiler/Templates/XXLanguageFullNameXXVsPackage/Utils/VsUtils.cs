@@ -20,7 +20,7 @@ namespace XXNamespaceXX
       return path;
     }
 
-    public static string GetPlaginPath()
+    public static string GetPluginPath()
     {
       return Path.GetDirectoryName(GetAssemblyPath(Assembly.GetExecutingAssembly()));
     }

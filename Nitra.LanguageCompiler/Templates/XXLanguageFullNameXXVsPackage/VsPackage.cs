@@ -54,13 +54,12 @@ namespace XXNamespaceXX
       if (string.IsNullOrEmpty(assembly))
         return;
 
-      var assemblyFullPath = Path.Combine(VsUtils.GetPlaginPath(), @"Languages\XXProjectSupportAssemblyXX");
-      var projectSupport   = new ProjectSupport("XXProjectSupportXX", "XXProjectSupportClassXX", Path.Combine(VsUtils.GetPlaginPath(), assemblyFullPath));
-      var path             = Path.Combine(VsUtils.GetPlaginPath(), @"Languages\XXProjectSupportAssemblyXX");
+      var assemblyFullPath = Path.Combine(VsUtils.GetPluginPath(), "Languages", assembly);
+      var projectSupport   = new ProjectSupport("XXProjectSupportXX", "XXProjectSupportClassXX", assemblyFullPath);
       var extensions       = ImmutableHashSet.Create<string>(StringComparer.OrdinalIgnoreCase, XXFileExtensionsXX);
       var languages = new []
         {
-          new LanguageInfo("XXLanguageFullNameXX", path, extensions)
+          new LanguageInfo("XXLanguageFullNameXX", assemblyFullPath, extensions)
         };
 
       var config = new Config(projectSupport, languages);
