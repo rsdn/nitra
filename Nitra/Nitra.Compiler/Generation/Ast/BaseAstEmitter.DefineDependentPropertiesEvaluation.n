@@ -1,4 +1,4 @@
-using Nitra.Runtime.GraphUtils;
+﻿using Nitra.Runtime.GraphUtils;
 using Nitra.Typing;
 using Nitra.Model;
 
@@ -427,9 +427,16 @@ namespace Nitra.Compiler
               }
               else
               {
+                def (sourceType, rawExpr, isAwaiting) =
+                  match (TryUnwrapAwaitOptionValue(source))
+                  {
+                    | VSome((originalSource, originalExpr)) => (originalSource.Type, originalExpr, true)
+                    | VNone => (source.Type, rawSourceExpr, false)
+                  };
+
                 def isCollector = e.Type.TryRequire(Environment.CollectorTypeVar);
-                def code        = PropertyDependencyCode.Source(assignLoc, tb, source.Type, rawSourceExpr);
-                nodesMap[path]  = PropertyDependencyNode.Assign(symbol, path, assignLoc, isCollector, code);
+                def code        = PropertyDependencyCode.Source(assignLoc, tb, sourceType, rawExpr);
+                nodesMap[path]  = PropertyDependencyNode.Assign(symbol, path, assignLoc, isCollector, code, isAwaiting);
               }
             }
             else
@@ -450,7 +457,13 @@ namespace Nitra.Compiler
               def nodesMap = nodesMap;
               def path = makePath(e);
               def node = nodesMap[path] :> PropertyDependencyNode.Assign;
-              addNodesDependentOnAssignedProperty(source, node);
+              def sourceToProcess =
+                match (TryUnwrapAwaitOptionValue(source))
+                {
+                  | VSome((originalSource, _)) => originalSource
+                  | VNone => source
+                };
+              addNodesDependentOnAssignedProperty(sourceToProcess, node);
               addNodesDependentOnAssignedProperty(e.obj, node);
             }
             else
@@ -532,6 +545,21 @@ namespace Nitra.Compiler
     private static IsPExprAnchor(m : IMacro) : bool
     {
       m.GetName() == "PExprAnchor" && m.GetNamespace() == "Nitra"
+    }
+
+    private static TryUnwrapAwaitOptionValue(e : TExpr) : ValueOption[TExpr * PExpr]
+    {
+      | TExpr.MacroEnvelope(_, m, result, <[ $expr.Value ]>) when m.GetName() == "AwaitOptionValue" && m.GetNamespace() == "Nitra" =>
+        def tryUnwrapResult(_ : TExpr)
+        {
+          | TExpr.PropertyMember(obj, _) => VSome((obj, expr))
+          | TExpr.DebugInfo(e, _) => tryUnwrapResult(e)
+          | _ => VNone()
+        }
+        tryUnwrapResult(result)
+
+      | TExpr.DebugInfo(e, _) => TryUnwrapAwaitOptionValue(e)
+      | _ => VNone()
     }
 
     private CheckStageDependencies(dependencyGraph : PropertyDependencyGraph) : void
@@ -660,7 +688,7 @@ namespace Nitra.Compiler
 
       foreach (node in dependencyGraph.GetOrderedNodes())
       {
-        | Assign(code) =>
+        | Assign(code, isAwaiting) =>
           def (predicate, checkedPaths)         = makeIsEvaluatedCheck(node.Path, dependentProperties);
           def (properties, collectorProperties) = collectDependendOn(node, checkedPaths);
           def file = Path.Combine(Path.GetDirectoryName(tb.Manager.Options.ProjectPath), code.Location.File);
@@ -671,7 +699,29 @@ namespace Nitra.Compiler
           def line = code.Location.Line;
           def col = code.Location.Column;
           def locCode = Util.locate(code.Location, <[ $(CompileLocationPath(node.Path)) = ($file, $line, $col); ]>);
-          def expr1 = Util.locate(code.Location, <[ $(CompilePath(node.Path)) = $(compileCode(node.DeclaredIn, code)); context.CalculatedCountInc(); $locCode; ]>);
+          def expr1 = Util.locate(code.Location, {
+            def compiledPath = CompilePath(node.Path);
+            def compiledCode = compileCode(node.DeclaredIn, code);
+            if (isAwaiting)
+              <[
+                def result = $compiledCode;
+                if (result.HasValue)
+                {
+                  $compiledPath = result.Value;
+                  $locCode;
+                }
+                else
+                {
+                  context.DeferredCountInc()
+                }
+              ]>
+            else
+              <[
+                $compiledPath = $compiledCode;
+                context.CalculatedCountInc();
+                $locCode;
+              ]>
+          });
           def expr2 = makeCondition(properties, collectorProperties, expr1, <[ context.DeferredCountInc() ]>);
           def expr3 = TryAddStageCheck(node.Path, expr2);
           def expr4 = <[ when ($predicate) $expr3; ]>;

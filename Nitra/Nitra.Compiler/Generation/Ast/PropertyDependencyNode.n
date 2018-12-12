@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Compiler;
@@ -54,15 +54,19 @@ namespace Nitra.Compiler
     | Assign
       {
         [RecordCtor]
-        public new this(declaredIn : PropertyContainerSymbol, path : DependencyPath, location : Nemerle.Compiler.Location, isCollector : bool, [MappedMember("Code")] code : PropertyDependencyCode)
+        public new this(declaredIn : PropertyContainerSymbol, path : DependencyPath, location : Nemerle.Compiler.Location, isCollector : bool,
+          [MappedMember("Code")] code : PropertyDependencyCode,
+          [MappedMember("IsValueAwaiting")] isValueAwaiting : bool)
         {
           assert2(!DebugStop || !location.IsEmpty);
 
           base(declaredIn, path, location, isCollector);
           this.Code = code;
+          this.IsValueAwaiting = isValueAwaiting;
         }
 
         Code : PropertyDependencyCode;
+        IsValueAwaiting : bool;
       }
 
     | Use
@@ -235,10 +239,10 @@ namespace Nitra.Compiler
       _order + "(" + _state + ")" + ": " +
       match (this)
       {
-        | Assign(code) =>
+        | Assign(code, isAwaiting) =>
           def loc = NitraLocation;
           if (loc.IsEmpty)
-            $"$Path = $code"
+            Path.ToString() + (if (isAwaiting) " = await " else " = ") + code
           else
             loc.GetText()
 

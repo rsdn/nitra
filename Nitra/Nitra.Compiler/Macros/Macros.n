@@ -115,4 +115,10 @@ namespace Nitra
   {
     e
   }
+
+  public macro AwaitOptionValue(e : PExpr)
+    syntax("await", e)
+  {
+    <[ $e.Value ]>
+  }
 }
