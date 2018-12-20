@@ -1,0 +1,4 @@
+<Project>
+  <Import Project="packages\Microsoft.Net.Compilers.2.10.0\build\Microsoft.Net.Compilers.props"
+          Condition="'$(MSBuildProjectExtension)' == '.csproj' and Exists('packages\Microsoft.Net.Compilers.2.10.0\build\Microsoft.Net.Compilers.props')" />
+</Project>
