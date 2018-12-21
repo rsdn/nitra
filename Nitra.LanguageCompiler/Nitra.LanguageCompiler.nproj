@@ -96,11 +96,11 @@
     <Content Include="App.config">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="ExternalDependencies\ReadMy.txt">
+    <Content Include="ExternalDependencies\ReadMe.txt">
       <SubType>Content</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="ExternalTools\ReadMy.txt">
+    <Content Include="ExternalTools\ReadMe.txt">
       <SubType>Content</SubType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

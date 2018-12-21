@@ -19,6 +19,7 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <NitraLanguageCompilerPath>$(MSBuildThisFileDirectory)..\..\Nitra.LanguageCompiler\bin\$(Configuration)</NitraLanguageCompilerPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -51,6 +52,9 @@
     <ProjectReference Include="..\..\Nitra.LanguageCompiler\Nitra.LanguageCompiler.nproj">
       <Project>{5b187ce9-5655-4d43-bfec-0d77b5c63818}</Project>
       <Name>Nitra.LanguageCompiler</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
       <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
@@ -86,14 +90,11 @@
   <Target Name="AfterBuild">
     <ItemGroup>
       <!-- Add links to the necessary assembly in this project. It will be copied to the Templates\XXLanguageFullNameXXVsPackage\Languages -->
-      <Languages Include="$(TargetDir)*.*" Exclude="$(TargetDir)$(TargetName).*;$(TargetDir)Nitra.LanguageCompiler.*" />
+      <Languages Include="$(TargetDir)*.*" Exclude="$(TargetDir)$(TargetName).*" />
     </ItemGroup>
-    <Message Text="Remove '$(VsPackagePath)'" Importance="high" />
     <RemoveDir Directories="$(VsPackagePath)" />
-    <Message Text="Copy references: '@(Languages)' -&gt; '$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages'" Importance="high" />
-    <RemoveDir Directories="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
-    <Copy SourceFiles="@(Languages)" DestinationFolder="$(TargetDir)Templates\XXLanguageFullNameXXVsPackage\Languages" />
-    <Exec Command="$(TargetDir)Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:..\..\..\ .\$(Assembly) /var:&quot;XXXAssetXXX:$(AssetVarValue)&quot;" WorkingDirectory="$(TargetDir)" />
+    <Exec Command="$(NitraLanguageCompilerPath)\Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:$(MSBuildThisFileDirectory).. .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
+    <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Languages" />
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>

@@ -37,8 +37,8 @@ namespace Nitra.LanguageCompiler
     public CompilerMessages    : CompilerMessages { get; }
     public UserDefinedVars     : list[string]     { get { _userDefinedVars.ToNList() } }
     public PackageVersion      : string           { get; private set;}
-    public ProjectBinPath      : string           { get; private set; default "bin\$(Configuration)" }
-    public ProjectObjPath      : string           { get; private set; default "obj\$(Configuration)" }
+    public ProjectBinPath      : string           { get; private set; default "bin\\$(Configuration)" }
+    public ProjectObjPath      : string           { get; private set; default "obj\\$(Configuration)" }
     _userDefinedVars           : List[string]     = List();
 
     public this()
