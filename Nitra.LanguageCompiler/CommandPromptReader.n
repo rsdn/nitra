@@ -37,7 +37,8 @@ namespace Nitra.LanguageCompiler
     public CompilerMessages    : CompilerMessages { get; }
     public UserDefinedVars     : list[string]     { get { _userDefinedVars.ToNList() } }
     public PackageVersion      : string           { get; private set;}
-    public ProjectOutputPath   : string           { get; private set; default "" }
+    public ProjectBinPath      : string           { get; private set; default "bin\$(Configuration)" }
+    public ProjectObjPath      : string           { get; private set; default "obj\$(Configuration)" }
     _userDefinedVars           : List[string]     = List();
 
     public this()
@@ -85,10 +86,14 @@ namespace Nitra.LanguageCompiler
                     aliases = ["-ver"],
                     help = "VS package version.",
                     handler = v => PackageVersion = v),
-        CliOption.String(name = "-projectOutput",
-                    help = "Project output path",
+        CliOption.String(name = "-projectBinPath",
+                    help = "Project output bin path",
                     required = false,
-                    handler = p => ProjectOutputPath = p)
+                    handler = p => ProjectBinPath = p),
+        CliOption.String(name = "-projectObjPath",
+                    help = "Project output obj path",
+                    required = false,
+                    handler = p => ProjectObjPath = p)
         ];
 
       Getopt.Parse(options);

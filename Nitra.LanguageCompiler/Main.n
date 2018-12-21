@@ -206,7 +206,8 @@ namespace Nitra.LanguageCompiler
         ("XXLanguageInstanceXX",         "global::" + lang.GetType().FullName + ".Instance"),
         ("XXFileExtensionsXX",           $<#..$(config.Language.FileExtensions; ", "; e => "\"" + e + "\"")#>),
         ("XXPackageVersionXX",           config.PackageVersion),
-        ("XXProjectOutputPathXX",        config.ProjectOutputPath),
+        ("XXProjectBinPathXX",           config.ProjectBinPath),
+        ("XXProjectObjPathXX",           config.ProjectObjPath),
         MakeXXFilesXXVar(config),
       ]
     }

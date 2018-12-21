@@ -47,8 +47,8 @@
     <StartAction>Program</StartAction>
     <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootSuffix Exp</StartArguments>
-    <OutputPath>XXProjectOutputPathXXbin\$(Configuration)</OutputPath>
-    <IntermediateOutputPath>XXProjectOutputPathXXobj\$(Configuration)</IntermediateOutputPath>
+    <OutputPath>XXProjectBinPathXX</OutputPath>
+    <IntermediateOutputPath>XXProjectObjPathXX</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -291,6 +291,7 @@
   <ItemGroup>
     <Reference Include="NitraCommonIde">
       <HintPath>Languages\NitraCommonIde.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Content Include="Languages\**\*.*">
       <IncludeInVSIX>true</IncludeInVSIX>
