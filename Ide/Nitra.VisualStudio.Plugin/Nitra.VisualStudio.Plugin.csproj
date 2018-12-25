@@ -64,6 +64,13 @@
       <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
       <Name>NitraCommonIde</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NitraCommonVSIX\NitraCommonVSIX.csproj">
+      <Project>{1dc85bbe-138a-4bce-9e25-b076bd4d2dbe}</Project>
+      <Name>NitraCommonVSIX</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Private>False</Private>
+    </ProjectReference>
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
