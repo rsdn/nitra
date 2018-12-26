@@ -28,6 +28,7 @@
     <Optimize>false</Optimize>
     <OutputPath>..\..\..\bin\Debug\Stage1\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants Condition="'$(NoServerWindow)' == 'true'">$(DefineConstants);NOSERVERWINDOW</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <RunDebugger>false</RunDebugger>
@@ -36,7 +37,7 @@
     <DebugSymbols>false</DebugSymbols>
     <Optimize>true</Optimize>
     <OutputPath>..\..\..\bin\Release\Stage2</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>TRACE;NOSERVERWINDOW</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>

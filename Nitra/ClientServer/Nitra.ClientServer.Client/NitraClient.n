@@ -29,7 +29,7 @@ namespace Nitra.ClientServer.Client
   {
     public  StringManager    : StringManager { get; }
     public  ResponseMap      : ConcurrentDictionary[int, Action[AsyncServerMessage]] = ConcurrentDictionary();
-            MaintPipeName    : string                                                = Guid.NewGuid().ToString();
+            MainPipeName     : string                                                = Guid.NewGuid().ToString();
             _locker          : object = object();
             _recorder        : Recorder;
     mutable _mainPipeClient  : NamedPipeClientStream;
@@ -71,17 +71,22 @@ namespace Nitra.ClientServer.Client
 
       def startInfo = ProcessStartInfo() <- {
         FileName    = serverPath;
-        Arguments   = MaintPipeName;
+        Arguments   = MainPipeName;
+#if NOSERVERWINDOW
+        UseShellExecute = false;
+        CreateNoWindow = true;
+#else
         WindowStyle = ProcessWindowStyle.Minimized;
+#endif
       };
 
       _serverProc = Process.Start(startInfo);
 
       assert2(_serverProc != null);
       Log("Server started.");
-      _mainPipeClient           = NamedPipeClientStream(".", MaintPipeName + Constants.RequestPipeSuffix, PipeDirection.Out);
+      _mainPipeClient           = NamedPipeClientStream(".", MainPipeName + Constants.RequestPipeSuffix, PipeDirection.Out);
       _mainPipeWriter           = BinaryWriter(_mainPipeClient);
-      _responsePipe             = NamedPipeClientStream(".", MaintPipeName + Constants.ResponsePipeSuffix, PipeDirection.In);
+      _responsePipe             = NamedPipeClientStream(".", MainPipeName + Constants.ResponsePipeSuffix, PipeDirection.In);
       _mainPipeReader           = BinaryReader(_responsePipe);
       _mainPipeClient.Connect();
       _responsePipe.Connect();
@@ -95,7 +100,7 @@ namespace Nitra.ClientServer.Client
 
     AsyncResponseReaderThreadMain() : void
     {
-      def asyncResponsePipet  = NamedPipeClientStream(".", MaintPipeName + Constants.AsyncResponsePipeSuffix, PipeDirection.In);
+      def asyncResponsePipet  = NamedPipeClientStream(".", MainPipeName + Constants.AsyncResponsePipeSuffix, PipeDirection.In);
       def asyncResponseReader = BinaryReader(asyncResponsePipet);
       asyncResponsePipet.Connect();
 
