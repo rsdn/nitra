@@ -76,7 +76,7 @@ namespace Nitra.ViewModels
             client.Send(ClientMessage.ReferenceLoaded(projectId, reference));
 
         foreach(test in project.Children)
-          client.Send(ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version));
+          client.Send(ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version, test.Version > 0, if (test.Version > 0) test.Code else null));
 
         client.Send(ClientMessage.ProjectLoaded(project.Id));
       }

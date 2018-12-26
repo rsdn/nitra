@@ -1,0 +1,126 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Extensions;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.ClientServer.Messages;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.IO.Pipes;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+
+namespace Nitra.ClientServer.Client
+{
+  class Recorder
+  {
+    public this(nitraClient : NitraClient) { _nitraClient = nitraClient; }
+    
+    _nitraClient      : NitraClient;
+    _recordedMessages : List[ClientMessage]                             = List();
+    _activatedFiles   : Dictionary[FileId, ClientMessage.FileActivated] = Dictionary();
+    _fileVersions     : Dictionary[FileId, FileVersion]                 = Dictionary();
+    _fileCaret        : Dictionary[FileId, ClientMessage.SetCaretPos]   = Dictionary();
+
+    public Play() : void
+    {
+      def messages = _recordedMessages.ToArray();
+
+      foreach (msg in messages)
+      {
+        //| FileActivated as m when _activatedFiles.ContainsKey(m.id) =>
+        //  when (_activatedFiles[m.id].version == m.version)
+        //    _nitraClient.SendInternal(m);
+        //
+        //| SetCaretPos as m when _activatedFiles.ContainsKey(m.fileId) =>
+        //  when (_fileCaret[m.fileId].pos.Version == m.pos.Version)
+        //    _nitraClient.SendInternal(m);
+        //
+        //| _ =>
+          _nitraClient.SendInternal(msg);
+      }
+
+      //foreach (msg in _activatedFiles.Values)
+      //{
+      //  | FileActivated as m when _fileVersions.ContainsKey(m.id) =>
+      //    _nitraClient.SendInternal(ClientMessage.FileActivated(m.projectId, m.id, _fileVersions[m.id]));
+      //  
+      //  | _ => _nitraClient.SendInternal(msg);
+      //}
+      //
+      //foreach (msg in _fileCaret.Values)
+      //{
+      //  | SetCaretPos as m when _fileVersions.ContainsKey(m.fileId) =>
+      //    _nitraClient.SendInternal(ClientMessage.SetCaretPos(m.projectId, m.fileId, VersionedPos(m.pos.Pos, _fileVersions[m.fileId])));
+      //  
+      //  | _ => _nitraClient.SendInternal(msg);
+      //}
+    }
+    
+    public Record([NotNull] msg : ClientMessage) : void
+    {
+      | SolutionStartLoading     => _recordedMessages.Add(msg);
+      | SolutionLoaded           => _recordedMessages.Add(msg);
+      | SolutionUnloaded         => Clear();
+      | ProjectStartLoading      => _recordedMessages.Add(msg);
+      | ProjectLoaded            => _recordedMessages.Add(msg);
+      | ProjectUnloaded          => _recordedMessages.Add(msg);
+      | ProjectRename            => _recordedMessages.Add(msg);
+      | ProjectReferenceLoaded   => _recordedMessages.Add(msg);
+      | ProjectReferenceUnloaded => _recordedMessages.Add(msg);
+      | ReferenceLoaded          => _recordedMessages.Add(msg);
+      | ReferenceUnloaded        => _recordedMessages.Add(msg);
+      | FileLoaded               => _recordedMessages.Add(msg);
+      | FileReparse              => () // игнорируем
+      | FileUnloaded             => _recordedMessages.Add(msg);
+      | FileRenamed              => _recordedMessages.Add(msg);
+      | FileInMemoryLoaded       => _recordedMessages.Add(msg);
+      //| FileActivated           as m => _activatedFiles[m.id] = m; // убираем предыдущие FileActivated и FileDeactivated того же файла
+      //| FileDeactivated         as m => _ =_activatedFiles.Remove(m.id);
+      | FileActivated           as m => _recordedMessages.Add(msg); _activatedFiles[m.id] = m;
+      | FileDeactivated         as m => _recordedMessages.Add(msg); _ = _activatedFiles.Remove(m.id);
+      //| FileChanged             as m => _fileVersions[m.id] = m.version;
+      //| FileChangedBatch        as m => _fileVersions[m.id] = m.version;
+      | FileChanged              => _recordedMessages.Add(msg);
+      | FileChangedBatch         => _recordedMessages.Add(msg);
+      //| SetCaretPos             as m => _fileCaret[m.fileId] = m;
+      | SetCaretPos              as m => _recordedMessages.Add(msg); _fileCaret[m.fileId] = m;
+      | Shutdown                 => Clear();
+      | CheckVersion             => () // игнорируем
+      | PrettyPrint              => () // игнорируем
+      | CompleteWord             => () // игнорируем
+      | CompleteWordDismiss      => () // игнорируем
+      | FindSymbolReferences     => () // игнорируем
+      | FindSymbolDefinitions    => () // игнорируем
+      | ParseTreeReflection      => () // игнорируем
+      | GetObjectContent         => () // игнорируем
+      | GetObjectGraph           => () // игнорируем
+      | AttachDebugger           => () // игнорируем
+      | GetLibsMetadata          => () // игнорируем
+      | GetLibsSyntaxModules     => () // игнорируем
+      | GetLibsProjectSupports   => () // игнорируем
+      | GetFileExtensions        => () // игнорируем
+      | GetHint                  => () // игнорируем
+      | GetSubHint               => () // игнорируем
+      | FindDeclarations         => () // игнорируем
+    }
+
+    private Clear() : void
+    {
+      _recordedMessages.Clear();
+      _activatedFiles.Clear();
+      _fileVersions.Clear();
+      _fileCaret.Clear();
+    }
+  } // class
+} // namespace

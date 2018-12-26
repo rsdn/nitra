@@ -602,7 +602,7 @@ namespace Nitra.VisualStudio
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
-          server.FileAdded(projectId, path, id, new FileVersion());
+          server.FileAdded(projectId, path, id, new FileVersion(), null);
 
       return;
     }

@@ -82,7 +82,7 @@ namespace Nitra.VisualStudio.Highlighting
               classificationFormatMap.AddExplicitTextProperties(classificationType, newProperties);
             }
 
-            _classificationMap.Add(info.Id, classificationType);
+            _classificationMap[info.Id] = classificationType;
           }
 
         }

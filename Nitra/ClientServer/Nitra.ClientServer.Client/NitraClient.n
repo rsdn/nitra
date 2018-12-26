@@ -27,26 +27,51 @@ namespace Nitra.ClientServer.Client
 
   public sealed class NitraClient : IDisposable
   {
-    public  StringManager    : StringManager;
-            MaintPipeName    : string = Guid.NewGuid().ToString();
-            _mainPipeClient  : NamedPipeClientStream;
-            _responsePipe    : NamedPipeClientStream;
-            _serverProc      : Process;
-            _mainPipeWriter  : BinaryWriter;
-    mutable _isDisposed      : bool;
+    public  StringManager    : StringManager { get; }
     public  ResponseMap      : ConcurrentDictionary[int, Action[AsyncServerMessage]] = ConcurrentDictionary();
-            _mainPipeReader  : BinaryReader;
+            MaintPipeName    : string                                                = Guid.NewGuid().ToString();
+            _locker          : object = object();
+            _recorder        : Recorder;
+    mutable _mainPipeClient  : NamedPipeClientStream;
+    mutable _responsePipe    : NamedPipeClientStream;
+    mutable _serverProc      : Process;
+    mutable _mainPipeWriter  : BinaryWriter;
+    mutable _isDisposed      : bool;
+    mutable _mainPipeReader  : BinaryReader;
+
+    volatile mutable _isRestarting : bool;
 
     public this([NotNull] stringManager : StringManager)
     {
-      StringManager             = stringManager;
+      StringManager = stringManager;
+      _recorder     = Recorder(this);
+      Start();
+    }
+
+    Restart(): void
+    {
+      lock (_locker)
+      {
+        _isRestarting = true;
+        try
+        {
+          Start();
+          _recorder.Play();
+        }
+        finally
+          _isRestarting = false;
+      }
+    }
+    
+    Start() : void
+    {
       def executingAssemblyPath = Assembly.GetExecutingAssembly().Location;
       def assembliesPath        = Path.GetDirectoryName(executingAssemblyPath);
       def serverPath            = Path.Combine(assembliesPath, "Nitra.ClientServer.Server.exe");
 
       def startInfo = ProcessStartInfo() <- {
-        FileName = serverPath;
-        Arguments = MaintPipeName;
+        FileName    = serverPath;
+        Arguments   = MaintPipeName;
         WindowStyle = ProcessWindowStyle.Minimized;
       };
 
@@ -99,6 +124,12 @@ namespace Nitra.ClientServer.Client
         {
           | _ is EndOfStreamException =>
             Trace.WriteLine("AsyncResponseReader disconnected.");
+            unless (_isDisposed)
+            {
+              // Server was failed! Restart it.
+              Restart();
+            }
+            
             return;
 
           | e => Trace.WriteLine("AsyncResponseReader exception: " + e);
@@ -108,16 +139,26 @@ namespace Nitra.ClientServer.Client
 
     public Send([NotNull] msg : ClientMessage) : void
     {
+      lock (_locker)
+      {
+        assert2(!_isRestarting);
+        SendInternal(msg);
+        _recorder.Record(msg);
+      }
+    }
+
+    internal SendInternal([NotNull] msg : ClientMessage) : void
+    {
       when(_isDisposed)
         return;
-
+      
       when (!_mainPipeClient.IsConnected)
       {
         assert2(true);
       }
       msg.Serialize(_mainPipeWriter);
     }
-
+    
     public Receive[T]() : T
       where T: ServerMessage
     {
@@ -128,7 +169,7 @@ namespace Nitra.ClientServer.Client
     {
       Deserializer.Deserialize.[ServerMessage](_mainPipeReader)
     }
-
+    
     public Flush() : void
     {
       _mainPipeWriter.Flush();

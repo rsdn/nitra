@@ -46,7 +46,7 @@ namespace Nitra.ClientServer.Messages
     | ProjectReferenceUnloaded { projectId : ProjectId; referencedProjectId : ProjectId; path : string; }
     | ReferenceLoaded          { projectId : ProjectId; name : string; }
     | ReferenceUnloaded        { projectId : ProjectId; name : string; }
-    | FileLoaded               { projectId : ProjectId; fullPath : string; id : FileId; version : FileVersion; }
+    | FileLoaded               { projectId : ProjectId; fullPath : string; id : FileId; version : FileVersion; hasContent : bool; contentOpt : string; }
     | FileReparse              { id : FileId; }
     | FileUnloaded             { projectId : ProjectId; id : FileId; }
     | FileRenamed              { oldId : FileId; newId : FileId; newPath : string; }

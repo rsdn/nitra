@@ -1723,7 +1723,7 @@ namespace Nitra.Visualizer
       File.WriteAllText(path, defaultContent, Encoding.UTF8);
       var test = new FileVm(project.Suite, project, path);
       project.Children.Add(test);
-      client.Send(new ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version));
+      client.Send(new ClientMessage.FileLoaded(project.Id, test.FullPath, test.Id, test.Version, false, null));
       return test;
     }
 

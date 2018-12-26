@@ -56,7 +56,7 @@ namespace Nitra.ClientServer.Server
       | ReferenceUnloaded  (projectId, fullPath)         => _solution[projectId].RemoveLib(fullPath);
       | ProjectReferenceLoaded(prjId, refPrjId, path)    => _solution[prjId].AddProjectReference(refPrjId, path);
       | ProjectReferenceUnloaded                         => assert(false, "Not supported yet.")
-      | FileLoaded         (projectId, fullPath, id, v)  => File(id, fullPath, v, _solution[projectId]).TrySendParseMessage();
+      | FileLoaded         (projectId, path, id, v, h, c)   => File(id, path, v, _solution[projectId], if (h) c else null).TrySendParseMessage();
       | FileReparse        (id)                          => foreach (f in _solution.GetFiles(id)) f.TrySendParseMessage();
       | FileInMemoryLoaded (projectId, id, name, text)   => File(id, name, _solution[projectId], text).TrySendParseMessage();
       | FileActivated      (projectId, id, version)      => _solution.GetFile(projectId, id).Activate(version);

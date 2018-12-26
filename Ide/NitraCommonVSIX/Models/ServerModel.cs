@@ -174,10 +174,10 @@ namespace Nitra.VisualStudio
       }
     }
 
-    internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version)
+    internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version, string contentOpt)
     {
       Debug.Assert(IsSolutionCreated);
-      Client.Send(new ClientMessage.FileLoaded(projectId, path, id, version));
+      Client.Send(new ClientMessage.FileLoaded(projectId, path, id, version, contentOpt != null, contentOpt));
     }
 
     internal void FileUnloaded(ProjectId projectId, FileId id)
