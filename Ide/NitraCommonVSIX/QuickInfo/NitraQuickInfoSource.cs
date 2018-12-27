@@ -63,9 +63,19 @@ namespace Nitra.VisualStudio.QuickInfo
 
       _wpfTextView = (IWpfTextView)session.TextView;
       _fileModel = VsUtils.TryGetFileModel(_textBuffer);
-      Debug.Assert(_fileModel != null);
+      if (_fileModel == null) // TODO: Add logging Debug.Assert(_fileModel != null);
+      {
+        applicableToSpan = null;
+        return;
+      }
+      
       _textViewModel = VsUtils.GetOrCreateTextViewModel(_wpfTextView, _fileModel);
-      Debug.Assert(_textViewModel != null);
+      if (_textViewModel == null) // TODO: Add logging Debug.Assert(_textViewModel != null);
+      {
+        applicableToSpan = null;
+        return;
+      }
+      
       Hint.SetCallbacks(SubHintText, SpanClassToBrush);
       Hint.Click += Hint_Click;
 
