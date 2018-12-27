@@ -38,7 +38,7 @@ namespace Nitra.VisualStudio
     public    bool                                     IsSolutionCreated { get; private set; }
     public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
 
-    readonly HashSet<FileModel>                        _fileModels          = new HashSet<FileModel>();
+    readonly  HashSet<FileModel>                       _fileModels          = new HashSet<FileModel>();
     readonly  Dictionary<FileId, FileModel>            _filIdToFileModelMap = new Dictionary<FileId, FileModel>();
     readonly  Dictionary<ProjectId, ErrorListProvider> _errorListProviders  = new Dictionary<ProjectId, ErrorListProvider>();
     private   INavigateToCallback                      _callback;
@@ -155,6 +155,20 @@ namespace Nitra.VisualStudio
     {
       Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ProjectReferenceLoaded(projectId, referencedProjectId, referencePath));
+    }
+
+    internal void FileSaved(string path)
+    {
+      Debug.Assert(IsSolutionCreated);
+      var fullPath = Path.GetFullPath(path);
+      foreach (var fileModel in _fileModels)
+      {
+        if (fileModel.FullPath.Equals(fullPath, StringComparison.InvariantCultureIgnoreCase))
+        {
+          Client.Send(new ClientMessage.FileSaved(fileModel.Id, fileModel.GetVersion()));
+          return;
+        }
+      }
     }
 
     internal void AddedMscorlibReference(ProjectId projectId)

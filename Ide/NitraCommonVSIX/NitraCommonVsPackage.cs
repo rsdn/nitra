@@ -116,6 +116,7 @@ namespace Nitra.VisualStudio
       _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
 
       _runningDocTableEventse = new RunningDocTableEvents();
+      _runningDocTableEventse.DocumentSaved += _runningDocTableEventse_DocumentSaved;
       SubscibeToSolutionEvents();
 
 
@@ -127,6 +128,12 @@ namespace Nitra.VisualStudio
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
       }
+    }
+
+    private void _runningDocTableEventse_DocumentSaved(object sender, string path)
+    {
+      foreach (var server in _servers)
+        server.FileSaved(path);
     }
 
     private void PrjItemsEvents_ItemRenamed(ProjectItem projectItem, string oldName)

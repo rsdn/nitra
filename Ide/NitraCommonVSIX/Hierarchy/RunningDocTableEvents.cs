@@ -22,6 +22,7 @@ namespace Nitra.VisualStudio
     public event EventHandler<DocumentWindowOnScreenChangedEventArgs> DocumentWindowOnScreenChanged;
     public event EventHandler<DocumentWindowEventArgs>                DocumentWindowCreate;
     public event EventHandler<DocumentWindowEventArgs>                DocumentWindowDestroy;
+    public event EventHandler<string>                                 DocumentSaved;
 
     public RunningDocTableEvents()
     {
@@ -118,6 +119,9 @@ namespace Nitra.VisualStudio
 
     public int OnAfterSave(uint docCookie)
     {
+      var info = _runningDocumentTable.GetDocumentInfo(docCookie);
+      var path = info.Moniker;
+      DocumentSaved?.Invoke(this, path);
       return VSConstants.S_OK;
     }
 

@@ -82,6 +82,7 @@ namespace Nitra.ClientServer.Server
       | GetHint(projectId, fileId, pos)                  => _solution.GetFile(projectId, fileId).GetHint(pos);
       | FindDeclarations(pat, projectId, hide, kinds)    => _solution.FindDeclarations(pat, projectId, hide, kinds)
       | GetSubHint(projectId, symbolId)                  => GetSubHint(projectId, symbolId);
+      | FileSaved                                        => ()
       | Shutdown                                         =>
         _mainQueue.CompleteAdding();
         _cts.Cancel();

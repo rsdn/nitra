@@ -127,7 +127,7 @@ namespace Nitra.ViewModels
 
     public Save() : void
     {
-      File.WriteAllText(_configPath, SerializationHelper.Serialize(Config))
+      File.WriteAllText(_configPath, SerializationHelper.Serialize(Config));
     }
 
     public GetConfigWithFullPaths() : Messages.Config

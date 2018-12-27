@@ -128,6 +128,7 @@ namespace Nitra.ViewModels
       {
         File.WriteAllText(FullPath, Code, Encoding.UTF8);
         IsDirty = false;
+        _client.Send(ClientMessage.FileSaved(Id, Version));
       }
     }
 
@@ -196,7 +197,9 @@ namespace Nitra.ViewModels
     public Update(code: string, gold: string): void
     {
       IOFile.WriteAllText(FullPath, code);
-      IOFile.WriteAllText(Path.ChangeExtension(FullPath, ".gold"), gold)
+      IOFile.WriteAllText(Path.ChangeExtension(FullPath, ".gold"), gold);
+      IsDirty = false;
+      _client.Send(ClientMessage.FileSaved(Id, Version));
     }
 
     public Remove(): void
