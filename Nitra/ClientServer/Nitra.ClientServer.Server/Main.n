@@ -5,6 +5,7 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server;
+using Nitra.Logging;
 
 using System;
 using System.Console;
@@ -20,13 +21,14 @@ module Program
 {
   Main(args : array[string]) : void
   {
-    ServerUtils.Log("Process ID: " + Process.GetCurrentProcess().Id);
+    Log.Init("Nitra.ClientServer.Server");
+    Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
     //assert2(false, "Start debugger");
 
     when (args.Length != 1)
     {
       assert2(false, "Invalid number of parameters!");
-      ServerUtils.Log("Invalid number of parameters, expected: <request pipe name> <response pipe name>");
+      Log.Message("Invalid number of parameters, expected: <request pipe name> <response pipe name>");
       Environment.Exit(42);
     }
 
@@ -38,7 +40,6 @@ module Program
     using (asyncResponsePipe = NamedPipeServerStream(asyncResponsePipeName, PipeDirection.Out))
     using (responsePipe      = NamedPipeServerStream(responsePipeName,      PipeDirection.Out))
     using (requestPipe       = NamedPipeServerStream(requestPipeName,       PipeDirection.In))
-    using (LoggerWorker())
     {
       // Connect to the pipe or wait until the pipe is available.
       Write("Attempting to connect to pipes...");
@@ -50,7 +51,7 @@ module Program
       def responseWriter      = BinaryWriter(responsePipe);
       def router              = Router(responseWriter, asyncResponseWriter);
 
-      ServerUtils.Log("Connected to pipe.");
+      Log.Message("Connected to pipe.");
       def MainPipeReaderThreadMain()
       {
         def thread = Thread.CurrentThread;
@@ -73,7 +74,7 @@ module Program
             catch
             {
               | _ is EndOfStreamException when !requestPipe.IsConnected =>
-                ServerUtils.Log("Session has been terminated.");
+                Log.Message("Session has been terminated.");
                 router.AddMessage(ClientMessage.Shutdown());
                 return;
               | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
@@ -84,9 +85,10 @@ module Program
       def readerThread = Thread(MainPipeReaderThreadMain);
       readerThread.IsBackground = true;
       readerThread.Start();
-      ServerUtils.Log("Server started.");
+      Log.Message("Server started.");
       router.Wait();
-      ServerUtils.Log("Server stopped.")
+      Log.Message("Server stopped.");
+      Log.Flush();
     }
   }
 }

@@ -7,6 +7,7 @@ using Nemerle.Utility;
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ProjectSystem;
 using Nitra.Declarations;
+using Nitra.Logging;
 
 using System;
 using System.Threading;
@@ -44,7 +45,7 @@ namespace Nitra.ClientServer.Server
       _mainThread          = Thread(RouterThreadMain);
       _mainThread.Start();
       def cores       = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
-      ServerUtils.Log("Cores: " + cores);
+      Log.Message("Cores: " + cores);
       this.SpanClassesManager = SpanClassesManager(this);
       _parseWorkers = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
     }
@@ -130,7 +131,7 @@ namespace Nitra.ClientServer.Server
         }
         catch
         {
-          | e is OperationCanceledException => ServerUtils.LogCanceled(e);
+          | e is OperationCanceledException => Log.Canceled(e);
           | e                               => ServerUtils.LogException(_asyncResponseWriter, e)
         }
       }

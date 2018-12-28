@@ -148,6 +148,10 @@
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Nitra\Nitra.Utils\Nitra.Utils.nproj">
+      <Project>{8bffaf3a-b454-4544-9218-3197df381d88}</Project>
+      <Name>Nitra.Utils</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
       <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
       <Name>System.Collections.Immutable.Light</Name>
@@ -431,8 +435,7 @@
     <CreateVsixContainerDependsOn>$(CreateVsixContainerDependsOn);SetVsixManifestExtensionVersion</CreateVsixContainerDependsOn>
   </PropertyGroup>
   <Target Name="SetVsixManifestExtensionVersion" DependsOnTargets="DetokenizeVsixManifestFile;GetNitraBuildVersion">
-    <XmlPoke XmlInputPath="$(IntermediateVsixManifest)" Query="//*[local-name()='Identity']/@*[local-name()='Version']"
-             Value="$(NitraBuildVersion)" />
+    <XmlPoke XmlInputPath="$(IntermediateVsixManifest)" Query="//*[local-name()='Identity']/@*[local-name()='Version']" Value="$(NitraBuildVersion)" />
   </Target>
   <Target Name="BeforeBuild">
   </Target>

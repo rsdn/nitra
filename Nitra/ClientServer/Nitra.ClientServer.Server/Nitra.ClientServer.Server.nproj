@@ -68,9 +68,6 @@
     <Compile Include="HtmlPrettyPrintWriter.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="LoggerWorker.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Main.n" />
     <Compile Include="Messages.n">
       <SubType>Code</SubType>
@@ -131,6 +128,11 @@
     <ProjectReference Include="..\..\Nitra.Runtime\Nitra.Runtime.nproj">
       <Name>Nitra.Runtime</Name>
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Nitra.Utils\Nitra.Utils.nproj">
+      <Name>Nitra.Utils</Name>
+      <Project>{8bffaf3a-b454-4544-9218-3197df381d88}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\Nitra.ClientServer.Messages\Nitra.ClientServer.Messages.nproj">

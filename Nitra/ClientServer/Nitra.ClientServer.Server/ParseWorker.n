@@ -7,6 +7,7 @@ using Nemerle.Utility;
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ServerUtils;
 using Nitra.Declarations;
+using Nitra.Logging;
 using Nitra.PrettyPrint;
 using Nitra.ProjectSystem;
 
@@ -68,14 +69,14 @@ namespace Nitra.ClientServer.Server
               ProcessMessage(m)
             catch
             {
-              | e is OperationCanceledException => ServerUtils.LogCanceled(e);
+              | e is OperationCanceledException => Log.Canceled(e);
               | e => ServerUtils.LogException(_asyncResponseWriter, e);
             }
           }
         }
         catch
         {
-          | e is OperationCanceledException => ServerUtils.LogCanceled(e);
+          | e is OperationCanceledException => Log.Canceled(e);
           | e => ServerUtils.LogException(_asyncResponseWriter, e);
         }
       }
@@ -84,7 +85,7 @@ namespace Nitra.ClientServer.Server
     ProcessMessage(msg : ParserMessage) : void
     {
       | ParseFile(solutionId, projectId, fileId, parseSession, source) =>
-        ServerUtils.Log("ParseFile " + fileId);
+        Log.Message("ParseFile " + fileId);
         def timer = Stopwatch.StartNew();
         // TODO: add statistics
         //def stat = Statistics;
@@ -114,7 +115,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("ParseFile " + fileId + " Length=" + parseResult.SourceSnapshot.Text.Length, timer, 200);
 
       | CreateAst(solutionId, projectId, fileId, parseResult, isActive) =>
-        ServerUtils.Log("CreateAst " + fileId);
+        Log.Message("CreateAst " + fileId);
         def timer = Stopwatch.StartNew();
         when (parseResult.ParseSession.CancellationToken.IsCancellationRequested)
           return;
@@ -147,7 +148,7 @@ namespace Nitra.ClientServer.Server
         {
           | PrettyPrintState.Disabled => ()
           | PrettyPrintState.Html =>
-            ServerUtils.Log("HtmlPrettyPrint " + fileId);
+            Log.Message("HtmlPrettyPrint " + fileId);
             def timer = Stopwatch.StartNew();
             def spanClasses = _spanClassesManager.GetSpanClasses();
             def htmlWriter = HtmlPrettyPrintWriter(PrettyPrintOptions.DebugIndent | PrettyPrintOptions.MissingNodes, spanClasses, "missing", "debug", "garbage");
@@ -157,7 +158,7 @@ namespace Nitra.ClientServer.Server
             ServerUtils.LogMsgHandled("HtmlPrettyPrint " + fileId, timer, 100);
 
           | PrettyPrintState.Text =>
-            ServerUtils.Log("TextPrettyPrint " + fileId);
+            Log.Message("TextPrettyPrint " + fileId);
             def timer = Stopwatch.StartNew();
             def text = parseTree.ToString(PrettyPrintOptions.DebugIndent | PrettyPrintOptions.MissingNodes);
             _router.SendAsyncResponse(AsyncServerMessage.PrettyPrintCreated(fileId, version, solutionId, PrettyPrintState.Text, text));
@@ -165,7 +166,7 @@ namespace Nitra.ClientServer.Server
         }
 
       | ParserMessage.CreateParseTreeReflection(solutionId, projectId, fileId, version, parseResult) =>
-        ServerUtils.Log("ParseTreeReflection " + fileId);
+        Log.Message("ParseTreeReflection " + fileId);
         def timer = Stopwatch.StartNew();
         def root  = parseResult.Reflect();
         def convertedRoot = ConvertParseTreeReflection(root, Hashtable());
@@ -173,13 +174,13 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("ParseTreeReflection " + fileId, timer, 100);
 
       | SemanticAnalysisStart(solutionId, projectId, cancellationToken, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
-        ServerUtils.Log($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
+        Log.Message($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
         def timer = Stopwatch.StartNew();
         try
           projectSupport.RefreshProject(cancellationToken, files, data);
         catch
         {
-          | e is OperationCanceledException => ServerUtils.LogCanceled(e); throw;
+          | e is OperationCanceledException => Log.Canceled(e); throw;
           | e when completeWordPosOpt < 0 => SendAsyncResponse(AsyncServerMessage.RefreshProjectFailed(FileId.Invalid, FileVersion.Invalid, solutionId, e.ToString()));
         }
 
@@ -217,7 +218,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("SemanticAnalysisStart", timer, 100);
 
       | CreateOutlining(solutionId, projectId, fileId, parseResult) =>
-        ServerUtils.Log("CreateOutlining " + fileId);
+        Log.Message("CreateOutlining " + fileId);
         def timer     = Stopwatch.StartNew();
         def outlining = List();
         parseResult.GetOutlining(outlining);
@@ -241,7 +242,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("CreateOutlining", timer, 50);
 
       | CreateKeywordsHighlighting(solutionId, projectId, fileId, parseResult) =>
-        ServerUtils.Log("CreateKeywordsHighlighting " + fileId);
+        Log.Message("CreateKeywordsHighlighting " + fileId);
         def timer     = Stopwatch.StartNew();
         def start     = 0;
         def end       = parseResult.SourceSnapshot.Text.Length;
@@ -270,7 +271,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("CreateKeywordsHighlighting", timer, 50);
 
       | CreateSymbolsHighlighting(solutionId, projectId, fileId, version, ast, completeWordPosOpt) =>
-        ServerUtils.Log($"CreateSymbolsHighlighting(solutionId=$solutionId, projectId=$projectId, fileId=$fileId, version=$version,  completeWordPosOpt=$completeWordPosOpt)");
+        Log.Message($"CreateSymbolsHighlighting(solutionId=$solutionId, projectId=$projectId, fileId=$fileId, version=$version,  completeWordPosOpt=$completeWordPosOpt)");
         def timer   = Stopwatch.StartNew();
         def visitor = CollectSymbolsAstVisitor(_spanClassesManager, completeWordPosOpt);
         ast.Accept(visitor);
@@ -301,7 +302,7 @@ namespace Nitra.ClientServer.Server
       def visitor = FindReferencesAstVisitor(NSpan(pos, pos));
       astRoot.Accept(visitor);
 
-      Log($"CompleteWord processed file=$(fileData.FileId) ver=$(fileData.FileVersion) pos=$pos");
+      Log.Message($"CompleteWord processed file=$(fileData.FileId) ver=$(fileData.FileVersion) pos=$pos");
 
       def isReference((ast : IAst, steack : array[IAst])) : bool
       {
@@ -370,7 +371,7 @@ namespace Nitra.ClientServer.Server
         def isPatternEmpty  = pattern.Length == 0;
         replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
 
-        Log($"    replacementSpan=$replacementSpan pattern='$pattern'");
+        Log.Message($"    replacementSpan=$replacementSpan pattern='$pattern'");
 
         def filter(_ : Reference, nodes : array[IAst]) : bool
         {
@@ -450,8 +451,8 @@ namespace Nitra.ClientServer.Server
 
       builder.Sort(CompletionElemComparer());
 
-      Log($"    KeyWords='$(matchedKeyWordsMap.Count)'");
-      Log($"    Symbols='$(symbolsSet.Count)'");
+      Log.Message($"    KeyWords='$(matchedKeyWordsMap.Count)'");
+      Log.Message($"    Symbols='$(symbolsSet.Count)'");
 
       def ver = FileVersion(fileData.FileVersion);
       def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());

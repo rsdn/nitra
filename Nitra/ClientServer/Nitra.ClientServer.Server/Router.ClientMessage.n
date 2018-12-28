@@ -6,6 +6,7 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ProjectSystem;
+using Nitra.Logging;
 
 using System;
 using System.Threading;
@@ -28,8 +29,8 @@ namespace Nitra.ClientServer.Server
       {
         | FileChanged | FileChangedBatch                    => ()
         | ReferenceLoaded | ReferenceUnloaded
-        | ProjectReferenceLoaded | ProjectReferenceUnloaded => ServerUtils.Log(serverMsg.ToString(), ConsoleColor.Magenta);
-        | _                                                 => ServerUtils.Log(serverMsg.ToString(), ConsoleColor.DarkGray);
+        | ProjectReferenceLoaded | ProjectReferenceUnloaded => Log.Message(serverMsg.ToString(), ConsoleColor.Magenta);
+        | _                                                 => Log.Message(serverMsg.ToString(), ConsoleColor.DarkGray);
       }
       OnClientMessageImpl(serverMsg);
     }
@@ -38,11 +39,11 @@ namespace Nitra.ClientServer.Server
     {
       | ClientMessage.CheckVersion(assemblyVersionGuid)  =>
         if (Constants.AssemblyVersionGuid == assemblyVersionGuid)
-          ServerUtils.Log("Client version checked.");
+          Log.Message("Client version checked.");
         else
         {
           def asm = typeof(Message);
-          ServerUtils.Log($"Incorrect version of messaging assembly: '$(asm.Assembly.Location)'.");
+          Log.Message($"Incorrect version of messaging assembly: '$(asm.Assembly.Location)'.");
           Environment.Exit(42);
         }
       | SolutionStartLoading(id, fullPath)               => assert2(_solution == null); SpanClassesManager.Clear(); _solution = Solution(id, fullPath);

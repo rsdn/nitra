@@ -6,6 +6,7 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.Declarations;
+using Nitra.Logging;
 
 using Nitra.Runtime.Reflection;
 using System;
@@ -107,7 +108,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         languages.Add(language);
 
         assert2(language.StartRule != null);
-        ServerUtils.Log("  Language " + i + ": "+ fullName + " - '" + path + "' " + language.Authors);
+        Log.Message("  Language " + i + ": "+ fullName + " - '" + path + "' " + language.Authors);
 
         def dynamicExtensions = List();
         def extensions = languageInfo.DynamicExtensions;
@@ -117,20 +118,20 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           def extensionAssembly = Language.LoadAssembly(dynamicExtension.Path);
           def descriptor = GrammarDescriptor.GetDescriptors(extensionAssembly).FirstOrDefault(g => String.Equals(g.FullName, dynamicExtension.Name, StringComparison.Ordinal));
           if (descriptor == null)
-            ServerUtils.Log($"Syntax module '$(dynamicExtension.Name)' not found in assembly '$(extensionAssembly.Location)'.");
+            Log.Message($"Syntax module '$(dynamicExtension.Name)' not found in assembly '$(extensionAssembly.Location)'.");
           else
           {
             dynamicExtensions.Add(descriptor);
-            ServerUtils.Log("    Dynamic extension " + descriptor.FullName + " - '" + dynamicExtension.Path + "'");
+            Log.Message("    Dynamic extension " + descriptor.FullName + " - '" + dynamicExtension.Path + "'");
           }
         }
 
-        ServerUtils.Log("    File extensions:");
+        Log.Message("    File extensions:");
         foreach (ext in language.FileExtensions)
         {
           _extToLanguages[ext]        = (language, dynamicExtensions);
           _languageMap[language.Name] = language;
-          ServerUtils.Log($"      $ext");
+          Log.Message($"      $ext");
         }
 
         _extToLanguages[".test"] = (language, dynamicExtensions);
@@ -225,7 +226,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         {
           when (this.Data == null)
           {
-            ServerUtils.Log("Project support: RefreshReferences " + this.Name + " ");
+            Log.Message("Project support: RefreshReferences " + this.Name + " ");
             def timer = Stopwatch.StartNew();
             def messages = CompilerMessages :> NSP.CompilerMessageList;
             messages.Clear();
@@ -233,9 +234,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               try projectSupport.RefreshReferences(Router.ProjectLoadCancellationToken, this)
               catch
               {
-                | e is OperationCanceledException => ServerUtils.LogCanceled(e); null
+                | e is OperationCanceledException => Log.Canceled(e); null
                 | e =>
-                ServerUtils.LogException(e);
+                Log.Exception(e);
                 Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
                 null
               };
@@ -253,7 +254,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               return;
           }
 
-          ServerUtils.Log("Prepare to Semantic Analysis");
+          Log.Message("Prepare to Semantic Analysis");
 
           def files = GetEvalPropertiesData(_files.Values.Where(_.IsSupported).OrderByDescending(_.IsActive));
           _semanticResult = ImmutableArray.Empty;
@@ -266,7 +267,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
         else
-          ServerUtils.Log("Project support not available!");
+          Log.Message("Project support not available!");
       }
     }
 
@@ -385,24 +386,24 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       IsOpened = true;
 
-      ServerUtils.Log("  Project " + Name + " is opened.");
+      Log.Message("  Project " + Name + " is opened.");
 
       if (DependantProjects.IsEmpty)
-        ServerUtils.Log("  DependantProjects is empty", ConsoleColor.DarkCyan);
+        Log.Message("  DependantProjects is empty", ConsoleColor.DarkCyan);
       else
       {
-        ServerUtils.Log("  DependantProjects", ConsoleColor.DarkCyan);
+        Log.Message("  DependantProjects", ConsoleColor.DarkCyan);
         foreach (p in DependantProjects)
-          ServerUtils.Log("    " + p.Name, ConsoleColor.DarkGray);
+          Log.Message("    " + p.Name, ConsoleColor.DarkGray);
       }
 
       if (DependsOnProjects.IsEmpty)
-        ServerUtils.Log("  DependsOnProjects is empty", ConsoleColor.DarkYellow);
+        Log.Message("  DependsOnProjects is empty", ConsoleColor.DarkYellow);
       else
       {
-        ServerUtils.Log("  DependsOnProjects", ConsoleColor.DarkYellow);
+        Log.Message("  DependsOnProjects", ConsoleColor.DarkYellow);
         foreach (p in DependsOnProjects)
-          ServerUtils.Log("    " + p.Name, ConsoleColor.DarkGray);
+          Log.Message("    " + p.Name, ConsoleColor.DarkGray);
       }
 
       TryStartSemanticAnalysis();
@@ -464,7 +465,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       def name = projectId.ToString();
       mutable index;
       if (_libMap.TryGetValue(path, out index))
-        ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
+        Log.Message("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
         assert2(!string.IsNullOrEmpty(path));
@@ -513,7 +514,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         watcher.Dispose();
       }
       else
-        ServerUtils.Log("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
+        Log.Message("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
     }
 
     public AddLib(name : string) : void
@@ -531,7 +532,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(!string.IsNullOrEmpty(r.Path));
       mutable index;
       if (_libMap.TryGetValue(r.Path, out index))
-        ServerUtils.Log("Reference '" + name + "' already added: " + _libs[index]);
+        Log.Message("Reference '" + name + "' already added: " + _libs[index]);
       else
       {
         _libMap[r.Path] = _libs.Count;
@@ -566,7 +567,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         RefrashReference();
       }
       else
-        ServerUtils.Log("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
+        Log.Message("Can't remove library reference: '" + fullPath + "'", ConsoleColor.Red);
     }
 
     public GetSymbolHint(symbolId : int) : void
@@ -628,7 +629,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def projectSupport = this.GetProjectSupport();
         when (projectSupport != null)
         {
-          //ServerUtils.Log($"FindDeclarations('$pattern', [..$kinds]) ProjectId=$(this.Id)");
+          //Log.Message($"FindDeclarations('$pattern', [..$kinds]) ProjectId=$(this.Id)");
 
           def timer = Stopwatch.StartNew();
           def infos = List();
@@ -639,7 +640,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             def result = infos.ToImmutableArray();
             def msg = AsyncServerMessage.FoundDeclarations(FileId.Invalid, FileVersion.Invalid, _solutionId, this.Id, result);
             Router.SendAsyncResponse(msg);
-            //ServerUtils.Log($"Sending $(infos.Count) DeclarationInfo-s.");
+            //Log.Message($"Sending $(infos.Count) DeclarationInfo-s.");
             infos.Clear();
           }
           def callbac(symbol : DeclarationSymbol) : bool
@@ -674,7 +675,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           }
           projectSupport.VisitGlobalSymbols(this.Data, callbac);
           send();
-          //ServerUtils.Log("Finish FindDeclarations");
+          //Log.Message("Finish FindDeclarations");
         }
       }
       AddSemanticAction(action);

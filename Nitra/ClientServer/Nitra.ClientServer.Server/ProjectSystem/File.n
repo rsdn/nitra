@@ -9,9 +9,10 @@ using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ServerUtils;
 using Nitra.Declarations;
 using Nitra.Internal;
+using Nitra.Logging;
 using Nitra.PrettyPrint;
-
 using Nitra.Runtime.Reflection;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -171,7 +172,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public Change(version : FileVersion, change : FileChange, caretPos : VersionedPos) : void
     {
-      Log($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
+      Log.Message($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
       _ = GetSource();
       FileVersion = version;
       ApplyChange(change);
@@ -354,7 +355,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public CompleteWord(version : FileVersion, pos : int) : void
     {
-      Log($"CompleteWord started in the $version file in position: $pos");
+      Log.Message($"CompleteWord started in the $version file in position: $pos");
       _isCompleteWord = true;
       Parent.IsCompleteWord = true;
       TrySendParseMessage(pos);
@@ -417,7 +418,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       { // execute when Parent.IsSemanticAvailable
         try
         {
-        Log("action(FindSymbolReferences) started", ConsoleColor.DarkYellow);
+        Log.Message("action(FindSymbolReferences) started", ConsoleColor.DarkYellow);
         def router             = this.Parent.Router;
         def pos                = pos;
         def ast                = ast;
@@ -492,12 +493,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         else
           router.SendResponse(ServerMessage.FindSymbolReferences(solutionId, refSpan, symbolsBiulder.MoveToImmutable()));
 
-          Log("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
+          Log.Message("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
         }
         catch { | _ => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty)); throw; }
       }
 
-      Log("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
+      Log.Message("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
       Parent.AddSemanticAction(action);
     }
 
@@ -577,7 +578,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         else
           text.Substring(span.StartPos, len) + "..."
       }
-      catch { e => LogException(e); $<#«Exception: $(e.Message)»#>; }
+      catch { e => Log.Exception(e); $<#«Exception: $(e.Message)»#>; }
     }
 
     public static GetText(obj : object) : string
@@ -851,7 +852,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public SetCaretPos(pos : VersionedPos) : void
     {
-      Log($"SetCaretPos pos=$pos");
+      Log.Message($"SetCaretPos pos=$pos");
       _caretPosOpt        = pos;
       _highlightingPosOpt = pos;
 

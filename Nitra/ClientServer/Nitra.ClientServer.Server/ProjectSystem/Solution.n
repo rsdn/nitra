@@ -6,6 +6,7 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.Declarations;
+using Nitra.Logging;
 
 using System;
 using System.Collections.Concurrent;
@@ -93,7 +94,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsOpened = true;
     }
 
-    public Log(msg : string) : void { ServerUtils.Log(msg) }
+    public Log(msg : string) : void { Log.Message(msg) }
 
     public AddProject(project : Project): void
     {

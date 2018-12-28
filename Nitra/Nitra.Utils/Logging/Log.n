@@ -1,0 +1,46 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.Logging
+{
+  public partial module Log
+  {
+    mutable _logger : LoggerWorker;
+    
+    public Init(name : string) : void
+    {
+      _logger = LoggerWorker(name);
+    }
+    
+    public Exception(e : Exception) : void
+    {
+      Message("Exception: " + e, ConsoleColor.Red);
+    }
+
+    public Canceled(e : OperationCanceledException) : void
+    {
+      Message(e.Message, ConsoleColor.Yellow);
+    }
+
+    public Message(msg : string) : void
+    {
+      Message(msg, ConsoleColor.Gray);
+    }
+
+    public Message(msg : string, color : ConsoleColor) : void
+    {
+      _logger.Log(msg, color);
+    }
+
+    public Flush() : void
+    {
+      _logger.Flush();
+    }
+  }
+}

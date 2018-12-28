@@ -6,6 +6,7 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server.ProjectSystem;
+using Nitra.Logging;
 
 using System;
 using System.Collections.Generic;
@@ -100,36 +101,16 @@ namespace Nitra.ClientServer.Server
       def threadId        = Padding(Thread.CurrentThread.ManagedThreadId.ToString(), 3);
       def msg3            = msg2 + "took: " + milliseconds + " ms  ThreadId:" + threadId;
 
-      Log(msg3, color);
+      Log.Message(msg3, color);
     }
-
-    public LogCanceled(e : OperationCanceledException) : void
-    {
-      Log(e.Message, ConsoleColor.Yellow);
-    }
-
+    
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
     {
       def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
       lock (asyncResponseWriter)
         msg.Serialize(asyncResponseWriter);
 
-      LogException(e);
-    }
-
-    public LogException(e : Exception) : void
-    {
-      Log("Exception: " + e, ConsoleColor.Red);
-    }
-
-    public Log(msg : string) : void
-    {
-      LoggerWorker.Log(msg, ConsoleColor.Gray);
-    }
-
-    public Log(msg : string, color : ConsoleColor) : void
-    {
-      LoggerWorker.Log(msg, color);
+      Log.Exception(e);
     }
 
     public GetCoreCount() : int
