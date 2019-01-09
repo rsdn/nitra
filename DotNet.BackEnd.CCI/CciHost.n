@@ -42,7 +42,7 @@ namespace Nitra.BackEnd.Cci
 
     public override OpenBinaryDocument(parentSourceDocument : IBinaryDocument, childDocumentName : string) : IBinaryDocumentMemoryBlock
     {
-      def directory         = Path.GetDirectoryName(parentSourceDocument.Location)??"";
+      def directory         = Path.GetDirectoryName(parentSourceDocument.Location) ?? "";
       def fullPath          = Path.Combine(directory, childDocumentName);
       def newBinaryDocument = BinaryDocument.GetBinaryDocumentForFile(fullPath, this) : IBinaryDocument;
       def binDocMemoryBlock = UnmanagedBinaryMemoryBlock.CreateUnmanagedBinaryMemoryBlock(newBinaryDocument.Location, newBinaryDocument);
