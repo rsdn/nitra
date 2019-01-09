@@ -47,7 +47,7 @@ namespace Nitra.BackEnd.Cci
     [RecordIgnore] mutable _cciExtensionAttribute    : INamespaceTypeDefinition;
     [RecordIgnore] mutable _cciExtensionAttributeKey : uint;
 
-    public this() { this(PeReader.DefaultHost()) }
+    public this() { this(CciHost()) }
 
     public Types                : Seq[TypeSymbol]            { get { _cciInternedKeyToSymbolMap.Values } }
     public Object               : TypeSymbol                 { get { _objectSymbol } }

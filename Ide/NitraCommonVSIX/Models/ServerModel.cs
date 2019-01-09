@@ -398,6 +398,7 @@ namespace Nitra.VisualStudio
         fileModel.Dispose();
 
       Client?.Dispose();
+      IsSolutionCreated = false;
     }
   }
 }

@@ -102,6 +102,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CciBackEnd.n" />
+    <Compile Include="CciHost.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="LazyAttributeList.n">
       <SubType>Code</SubType>
     </Compile>
