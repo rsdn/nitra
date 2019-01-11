@@ -75,7 +75,6 @@ module Program
             {
               | _ is EndOfStreamException when !requestPipe.IsConnected =>
                 Log.Message("Session has been terminated.");
-                router.AddMessage(ClientMessage.Shutdown());
                 return;
               | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
             }
