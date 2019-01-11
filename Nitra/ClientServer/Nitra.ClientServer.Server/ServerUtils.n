@@ -106,11 +106,14 @@ namespace Nitra.ClientServer.Server
     
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
     {
-      def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
-      lock (asyncResponseWriter)
-        msg.Serialize(asyncResponseWriter);
-
       Log.Exception(e);
+
+      def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
+      
+      try
+        lock (asyncResponseWriter)
+          msg.Serialize(asyncResponseWriter);
+      catch { e is System.IO.IOException => Log.Message("Cant' write responce to client: " + e.Message); }
     }
 
     public GetCoreCount() : int

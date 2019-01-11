@@ -69,7 +69,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       (Language, DynamicExtensions) = parent.GetLanguage(Path.GetExtension(fullPath));
 
       when (content != null)
+      {
+        _text     = StringBuilder(content);
         _snapshot = SourceSnapshot(content, this, version);
+      }
       // TODO: Add statistics support.
 
       parent.AddFile(this);
@@ -106,6 +109,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _snapshot = SourceSnapshot(text, this, Version);
         _text     = StringBuilder(text);
       }
+
+      assert2(_text != null);
 
       _snapshot
     }
@@ -836,7 +841,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       def source     = this.GetSource();
       def newVersion = this.FileVersion;
-      def content    = this.GetSource().Text;
+      def content    = source.Text;
       def project    = Parent;
       assert(newVersion == source.Version);
       project.RemoveFile(this);
