@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
+using Nitra.VisualStudio.Utils;
 using NitraCommonIde;
 
 using System;
@@ -101,6 +102,12 @@ namespace Nitra.VisualStudio
     /// </summary>
     protected override void Initialize()
     {
+      var listener = new NitraTraceListener();
+      Trace.Listeners.Clear();
+      Debug.Listeners.Clear();
+      Trace.Listeners.Add(listener);
+      Debug.Listeners.Add(listener);
+
       ThreadHelper.ThrowIfNotOnUIThread();
       base.Initialize();
       Debug.Assert(Instance == null);

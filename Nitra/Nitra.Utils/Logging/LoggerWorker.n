@@ -20,7 +20,7 @@ namespace Nitra.Logging
   {
     class LoggerWorker : IDisposable
     {
-      _queue   : BlockingCollection[string * ConsoleColor] = BlockingCollection();
+      _queue   : BlockingCollection[string * ConsoleColor * bool] = BlockingCollection();
       _logFile : StreamWriter;
       _date    : string;
       _name    : string;
@@ -45,9 +45,9 @@ namespace Nitra.Logging
         _thread.Start();
       }
 
-      public Log(msg : string, color : ConsoleColor) : void
+      public Log(msg : string, color : ConsoleColor, lineBreak : bool) : void
       {
-        _queue.Add((msg, color));
+        _queue.Add((msg, color, lineBreak));
       }
 
       ParseWorkerMain() : void
@@ -75,10 +75,13 @@ namespace Nitra.Logging
         try
         {
           _logFile.WriteLine(header);
-          foreach((msg, color) in _queue.GetConsumingEnumerable(_cts.Token))
+          foreach((msg, color, lineBreak) in _queue.GetConsumingEnumerable(_cts.Token))
           {
             try
-              WriteMessage(msg, color);
+              if (lineBreak)
+                this.WriteLine(msg, color);
+              else
+                this.Write(msg, color);
             catch
             {
               | e is OperationCanceledException => Log.Canceled(e);
@@ -118,7 +121,7 @@ namespace Nitra.Logging
 		    | White       => "White"
       }
     
-      WriteMessage(msg : string, color : ConsoleColor) : void
+      WriteLine(msg : string, color : ConsoleColor) : void
       {
         _logFile.Write(<#<span style="color:#>);
         _logFile.Write(TranslateColor(color));
@@ -131,7 +134,21 @@ namespace Nitra.Logging
         Console.WriteLine(msg);
         Console.ResetColor();
       }
-    
+
+      Write(msg : string, color : ConsoleColor) : void
+      {
+        _logFile.Write(<#<span style="color:#>);
+        _logFile.Write(TranslateColor(color));
+        _logFile.Write(<#">#>);
+        _logFile.Write(msg);
+        _logFile.Write(<#</span>#>);
+        when (_queue.Count == 0)
+          _logFile.Flush();
+        Console.ForegroundColor = color;
+        Console.Write(msg);
+        Console.ResetColor();
+      }
+      
       public Flush() : void
       {
         _logFile.Flush();
