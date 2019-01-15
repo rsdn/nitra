@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 
 using IO = System.IO;
 using M  = Nitra.ClientServer.Messages;
@@ -115,6 +116,7 @@ namespace Nitra.ClientServer.Server
       RouteMessages();
     }
 
+    [HandleProcessCorruptedStateExceptions]
     RouteMessages() : void
     {
       while (!_mainQueue.IsCompleted)
@@ -131,8 +133,9 @@ namespace Nitra.ClientServer.Server
         }
         catch
         {
-          | e is OperationCanceledException => Log.Canceled(e);
-          | e                               => ServerUtils.LogException(_asyncResponseWriter, e)
+          | e is OperationCanceledException      => Log.Canceled(e);
+          | _ is System.AccessViolationException => Environment.Exit(-3); // The server will restart automatically.
+          | e                                    => ServerUtils.LogException(_asyncResponseWriter, e)
         }
       }
     }

@@ -27,7 +27,7 @@ namespace Nitra.ClientServer.Client
     public this(nitraClient : NitraClient) { _nitraClient = nitraClient; }
     
     _nitraClient      : NitraClient;
-    _recordedMessages : List[ClientMessage]                             = List();
+    _recordedMessages : List[ClientMessage] = List();
 
     public Play() : void
     {

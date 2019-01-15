@@ -22,6 +22,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -175,9 +176,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       | FileChange.Replace(span, text) => Replace(span, text)
     }
 
+    //[DllImport("msvcrt.dll", EntryPoint = "memcpy", CallingConvention = CallingConvention.Cdecl, SetLastError = false)]
+    //public static extern memcpy(dest : IntPtr, src : IntPtr, count : UIntPtr) : IntPtr;
+
     public Change(version : FileVersion, change : FileChange, caretPos : VersionedPos) : void
     {
       Log.Message($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
+      //_ = memcpy(IntPtr.Zero, IntPtr.Zero, UIntPtr(42));
       _ = GetSource();
       FileVersion = version;
       ApplyChange(change);
