@@ -35,12 +35,17 @@ namespace Nitra.Logging
 
     public Message(msg : string, color : ConsoleColor) : void
     {
-      _logger.Log(msg, color, lineBreak=true);
+      WriteLine(msg, color);
+    }
+
+    public Error(msg : string) : void
+    {
+      WriteLine(msg, ConsoleColor.Red);
     }
 
     public WriteLine(msg : string, color : ConsoleColor) : void
     {
-      Message(msg, color);
+      _logger.Log(msg, color, lineBreak=true);
     }
 
     public Write(msg : string, color : ConsoleColor) : void

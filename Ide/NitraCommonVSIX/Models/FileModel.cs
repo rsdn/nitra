@@ -17,6 +17,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
+using Nitra.Logging;
 
 namespace Nitra.VisualStudio.Models
 {
@@ -37,27 +38,30 @@ namespace Nitra.VisualStudio.Models
 
     readonly ITextBuffer                             _textBuffer;
     readonly Dictionary<IWpfTextView, TextViewModel> _textViewModelsMap = new Dictionary<IWpfTextView, TextViewModel>();
-    ErrorListProvider[]                              _errorListProviders;
+    ErrorListProvider[]                              _errorListProviders = new ErrorListProvider[KindCount] { null, null, null };
     TextViewModel                                    _activeTextViewModelOpt;
     TextViewModel                                    _mouseHoverTextViewModelOpt;
     bool                                             _fileIsRemoved;
     ICompletionSession                               _completionSession;
     VersionedPos                                     _caretPosition;
+    bool                                             _disposed;
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
-      Hierarchy = hierarchy;
-      FullPath = fullPath;
-      Ext = Path.GetExtension(fullPath).ToLowerInvariant();
-      Id = id;
-      Server = server;
-      _textBuffer = textBuffer;
+      if (dispatcher == null)
+        throw new ArgumentNullException(nameof(dispatcher));
 
-      var snapshot = textBuffer.CurrentSnapshot;
-      var empty = new CompilerMessage[0];
-      CompilerMessages = new CompilerMessage[KindCount][] { empty, empty, empty };
-      CompilerMessagesSnapshots = new ITextSnapshot[KindCount] { snapshot, snapshot, snapshot };
-      _errorListProviders = new ErrorListProvider[KindCount] { null, null, null };
+      Hierarchy                     = hierarchy  ?? throw new ArgumentNullException(nameof(hierarchy));
+      FullPath                      = fullPath   ?? throw new ArgumentNullException(nameof(fullPath));
+      Ext                           = Path.GetExtension(fullPath).ToLowerInvariant();
+      Id                            = id;
+      Server                        = server     ?? throw new ArgumentNullException(nameof(server));
+      _textBuffer                   = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
+
+      var snapshot                  = textBuffer.CurrentSnapshot;
+      var empty                     = new CompilerMessage[0];
+      CompilerMessages              = new CompilerMessage[KindCount][] { empty,    empty,    empty };
+      CompilerMessagesSnapshots     = new ITextSnapshot[KindCount]     { snapshot, snapshot, snapshot };
 
       server.Client.ResponseMap[id] = msg => dispatcher.BeginInvoke(DispatcherPriority.Normal,
         new Action<AsyncServerMessage>(msg2 => Response(msg2)), msg);
@@ -185,6 +189,14 @@ namespace Nitra.VisualStudio.Models
 
     void Response(AsyncServerMessage msg)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      if (_disposed)
+      {
+        ReportDisposed();
+        return;
+      }
+
       Debug.Assert(msg.FileId >= 0);
       ITextBuffer textBuffer = _textBuffer;
 
@@ -262,17 +274,23 @@ namespace Nitra.VisualStudio.Models
 
     private void UpdateCompilerMessages(int index, CompilerMessage[] messages, int version)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      Debug.Assert(!_disposed);
+      Debug.Assert(_errorListProviders != null);
+
       var snapshot = _textBuffer.CurrentSnapshot;
 
       if (snapshot.Version.VersionNumber != version + 1)
         return;
 
-      CompilerMessages[index] = messages;
+      CompilerMessages[index]          = messages;
       CompilerMessagesSnapshots[index] = snapshot;
 
       CompilerMessagesTagger tegger;
       if (_textBuffer.Properties.TryGetProperty<CompilerMessagesTagger>(Constants.CompilerMessagesTaggerKey, out tegger))
         tegger.Update();
+
 
       var errorListProvider = _errorListProviders[index];
       var noTasks = errorListProvider == null || errorListProvider.Tasks.Count == 0;
@@ -297,6 +315,11 @@ namespace Nitra.VisualStudio.Models
           errorListProvider.ResumeRefresh();
         }
       }
+    }
+
+    private void ReportDisposed()
+    {
+      Log.Error($"The {nameof(FileModel)} is disposed: '{this}'.");
     }
 
     private void AddTask(ITextSnapshot snapshot, ErrorListProvider errorListProvider, CompilerMessage msg)
@@ -376,6 +399,13 @@ namespace Nitra.VisualStudio.Models
 
     public void Dispose()
     {
+      if (_disposed)
+        return;
+
+      _disposed = true;
+
+      var client = Server.Client;
+      client.ResponseMap.TryRemove(Id, out var _);
       var textViews = _textViewModelsMap.Keys.ToArray();
 
       foreach (var textView in textViews)
@@ -386,8 +416,6 @@ namespace Nitra.VisualStudio.Models
         if (errorListProvider != null)
           errorListProvider.Dispose();
       _errorListProviders = null;
-      var client = Server.Client;
-      client.ResponseMap.TryRemove(Id, out var value);
       _textBuffer.Properties.RemoveProperty(Constants.FileModelKey);
       Server.Remove(this);
     }
