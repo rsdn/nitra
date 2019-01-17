@@ -185,6 +185,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _expectsToBuildAst--;
       assert2(_expectsToBuildAst >= 0);
 
+      Log.Message("AstCreated(_expectsToBuildAst=" + _expectsToBuildAst + ")");
+      
       TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
     }
 
@@ -438,13 +440,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public RemoveFile(id : int): void
     {
-      def file = _files[id];
+      def file = _files.GetValue(id);
 
       when (file.IsSupported && file.Ast == null)
         _expectsToBuildAst--;
       IsSemanticAvailable = false;
       _files.Remove(id);
       Parent._N_OnFileRemoved(id);
+      Log.Message("RemoveFile(id=" + id + ")");
       TryStartSemanticAnalysis();
     }
 

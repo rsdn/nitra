@@ -851,6 +851,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert(newVersion == source.Version);
       project.RemoveFile(this);
       def newFile = File(newId, newPath, newVersion, project, content);
+      newFile.IsActive = IsActive;
       newFile.TrySendParseMessage();
     }
 

@@ -29,14 +29,15 @@ namespace Nitra.VisualStudio.Models
   {
     public const int KindCount = 3;
     public ServerModel         Server                    { get; }
-    public FileId              Id                        { get; }
+    public FileId              Id                        { get; private set; }
     public IVsHierarchy        Hierarchy                 { get; }
-    public string              FullPath                  { get; }
-    public string              Ext                       { get; }
+    public string              FullPath                  { get; private set; }
+    public string              Ext                       { get; private set; }
     public CompilerMessage[][] CompilerMessages          { get; private set; }
     public ITextSnapshot[]     CompilerMessagesSnapshots { get; private set; }
 
     readonly ITextBuffer                             _textBuffer;
+    readonly Dispatcher                              _dispatcher;
     readonly Dictionary<IWpfTextView, TextViewModel> _textViewModelsMap = new Dictionary<IWpfTextView, TextViewModel>();
     ErrorListProvider[]                              _errorListProviders = new ErrorListProvider[KindCount] { null, null, null };
     TextViewModel                                    _activeTextViewModelOpt;
@@ -48,23 +49,20 @@ namespace Nitra.VisualStudio.Models
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
-      if (dispatcher == null)
-        throw new ArgumentNullException(nameof(dispatcher));
+      Hierarchy = hierarchy ?? throw new ArgumentNullException(nameof(hierarchy));
+      FullPath = fullPath ?? throw new ArgumentNullException(nameof(fullPath));
+      Ext = Path.GetExtension(fullPath).ToLowerInvariant();
+      Id = id;
+      Server = server ?? throw new ArgumentNullException(nameof(server));
+      _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+      _textBuffer = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
 
-      Hierarchy                     = hierarchy  ?? throw new ArgumentNullException(nameof(hierarchy));
-      FullPath                      = fullPath   ?? throw new ArgumentNullException(nameof(fullPath));
-      Ext                           = Path.GetExtension(fullPath).ToLowerInvariant();
-      Id                            = id;
-      Server                        = server     ?? throw new ArgumentNullException(nameof(server));
-      _textBuffer                   = textBuffer ?? throw new ArgumentNullException(nameof(textBuffer));
+      var snapshot = textBuffer.CurrentSnapshot;
+      var empty = new CompilerMessage[0];
+      CompilerMessages = new CompilerMessage[KindCount][] { empty, empty, empty };
+      CompilerMessagesSnapshots = new ITextSnapshot[KindCount] { snapshot, snapshot, snapshot };
 
-      var snapshot                  = textBuffer.CurrentSnapshot;
-      var empty                     = new CompilerMessage[0];
-      CompilerMessages              = new CompilerMessage[KindCount][] { empty,    empty,    empty };
-      CompilerMessagesSnapshots     = new ITextSnapshot[KindCount]     { snapshot, snapshot, snapshot };
-
-      server.Client.ResponseMap[id] = msg => dispatcher.BeginInvoke(DispatcherPriority.Normal,
-        new Action<AsyncServerMessage>(msg2 => Response(msg2)), msg);
+      UpdateResponseMap(id, server, dispatcher);
 
       server.Add(this);
 
@@ -97,6 +95,12 @@ namespace Nitra.VisualStudio.Models
       }
 
       return textViewModel;
+    }
+
+    void UpdateResponseMap(FileId id, ServerModel server, Dispatcher dispatcher)
+    {
+      server.Client.ResponseMap[id] = msg => dispatcher.BeginInvoke(DispatcherPriority.Normal,
+        new Action<AsyncServerMessage>(msg2 => Response(msg2)), msg);
     }
 
     void OnSwhow()
@@ -183,7 +187,18 @@ namespace Nitra.VisualStudio.Models
 
     internal void Remove()
     {
-      _fileIsRemoved = true;
+      var id = Id;
+      UpdateResponseMap(id, Server, _dispatcher);
+      foreach (var item in _textViewModelsMap.ToArray())
+      {
+        if (item.Value.FileModel.Id == id)
+        {
+          _textViewModelsMap.Remove(item.Key);
+          _textBuffer.Properties.RemoveProperty(Constants.FileModelKey);
+          item.Key.Properties.RemoveProperty(Constants.TextViewModelKey);
+        }
+      }
+
       Server.Client.Send(new ClientMessage.FileUnloaded(GetProjectId(), Id));
     }
 
@@ -241,6 +256,15 @@ namespace Nitra.VisualStudio.Models
           }
           break;
       }
+    }
+
+    internal void Rename(FileId newFileId, string newFilePath)
+    {
+      var server = Server;
+      server.Client.ResponseMap.TryRemove(Id, out var _);
+      Id       = newFileId;
+      FullPath = newFilePath;
+      UpdateResponseMap(newFileId, server, _dispatcher);
     }
 
     internal void SetCompletionSession(ICompletionSession session, SnapshotPoint caretPos)

@@ -177,5 +177,18 @@ namespace Nitra.ClientServer.Server
         From: "$serverItfAsmPath"
       #>
     }
+
+    public GetValue[K, V](this dictionary : Dictionary[K, V], key : K) : V
+    {
+      mutable value;
+      if (dictionary.TryGetValue(key, out value))
+        value
+      else
+      {
+        def t = dictionary.GetType();
+        def args = t.GetGenericArguments();
+        throw KeyNotFoundException($"The given key was not present in the dictionary. Key='$key'; K='$(args[0].Name); V=$(args[1].Name)'.")
+      }
+    }
   } // module
 } // namespace

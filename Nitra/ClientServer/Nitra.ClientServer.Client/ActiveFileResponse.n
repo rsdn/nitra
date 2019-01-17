@@ -55,7 +55,7 @@ namespace Nitra.ClientServer.Client
           }
           catch
           {
-            | _ is EndOfStreamException when !_responsePipe.IsConnected => Log("Session has been terminated."); return;
+            | _ is EndOfStreamException when !_responsePipe.IsConnected => Log("The active file response session has been terminated."); return;
             | e => Log($"Message read error: $e");
           }
         }

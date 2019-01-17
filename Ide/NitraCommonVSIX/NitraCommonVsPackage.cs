@@ -104,9 +104,7 @@ namespace Nitra.VisualStudio
     {
       var listener = new NitraTraceListener();
       Trace.Listeners.Clear();
-      Debug.Listeners.Clear();
       Trace.Listeners.Add(listener);
-      Debug.Listeners.Add(listener);
 
       ThreadHelper.ThrowIfNotOnUIThread();
       base.Initialize();
@@ -126,7 +124,6 @@ namespace Nitra.VisualStudio
       _runningDocTableEventse.DocumentSaved += _runningDocTableEventse_DocumentSaved;
       SubscibeToSolutionEvents();
 
-
       if (_objectManagerCookie == 0)
       {
         _library = new Library();
@@ -143,8 +140,36 @@ namespace Nitra.VisualStudio
         server.FileSaved(path);
     }
 
+    private void PrjItemsEvents_ItemAdded(ProjectItem projectItem)
+    {
+      if (_backgroundLoading != SolutionLoadingSate.Loaded)
+        return;
+
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      string fullPath = projectItem.FileNames[1];
+      //var ext = Path.GetExtension(fullPath);
+      //projectItem.Properties.Item("ItemType").Value = "MyOwnBuildActionChoice";
+      AddFile(projectItem, fullPath);
+    }
+
     private void PrjItemsEvents_ItemRenamed(ProjectItem projectItem, string oldName)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      var newFilePath = (string)projectItem.Properties.Item("FullPath").Value;
+      var oldFilePath = Path.Combine(Path.GetDirectoryName(newFilePath), oldName);
+      var project = projectItem.ContainingProject;
+      var projectPath = project.FullName;
+      var projectId = GetProjectId(project);
+      var ext = Path.GetExtension(newFilePath);
+      var newFileId = new FileId(_stringManager.GetId(newFilePath));
+      var oldFileId = new FileId(_stringManager.GetId(oldFilePath));
+
+      foreach (var server in _servers)
+        if (server.IsSupportedExtension(ext))
+          server.FileRenamed(oldFileId, newFileId, newFilePath);
+
+      Debug.WriteLine($"tr: FileAdded(FileName='{newFilePath}' id={newFileId} projectPath='{projectPath}')");
     }
 
     private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
@@ -162,12 +187,6 @@ namespace Nitra.VisualStudio
           server.FileUnloaded(projectId, id);
 
       Debug.WriteLine($"tr: FileAdded(FileName='{filePath}' id={id} projectPath='{projectPath}')");
-    }
-
-    private void PrjItemsEvents_ItemAdded(ProjectItem projectItem)
-    {
-      ThreadHelper.ThrowIfNotOnUIThread();
-      AddFile(projectItem, projectItem.Properties.Item("FullPath").Value);
     }
 
     protected override void Dispose(bool disposing)
@@ -344,6 +363,9 @@ namespace Nitra.VisualStudio
         ScanReferences(project);
 
       foreach (var project in _projects)
+        ScanFiles(project);
+
+      foreach (var project in _projects)
         foreach (var server in _servers)
           server.ProjectLoaded(GetProjectId(project));
 
@@ -401,6 +423,47 @@ namespace Nitra.VisualStudio
         Debug.WriteLine("tr:    Error: project.Object=null");
 
       Debug.WriteLine("tr: ScanReferences(finished)");
+    }
+
+    void ScanFiles(Project project)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      Debug.WriteLine("tr: ScanReferences(started)");
+      Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
+
+      if (project.Object is VSProject vsproject)
+      {
+        var projectId = GetProjectId(project);
+
+        ProjectItems projectItems = project.ProjectItems;
+
+        ScanFiles(project, projectItems);
+      }
+      else
+        Debug.WriteLine("tr:    Error: project.Object=null");
+
+      Debug.WriteLine("tr: ScanReferences(finished)");
+    }
+
+    private void ScanFiles(Project project, ProjectItems projectItems)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      foreach (ProjectItem item in projectItems)
+      {
+        var filePath = (string)item.Properties.Item("FullPath").Value;
+
+        if (new Guid(item.Kind) == VSConstants.GUID_ItemType_PhysicalFile)
+        {
+          AddFile(item, filePath);
+        }
+
+        if (item.ProjectItems?.Count > 0)
+          ScanFiles(project, item.ProjectItems);
+
+        //Debug.WriteLine($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind} ExtenderCATID={item.ExtenderCATID} ExtenderCATID={item.ExtenderCATID}");
+      }
     }
 
     ProjectId GetProjectId(Project project)
@@ -469,82 +532,11 @@ namespace Nitra.VisualStudio
       foreach (var server in _servers)
         server.AddedMscorlibReference(projectId);
 
-      var listener = new HierarchyListener(hierarchy);
-
-      listener.ItemAdded        += FileAdded;
-      listener.ItemDeleted      += FileDeleted;
-      listener.ReferenceAdded   += ReferenceAdded;
-      listener.ReferenceDeleted += ReferenceDeleted;
-
-      _listenersMap.Add(hierarchy, listener);
-
-      // We need update all references when a project adding in exist solution
-      if (e.IsAdded)
-      {
-      }
-
       if (!isDelayLoading)
       {
-        listener.StartListening(true);
-
         foreach (var server in _servers)
           server.ProjectLoaded(GetProjectId(project));
       }
-    }
-
-    private void ReferenceDeleted(object sender, ReferenceEventArgs e)
-    {
-      ThreadHelper.ThrowIfNotOnUIThread();
-
-      foreach (var project in _projects)
-      {
-        var projectId = GetProjectId(project);
-        if (!_referenceMap.TryGetValue(projectId, out var references))
-          continue;
-        if (!(project.Object is VSProject vsproject))
-          continue;
-        var currentReferences = vsproject.References.OfType<Reference>().Select(r => r.Path).ToArray();
-        var removedReferences = references.Except(currentReferences).ToArray();
-
-        foreach (var path in removedReferences)
-          references.Remove(path);
-
-        foreach (var server in _servers)
-          foreach (var path in removedReferences)
-            server.ReferenceDeleted(projectId, path);
-
-        foreach (var path in removedReferences)
-          Debug.WriteLine($"tr: ReferenceDeleted(FileName='{path}' projectId={projectId})");
-      }
-    }
-
-    void ReferenceAdded(object sender, ReferenceEventArgs e)
-    {
-      ThreadHelper.ThrowIfNotOnUIThread();
-
-      if (_backgroundLoading == SolutionLoadingSate.SynchronousLoading)
-        return;
-
-      var r             = e.Reference;
-      var sourceProject = r.SourceProject; // TODO: Add support of project reference
-      var path          = r.Path;
-      var projectPath   = r.ContainingProject.FullName;
-      var projectId     = new ProjectId(_stringManager.GetId(projectPath));
-      if (!_referenceMap.TryGetValue(projectId, out var references))
-        return;
-
-      if (string.IsNullOrEmpty(path))
-      {
-        Debug.WriteLine($"tr: Error: ReferenceAdded(FileName='null' Name={r.Name} projectId={projectId})");
-        return;
-      }
-
-      references.Add(path);
-
-      foreach (var server in _servers)
-        server.ReferenceAdded(projectId, path);
-
-      Debug.WriteLine($"tr: ReferenceAdded(FileName='{e.Reference.Path}' projectId={projectId})");
     }
 
     void SolutionEvents_OnBeforeCloseProject(object sender, CloseProjectEventArgs e)
@@ -577,65 +569,23 @@ namespace Nitra.VisualStudio
         server.BeforeCloseProject(id);
     }
 
-    static bool CanIncludeInProject(string action)
-    {
-      return action == "Compile" || action == "Nitra" || action == "None" || string.IsNullOrEmpty(action);
-    }
-
-    void FileAdded(object sender, HierarchyItemEventArgs e)
-    {
-      ThreadHelper.ThrowIfNotOnUIThread();
-
-      var action = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
-      var path   = e.FileName;
-
-      if (CanIncludeInProject(action))
-      {
-        object obj;
-        var hr2 = e.Hierarchy.GetProperty(e.ItemId, (int)__VSHPROPID.VSHPROPID_ExtObject, out obj);
-
-        if (ErrorHelper.Succeeded(hr2) && obj is ProjectItem projectItem && projectItem != null)
-        {
-          AddFile(projectItem, path);
-          Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
-          return;
-        }
-      }
-
-      Debug.WriteLine($"tr: FileAdded(BuildAction='{action}', FileName='{path}')");
-    }
-
     private void AddFile(ProjectItem projectItem, string path)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      var ext = Path.GetExtension(path);
-      var id = new FileId(_stringManager.GetId(path));
-      var project = projectItem.ContainingProject;
+      var ext         = Path.GetExtension(path);
+      var id          = new FileId(_stringManager.GetId(path));
+      var project     = projectItem.ContainingProject;
       var projectPath = project.FullName;
-      var projectId = new ProjectId(_stringManager.GetId(projectPath));
+      var projectId   = new ProjectId(_stringManager.GetId(projectPath));
+      var buildAction = projectItem.Properties.Item("BuildAction").Value;
+
+      Debug.WriteLine($"tr: AddFile(Name={projectItem.Name}, Id={id}, BuildAction='{buildAction}', FileName='{path}', Project={project.Name}, ProjectId={projectId})");
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
           server.FileAdded(projectId, path, id, new FileVersion(), null);
 
       return;
-    }
-
-    void FileDeleted(object sender, HierarchyItemEventArgs e)
-    {
-      var path      = e.FileName;
-      var ext       = Path.GetExtension(path);
-      var id        = new FileId(_stringManager.GetId(path));
-      var action    = e.Hierarchy.GetProp<string>(e.ItemId, __VSHPROPID4.VSHPROPID_BuildAction);
-      var project   = e.Hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
-      var projectId = GetProjectId(project);
-
-      if (CanIncludeInProject(action))
-        foreach (var server in _servers)
-          if (server.IsSupportedExtension(ext))
-            server.FileUnloaded(projectId, id);
-
-      Debug.WriteLine($"tr: FileAdded(FileName='{path}' id={id})");
     }
 
     void AfterOpeningChildren(object sender, HierarchyEventArgs e)

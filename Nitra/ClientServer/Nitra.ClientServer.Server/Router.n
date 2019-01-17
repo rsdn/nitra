@@ -33,7 +33,6 @@ namespace Nitra.ClientServer.Server
             _asyncResponseWriter        : IO.BinaryWriter;
             _responseWriter             : IO.BinaryWriter;
     public  SpanClassesManager          : SpanClassesManager;
-    mutable _stopped                    : bool;
     mutable _solution                   : Solution;
     mutable _projectLoadingCts          : CancellationTokenSource;
     public  PrettyPrintState            : PrettyPrintState { get; private set; }
@@ -142,21 +141,21 @@ namespace Nitra.ClientServer.Server
 
     public Wait() : void
     {
-      unless (_stopped)
+      unless (_mainQueue.IsCompleted)
       {
         _mainThread.Join();
+        _mainQueue.CompleteAdding();
         _cts.Dispose();
         foreach(worker in _parseWorkers)
           worker.Dispose();
         _parseQueue.Dispose();
-        _stopped = true;
       }
     }
 
     public AddMessage(msg : RouterMessage): void
     {
-      unless (_stopped)
-        _mainQueue.Add(msg)
+      unless (_mainQueue.IsCompleted)
+        _mainQueue.Add(msg);
     }
 
     GetLibsMetadata(libs : ImmutableArray[string]) : void

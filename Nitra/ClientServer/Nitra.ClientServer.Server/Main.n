@@ -23,7 +23,9 @@ module Program
   {
     Log.Init("Nitra.ClientServer.Server");
     Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
+#if !NOSERVERWINDOW
     //assert2(false, "Start debugger");
+#endif
 
     when (args.Length != 1)
     {
@@ -74,7 +76,8 @@ module Program
             catch
             {
               | _ is EndOfStreamException when !requestPipe.IsConnected =>
-                Log.Message("Session has been terminated.");
+                Log.Message("The main pipe reader session has been terminated.");
+                router.AddMessage(ClientMessage.Shutdown());
                 return;
               | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
             }

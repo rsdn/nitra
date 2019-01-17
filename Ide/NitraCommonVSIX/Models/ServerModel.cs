@@ -188,6 +188,19 @@ namespace Nitra.VisualStudio
       }
     }
 
+    internal void FileRenamed(FileId oldFileId, FileId newFileId, string newFilePath)
+    {
+      Debug.Assert(IsSolutionCreated);
+      var fileModel = FindFileModel(oldFileId);
+      if (fileModel != null)
+      {
+        _filIdToFileModelMap.Remove(fileModel.Id);
+        fileModel.Rename(newFileId, newFilePath);
+        _filIdToFileModelMap.Add(fileModel.Id, fileModel);
+      }
+      Client.Send(new ClientMessage.FileRenamed(oldFileId, newFileId, newFilePath));
+    }
+
     internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version, string contentOpt)
     {
       Debug.Assert(IsSolutionCreated);
@@ -196,15 +209,28 @@ namespace Nitra.VisualStudio
 
     internal void FileUnloaded(ProjectId projectId, FileId id)
     {
+      RemoveFileModel(id);
+      //Client.Send(new ClientMessage.FileUnloaded(projectId, id));
+    }
+
+    private FileModel FindFileModel(FileId id)
+    {
       foreach (var fileModel in _fileModels)
-      {
         if (fileModel.Id == id)
-        {
-          fileModel.Remove();
-          return;
-        }
+          return fileModel;
+
+      return null;
+    }
+
+    private void RemoveFileModel(FileId id)
+    {
+      var fileModel = FindFileModel(id);
+      if (fileModel != null)
+      {
+        fileModel.Remove();
+        _fileModels.Remove(fileModel);
+        _filIdToFileModelMap.Remove(fileModel.Id);
       }
-      Client.Send(new ClientMessage.FileUnloaded(projectId, id));
     }
 
     internal void ViewActivated(IWpfTextView wpfTextView, FileId id, IVsHierarchy hierarchy, string fullPath)
