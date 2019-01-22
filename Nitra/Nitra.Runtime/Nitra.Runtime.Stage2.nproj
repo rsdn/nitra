@@ -11,4 +11,7 @@
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
   </PropertyGroup>
   <Import Project="..\Nitra.Runtime\Nitra.Runtime.nproj" />
+  <PropertyGroup>
+    <RunDebugger>true</RunDebugger>  
+  </PropertyGroup>
 </Project>

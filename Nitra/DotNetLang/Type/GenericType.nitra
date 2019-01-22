@@ -11,25 +11,27 @@ using SCG = System.Collections.Generic;
 namespace DotNet
 {
 
-  abstract declaration GenericEntity : BindableAst
+  abstract declaration GenericEntity : BindableAst, Container
   {
     symbol
     {
-      out TypeParametersCount : int = AstUtils.GetTypeParametersCount(this.FirstDeclarationOrDefault);
-      out TypeParameters      : ImmutableArray[TypeSymbol] = AstUtils.CreateTypeParameters(TypeParametersCount);
+      in TypeParametersCount : int;
+      in TypeParameters      : ImmutableArray[TypeSymbol];
     }
 
 
     // Local scope. Type parameters can have different names. We should use alias to reflect it.
     out TypeParameterAliasesScope : TableScope = TableScope("type parameters");
 
-    TypeParameterAliases.TypeParameterSymbols  = Symbol.TypeParameters;
-    TypeParameterAliases.IndexIn               = 0;
-    TypeParameterAliases.ContainingTable       = TypeParameterAliasesScope;
-    TypeParameterAliases.Scope                 = Scope;
-    TypeParameterConstraints.Scope             = Scope.HideWith(TypeParameterAliasesScope);
+    Symbol.TypeParametersCount                      = TypeParameterAliases.Count;
+    Symbol.TypeParameters                           = AstUtils.CreateTypeParameters(context, Symbol.MemberTable, TypeParameterAliases);
+    TypeParameterAliases.TypeParameterSymbols       = Symbol.TypeParameters;
+    TypeParameterAliases.IndexIn                    = 0;
+    TypeParameterAliases.ContainingTable            = TypeParameterAliasesScope;
+    TypeParameterAliases.Scope                      = Scope;
+    TypeParameterConstraints.Scope                  = Scope.HideWith(TypeParameterAliasesScope);
     TypeParameterConstraints.ConstraintedParameters = SCG.HashSet();
-    TypeParameterAliases.DeclaringMember       = Symbol;
+    TypeParameterAliases.DeclaringMember            = Symbol;
 
     TypeParameterAliases     : TypeParameterAlias*;
     TypeParameterConstraints : TypeParameterConstraintsClause*;

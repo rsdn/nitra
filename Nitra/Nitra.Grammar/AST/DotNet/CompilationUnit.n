@@ -551,12 +551,11 @@ namespace DotNet
           def name          = NRB.Name(loc, "#Tuple");
           def symbol        = ExternalTypeDeclaration.[TypeAliasSymbol](name, realDecl.NemerleTypeInfo).DefineSymbol(declaredIn.MemberTable);
           symbol.TypeParametersCount = i;
-          symbol.TypeParameters      = AstUtils.CreateTypeParameters(i);
+          symbol.TypeParameters      = realSymbol.TypeParameters;
           symbol.DeclaredIn          = declaredIn;
           symbol.EvalProperties(context);
         }
       }
-
 
       makeTuples();
 

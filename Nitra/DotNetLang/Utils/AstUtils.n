@@ -308,15 +308,23 @@ namespace DotNet
 
     public NoTypeParameters : array[TypeParameterSymbol] = array(0);
 
-    public CreateTypeParameters(count : int) : ImmutableArray[TypeSymbol]
+    public CreateTypeParameters(context : DependentPropertyEvalContext, table : TableScope, aliases : DotNet.TypeParameterAlias.IAstList) : ImmutableArray[TypeSymbol]
     {
+      def count : int = aliases.Count;
       if (count == 0)
         ImmutableArray.Empty
       else
       {
         def result = ImmutableArray.CreateBuilder(count);
         for (mutable i = 0; i < count; ++i)
-          result.Add(TypeParameterSymbol());
+        {
+          def alias  = aliases[i];
+          def name   = Name(alias.Name.Location);
+          // TODO: Подумать не надо ли собрать все атрибуты, со всех частей вместо использования первого попавшегося alias.Attributes
+          def decl   = TypeParameter(alias.Location, name, alias.Attributes, false);
+          def symbol = table.Define(decl, context);
+          result.Add(symbol);
+        }
         result.MoveToImmutable()
       }
     }
