@@ -244,6 +244,9 @@
     <Compile Include="Type\TypeAlias.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\Typed.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\TypedAst.nitra">
       <SubType>Code</SubType>
     </Compile>

@@ -2,15 +2,16 @@
 
 namespace DotNet
 {
-  abstract declaration Functional : Parameterizable
+  abstract declaration Functional : Parameterizable, Typed
   {
     symbol
     {
-      in ReturnType : TypeSymbol;
-      in Type       : FunctionTypeSymbol = FunctionTypeSymbol();
+      in ReturnType   : TypeSymbol;
+      in FunctionType : FunctionTypeSymbol = FunctionTypeSymbol();
 
-      Type.Return     = ReturnType;
-      Type.Parameters = AstUtils.MapParametersToTypes(Parameters, ReturnType);
+      Type                    = FunctionType;
+      FunctionType.Return     = ReturnType;
+      FunctionType.Parameters = AstUtils.MapParametersToTypes(Parameters, ReturnType);
     }
   }
 }
