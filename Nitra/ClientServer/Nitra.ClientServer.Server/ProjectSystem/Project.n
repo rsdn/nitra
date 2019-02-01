@@ -7,8 +7,8 @@ using Nemerle.Utility;
 using Nitra.ClientServer.Messages;
 using Nitra.Declarations;
 using Nitra.Logging;
-
 using Nitra.Runtime.Reflection;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,8 +16,9 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 
 using NSP    = Nitra.ProjectSystem;
 using NCSSPS = Nitra.ClientServer.Server.ProjectSystem;
@@ -458,9 +459,15 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       TryStartSemanticAnalysis();
     }
     
+    [HandleProcessCorruptedStateExceptions]
     private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
     {
-      RefrashReference();
+      try
+        RefrashReference();
+        catch
+        {
+          | _ is System.AccessViolationException => Environment.Exit(-3); // The server will restart automatically.
+        }
     }
 
     public AddProjectReference(projectId : int, path : string) : void
