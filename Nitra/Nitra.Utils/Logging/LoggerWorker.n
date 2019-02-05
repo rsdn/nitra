@@ -20,6 +20,8 @@ namespace Nitra.Logging
   {
     class LoggerWorker : IDisposable
     {
+      public static SaveLogsCount = 3;
+      
       _queue   : BlockingCollection[string * ConsoleColor * bool] = BlockingCollection();
       _logFile : StreamWriter;
       _date    : string;
@@ -35,9 +37,23 @@ namespace Nitra.Logging
         def programDataPath  = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         _date                = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         def logDir           = Path.Combine(programDataPath, "RSDN", "Nitra");
-        def logPath          = Path.Combine(logDir, $"$_name-$_date.html");
-        unless (Directory.Exists(logDir))
-          _                  = Directory.CreateDirectory(logDir);
+        def logPath          = Path.Combine(logDir, $"$name-$_date.html");
+        if (Directory.Exists(logDir))
+        {
+          def files         = Directory.GetFiles(logDir, name + "-*.html");
+          def filesToDelete = files.OrderBy(f => f).Take(Math.Max(files.Length - SaveLogsCount, 0));
+          foreach (file in filesToDelete)
+          {
+            try
+            {
+              Console.WriteLine(file);
+              File.Delete(file);
+            }
+            catch { _ is IOException => () }
+          }
+        }
+        else
+          _ = Directory.CreateDirectory(logDir);
         _logFile             = StreamWriter(logPath);
         _thread              = Thread(ParseWorkerMain);
         _thread.Priority     = ThreadPriority.BelowNormal;
