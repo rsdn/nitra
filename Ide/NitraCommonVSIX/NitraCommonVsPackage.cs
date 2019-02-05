@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
+using Nitra.Logging;
 using Nitra.VisualStudio.Utils;
 using NitraCommonIde;
 
@@ -64,17 +65,17 @@ namespace Nitra.VisualStudio
 
     public static NitraCommonVsPackage Instance;
 
-    readonly Dictionary<ProjectId, HashSet<string>>      _referenceMap  = new Dictionary<ProjectId, HashSet<string>>();
-    readonly Dictionary<IVsHierarchy, HierarchyListener> _listenersMap  = new Dictionary<IVsHierarchy, HierarchyListener>();
-    readonly List<Project>                               _projects      = new List<Project>();
-    readonly List<ServerModel>                           _servers       = new List<ServerModel>();
-    readonly StringManager                               _stringManager = new StringManager();
+    readonly Dictionary<ProjectId, HashSet<string>> _referenceMap = new Dictionary<ProjectId, HashSet<string>>();
+    readonly Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
+    readonly List<Project> _projects = new List<Project>();
+    readonly List<ServerModel> _servers = new List<ServerModel>();
+    readonly StringManager _stringManager = new StringManager();
     RunningDocTableEvents _runningDocTableEventse;
-    ProjectItemsEvents    _prjItemsEvents;
-    uint                  _objectManagerCookie;
-    Library               _library;
-    SolutionLoadingSate   _backgroundLoading;
-    SolutionId            _currentSolutionId = InvalidSolutionId;
+    ProjectItemsEvents _prjItemsEvents;
+    uint _objectManagerCookie;
+    Library _library;
+    SolutionLoadingSate _backgroundLoading;
+    SolutionId _currentSolutionId = InvalidSolutionId;
 
     internal List<ServerModel> Servers { get => _servers; }
 
@@ -116,7 +117,7 @@ namespace Nitra.VisualStudio
       //Debug.Assert(false);
       // We must cache ProjectItemsEvents in a field to prevent free it by GC. Don't in-line the _prjItemsEvents!
       _prjItemsEvents = ((Events2)dte.Events).ProjectItemsEvents;
-      _prjItemsEvents.ItemAdded   += PrjItemsEvents_ItemAdded;
+      _prjItemsEvents.ItemAdded += PrjItemsEvents_ItemAdded;
       _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
       _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
 
@@ -148,8 +149,6 @@ namespace Nitra.VisualStudio
       ThreadHelper.ThrowIfNotOnUIThread();
 
       string fullPath = projectItem.FileNames[1];
-      //var ext = Path.GetExtension(fullPath);
-      //projectItem.Properties.Item("ItemType").Value = "MyOwnBuildActionChoice";
       AddFile(projectItem, fullPath);
     }
 
@@ -175,12 +174,12 @@ namespace Nitra.VisualStudio
     private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      var filePath    = (string)projectItem.Properties.Item("FullPath").Value;
-      var project     = projectItem.ContainingProject;
+      var filePath = (string)projectItem.Properties.Item("FullPath").Value;
+      var project = projectItem.ContainingProject;
       var projectPath = project.FullName;
-      var ext         = Path.GetExtension(filePath);
-      var id          = new FileId(_stringManager.GetId(filePath));
-      var projectId   = GetProjectId(project);
+      var ext = Path.GetExtension(filePath);
+      var id = new FileId(_stringManager.GetId(filePath));
+      var projectId = GetProjectId(project);
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
@@ -360,10 +359,28 @@ namespace Nitra.VisualStudio
 
       // scan only currently loaded projects
       foreach (var project in _projects)
-        ScanReferences(project);
+      {
+        try
+        {
+          ScanReferences(project);
+        }
+        catch (Exception ex)
+        {
+          Log.Exception(ex);
+        }
+      }
 
       foreach (var project in _projects)
-        ScanFiles(project);
+      {
+        try
+        {
+          ScanFiles(project);
+        }
+        catch (Exception ex)
+        {
+          Log.Exception(ex);
+        }
+      }
 
       foreach (var project in _projects)
         foreach (var server in _servers)
@@ -376,8 +393,7 @@ namespace Nitra.VisualStudio
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
-      Debug.WriteLine("tr: ScanReferences(started)");
-      Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
+      Debug.WriteLine($"tr: ScanReferences(started) Project='{project.Name}'");
 
       if (project.Object is VSProject vsproject)
       {
@@ -429,8 +445,11 @@ namespace Nitra.VisualStudio
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
-      Debug.WriteLine("tr: ScanReferences(started)");
-      Debug.WriteLine($"tr:  Project: Project='{project.Name}'");
+      Debug.WriteLine($"tr: ScanFiles(started) Project='{project.Name}'");
+
+      if (project.Name == "Autotest.Kis.Tdl.BvtPvt")
+      {
+      }
 
       if (project.Object is VSProject vsproject)
       {
@@ -443,16 +462,20 @@ namespace Nitra.VisualStudio
       else
         Debug.WriteLine("tr:    Error: project.Object=null");
 
-      Debug.WriteLine("tr: ScanReferences(finished)");
+      Debug.WriteLine("tr: ScanFiles(finished)");
     }
 
     private void ScanFiles(Project project, ProjectItems projectItems)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
+      Debug.WriteLine($"tr:    ScanFiles(ProjectItem: Project={project.Name})");
+
       foreach (ProjectItem item in projectItems)
       {
-        var filePath = (string)item.Properties.Item("FullPath").Value;
+        //var filePath = (string)item.Properties.Item("FullPath").Value;
+        var filePath = item.FileNames[1];
+        Debug.WriteLine($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind}");
 
         if (new Guid(item.Kind) == VSConstants.GUID_ItemType_PhysicalFile)
         {
@@ -462,8 +485,8 @@ namespace Nitra.VisualStudio
         if (item.ProjectItems?.Count > 0)
           ScanFiles(project, item.ProjectItems);
 
-        //Debug.WriteLine($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind} ExtenderCATID={item.ExtenderCATID} ExtenderCATID={item.ExtenderCATID}");
       }
+      Debug.WriteLine($"tr:    ScanFiles finished!");
     }
 
     ProjectId GetProjectId(Project project)
@@ -552,13 +575,13 @@ namespace Nitra.VisualStudio
         _listenersMap.Remove(hierarchy);
       }
 
-      var project   = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
+      var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
 
       if (project == null)
         return;
 
-      var path      = project.FullName;
-      var id        = new ProjectId(_stringManager.GetId(path));
+      var path = project.FullName;
+      var id = new ProjectId(_stringManager.GetId(path));
 
       _projects.Remove(project);
       _referenceMap.Remove(id);
@@ -577,9 +600,8 @@ namespace Nitra.VisualStudio
       var project     = projectItem.ContainingProject;
       var projectPath = project.FullName;
       var projectId   = new ProjectId(_stringManager.GetId(projectPath));
-      var buildAction = projectItem.Properties.Item("BuildAction").Value;
 
-      Debug.WriteLine($"tr: AddFile(Name={projectItem.Name}, Id={id}, BuildAction='{buildAction}', FileName='{path}', Project={project.Name}, ProjectId={projectId})");
+      Debug.WriteLine($"tr: AddFile(Name={projectItem.Name}, Id={id}, FileName='{path}', Project={project.Name}, ProjectId={projectId})");
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
@@ -637,16 +659,16 @@ namespace Nitra.VisualStudio
 
     void DocumentWindowOnScreenChanged(object sender, DocumentWindowOnScreenChangedEventArgs e)
     {
-      var fullPath    = e.Info.FullPath;
-      var ext         = Path.GetExtension(fullPath);
-      var id          = new FileId(_stringManager.GetId(fullPath));
+      var fullPath = e.Info.FullPath;
+      var ext = Path.GetExtension(fullPath);
+      var id = new FileId(_stringManager.GetId(fullPath));
       var windowFrame = e.Info.WindowFrame;
-      var vsTextView  = VsShellUtilities.GetTextView(windowFrame);
+      var vsTextView = VsShellUtilities.GetTextView(windowFrame);
       var wpfTextView = vsTextView.ToIWpfTextView();
       if (wpfTextView == null)
         return;
-      var dispatcher  = wpfTextView.VisualElement.Dispatcher;
-      var hierarchy   = windowFrame.GetHierarchyFromVsWindowFrame();
+      var dispatcher = wpfTextView.VisualElement.Dispatcher;
+      var hierarchy = windowFrame.GetHierarchyFromVsWindowFrame();
 
       if (e.OnScreen)
       {
@@ -677,65 +699,65 @@ namespace Nitra.VisualStudio
 
     void SubscibeToSolutionEvents()
     {
-      SolutionEvents.OnAfterAsynchOpenProject               += AfterAsynchOpenProject;
-      SolutionEvents.OnAfterBackgroundSolutionLoadComplete  += AfterBackgroundSolutionLoadComplete;
-      SolutionEvents.OnAfterChangeProjectParent             += AfterChangeProjectParent;
-      SolutionEvents.OnAfterCloseSolution                   += AfterCloseSolution;
-      SolutionEvents.OnAfterClosingChildren                 += AfterClosingChildren;
-      SolutionEvents.OnAfterLoadProject                     += AfterLoadProject;
-      SolutionEvents.OnAfterLoadProjectBatch                += AfterLoadProjectBatch;
-      SolutionEvents.OnAfterMergeSolution                   += SolutionEvents_OnAfterMergeSolution;
-      SolutionEvents.OnAfterOpeningChildren                 += AfterOpeningChildren;
-      SolutionEvents.OnAfterOpenProject                     += AfterOpenProject;
-      SolutionEvents.OnAfterOpenSolution                    += AfterOpenSolution;
-      SolutionEvents.OnAfterRenameProject                   += AfterRenameProject;
-      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins   += BeforeBackgroundSolutionLoadBegins;
-      SolutionEvents.OnBeforeCloseProject                   += SolutionEvents_OnBeforeCloseProject;
-      SolutionEvents.OnBeforeCloseSolution                  += BeforeCloseSolution;
-      SolutionEvents.OnBeforeClosingChildren                += BeforeClosingChildren;
-      SolutionEvents.OnBeforeLoadProjectBatch               += BeforeLoadProjectBatch;
-      SolutionEvents.OnBeforeOpeningChildren                += BeforeOpeningChildren;
-      SolutionEvents.OnBeforeOpenProject                    += BeforeOpenProject;
-      SolutionEvents.OnBeforeOpenSolution                   += BeforeOpenSolution;
-      SolutionEvents.OnBeforeUnloadProject                  += BeforeUnloadProject;
-      SolutionEvents.OnQueryBackgroundLoadProjectBatch      += QueryBackgroundLoadProjectBatch;
-      SolutionEvents.OnQueryChangeProjectParent             += QueryChangeProjectParent;
-      SolutionEvents.OnQueryCloseProject                    += QueryCloseProject;
-      SolutionEvents.OnQueryCloseSolution                   += SolutionEvents_OnQueryCloseSolution;
-      SolutionEvents.OnQueryUnloadProject                   += QueryUnloadProject;
+      SolutionEvents.OnAfterAsynchOpenProject += AfterAsynchOpenProject;
+      SolutionEvents.OnAfterBackgroundSolutionLoadComplete += AfterBackgroundSolutionLoadComplete;
+      SolutionEvents.OnAfterChangeProjectParent += AfterChangeProjectParent;
+      SolutionEvents.OnAfterCloseSolution += AfterCloseSolution;
+      SolutionEvents.OnAfterClosingChildren += AfterClosingChildren;
+      SolutionEvents.OnAfterLoadProject += AfterLoadProject;
+      SolutionEvents.OnAfterLoadProjectBatch += AfterLoadProjectBatch;
+      SolutionEvents.OnAfterMergeSolution += SolutionEvents_OnAfterMergeSolution;
+      SolutionEvents.OnAfterOpeningChildren += AfterOpeningChildren;
+      SolutionEvents.OnAfterOpenProject += AfterOpenProject;
+      SolutionEvents.OnAfterOpenSolution += AfterOpenSolution;
+      SolutionEvents.OnAfterRenameProject += AfterRenameProject;
+      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins += BeforeBackgroundSolutionLoadBegins;
+      SolutionEvents.OnBeforeCloseProject += SolutionEvents_OnBeforeCloseProject;
+      SolutionEvents.OnBeforeCloseSolution += BeforeCloseSolution;
+      SolutionEvents.OnBeforeClosingChildren += BeforeClosingChildren;
+      SolutionEvents.OnBeforeLoadProjectBatch += BeforeLoadProjectBatch;
+      SolutionEvents.OnBeforeOpeningChildren += BeforeOpeningChildren;
+      SolutionEvents.OnBeforeOpenProject += BeforeOpenProject;
+      SolutionEvents.OnBeforeOpenSolution += BeforeOpenSolution;
+      SolutionEvents.OnBeforeUnloadProject += BeforeUnloadProject;
+      SolutionEvents.OnQueryBackgroundLoadProjectBatch += QueryBackgroundLoadProjectBatch;
+      SolutionEvents.OnQueryChangeProjectParent += QueryChangeProjectParent;
+      SolutionEvents.OnQueryCloseProject += QueryCloseProject;
+      SolutionEvents.OnQueryCloseSolution += SolutionEvents_OnQueryCloseSolution;
+      SolutionEvents.OnQueryUnloadProject += QueryUnloadProject;
 
       _runningDocTableEventse.DocumentWindowOnScreenChanged += DocumentWindowOnScreenChanged;
-      _runningDocTableEventse.DocumentWindowDestroy         += DocumentWindowDestroy;
+      _runningDocTableEventse.DocumentWindowDestroy += DocumentWindowDestroy;
     }
 
     void UnsubscibeToSolutionEvents()
     {
-      SolutionEvents.OnAfterAsynchOpenProject              -= AfterAsynchOpenProject;
+      SolutionEvents.OnAfterAsynchOpenProject -= AfterAsynchOpenProject;
       SolutionEvents.OnAfterBackgroundSolutionLoadComplete -= AfterBackgroundSolutionLoadComplete;
-      SolutionEvents.OnAfterChangeProjectParent            -= AfterChangeProjectParent;
-      SolutionEvents.OnAfterCloseSolution                  -= AfterCloseSolution;
-      SolutionEvents.OnAfterClosingChildren                -= AfterClosingChildren;
-      SolutionEvents.OnAfterLoadProject                    -= AfterLoadProject;
-      SolutionEvents.OnAfterLoadProjectBatch               -= AfterLoadProjectBatch;
-      SolutionEvents.OnAfterMergeSolution                  -= SolutionEvents_OnAfterMergeSolution;
-      SolutionEvents.OnAfterOpeningChildren                -= AfterOpeningChildren;
-      SolutionEvents.OnAfterOpenProject                    -= AfterOpenProject;
-      SolutionEvents.OnAfterOpenSolution                   -= AfterOpenSolution;
-      SolutionEvents.OnAfterRenameProject                  -= AfterRenameProject;
-      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins  -= BeforeBackgroundSolutionLoadBegins;
-      SolutionEvents.OnBeforeCloseProject                  -= SolutionEvents_OnBeforeCloseProject;
-      SolutionEvents.OnBeforeCloseSolution                 -= BeforeCloseSolution;
-      SolutionEvents.OnBeforeClosingChildren               -= BeforeClosingChildren;
-      SolutionEvents.OnBeforeLoadProjectBatch              -= BeforeLoadProjectBatch;
-      SolutionEvents.OnBeforeOpeningChildren               -= BeforeOpeningChildren;
-      SolutionEvents.OnBeforeOpenProject                   -= BeforeOpenProject;
-      SolutionEvents.OnBeforeOpenSolution                  -= BeforeOpenSolution;
-      SolutionEvents.OnBeforeUnloadProject                 -= BeforeUnloadProject;
-      SolutionEvents.OnQueryBackgroundLoadProjectBatch     -= QueryBackgroundLoadProjectBatch;
-      SolutionEvents.OnQueryChangeProjectParent            -= QueryChangeProjectParent;
-      SolutionEvents.OnQueryCloseProject                   -= QueryCloseProject;
-      SolutionEvents.OnQueryCloseSolution                  -= SolutionEvents_OnQueryCloseSolution;
-      SolutionEvents.OnQueryUnloadProject                  -= QueryUnloadProject;
+      SolutionEvents.OnAfterChangeProjectParent -= AfterChangeProjectParent;
+      SolutionEvents.OnAfterCloseSolution -= AfterCloseSolution;
+      SolutionEvents.OnAfterClosingChildren -= AfterClosingChildren;
+      SolutionEvents.OnAfterLoadProject -= AfterLoadProject;
+      SolutionEvents.OnAfterLoadProjectBatch -= AfterLoadProjectBatch;
+      SolutionEvents.OnAfterMergeSolution -= SolutionEvents_OnAfterMergeSolution;
+      SolutionEvents.OnAfterOpeningChildren -= AfterOpeningChildren;
+      SolutionEvents.OnAfterOpenProject -= AfterOpenProject;
+      SolutionEvents.OnAfterOpenSolution -= AfterOpenSolution;
+      SolutionEvents.OnAfterRenameProject -= AfterRenameProject;
+      SolutionEvents.OnBeforeBackgroundSolutionLoadBegins -= BeforeBackgroundSolutionLoadBegins;
+      SolutionEvents.OnBeforeCloseProject -= SolutionEvents_OnBeforeCloseProject;
+      SolutionEvents.OnBeforeCloseSolution -= BeforeCloseSolution;
+      SolutionEvents.OnBeforeClosingChildren -= BeforeClosingChildren;
+      SolutionEvents.OnBeforeLoadProjectBatch -= BeforeLoadProjectBatch;
+      SolutionEvents.OnBeforeOpeningChildren -= BeforeOpeningChildren;
+      SolutionEvents.OnBeforeOpenProject -= BeforeOpenProject;
+      SolutionEvents.OnBeforeOpenSolution -= BeforeOpenSolution;
+      SolutionEvents.OnBeforeUnloadProject -= BeforeUnloadProject;
+      SolutionEvents.OnQueryBackgroundLoadProjectBatch -= QueryBackgroundLoadProjectBatch;
+      SolutionEvents.OnQueryChangeProjectParent -= QueryChangeProjectParent;
+      SolutionEvents.OnQueryCloseProject -= QueryCloseProject;
+      SolutionEvents.OnQueryCloseSolution -= SolutionEvents_OnQueryCloseSolution;
+      SolutionEvents.OnQueryUnloadProject -= QueryUnloadProject;
     }
   }
 }
