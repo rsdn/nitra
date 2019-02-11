@@ -329,7 +329,32 @@ namespace Nitra.ClientServer.Messages
 
     public CompareTo(other : CompilerMessage) : int
     {
-      this.Location.CompareTo(other.Location)
+      def result1 = this.Location.CompareTo(other.Location);
+      when (result1 != 0)
+        return result1;
+
+      def result2 = Type :> int - other.Type :> int;
+      when (result2 != 0)
+        return result2;
+
+      string.Compare(Text, other.Text, StringComparison.Ordinal)
+    }
+
+    [OverrideObjectEquals]
+    Equals(other : CompilerMessage) : bool
+    {
+      when (!this.Location.Equals(other.Location))
+        return false;
+
+      when (Type != other.Type)
+        return false;
+
+      string.Equals(Text, other.Text)
+    }
+
+    public override GetHashCode() : int
+    {
+      this.Location.GetHashCode() ^ Type :> int ^ Text.GetHashCode()
     }
   }
 
