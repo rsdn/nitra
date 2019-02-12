@@ -10,20 +10,25 @@ namespace DotNet
   {
     symbol
     {
+      in Modifier   : ParameterModifier;
+      in Index      : uint;
+      in Default    : DefaultValue;
+      in DeclaredIn : DeclarationSymbol;
+
+      DeclaredInOpt = VSome(DeclaredIn);
+
       // TODO: add support of optional, custom modifiers, index and default value
       Kind      = "parameter";
       SpanClass = DotNetLang.ParameterSpanClass;
-
-      in Modifier : ParameterModifier;
-      in Index    : uint;
-      in Default  : DefaultValue;
     }
 
     inout Index      : uint;
     inout Parameters : list[FormalParameterSymbol];
+    in    DeclaredIn : DeclarationSymbol;
   stage 1:
     inout Types      : list[TypeSymbol];
 
+    Symbol.DeclaredIn    = DeclaredIn;
     IndexOut             = IndexIn + 1u;
     Type.Scope           = Scope;
     TypeRef              = Type.Ref.Resolve();
