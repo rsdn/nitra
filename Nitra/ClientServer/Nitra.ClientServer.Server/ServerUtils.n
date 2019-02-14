@@ -119,8 +119,12 @@ namespace Nitra.ClientServer.Server
     public GetCoreCount() : int
     {
       mutable coreCount = 0;
-      foreach (item in System.Management.ManagementObjectSearcher("Select * from Win32_Processor").Get())
-        coreCount += int.Parse(item["NumberOfCores"].ToString());
+      try
+      {
+        foreach (item in System.Management.ManagementObjectSearcher("Select * from Win32_Processor").Get())
+          coreCount += int.Parse(item["NumberOfCores"].ToString());
+      }
+      catch { _ => coreCount = Environment.ProcessorCount; }
       coreCount
     }
 
