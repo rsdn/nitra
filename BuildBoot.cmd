@@ -14,9 +14,7 @@ if defined Value (
 call "%Value%Common7\Tools\VsDevCmd.bat"
 set NoPause=true
 
-MSBuild.exe %~dp0\Common\BootTasks.proj /t:BuildBoot /tv:4.0 /bl:%~dp0\Boot2\BootTasks.binlog;ProjectImports=Embed
-
-IF %errorlevel% == 0 call Reg-bins-VS2015.cmd
+MSBuild.exe %~dp0\Common\BootTasks.proj /t:BuildBoot /bl:%~dp0\Boot2\BootTasks.binlog;ProjectImports=Embed
 ) else (
 @echo %KEY_NAME%\%VALUE_NAME% not found.
 )
