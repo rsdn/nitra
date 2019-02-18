@@ -300,25 +300,21 @@ namespace Nitra.Declarations
     protected ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
     {
       def e = vars.GetEnumerator();
-      when (e.MoveNext())
+      while (e.MoveNext())
       {
-        do
-        {
-          def var                   = e.Current;
-          def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
-          def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
+        def var                   = e.Current;
+        def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
+        def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
 
-          var.ResetProperties();
+        var.ResetProperties();
 
-          when (baseTypeConstraint : object != null)
-            var.BaseTypeConstraint = baseTypeConstraint;
+        when (baseTypeConstraint : object != null)
+          var.BaseTypeConstraint = baseTypeConstraint;
 
-          when (derivedTypeConstraint : object != null)
-            var.DerivedTypeConstraint = derivedTypeConstraint;
+        when (derivedTypeConstraint : object != null)
+          var.DerivedTypeConstraint = derivedTypeConstraint;
 
-          var.EvalProperties(_typeVarInitContext);
-        }
-        while (e.MoveNext())
+        var.EvalProperties(_typeVarInitContext);
       }
     }
   }

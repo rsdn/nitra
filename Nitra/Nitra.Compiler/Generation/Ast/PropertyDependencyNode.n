@@ -150,7 +150,7 @@ namespace Nitra.Compiler
       mutable isCycled = false;
       def components = GraphAlgorithms.FindStronglyConnectedComponents(graph).ToArray();
 
-      foreach (component when component.Nodes.Count > 1 in components)
+      foreach (component when component.IsNonTrivial() in components)
       {
         isCycled = true;
 

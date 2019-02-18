@@ -784,7 +784,7 @@ namespace Nitra.Compiler
     private CheckLoopsAndReport(dependencyGraph : PropertyDependencyGraph) : void
     {
       def components = GraphAlgorithms.FindStronglyConnectedComponents(dependencyGraph.Nodes.Values).ToArray();
-      foreach (component when component.Nodes.Count > 1 in components)
+      foreach (component when component.IsNonTrivial() in components)
       {
         surroundwith (related_messages)
         {

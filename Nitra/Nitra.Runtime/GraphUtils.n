@@ -43,6 +43,7 @@ namespace Nitra.Runtime.GraphUtils
     where GraphNodeGroupType : GraphNodeGroup[NodeType, GraphNodeGroupType]
   {
     public Nodes : LightList[NodeType] { get; private set; }
+
     public Add(node : NodeType) : void
     {
       def tmp = Nodes;
@@ -72,6 +73,20 @@ namespace Nitra.Runtime.GraphUtils
       {
         Node = node;
       }
+    }
+
+    public IsNonTrivial[NodeType, GroupType](this group : GroupType) : bool
+      where NodeType  : IGraphNode[NodeType]
+      where GroupType : GraphNodeGroup[NodeType, GroupType]
+    {
+      def nodes = group.Nodes;
+      if (nodes.Count == 1)
+      {
+        def node = nodes.FirstItem;
+        node.Connections.Contains(node)
+      }
+      else
+        nodes.Count > 1
     }
 
     // In the mathematical theory of directed graphs, a graph is said to be strongly connected
