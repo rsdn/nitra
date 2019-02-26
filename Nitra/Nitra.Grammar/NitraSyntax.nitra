@@ -1231,7 +1231,8 @@ syntax module NitraSyntax : NitraLang
   {
     [Cached] MakeContext(parent : Context) : Context;
     [Cached] MakeType(ruleSymbol : SyntaxRuleSymbol, typeHintOpt : ValueOption[AstType]) : SyntaxMappingType;
-    Expression(ruleSymbol : SyntaxRuleSymbol, astType : AstType) : SyntaxMappingExpr = SyntaxMappingTyper.MakeExpression(MakeType(ruleSymbol, VSome(astType)), astType, this.Context);
+    Expression(ruleSymbol : SyntaxRuleSymbol, astType : AstType, ntype : ValueOption[NType]) : SyntaxMappingExpr =
+      SyntaxMappingTyper.MakeExpression(MakeType(ruleSymbol, VSome(astType)), astType, ntype, this.Context);
 
     | Braces = "(" Expr=MapSyntaxExpression ")"
       {
@@ -1332,9 +1333,10 @@ syntax module NitraSyntax : NitraLang
       }
     | DefineVariable = "let" sm Name sm ":" sm NitraType sm "=" sm Expr=MapSyntaxExpression sm "in" nl Body=MapSyntaxExpression
       {
+        [Cached] MakeNType() : NType = this.NitraType.Typing(this.Context)[0];
         [Cached] MakeVariableSymbol() : AstVariableSymbol = ParsedAstVariableSymbol(this);
-        [Cached] MakeVariableType() : AstType = TypingUtils.NTypeToAstTypeWithMessage(this.NitraType, this.Context);
-        [Cached] MakeVariableExpression(ruleSymbol : SyntaxRuleSymbol) : SyntaxMappingExpr = Expr.Expression(ruleSymbol, MakeVariableType());
+        [Cached] MakeVariableType() : AstType = TypingUtils.NTypeToAstTypeWithMessage(MakeNType(), this.Context);
+        [Cached] MakeVariableExpression(ruleSymbol : SyntaxRuleSymbol) : SyntaxMappingExpr = Expr.Expression(ruleSymbol, MakeVariableType(), VSome(MakeNType()));
         override MakeContext
         {
           def context = AstVariableContext(parent, MakeVariableSymbol());
@@ -1383,14 +1385,8 @@ syntax module NitraSyntax : NitraLang
         {
           match (TypingUtils.BindProperty(astSymbol, this.AstPropertyName, this.Context))
           {
-            | SymbolRef.Some(StructuralPropertySymbol(AstType = Void) as p) =>
-              def name = p.Name;
-              def type = p.Type;
-              this.Context.Error(this, $"Type '$type' of property '$name' is not AST.");
-              VNone()
-
             | SymbolRef.Some(StructuralPropertySymbol as p) =>
-              def expr = this.Expr.Expression(ruleSymbol, p.AstType);
+              def expr = this.Expr.Expression(ruleSymbol, p.AstType, VSome(p.Type));
               VSome(SyntaxMappingField(this.Location, p, expr))
 
             | SymbolRef.Some =>
@@ -1488,7 +1484,7 @@ syntax module NitraSyntax : NitraLang
             null
           }
           else
-            this.Expr.Expression(syntaxMapping.DeclaringRule, returnType)
+            this.Expr.Expression(syntaxMapping.DeclaringRule, returnType, VNone())
         }
       }
     | Expression2 = sm "->" inl Expr=MapSyntaxExpression nl d
@@ -1502,7 +1498,7 @@ syntax module NitraSyntax : NitraLang
             null
           }
           else
-            this.Expr.Expression(syntaxMapping.DeclaringRule, returnType)
+            this.Expr.Expression(syntaxMapping.DeclaringRule, returnType, VNone())
         }
       }
     | Inline = sm "=" inl Code=MapSyntaxCode d

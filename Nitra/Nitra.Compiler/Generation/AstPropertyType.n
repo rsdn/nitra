@@ -14,7 +14,7 @@ namespace Nitra.Compiler
     public Type : FixedType;
 
     | Ast
-    | ParsedValue
+    | ParsedValue { WrappedType : TypeVar }
     | Span
   }
 }

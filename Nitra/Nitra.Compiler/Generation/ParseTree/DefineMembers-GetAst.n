@@ -79,7 +79,7 @@ namespace Nitra.Compiler
             if (needsParseTreeCheck)
               compileAccess(qualifier, true, expr => checkParseTree(path.Type, Util.locate(loc, <[ $expr.$(name.Value : usesite) ]>), compile))
             else
-              compileAccess(qualifier, true, expr => compile(Util.locate(loc, <[ $expr.$(name.Value : usesite) ]>)))
+              compileAccess(qualifier, !astType.IsVoid, expr => compile(Util.locate(loc, <[ $expr.$(name.Value : usesite) ]>)))
         }
       }
 
@@ -420,6 +420,34 @@ namespace Nitra.Compiler
               def $(symbol.Name : usesite) : $(Environment.GetAstType(symbol.Type)) = $(CompileSyntaxMapping(symbol.Expr, loc.EnableTryEvalSpan()));
               $(CompileSyntaxMapping(body, loc))
             ]>
+
+          | ParsedValueOrSpan(path, targetType) =>
+            CompileParseTreeMemberAccess(path, AstType.Void(targetType), false, fun (obj)
+            {
+              def spanExpr = if (path.Type is RuleType.Chars) obj else <[ $obj.Span ]>;
+
+              match (this.TypeCompiler.CompileToAstPropertyType(targetType))
+              {
+                | Span => spanExpr
+                | ParsedValue(wrappedType) as t when Environment.StringTypeVar.TryUnify(wrappedType) =>
+                  <[
+                    def span = $(spanExpr);
+                    $(t.Type : typed)(span, GetText(span))
+                  ]>
+
+                | ParsedValue(wrappedType) as t =>
+                  <[
+                    def span = $(spanExpr);
+                    mutable value;
+                    if ($(wrappedType : typed).TryParse(GetText(span), out value))
+                      $(t.Type : typed)(span, value)
+                    else
+                      $(t.Type : typed)(span.StartPos)
+                  ]>
+
+                | Ast => assert(false, "Invalid ParsedValueOrSpan mapping.");
+              }
+            })
         }
       });
     }
