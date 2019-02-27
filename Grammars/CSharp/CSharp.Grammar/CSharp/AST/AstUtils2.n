@@ -246,17 +246,18 @@ namespace DotNet
     {
       match (symbol)
       {
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName
-        | x when x.FullName == context.GetVoidType().FullName => true
+        | null => false
+        | x when x.Id == context.GetPlatformType().SByte.Id
+        | x when x.Id == context.GetPlatformType().Int16.Id
+        | x when x.Id == context.GetPlatformType().Int32.Id
+        | x when x.Id == context.GetPlatformType().Int64.Id
+        | x when x.Id == context.GetPlatformType().UInt16.Id
+        | x when x.Id == context.GetPlatformType().UInt32.Id
+        | x when x.Id == context.GetPlatformType().UInt64.Id
+        | x when x.Id == context.GetPlatformType().Double.Id
+        | x when x.Id == context.GetPlatformType().Single.Id
+        | x when x.Id == context.GetPlatformType().Single.Id
+        | x when x.Id == context.GetPlatformType().Byte.Id => true
         | _ => false
       }
     }
