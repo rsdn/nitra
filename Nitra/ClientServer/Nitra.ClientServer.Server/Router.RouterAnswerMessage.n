@@ -49,6 +49,7 @@ namespace Nitra.ClientServer.Server
           return;
         def project = _solution[projectId];
         project.SemanticAnalysisFinished(files, completeWordFileIdOpt, completeWordPosOpt);
+      | ProjectReload(projectId) => _solution[projectId].Reload();
     }
   }
 }

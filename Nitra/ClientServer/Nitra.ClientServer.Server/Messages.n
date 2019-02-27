@@ -62,5 +62,6 @@ namespace Nitra.ClientServer.Server
         completeWordFileIdOpt : FileId;
         completeWordPosOpt    : int;
       }
+    | ProjectReload            { projectId : ProjectId; }
   }
 }

@@ -26,6 +26,13 @@ namespace CSharp
 {
   public partial class CompilationUnit : AstBase, IProjectSupport, NamespaceBody
   {
+    public Reset(project : Project) : void
+    {
+      def (backEnd, _, _) = DecomposeData(project.Data);
+      backEnd.Dispose();
+      project.Data = null;
+    }
+    
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParameters;

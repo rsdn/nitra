@@ -27,6 +27,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 {
   internal class Project : NSP.Project, IDisposable
   {
+    private static ReloadDelay = 5_000;
+
             _files                                   : Hashtable[int, File]   = Hashtable();
             _libMap                                  : Hashtable[string, int] = Hashtable();
             _libs                                    : List[NSP.LibReference] = List();
@@ -41,6 +43,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             _projectSupport                          : IProjectSupport;
             _extToLanguages                          : Dictionary[string, Nitra.Language * List[GrammarDescriptor]] = Dictionary(StringComparer.InvariantCultureIgnoreCase);
             _languageMap                             : Dictionary[string, Nitra.Language] = Dictionary(StringComparer.InvariantCultureIgnoreCase);
+            _refrashTimer                            : Timer;
     public  IsDisposed                               : bool                         { get; private set; }
     public  IsSemanticAvailable                      : bool                         { get; private set; }
     public  ParseQueue                               : BlockingCollection[ParserMessage];
@@ -51,21 +54,23 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
     public  IsCompleteWord                           : bool { get; set; }
+    
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
     {
+      _refrashTimer     = Timer(OnRefrashTimer, null, Timeout.Infinite, Timeout.Infinite);
       DependantProjects = [];
       DependsOnProjects = [];
-      ParseQueue    = parseQueue;
-      Path          = fullPath;
-      ProjectDir    = if (string.IsNullOrEmpty(fullPath)) "" else Path.GetDirectoryName(fullPath);
-      Id            = id;
-      Parent        = parent;
-      Solution      = parent;
-      Name          = Path.GetFileNameWithoutExtension(fullPath);
-      _config       = config;
-      Libs          = _libs;
-      Router        = router;
+      ParseQueue        = parseQueue;
+      Path              = fullPath;
+      ProjectDir        = if (string.IsNullOrEmpty(fullPath)) "" else Path.GetDirectoryName(fullPath);
+      Id                = id;
+      Parent            = parent;
+      Solution          = parent;
+      Name              = Path.GetFileNameWithoutExtension(fullPath);
+      _config           = config;
+      Libs              = _libs;
+      Router            = router;
 
       unless (config.ProjectSupport.IsNotSpecified)
       {
@@ -378,7 +383,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public AddSemanticAction(action : Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]) : void
     {
       if (IsSemanticAvailable)
+      {
+        when (_semanticAnalysisCancellationTokenSource == null)
+          _semanticAnalysisCancellationTokenSource = CancellationTokenSource();
         ParseQueue.Add(ParserMessage.SemanticAction(Parent.Id, action, _semanticAnalysisCancellationTokenSource.Token, GetAsts(_files.Values)));
+      }
       else
         SemanticActions.Enqueue(action);
     }
@@ -452,22 +461,53 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       TryStartSemanticAnalysis();
     }
 
+
+    private Reset() : void
+    {
+      CancelSemanticAnalysisCancellation();
+      CancelFindDeclarationsCancellation();
+      def projectSupport = this.GetProjectSupport();
+      when (projectSupport != null)
+        projectSupport.Reset(this);
+    }
+
+    public Reload() : void
+    {
+      when (IsDisposed)
+        return;
+        
+      try
+      {
+        IsSemanticAvailable = false;
+        Reset();
+        TryStartSemanticAnalysis()
+      }
+      catch
+      {
+        | _ is System.AccessViolationException => Environment.Exit(-3); // The server will restart automatically.
+      }
+    }
+
     private RefrashReference() : void
     {
-      IsSemanticAvailable = false;
-      this.Data = null;
-      TryStartSemanticAnalysis();
+      Reload();
+    }
+
+    private OnRefrashTimer(_ : object) : void
+    {
+      when (IsDisposed)
+        return;
+
+      Router.AddMessage(RouterAnswerMessage.ProjectReload(Id));
     }
     
     [HandleProcessCorruptedStateExceptions]
     private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
     {
-      try
-        RefrashReference();
-        catch
-        {
-          | _ is System.AccessViolationException => Environment.Exit(-3); // The server will restart automatically.
-        }
+      when (IsDisposed)
+        return;
+
+      _ = _refrashTimer.Change(ReloadDelay, Timeout.Infinite);
     }
 
     public AddProjectReference(projectId : int, path : string) : void
@@ -711,6 +751,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         disp.Dispose();
 
       IsDisposed = true;
+
+      _ = _refrashTimer.Change(Timeout.Infinite, Timeout.Infinite);
+      _refrashTimer.Dispose();
     }
 
     public override UpdateProperties(cancellationToken : CancellationToken) : void { IgnoreParams(); throw System.NotImplementedException() }
