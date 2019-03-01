@@ -477,9 +477,14 @@ namespace Nitra.VisualStudio
         var filePath = item.FileNames[1];
         Debug.WriteLine($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind}");
 
-        if (new Guid(item.Kind) == VSConstants.GUID_ItemType_PhysicalFile)
+        try
         {
-          AddFile(item, filePath);
+          if (Guid.TryParse(item.Kind, out var guid) && guid == VSConstants.GUID_ItemType_PhysicalFile)
+            AddFile(item, filePath);
+        }
+        catch (Exception ex)
+        {
+          Log.Exception(ex);
         }
 
         if (item.ProjectItems?.Count > 0)
