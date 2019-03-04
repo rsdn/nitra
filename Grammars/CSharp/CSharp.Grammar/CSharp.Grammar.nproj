@@ -76,6 +76,9 @@
     <Compile Include="CSharp\AST\CompilationUnit\CompilationUnit.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CSharp\AST\CompilationUnit\DotNetProjectData.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CSharp\AST\CsSpecificAst.nitra">
       <SubType>Code</SubType>
     </Compile>

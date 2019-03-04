@@ -1,0 +1,21 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Declarations;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace DotNet
+{
+  [Record]
+  public class DotNetProjectData
+  {
+    public BackEnd       : IDotNetBackEnd;
+    public Context       : DependentPropertyEvalContext;
+    public RootNamespace : NamespaceSymbol;
+  }
+}

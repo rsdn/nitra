@@ -100,12 +100,15 @@ namespace CSharp
         defineAlias(context, systemNs, rootNamespace, "Char",    "char");
       }
 
-      (backEnd : IDotNetBackEnd, context, rootNamespace)
+      DotNetProjectData(backEnd, context, rootNamespace)
     }
 
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
-      def (backEnd, context, rootNamespace) = (data :> IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol);
+      def projectData = data :> DotNetProjectData;
+      def backEnd               = projectData.BackEnd;
+      def context               = projectData.Context;
+      def rootNamespace         = projectData.RootNamespace;
       context.CancellationToken = cancellationToken;
       backEnd.CancellationToken = cancellationToken;
 
@@ -134,7 +137,7 @@ namespace CSharp
 
     public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
     {
-      def (_, _, rootNamespace) = DecomposeData(data);
+      def rootNamespace = DecomposeData(data).RootNamespace;
       // TODO: cache symbols an use it cache to find symbol by id
       def findSymbol(symbols : Seq[DeclarationSymbol]) : ValueOption[DeclarationSymbol]
       {
@@ -191,9 +194,9 @@ namespace CSharp
       _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
     }
 
-    public DecomposeData(data : object) : IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol
+    public DecomposeData(data : object) : DotNetProjectData
     {
-      data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol)
+      data :> DotNetProjectData
     }
   }
 
@@ -201,9 +204,12 @@ namespace CSharp
   {
     protected _rootNamespace : NamespaceSymbol;
 
-    public this(files : ImmutableArray[FileEvalPropertiesData], rootNamespace : NamespaceSymbol)
+    public this(files : ImmutableArray[FileEvalPropertiesData], rootNamespace : NamespaceSymbol, params symbols : array[DeclarationSymbol])
     {
-      base(files, ImmutableArray.Create(rootNamespace));
+      def builder = ImmutableArray.CreateBuilder(symbols.Length + 1);
+      builder.AddRange(symbols);
+      builder.Add(rootNamespace);
+      base(files, builder.MoveToImmutable());
       _rootNamespace = rootNamespace;
     }
 

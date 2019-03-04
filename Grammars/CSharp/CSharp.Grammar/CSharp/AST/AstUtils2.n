@@ -171,7 +171,7 @@ namespace DotNet
 
     public GetBackEnd(this context : DependentPropertyEvalContext) : IDotNetBackEnd
     {
-      (context.Project.Data :> (IDotNetBackEnd * DependentPropertyEvalContext * NamespaceSymbol))[0]
+      (context.Project.Data :> DotNetProjectData).BackEnd
     }
 
     public GetPlatformType(this context : DependentPropertyEvalContext) : IPlatformType
