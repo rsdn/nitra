@@ -123,6 +123,7 @@ namespace DotNet
         // This requires a separate stage, since the field symbols must be created before the rule bodies are typed.
         evalHost.EvalProperties(context, "Make rule fields symbols", 2);
         evalHost.EvalProperties(context, "Type bodies binding", 3);
+        evalHost.Finish();
       }
       finally ManagerClass.Instance = oldManager;
     }

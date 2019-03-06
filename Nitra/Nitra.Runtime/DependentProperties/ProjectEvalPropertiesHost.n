@@ -28,6 +28,11 @@ namespace Nitra.Declarations
       _symbols = symbols;
     }
 
+    public Finish() : void
+    {
+      CollectCompilerMessageFrimAst();
+    }
+
     protected override ExecutePass(context : DependentPropertyEvalContext, passName : string) : void
     {
       context.Files = _files;
@@ -58,6 +63,12 @@ namespace Nitra.Declarations
         when (ast != null)
           stageNotifier.Notify(ast, stage);
       }
+    }
+
+    private CollectCompilerMessageFrimAst() : void
+    {
+      foreach (file when file.Ast != null in _files)
+        file.CollectFrimAst();
     }
 
     private GetStatistics(file : FileEvalPropertiesData, passName : string) : StatisticsTask.Single

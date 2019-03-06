@@ -40,15 +40,17 @@ namespace Nitra.Declarations
     public GetCompilerMessage() : CompilerMessageList
     {
       when (_compilerMessage == null)
-      {
         _compilerMessage = CompilerMessageList();
-        when (Ast != null)
-        {
-          def errorCollector = CollectSymbolErrorsVisitor(_compilerMessage);
-          errorCollector.Visit(Ast);
-        }
-      }
       _compilerMessage
     }
-   }
+
+    public CollectFrimAst() : void
+    {
+      when (Ast != null)
+      {
+        def errorCollector = CollectSymbolErrorsVisitor(GetCompilerMessage());
+        errorCollector.Visit(Ast);
+      }
+    }
+  }
 }
