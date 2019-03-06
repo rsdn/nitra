@@ -187,9 +187,9 @@ namespace Nitra.ClientServer.Client
 
       Send(Messages.ClientMessage.Shutdown());
 
+      _isDisposed = true;
       _mainPipeClient.Dispose();
       _responsePipe.Dispose();
-      _isDisposed = true;
       GC.SuppressFinalize(this);
     }
 
