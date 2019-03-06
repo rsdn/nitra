@@ -43,7 +43,6 @@ namespace Nitra.BackEnd.Cci
     [RecordIgnore] mutable _singleDimensionArray     : SingleDimensionArraySymbol;
     [RecordIgnore] mutable _cciObject                : INamespaceTypeDefinition;
     [RecordIgnore] mutable _objectSymbol             : TypeSymbol;
-    [RecordIgnore]         _tempAssemblies           : List[string]                           = List();
     [RecordIgnore] mutable _cciExtensionAttribute    : INamespaceTypeDefinition;
     [RecordIgnore] mutable _cciExtensionAttributeKey : uint;
 
@@ -103,12 +102,8 @@ namespace Nitra.BackEnd.Cci
             addError(NoLocation, "The referenced file '" + fullPath + "' is not found.");
             continue;
           }
-          
-          def tempFullPath = IO.Path.ChangeExtension(IO.Path.GetTempFileName(), IO.Path.GetExtension(fullPath));
-          IO.File.Copy(fullPath, tempFullPath);
-          def unit         = host.LoadUnitFrom(tempFullPath);
-          _tempAssemblies.Add(tempFullPath);
 
+          def unit = host.LoadUnitFrom(fullPath);
           when (unit == null || unit.Equals(Dummy.Module) || unit.Equals(Dummy.Assembly) || !(unit is IAssembly))
           {
             addError(NoLocation, "The referenced file '" + fullPath + "' is not .Net assembly.");
@@ -335,9 +330,6 @@ namespace Nitra.BackEnd.Cci
     {
       when ((CciHost : object) is IDisposable as d)
         d.Dispose();
-      foreach (tempAssembly in _tempAssemblies)
-        try File.Delete(tempAssembly)
-        catch { e => Debug.WriteLine($"Can't delete temporary assembly '$tempAssembly': $(e.Message)"); }
     }
 
     MakeModifiers(visibility : TypeMemberVisibility) : Modifiers
