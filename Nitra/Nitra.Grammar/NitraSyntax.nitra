@@ -703,8 +703,8 @@ syntax module NitraSyntax : NitraLang
           unless (owner.IsAbstract)
             compilerMessages.Error(this, "Child AST is valid only in abstract AST body.");
 
-          def (_, _, cardinality) = TypingUtils.TypeAstModifiers(this.AstModifiers, true, owner.IsDeclaration, compilerMessages);
-          ParsedChildAstSymbol(this.Name, this.get_Parents, this.Body, owner, cardinality);
+          def (_, _, cardinality, ignoreCase) = TypingUtils.TypeAstModifiers(this.AstModifiers, true, owner.IsDeclaration, compilerMessages);
+          ParsedChildAstSymbol(this.Name, this.get_Parents, this.Body, owner, cardinality, ignoreCase);
         }
         override CollectGlobalSymbols
         {
@@ -746,10 +746,12 @@ syntax module NitraSyntax : NitraLang
   {
     IsAbstract(acc : bool, isExtensible : bool, compilerMessages : ICompilerMessages) : bool                                          { IgnoreParams(); acc }
     Cardinality(acc : AstCardinality, isDeclaration : bool, isAbstract : bool, compilerMessages : ICompilerMessages) : AstCardinality { IgnoreParams(); acc }
+    IsIgnoreCase(acc : bool, isDeclaration : bool, isAbstract : bool, compilerMessages : ICompilerMessages) : bool                    { IgnoreParams(); acc }
 
-    | Abstract = "abstract" sm { override IsAbstract  = TypingUtils.TypeAstModifier_IsAbstract(this, acc, isExtensible, compilerMessages); }
-    | Optional = "optional" sm { override Cardinality = TypingUtils.TypeAstModifier_Cardinality(this, acc, isDeclaration, isAbstract, compilerMessages, AstCardinality.Optional); }
-    | Multiple = "multiple" sm { override Cardinality = TypingUtils.TypeAstModifier_Cardinality(this, acc, isDeclaration, isAbstract, compilerMessages, AstCardinality.Multiple); }
+    | Abstract   = "abstract"    sm { override IsAbstract  = TypingUtils.TypeAstModifier_IsAbstract(this, acc, isExtensible, compilerMessages); }
+    | Optional   = "optional"    sm { override Cardinality = TypingUtils.TypeAstModifier_Cardinality(this, acc, isDeclaration, isAbstract, compilerMessages, AstCardinality.Optional); }
+    | Multiple   = "multiple"    sm { override Cardinality = TypingUtils.TypeAstModifier_Cardinality(this, acc, isDeclaration, isAbstract, compilerMessages, AstCardinality.Multiple); }
+    | IgnoreCase = "ignore-case" sm { override IsIgnoreCase = TypingUtils.TypeAstModifier_IsIgnoreCase(this, acc, isDeclaration, isAbstract, compilerMessages); }
   }
 
   syntax NamespaceMember
@@ -776,19 +778,19 @@ syntax module NitraSyntax : NitraLang
 
     | Ast  = AstModifier* "ast"         sm Name AstInheritance? Body=AstBody
       {
-        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality =
+        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality * bool =
           TypingUtils.TypeAstModifiers(this.AstModifiers, false, false, compilerMessages);
 
         [Cached] MakeAstSymbol(compilerMessages : ICompilerMessages) : AstSymbol
         {
-          def (isDeclaration, isAbstract, cardinality) = this.Modifiers(compilerMessages);
+          def (isDeclaration, isAbstract, cardinality, ignoreCase) = this.Modifiers(compilerMessages);
           if (isAbstract)
           {
             assert(cardinality == AstCardinality.Single);
             ParsedAbstractAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration)
           }
           else
-            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality)
+            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality, ignoreCase)
         }
         [Cached] MakeParents() : list[AstSymbol] = TypingUtils.TypeAstInheritance(this.AstInheritanceOpt, this.Context, this.AstSymbol);
         override CollectGlobalSymbols
@@ -821,19 +823,19 @@ syntax module NitraSyntax : NitraLang
 
     | Decl = AstModifier* "declaration" sm Name AstInheritance? Body=AstBody
       {
-        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality =
+        Modifiers(compilerMessages : ICompilerMessages) : bool * bool * AstCardinality * bool =
           TypingUtils.TypeAstModifiers(this.AstModifiers, false, true,  compilerMessages);
 
         [Cached] MakeAstSymbol(compilerMessages : ICompilerMessages) : AstSymbol
         {
-          def (isDeclaration, isAbstract, cardinality) = this.Modifiers(compilerMessages);
+          def (isDeclaration, isAbstract, cardinality, ignoreCase) = this.Modifiers(compilerMessages);
           if (isAbstract)
           {
             assert(cardinality == AstCardinality.Single);
             ParsedAbstractAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration)
           }
           else
-            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality)
+            ParsedSimpleAstSymbol(this.Name, this.get_Parents, this.Body, isDeclaration, cardinality, ignoreCase)
         }
         [Cached] MakeParents() : list[AstSymbol] = TypingUtils.TypeAstInheritance(this.AstInheritanceOpt, this.Context, this.AstSymbol);
         override CollectGlobalSymbols

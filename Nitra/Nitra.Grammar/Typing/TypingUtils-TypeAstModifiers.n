@@ -12,11 +12,12 @@ namespace Nitra.Typing
 {
   public partial module TypingUtils
   {
-    internal TypeAstModifiers(modifiers : ListParseTree[G.AstModifier], isExtension : bool, isDeclaration : bool, compilerMessages : ICompilerMessages) : bool * bool * AstCardinality
+    internal TypeAstModifiers(modifiers : ListParseTree[G.AstModifier], isExtension : bool, isDeclaration : bool, compilerMessages : ICompilerMessages) : bool * bool * AstCardinality * bool
     {
       def isAbstract  = Utils.FoldThrough(modifiers, false,                 _.IsAbstract(_, isExtension, compilerMessages));
       def cardinality = Utils.FoldThrough(modifiers, AstCardinality.Single, _.Cardinality(_, isDeclaration, isAbstract, compilerMessages));
-      (isDeclaration, isAbstract, cardinality)
+      def ignoreCase  = Utils.FoldThrough(modifiers, false,                 _.IsIgnoreCase(_, isDeclaration, isAbstract, compilerMessages));
+      (isDeclaration, isAbstract, cardinality, ignoreCase)
     }
 
     internal TypeAstModifier_IsAbstract(loc : ILocated, acc : bool, isExtension : bool, compilerMessages : ICompilerMessages) : bool
@@ -54,6 +55,27 @@ namespace Nitra.Typing
         compilerMessages.Error(loc, $"Modifier '$(value.GetText())' is not valid on ast");
         acc
       }
+    }
+
+    internal TypeAstModifier_IsIgnoreCase(loc : ILocated, acc : bool, isDeclaration : bool, isAbstract : bool, compilerMessages : ICompilerMessages) : bool
+    {
+      if (acc)
+      {
+        compilerMessages.Error(loc, $"Duplicate 'ignore-case' modifier");
+        acc
+      }
+      else if (!isDeclaration)
+      {
+        compilerMessages.Error(loc, $"Modifier 'ignore-case' is not valid on ast");
+        acc
+      }
+      else if (isAbstract)
+      {
+        compilerMessages.Error(loc, "Modifier 'ignore-case' is not compatible with 'abstract'");
+        acc
+      }
+      else
+        true
     }
   }
 }

@@ -56,6 +56,7 @@ namespace Nitra.Ast
       in IsDeclaration : bool;
       in IsAbstract    : bool;
       in Cardinality   : AstCardinality;
+      in IgnoreCase    : bool;
     }
 
     Symbol.IsDeclaration = false;
@@ -70,6 +71,9 @@ namespace Nitra.Ast
     Modifiers.CardinalityIn = AstCardinality.Single;
     Symbol.Cardinality = Modifiers.CardinalityOut;
 
+    Modifiers.IsIgnoreCaseIn = false;
+    Symbol.IgnoreCase = Modifiers.IsIgnoreCaseOut;
+
     Modifiers : AstModifier*;
     Members : AM.AstMember*;
   }
@@ -78,11 +82,13 @@ namespace Nitra.Ast
   {
     inout IsAbstract : bool;
     inout Cardinality : AstCardinality;
+    inout IsIgnoreCase : bool;
 
     // TODO: validation of modifiers
 
     | Abstract { IsAbstractOut = true; }
     | Optional { CardinalityOut = AstCardinality.Optional; }
     | Multiple { CardinalityOut = AstCardinality.Multiple; }
+    | IgnoreCase { IsIgnoreCaseOut = true; }
   }
 }

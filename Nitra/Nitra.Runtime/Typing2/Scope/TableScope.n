@@ -23,7 +23,8 @@ namespace Nitra.Declarations
   {
     protected         _owner                   : DeclarationSymbol;
     protected         _name                    : string;
-    protected         _nameTable               : Hashtable[int, list[DeclarationSymbol]];
+    protected         _caseSensitiveTable      : Hashtable[int, list[DeclarationSymbol]];
+    protected         _caseInsensitiveTable    : Hashtable[int, list[DeclarationSymbol]];
     protected mutable _extensionMethodsModules : list[DeclarationSymbol] = [];
 
     public this(name : string)
@@ -35,19 +36,39 @@ namespace Nitra.Declarations
     {
       _owner     = owner;
       _name      = name;
-      _nameTable = Hashtable();
+      _caseSensitiveTable = Hashtable();
+      _caseInsensitiveTable = Hashtable();
     }
 
     public Owner   : DeclarationSymbol { get { _owner } }
     public Name    : string            { get { _name } }
-    
-    public virtual Symbols : Hashtable[int, list[DeclarationSymbol]].ValueCollection { get { _nameTable.Values } }
+    public IsEmpty : bool              { get { (_caseSensitiveTable.Count + _caseInsensitiveTable.Count) == 0 } }
+
+    public virtual Symbols : Seq[list[DeclarationSymbol]]
+    {
+      get
+      {
+        match (_caseSensitiveTable.Count, _caseInsensitiveTable.Count)
+        {
+          | (0, 0) => Enumerable.Empty()
+          | (_, 0) => _caseSensitiveTable.Values
+          | (0, _) => _caseInsensitiveTable.Values
+          | _      => _caseSensitiveTable.Values.Concat(_caseInsensitiveTable.Values)
+        }
+      }
+    }
 
     public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
-      _nameTable.Values.SelectMany(symbols => symbols)
+      foreach (lst in _caseSensitiveTable.Values)
+        foreach (s in lst)
+          yield s;
+
+      foreach (lst in _caseInsensitiveTable.Values)
+        foreach (s in lst)
+          yield s;
     }
-    
+
     public virtual Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext, name : Name = null) : TSymbol
       where TSymbol : DeclarationSymbol
     {
@@ -58,8 +79,19 @@ namespace Nitra.Declarations
       def     candidateSymbols = LightList();
       mutable ambiguousSymbols : HashSet[DeclarationSymbol];
 
+      mutable table          = _caseSensitiveTable;
+      mutable alternateTable = _caseInsensitiveTable;
+      mutable id             = StringIndex.GetCaseSensitivePart(name2.Id);
+      mutable alternateId    = StringIndex.GetCaseInsensitivePart(name2.Id);
+
+      when (declaration.IgnoreCase)
+      {
+        table <-> alternateTable;
+        id <-> alternateId;
+      }
+
       mutable lookupResult;
-      when (_nameTable.TryGetValue(name2.Id, out lookupResult))
+      when (table.TryGetValue(id, out lookupResult))
       {
         ambiguousSymbols = HashSet(lookupResult);
         foreach (symbol is TSymbol when symbol.CanMerge(declaration) in lookupResult)
@@ -74,36 +106,26 @@ namespace Nitra.Declarations
             (newSymbol :> SymbolBase).Owner = this;
             newSymbol :> TSymbol;
 
-          | 1 => candidateSymbols[0] // merge
+          | 1 => candidateSymbols.FirstItem // merge
           | _ => assert(false)
         };
 
+
       if (ambiguousSymbols : object == null)
-        _nameTable.Add(name2.Id, [concreteSymbol]);
+      {
+        table.Add(id, [concreteSymbol]);
+
+        when (alternateTable.TryGetValue(alternateId, out lookupResult))
+          ReportRedefinition(name2, declaration, context, "Redefinition of '{0}' with different case sensitivity",
+            lookupResult.FilterToArray(s => s is TSymbol && s.IsSameIdentity(declaration)));
+      }
       else when (ambiguousSymbols.Add(concreteSymbol))
       {
         // фильтруем без учета конкретного типа
-        def realAmbiguousSymbols = ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsSameIdentity(declaration));
-        when (realAmbiguousSymbols.Length > 0)
-        {
-          try
-          {
-            if (context == null)
-            {
-              Debug.WriteLine($"Redefinition of '$name2'. FIXME: Forward context!")
-            }
-            else
-            {
-              def cm = declaration.Source.File.TypingMessages;
-              using (nested = GetCompilerMessage(context, name2).ReportRootMessage(CompilerMessageType.Error, name2.Location, $"Redefinition of '$name2'", -1))
-                foreach (ambiguous in realAmbiguousSymbols)
-                  foreach (d in ambiguous.Declarations)
-                    nested.Hint(d.Name, "previous definition.");
-            }
-          }
-          catch { _ => assert2(false); }
-        }
-        _nameTable[name2.Id] = ambiguousSymbols.NToList();
+        ReportRedefinition(name2, declaration, context, "Redefinition of '{0}'",
+          ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsSameIdentity(declaration)));
+
+        table[id] = ambiguousSymbols.NToList();
       }
 
       concreteSymbol.AddDeclaration(declaration);
@@ -141,23 +163,34 @@ namespace Nitra.Declarations
           }
       }
 
-      foreach (pair in _nameTable.ToArray())
+      def updateTable(table : Hashtable[_, _])
       {
-        def newList = undefine(pair.Value);
+        when (table.Count > 0)
+        foreach (pair in table.ToArray())
+        {
+          def newList = undefine(pair.Value);
 
-        when (newList : object != pair.Value)
-          if (newList.IsEmpty)
-            _nameTable.Remove(pair.Key);
-          else
-            _nameTable[pair.Key] = newList;
+          when (newList : object != pair.Value)
+            if (newList.IsEmpty)
+              table.Remove(pair.Key);
+            else
+              table[pair.Key] = newList;
+        }
       }
+
+      updateTable(_caseSensitiveTable);
+      updateTable(_caseInsensitiveTable);
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def res = LightList();
 
-      foreach (symbols in _nameTable.Values)
+      foreach (symbols in _caseSensitiveTable.Values)
+      foreach (symbol is TSymbol when isMatch(symbol) in symbols)
+        res.Add(symbol);
+
+      foreach (symbols in _caseInsensitiveTable.Values)
       foreach (symbol is TSymbol when isMatch(symbol) in symbols)
         res.Add(symbol);
 
@@ -166,16 +199,18 @@ namespace Nitra.Declarations
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
+      def res = LightList();
+      
       mutable lookupResult;
-      if (_nameTable.TryGetValue(reference.Id, out lookupResult))
-      {
-        def res = LightList();
+      when (_caseSensitiveTable.TryGetValue(StringIndex.GetCaseSensitivePart(reference.Id), out lookupResult))
         foreach (x is TSymbol in lookupResult)
           res.Add(x);
+
+      when (_caseInsensitiveTable.TryGetValue(StringIndex.GetCaseInsensitivePart(reference.Id), out lookupResult))
+        foreach (x is TSymbol in lookupResult)
+          res.Add(x);
+
         res.ToBindResult()
-      }
-      else
-        BindResult.Nil()
     }
 
     public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
@@ -236,9 +271,13 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
 
     internal EnqueueSymbols(metadataWriter : MetadataWriter) : void
     {
-      foreach (pair in _nameTable)
+      foreach (pair in _caseSensitiveTable)
         foreach (s when s.HasParsedDeclarations in pair.Value)
-          metadataWriter.EnqueueSymbol(s)
+          metadataWriter.EnqueueSymbol(s);
+
+      foreach (pair in _caseInsensitiveTable)
+        foreach (s when s.HasParsedDeclarations in pair.Value)
+          metadataWriter.EnqueueSymbol(s);
     }
 
     public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
@@ -274,6 +313,28 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
           result.GetValueOrDefault()
         }
       }
+    }
+
+    private static ReportRedefinition(name : Name, declaration : Declaration, context : DependentPropertyEvalContext, formatString : string,
+      ambiguousSymbols : array[DeclarationSymbol]) : void  
+    {
+      try
+      {
+        if (context == null)
+        {
+          Debug.WriteLine(string.Format(formatString + ". FIXME: Forward context!", name))
+        }
+        else
+        {
+          def cm = declaration.Source.File.TypingMessages;
+          def message = string.Format(formatString, name);
+          using (nested = GetCompilerMessage(context, name).ReportRootMessage(CompilerMessageType.Error, name.Location, message, -1))
+            foreach (ambiguous in ambiguousSymbols)
+              foreach (d in ambiguous.Declarations)
+                nested.Hint(d.Name, "previous definition.");
+        }
+      }
+      catch { _ => assert2(false); }
     }
   }
 }

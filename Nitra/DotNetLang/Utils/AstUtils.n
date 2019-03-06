@@ -35,7 +35,7 @@ namespace DotNet
       def makeCurrentScope(scope : Scope) : Scope
       {
         def withAliases =
-          if (aliases.Symbols.Count == 0)
+          if (aliases.IsEmpty)
             scope
           else
             scope.UnionWith(aliases);

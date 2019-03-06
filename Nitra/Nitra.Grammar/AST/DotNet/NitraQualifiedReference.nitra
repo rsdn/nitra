@@ -7,7 +7,7 @@ namespace Nitra.Ast
 {
   abstract ast NitraQualifiedReference : QualifiedReference
   {
-    out FieldNameId : ParsedValue[int];
+    out FieldNameId : ParsedValue[long];
 
     | Simple
       {

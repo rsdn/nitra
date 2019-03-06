@@ -147,7 +147,7 @@ namespace Nitra.BackEnd.Cci
       base.GetAllSymbols()
     }
 
-    public override Symbols : Hashtable[int, list[DeclarationSymbol]].ValueCollection
+    public override Symbols : Seq[list[DeclarationSymbol]]
     {
       get
       {

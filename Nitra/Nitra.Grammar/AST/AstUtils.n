@@ -23,7 +23,7 @@ namespace Nitra
 {
   public module AstUtils
   {
-    public static GetAstId : int = StringIndex.GetId("GetAst");
+    public static GetAstId : long = StringIndex.GetId("GetAst");
 
     static this()
     {
@@ -127,7 +127,7 @@ namespace Nitra
         ParsedValue(parsedValue.Span, ("Literal", false))
     }
 
-    public MakeCallFieldName(parsedValue : ParsedValue[int]) : ParsedValue[string * bool]
+    public MakeCallFieldName(parsedValue : ParsedValue[long]) : ParsedValue[string * bool]
     {
       if (parsedValue.HasValue)
         ParsedValue(parsedValue.Span, (StringIndex.GetText(parsedValue.ValueOrDefault), false))

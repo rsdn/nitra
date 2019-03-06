@@ -14,7 +14,7 @@ namespace Nitra.Declarations
 {
   public partial class Reference : AstBase
   {
-    public this(location : Location, Id : int)
+    public this(location : Location, Id : long)
     {
       def loc =
         if (location.IsTextAvailable)
@@ -41,7 +41,7 @@ namespace Nitra.Declarations
       this(located.Location, located.GetText())
     }
 
-    public virtual  Id   : int    { get; protected set; }
+    public virtual  Id   : long   { get; protected set; }
     public          Text : string { get { StringIndex.GetText(Id) } }
 
     public Bind[TSymbol](scope : Scope) : Ref[TSymbol]
@@ -56,7 +56,7 @@ namespace Nitra.Declarations
 
     new public sealed partial class AmbiguousOrMissing : Reference, IAmbiguousAst
     {
-      public override Id : int
+      public override Id : long
       {
         get
         {

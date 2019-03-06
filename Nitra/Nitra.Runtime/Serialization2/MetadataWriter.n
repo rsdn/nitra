@@ -177,9 +177,10 @@ namespace Nitra.Serialization2
         writer.Write(obj.InitialName);
         WriteObject(obj.Owner, writer);
 
+        def parsedDeclaration = obj.FirstParsedDeclarationOrDefault;
         def symbolKind =
-          if (obj.HasParsedDeclarations)
-            SymbolKind.Parsed
+          if (parsedDeclaration != null)
+            if (parsedDeclaration.IgnoreCase) SymbolKind.ParsedIgnoreCase else SymbolKind.Parsed
           else if (!obj.HasDeclarations)
             SymbolKind.WithoutDeclarations
           else

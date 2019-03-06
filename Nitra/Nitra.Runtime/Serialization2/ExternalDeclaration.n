@@ -1,4 +1,4 @@
-using Nitra.ProjectSystem;
+﻿using Nitra.ProjectSystem;
 using Nitra.Declarations;
 
 using Nemerle;
@@ -17,14 +17,25 @@ namespace Nitra.Declarations
   {
     public this(location : Location, name : string)
     {
-      this(Name(location, name))
+      this(Name(location, name), false)
     }
 
+    public this(location : Location, name : string, ignoreCase : bool)
+    {
+      this(Name(location, name), ignoreCase)
+    }
+    
     public this(name : Name)
+    {
+      this(name, false);
+    }
+
+    public this(name : Name, ignoreCase : bool)
     {
       Source     = name.Source;
       Span       = name.Span;
       __NameImpl = name;
+      IgnoreCase = ignoreCase;
     }
 
     private mutable _containingTable : TableScope;
@@ -52,6 +63,8 @@ namespace Nitra.Declarations
     public ContainingTable_Location : string * int * int { get; set; }
 
     public override IsParsed : bool { get { false } }
+
+    public override IgnoreCase : bool { get; }
 
     public override CreateSymbol() : DeclarationSymbol
     {

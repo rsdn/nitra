@@ -28,5 +28,7 @@ namespace Nitra.Declarations
     }
 
     public virtual IsParsed : bool { get { true } }
+
+    public virtual IgnoreCase : bool { get { false } }
   }
 }

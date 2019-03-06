@@ -20,9 +20,9 @@ namespace Nitra.Ast
   {
     private static _plainNameGenerator : RuleFieldNameGenerator = RuleFieldNameGenerator(null);
 
-    private _table : Dictionary[int, bool * int];
+    private _table : Dictionary[long, bool * int];
 
-    private this(table : Dictionary[int, bool * int])
+    private this(table : Dictionary[long, bool * int])
     {
       _table = table;
     }
@@ -82,7 +82,7 @@ namespace Nitra.Ast
       if (desiredName.HasValue) desiredName.Value[1] else false
     }
 
-    private static GetId(desiredName : ParsedValue[string * bool]) : int
+    private static GetId(desiredName : ParsedValue[string * bool]) : long
     {
       def text = if (desiredName.HasValue) desiredName.Value[0] else "Node";
       StringIndex.GetId(text)

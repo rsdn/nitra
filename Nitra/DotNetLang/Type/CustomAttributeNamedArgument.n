@@ -13,7 +13,7 @@ namespace DotNet
   [Record]
   public class CustomAttributeNamedArgument
   {
-    public NameId     : int;
+    public NameId     : long;
     public Name       : string { get { StringIndex.GetText(NameId) } }
     public Expression : CustomAttributeExpression;
 

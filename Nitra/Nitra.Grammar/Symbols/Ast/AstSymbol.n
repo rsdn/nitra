@@ -21,6 +21,7 @@ namespace Nitra.Typing
     public abstract Parents       : list[AstSymbol] implements IGraphNode[AstSymbol].Connections { get; }
     public abstract IsDeclaration : bool                          { get; }
     public abstract Cardinality   : AstCardinality                { get; }
+    public abstract IgnoreCase    : bool                          { get; }
     public abstract Symbol        : SymbolRef[SymbolSymbol]       { get; }
     public override GetParents() : Seq[PropertyContainerSymbol] { Parents }
 

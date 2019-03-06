@@ -19,6 +19,7 @@ namespace Nitra.Typing
     public override Description : string         { get { if (IsDeclaration) "abstract declaration" else "abstract ast" } }
     public override Cardinality : AstCardinality { get { AstCardinality.Single } }
     public override IsAbstract  : bool           { get { true } }
+    public override IgnoreCase  : bool           { get { false } }
   }
 
   public sealed class ParsedAbstractAstSymbol : AbstractAstSymbol, IDependentStatementContainer

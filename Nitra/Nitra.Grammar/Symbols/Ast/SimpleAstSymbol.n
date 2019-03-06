@@ -30,7 +30,7 @@ namespace Nitra.Typing
     private         _statements               : SCG.List[DependentStatement];
     private mutable _initializedOutProperties : list[DependentPropertySymbol];
 
-    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], body : NitraSyntaxParseTree.AstBody, isDeclaration : bool, cardinality : AstCardinality)
+    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], body : NitraSyntaxParseTree.AstBody, isDeclaration : bool, cardinality : AstCardinality, ignoreCase : bool)
     {
       base(name, name.Value());
       _parentsLazy              = parentsLazy;
@@ -40,6 +40,7 @@ namespace Nitra.Typing
       DefinedIn                 = SymbolRef.None(this.FirstLocation, true);
       IsDeclaration             = isDeclaration;
       Cardinality               = cardinality;
+      IgnoreCase                = ignoreCase;
     }
     
     private mutable _symbol : SymbolRef[SymbolSymbol];
@@ -48,6 +49,7 @@ namespace Nitra.Typing
     public override Symbol                   : SymbolRef[SymbolSymbol]       { get { assert(_symbol : object != null); _symbol } }
     public override IsDeclaration            : bool                          { get; }
     public override Cardinality              : AstCardinality                { get; }
+    public override IgnoreCase               : bool                          { get; }
     public override Parents                  : list[AstSymbol]               { get { _parentsLazy() } }
     public override InitializedOutProperties : list[DependentPropertySymbol] { get { _initializedOutProperties } }
 
@@ -77,7 +79,7 @@ namespace Nitra.Typing
     private         _statements               : SCG.List[DependentStatement];
     private mutable _initializedOutProperties : list[DependentPropertySymbol];
 
-    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], bodyOpt : OptionParseTree[NitraSyntaxParseTree.AstBody], owner : AstSymbol, cardinality : AstCardinality)
+    public this(name : NitraSyntaxParseTree.Name, parentsLazy : Func[list[AstSymbol]], bodyOpt : OptionParseTree[NitraSyntaxParseTree.AstBody], owner : AstSymbol, cardinality : AstCardinality, ignoreCase : bool)
     {
       base(name, name.Value());
       _parentsLazy              = parentsLazy;
@@ -88,6 +90,7 @@ namespace Nitra.Typing
       DefinedIn                 = SymbolRef.Some(FirstLocation, true, owner);
       IsDeclaration             = owner.IsDeclaration;
       Cardinality               = cardinality;
+      IgnoreCase                = ignoreCase;
     }
 
     private mutable _symbol : SymbolRef[SymbolSymbol];
@@ -97,6 +100,7 @@ namespace Nitra.Typing
     public override Symbol                   : SymbolRef[SymbolSymbol]       { get { assert(_symbol : object != null); _symbol } }
     public override IsDeclaration            : bool                          { get; }
     public override Cardinality              : AstCardinality                { get; }
+    public override IgnoreCase               : bool                          { get; }
     public override Parents                  : list[AstSymbol]               { get { _parentsLazy() } }
     public override InitializedOutProperties : list[DependentPropertySymbol] { get { _initializedOutProperties } }
 

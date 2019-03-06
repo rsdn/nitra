@@ -5,5 +5,6 @@
     | WithoutDeclarations = 0
     | Parsed              = 1
     | External            = 2
+    | ParsedIgnoreCase    = 3
   }
 }

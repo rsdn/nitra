@@ -25,13 +25,19 @@ namespace Nitra.Declarations
     private static mutable _symbolIdCounter : int = 0;
 
     private         _id           : int;
-    private mutable _nameId       : int;
+    private mutable _nameId       : long;
     private mutable _declarations : object;
     private mutable _owner        : TableScope;
 
     public Id          : int    { get { _id } }
     public IsNameValid : bool   { get { _nameId > 0 } }
-    public NameId      : int    { get { _nameId } }
+
+    /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
+    /// If return value is 0 the name of symbol is not set.
+    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
+    ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
+    ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
+    public NameId      : long   { get { _nameId } }
     public Name        : string { get { if (_nameId > 0) StringIndex.GetText(_nameId) else "<invalid name>" } }
     public InitialName : string { get { if (_nameId < 0) StringIndex.GetText(~_nameId) else Name } }
 
@@ -50,13 +56,6 @@ namespace Nitra.Declarations
     public override GetHashCode() : int { _id }
     public override Equals(other : object) : bool { other == this }
 
-    /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
-    /// If return value is 0 the name of symbol is not set.
-    /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
-    ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
-    ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
-    public TryGetNameId() : int { _nameId }
-
     public FirstDeclarationOrDefault : Declaration
     {
       get
@@ -66,6 +65,24 @@ namespace Nitra.Declarations
           | null                     => null
           | d   is Declaration       => d
           | lst is list[Declaration] => lst.Head
+          | _ => assert(false)
+        }
+      }
+    }
+
+    public FirstParsedDeclarationOrDefault : Declaration
+    {
+      get
+      {
+        match (_declarations)
+        {
+          | null                     => null
+          | d   is Declaration       => if (d.IsParsed) d else null
+          | lst is list[Declaration] =>
+            foreach (d when d.IsParsed in lst)
+              return d;
+            null
+
           | _ => assert(false)
         }
       }
@@ -230,7 +247,7 @@ namespace Nitra.Declarations
       UpdateName(StringIndex.GetId(name));
     }
     
-    public UpdateName(newId : int) : void
+    public UpdateName(newId : long) : void
     {
       when (_nameId != newId)
       {

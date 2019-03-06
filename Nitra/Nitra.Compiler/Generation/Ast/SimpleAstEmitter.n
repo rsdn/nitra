@@ -1,4 +1,4 @@
-using Nitra.Model;
+﻿using Nitra.Model;
 using Nitra.Typing;
 
 using Nemerle;
@@ -175,6 +175,11 @@ namespace Nitra.Compiler
           {
             $(Environment.GetSymbolClass(s) : typed)()
           }
+        ]>);
+
+      when (_symbol.IsDeclaration && _symbol.IgnoreCase)
+        _tb.Define(<[ decl:
+          public override IgnoreCase : bool { get { true } }
         ]>);
     }
 

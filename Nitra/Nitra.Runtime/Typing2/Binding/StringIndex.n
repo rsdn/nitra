@@ -13,27 +13,75 @@ namespace Nitra.Internal
 {
   public module StringIndex
   {
-    public static InvalidId = 0;
+    public static InvalidId = 0L;
 
-    private _initialTableSize = 1024;
+    private _tableLock            : object = object();
+    private _caseSensitiveTable   : Table  = Table(StringComparer.Ordinal);
+    private _caseInsensitiveTable : Table  = Table(StringComparer.OrdinalIgnoreCase);
 
-    private _tableLock     : object = object();
-    private mutable _table : array[string] = array(_initialTableSize);
-    private mutable _index : int;
-
-    private _internTable : ConcurrentDictionary[string, int] = ConcurrentDictionary(Environment.ProcessorCount * 4, _initialTableSize, StringComparer.InvariantCulture);
-
-    public GetId([NotNull] text : string) : int
+    public GetId([NotNull] text : string) : long
     {
-      def internTable = _internTable;
-      mutable result;
-      when (internTable.TryGetValue(text, out result))
-        return result;
-
-      lock (_tableLock)
+      mutable lockTaken;
+      try
       {
+        def caseSensitiveId = _caseSensitiveTable.GetId(text, ref lockTaken) : long;
+        def caseInsensitiveId = _caseInsensitiveTable.GetId(text, ref lockTaken) : long;
+        unchecked((caseInsensitiveId << 32) | caseSensitiveId)
+      }
+      finally when (lockTaken) Monitor.Exit(_tableLock);
+    }
+
+    public GetText(id : long) : string
+    {
+      _caseSensitiveTable.GetText(unchecked(id :> int));
+    }
+
+    public GetCaseSensitivePart(id : long) : int
+    {
+      unchecked(id :> int)
+    }
+
+    public GetCaseSensitiveText(id : int) : string
+    {
+      _caseSensitiveTable.GetText(id)
+    }
+
+    public GetCaseInsensitivePart(id : long) : int
+    {
+      unchecked((id >> 32) :> int)
+    }
+
+    public GetCaseInsensitiveText(id : int) : string
+    {
+      _caseInsensitiveTable.GetText(id)
+    }
+
+    private class Table
+    {
+      private static _initialTableSize = 1024;
+
+      private mutable _table       : array[string] = array(_initialTableSize);
+      private mutable _index       : int;
+      private         _internTable : ConcurrentDictionary[string, int];
+
+      public this(comparer : StringComparer)
+      {
+        _internTable = ConcurrentDictionary(Environment.ProcessorCount * 4, _initialTableSize, comparer)
+      }
+
+      public GetId([NotNull] text : string, lockTaken : ref bool) : int
+      {
+        def internTable = _internTable;
+        mutable result;
         when (internTable.TryGetValue(text, out result))
           return result;
+
+        unless (lockTaken)
+        {
+          Monitor.Enter(_tableLock, ref lockTaken);
+          when (internTable.TryGetValue(text, out result))
+            return result;
+        }
 
         def id = _index + 1;
         when (id >= _table.Length)
@@ -42,13 +90,13 @@ namespace Nitra.Internal
         _index = id;
         internTable.GetOrAdd(text, id)
       }
-    }
 
-    public GetText(id : int) : string
-    {
-      def text =  _table[id];
-      assert(text : object != null, "Text is null");
-      text
+      public GetText(id : int) : string
+      {
+        def text =  _table[id];
+        assert(text : object != null, "Text is null");
+        text
+      }
     }
   }
 }

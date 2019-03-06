@@ -142,6 +142,7 @@ namespace Nitra.Ast
     | Abstract {}
     | Optional {}
     | Multiple {}
+    | IgnoreCase {}
   }
 
   map syntax NitraSyntax.StyleProperty -> StyleProperty
