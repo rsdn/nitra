@@ -19,6 +19,7 @@ namespace Nitra
 {
   public module NitraUtils
   {
+    public static IdeMode : bool { get; set; }
     internal static StringTableCheckString : string = "String table - OK!";
     internal static StringTableCheckData : array[byte] = ToByteArray("String table");
 

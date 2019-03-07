@@ -116,13 +116,13 @@ namespace Nitra.Declarations
         table.Add(id, [concreteSymbol]);
 
         when (alternateTable.TryGetValue(alternateId, out lookupResult))
-          ReportRedefinition(name2, declaration, context, "Redefinition of '{0}' with different case sensitivity",
+          ReportRedefinition(name2, declaration, context, "Redefinition of '{0}' with different case sensitivity.",
             lookupResult.FilterToArray(s => s is TSymbol && s.IsSameIdentity(declaration)));
       }
       else when (ambiguousSymbols.Add(concreteSymbol))
       {
         // фильтруем без учета конкретного типа
-        ReportRedefinition(name2, declaration, context, "Redefinition of '{0}'",
+        ReportRedefinition(name2, declaration, context, "Redefinition of '{0}'.",
           ambiguousSymbols.FilterToArray(s => !concreteSymbol.Equals(s) && s.IsSameIdentity(declaration)));
 
         table[id] = ambiguousSymbols.NToList();
@@ -315,18 +315,14 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
       }
     }
 
-    private static ReportRedefinition(name : Name, declaration : Declaration, context : DependentPropertyEvalContext, formatString : string,
-      ambiguousSymbols : array[DeclarationSymbol]) : void  
+    private static ReportRedefinition(name : Name, _declaration : Declaration, context : DependentPropertyEvalContext, formatString : string, ambiguousSymbols : array[DeclarationSymbol]) : void  
     {
       try
       {
         if (context == null)
-        {
           Debug.WriteLine(string.Format(formatString + ". FIXME: Forward context!", name))
-        }
         else
         {
-          def cm = declaration.Source.File.TypingMessages;
           def message = string.Format(formatString, name);
           using (nested = GetCompilerMessage(context, name).ReportRootMessage(CompilerMessageType.Error, name.Location, message, -1))
             foreach (ambiguous in ambiguousSymbols)

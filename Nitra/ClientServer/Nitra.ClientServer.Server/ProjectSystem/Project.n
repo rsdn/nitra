@@ -665,6 +665,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public FindDeclarations(pattern : string, kinds : ImmutableArray[string]) : void
     {
+      when (this.Data == null)
+        return;
       CancelFindDeclarationsCancellation();
       def cancellationTokenSource              = CancellationTokenSource();
       def findDeclarationsCancellationToken    = cancellationTokenSource.Token;
@@ -723,6 +725,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
             cancellationToken.IsCancellationRequested
           }
+          when (this.Data == null)
+            return;
           projectSupport.VisitGlobalSymbols(this.Data, callbac);
           send();
           //Log.Message("Finish FindDeclarations");

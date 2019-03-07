@@ -34,6 +34,8 @@ module Program
       Environment.Exit(42);
     }
 
+    Nitra.NitraUtils.IdeMode = true;
+
     def mainPipeName = args[0];
     def requestPipeName       = mainPipeName + Constants.RequestPipeSuffix;
     def asyncResponsePipeName = mainPipeName + Constants.AsyncResponsePipeSuffix;
