@@ -70,8 +70,8 @@ namespace Nitra.VisualStudio.BraceMatching
         if (textViewModelOpt == null)
         {
           // It happens when second view was opened. For example if user split a editor.
-          var fileModel = _textBuffer.Properties.GetProperty<FileModel>(Constants.FileModelKey);
-          textViewModelOpt = VsUtils.GetOrCreateTextViewModel(wpfTextView, fileModel);
+          if (_textBuffer.Properties.TryGetProperty<FileModel>(Constants.FileModelKey, out var fileModel))
+            textViewModelOpt = VsUtils.GetOrCreateTextViewModel(wpfTextView, fileModel);
         }
       }
       else
