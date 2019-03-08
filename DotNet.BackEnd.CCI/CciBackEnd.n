@@ -580,8 +580,8 @@ namespace Nitra.BackEnd.Cci
 
     CreateGenericParameter(genericParam : IGenericParameter, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      def name  = NRB.Name(NoLocation, genericParam.Name.Value); // TODO: type.Name.UniqueKey
-      def tps   = TypeParameterDeclaration(name, genericParam).DefineSymbol();
+      def tps   = TypeParameterSymbol();
+      tps.UpdateName(genericParam.Name.Value); // TODO: type.Name.UniqueKey
       tps.EvalProperties(context);
       tps
     }
@@ -625,8 +625,8 @@ namespace Nitra.BackEnd.Cci
 
     MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeSymbol
     {
-      def name  = NRB.Name(NoLocation, "T");
-      def tps   = ArrayTypeParameterDeclaration(name).DefineSymbol();
+      def tps = TypeParameterSymbol();
+      tps.UpdateName("T");
       tps.EvalProperties(context);
       tps
     }
@@ -742,19 +742,6 @@ namespace Nitra.BackEnd.Cci
     where TSymbol : DeclarationSymbol
   {
     public Type : INestedTypeDefinition { get; private set; }
-  }
-
-  [Record]
-  public class TypeParameterDeclaration : ExternalDeclaration[TypeParameterSymbol]
-  {
-    public TypeParam : IGenericParameter;
-    public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
-  }
-
-  [Record]
-  public class ArrayTypeParameterDeclaration : ExternalDeclaration[TypeParameterSymbol]
-  {
-    public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
   }
 
   [Record]

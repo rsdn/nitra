@@ -369,8 +369,8 @@ namespace DotNet
           for (mutable i = 0; i < count; ++i)
           {
             def tp    = typarms.Head;
-            def name  = NRB.Name(loc, tp.Name);
-            def tps   = TypeParameterDeclaration(name, tp).DefineSymbol();
+            def tps   = TypeParameterSymbol();
+            tps.UpdateName(tp.Name);
             tps.EvalProperties(context);
             result.Add(tps);
             typarms   = typarms.Tail;
@@ -623,19 +623,6 @@ namespace DotNet
         | _ => ()
       }
     }
-  }
-
-  [Record]
-  class TypeParameterDeclaration : ExternalDeclaration[TypeParameterSymbol]
-  {
-    public NemerleTypeParam : StaticTypeVar;
-    public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
-  }
-
-  [Record]
-  class TypeParameterStubDeclaration : ExternalDeclaration[TypeParameterSymbol]
-  {
-    public override CreateSymbol() : DeclarationSymbol { TypeParameterSymbol() }
   }
 
   interface IExternalTypeDeclaration
