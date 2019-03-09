@@ -1,17 +1,31 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
 
+using Nitra;
+
 using Nitra.Declarations;
+using Nitra.ProjectSystem;
+using Nitra.Internal;
+
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace DotNet
 {
   public module SymbolUtils
   {
+    this()
+    {
+      TypeHintHelper.AddTypeHintHandler(MakeHintForType);
+    }
+    
     public GetNestedSymbol(ns : NamespaceSymbol) : Seq[DeclarationSymbol]
     {
       foreach (symbols in ns.MemberTable.Symbols)
@@ -32,5 +46,47 @@ namespace DotNet
       | type is TopGenericContainerTypeSymbol => GetNestedSymbol(type)
       | _                                     => Enumerable.Empty()
     }
-  }
-}
+
+    public MakeHintForType(builder : StringBuilder, symbolCache : ISymbolCache, type : TypeSymbol) : bool
+    {
+      def functionTypeMakeHint(builder : StringBuilder, symbolCache : ISymbolCache, symbol : FunctionTypeSymbol) : void
+      {
+        try
+        {
+          // $"..$(Parameters; \" * \") -> $Return"
+          if (symbol.IsParametersEvaluated)
+            _ = builder.JoinAnd(symbol.Parameters, (b, p) => TypeHintHelper.MakeHintForType(b, symbolCache, p)).Append(" * ");
+          else
+            _ = builder.Append("«Parameters not evaluated»");
+
+          _ = builder.Append(" -> ");
+
+          if (symbol.IsReturnEvaluated)
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, symbol.Return);
+          else
+            _ = builder.Append("«Return not evaluated»");
+        }
+        catch { e => _ = builder.HintMlException(e); }
+      }
+      symbolCache?.CacheSymbol(type);
+      match (type)
+      {
+        // TODO: Add support for tuples and other types.
+        | x is FunctionTypeSymbol => functionTypeMakeHint(builder, symbolCache, x); true
+        | x is TypeVarSymbol =>
+          if (x.IsTypeEvaluated)
+            _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.Type);
+          else match (x.IsBaseTypeConstraintEvaluated, x.IsDerivedTypeConstraintEvaluated)
+          {
+            | (false, false) => builder.Append("<keyword>unbound</keyword>")
+            | (true,  false) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append("+");
+            | (false,  true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.DerivedTypeConstraint).Append("-");
+            | (true,   true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForType(symbolCache, x.DerivedTypeConstraint);
+          }
+          true
+
+        | _ => false
+      }
+    }
+  } // module
+} // namespace

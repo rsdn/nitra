@@ -1,4 +1,4 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra;
 using Nitra.Declarations;
@@ -79,29 +79,6 @@ namespace Nitra.Ast
       ToString = "ValueAst[" + ValueType + "]";
       MakeHint = AstUtils.ValueAstTypeMakeHint(this);
       Kind     = "ast value";
-    }
-  }
-
-  declaration FunctionType : Type
-  {
-    symbol
-    {
-      in Parameters : IList[TypeSymbol];
-      in ReturnType : TypeSymbol;
-
-      ToString = $"..$(Parameters; \" * \") -> $ReturnType";
-      MakeHint = AstUtils.FunctionTypeMakeHint(symbolCache, this);
-
-      DecomposeType =
-        if (IsParametersEvaluated && IsReturnTypeEvaluated)
-        {
-          mutable typeArguments = LightList();
-          typeArguments.Add(ReturnType);
-          typeArguments.AddRange(Parameters);
-          VSome(TypeStructure(WellKnownSymbols.FunctionType, typeArguments))
-        }
-        else
-          VNone();
     }
   }
 }

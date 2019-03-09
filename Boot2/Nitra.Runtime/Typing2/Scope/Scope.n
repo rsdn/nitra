@@ -16,7 +16,8 @@ namespace Nitra.Declarations
 {
   public abstract class Scope : ISerializable
   {
-    public abstract AllSymbols : Seq[DeclarationSymbol] { get; }
+    public virtual  AllSymbols : Seq[DeclarationSymbol] { get { GetAllSymbols().OrderBy(x => x.Name, StringComparer.Ordinal).ToArray() } }
+    public abstract GetAllSymbols() : Seq[DeclarationSymbol];
     public abstract Bind[TSymbol](reference : Reference)        : BindResult[TSymbol] where TSymbol : DeclarationSymbol;
     public abstract Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol] where TSymbol : DeclarationSymbol;
     public abstract ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void;

@@ -28,24 +28,18 @@ namespace Nitra.Declarations
       Scope  = scope;
     }
 
-    public override AllSymbols : Seq[DeclarationSymbol]
+    public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
-      get
+      def enumerated = HashSet();
+      foreach (symbol in this.Scope.GetAllSymbols())
       {
-        def enumerated = HashSet();
-        def result = List();
-        foreach (symbol in this.Scope.AllSymbols)
-        {
-          _ = enumerated.Add(symbol);
-          result.Add(symbol);
-        }
-        foreach (symbol in this.Hidden.AllSymbols)
-        {
-          unless (enumerated.Contains(symbol))
-            result.Add(symbol);
-        }
-
-        result.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
+        _ = enumerated.Add(symbol);
+        yield symbol;
+      }
+      foreach (symbol in this.Hidden.GetAllSymbols())
+      {
+        unless (enumerated.Contains(symbol))
+          yield symbol;
       }
     }
 

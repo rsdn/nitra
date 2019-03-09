@@ -1,0 +1,17 @@
+﻿using Nitra.Declarations;
+
+namespace DotNet
+{
+  abstract declaration Functional : Parameterizable, Typed
+  {
+    symbol
+    {
+      in ReturnType   : TypeSymbol;
+      in FunctionType : FunctionTypeSymbol = FunctionTypeSymbol();
+
+      Type                    = FunctionType;
+      FunctionType.Return     = ReturnType;
+      FunctionType.Parameters = AstUtils.MapParametersToTypes(Parameters, ReturnType);
+    }
+  }
+}

@@ -5,6 +5,7 @@ using Nemerle.Collections;
 using Nemerle.Imperative;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
@@ -60,7 +61,10 @@ namespace Nitra
         if (path.Contains(", Version="))
           Assembly.Load(path)
         else
-          Assembly.LoadFrom(path);
+        {
+          def name = AssemblyName.GetAssemblyName(path).FullName;
+          AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.FullName == name) ?? Assembly.LoadFrom(path);
+        }
       assembly
     }
 

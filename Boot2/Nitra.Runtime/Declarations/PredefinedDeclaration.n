@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -13,10 +13,16 @@ namespace Nitra.Declarations
   {
     public this(name : Name, symbolFactory : Func[DeclarationSymbol])
     {
+      this(name, symbolFactory, false)
+    }
+
+    public this(name : Name, symbolFactory : Func[DeclarationSymbol], ignoreCase : bool)
+    {
       _symbolFactory = symbolFactory;
       Source         = name.Source;
       Span           = name.Span;
       __NameImpl     = name;
+      IgnoreCase     = ignoreCase;
     }
 
     private         _symbolFactory   : Func[DeclarationSymbol];
@@ -38,6 +44,8 @@ namespace Nitra.Declarations
     }
 
     public override IsParsed : bool { get { false } }
+
+    public override IgnoreCase : bool { get; }
 
     public override CreateSymbol() : DeclarationSymbol
     {

@@ -1,4 +1,4 @@
-using Nitra.ProjectSystem;
+﻿using Nitra.ProjectSystem;
 using Nitra.Declarations;
 using Nitra.Staging;
 
@@ -193,9 +193,10 @@ namespace Nitra.Serialization2
           match (symbolKind)
           {
             | WithoutDeclarations => TSymbol()
-            | Parsed =>
+            | Parsed           with ignoreCase = false
+            | ParsedIgnoreCase with ignoreCase = true =>
               def name        = Name(Location(Source, NSpan()), nameText);
-              def declaration = ExternalDeclaration.[TSymbol](name);
+              def declaration = ExternalDeclaration.[TSymbol](name, ignoreCase);
               declaration.DefineSymbol(containingScope)
 
             | External =>

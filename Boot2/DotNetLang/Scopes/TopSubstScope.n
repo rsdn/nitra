@@ -1,6 +1,5 @@
 ﻿using Nitra;
 using Nitra.Declarations;
-
 using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Text;
@@ -8,29 +7,63 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Immutable;
-
 using System.Diagnostics;
+
 using SCG = System.Collections.Generic;
 
 namespace DotNet
 {
-  public class TopSubstScope : Scope
+  public partial class TopSubstScope : Scope
   {
-    private _typeInfo : GenericTypeSymbol;
-    private _args     : ImmutableArray[TypeSymbol];
+    private _typeInfo      : GenericTypeSymbol;
+    private _args          : ImmutableArray[TypeSymbol];
+    private _typeParamsMap : Hashtable[int, TypeSymbol];
 
-    public this(typeInfo : GenericTypeSymbol, _scope : Scope, args : ImmutableArray[TypeSymbol])
+    public this(typeInfo : GenericTypeSymbol, nestedScope : Scope, args : ImmutableArray[TypeSymbol]) { this(typeInfo, args) }
+
+    public this(typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
     {
       _typeInfo = typeInfo;
       _args     = args;
+
+      def typeParams    = typeInfo.TypeParameters;
+      def typeParamsMap = Hashtable();
+      assert2(args.Length == typeParams.Length);
+      // TODO: Add support of parent type type parameters.
+      foreach (tp in typeParams with i)
+        typeParamsMap[tp.Id] = args[i];
+
+      _typeParamsMap = typeParamsMap;
     }
 
     // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { _typeInfo.Scope.AllSymbols } }
+    public override GetAllSymbols() : Seq[DeclarationSymbol]{ _typeInfo.Scope.GetAllSymbols() }
+
+    public virtual TrySubstTypeParameterSymbol(parameterSymbol : TypeParameterSymbol) : TypeSymbol
+    {
+      mutable result;
+      if (_typeParamsMap.TryGetValue(parameterSymbol.Id, out result))
+        result
+      else
+      {
+        assert2(false, "Unmapped TypeParameterSymbol!");
+        parameterSymbol
+      }
+    }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
-      _typeInfo.Scope.Bind.[TSymbol](reference)
+      def result = _typeInfo.Scope.Bind.[TSymbol](reference);
+      def symbols = result.GetSymbols();
+
+      def res = LightList();
+      foreach (x in symbols)
+      {
+        | method   is Member.MethodSymbol   => res.Add(SubstMethod(method) :> TSymbol);
+        | property is Member.PropertySymbol => res.Add(SubstProperty(property) :> TSymbol);
+        | _ => ()
+      }
+      res.ToBindResult()
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
@@ -67,5 +100,5 @@ namespace DotNet
       def (typeInfo, args) = Read(reader, metadataReader);
       TopSubstScope(typeInfo, null, ImmutableArray.Create(args))
     }
-  }
-}
+  } // class
+} // namespace

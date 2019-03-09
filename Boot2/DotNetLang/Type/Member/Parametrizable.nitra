@@ -1,0 +1,24 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+using System.Collections.Immutable;
+
+namespace DotNet
+{
+  abstract declaration Parameterizable
+  {
+    symbol
+    {
+      table ParameterScope;
+      in Parameters : ImmutableArray[FormalParameterSymbol];
+    }
+
+    Parameters.ContainingTable = Symbol.ParameterScope;
+    Parameters.IndexIn         = 0u;
+    Parameters.ParametersIn    = [];
+    Parameters.TypesIn         = [];
+    Symbol.Parameters          = Parameters.ParametersOut.Reverse().ToImmutableArray();
+
+    Parameters               : FormalParameter*;
+  }
+}

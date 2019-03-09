@@ -6,30 +6,43 @@ using Nitra.Internal;
 
 namespace DotNet
 {
-  declaration FormalParameter : CustomAttributeHost
+  declaration FormalParameter : TypedDeclaration, CustomAttributeHostDeclaration
   {
     symbol
     {
+      in Modifier   : ParameterModifier;
+      in Index      : uint;
+      in Default    : DefaultValue;
+      in DeclaredIn : DeclarationSymbol;
+
+      DeclaredInOpt = VSome(DeclaredIn);
+
       // TODO: add support of optional, custom modifiers, index and default value
       Kind      = "parameter";
       SpanClass = DotNetLang.ParameterSpanClass;
-
-      in Type     : TypeSymbol;
-      in Modifier : ParameterModifier;
-      in Index    : uint;
     }
 
-    inout Index    : uint;
-    in TypeRef : Ref[TypeSymbol];
+    inout Index      : uint;
+    inout Parameters : list[FormalParameterSymbol];
+    in    DeclaredIn : DeclarationSymbol;
+  stage 1:
+    inout Types      : list[TypeSymbol];
 
-    IndexOut = IndexIn + 1u;
+    Symbol.DeclaredIn    = DeclaredIn;
+    IndexOut             = IndexIn + 1u;
     Type.Scope           = Scope;
     TypeRef              = Type.Ref.Resolve();
     Symbol.Type          = TypeRef.Symbol;
     Symbol.Modifier      = Modifier.ValueOrDefault;
     Symbol.Index         = IndexIn;
+    ParametersOut        = Symbol :: ParametersIn;
+    TypesOut             = Symbol.Type :: TypesIn;
+    Symbol.Default       = AstUtils.MakeDefault(Default);
+    Default.ExpectedType = TypeRef.Symbol;
+    Default.ScopeIn      = Scope;
 
-    Type       : QualifiedReference;
-    Modifier   : ParameterModifier;
+    Type     : QualifiedReference;
+    Modifier : ParameterModifier;
+    Default  : ExprBase;
   }
 }

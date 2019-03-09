@@ -17,6 +17,7 @@ namespace DotNet
     ContainingTable           = UsingAliasesScope;
     NamespaceOrTypeName.Scope = CurrentScope;
     Symbol.Replacement        = NamespaceOrTypeName.Ref;
+    //Symbol.TypeSubst          = NamespaceOrTypeName.Ref.Resolve().Symbol; // нужно ли это делать?
 
     NamespaceOrTypeName : QualifiedReference;
   }

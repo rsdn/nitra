@@ -21,6 +21,7 @@ namespace Nitra.Typing
     public abstract Parents       : list[AstSymbol] implements IGraphNode[AstSymbol].Connections { get; }
     public abstract IsDeclaration : bool                          { get; }
     public abstract Cardinality   : AstCardinality                { get; }
+    public abstract IgnoreCase    : bool                          { get; }
     public abstract Symbol        : SymbolRef[SymbolSymbol]       { get; }
     public override GetParents() : Seq[PropertyContainerSymbol] { Parents }
 
@@ -54,7 +55,7 @@ namespace Nitra.Typing
       {
         unless (_isCyclic)
         {
-          foreach (group when group.Nodes.Count > 1 in GraphAlgorithms.FindStronglyConnectedComponents([this]))
+          foreach (group when group.IsNonTrivial() in GraphAlgorithms.FindStronglyConnectedComponents([this]))
           {
             def firstSymbol = group.Nodes.FirstItem;
             using (root = Node.Project.RootError(firstSymbol.FirstLocation, $"Declaration '$(firstSymbol.FullName)' is cyclic."))

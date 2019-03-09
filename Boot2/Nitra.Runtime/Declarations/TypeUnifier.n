@@ -16,17 +16,12 @@ namespace Nitra.Declarations
 
     protected _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
-    public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
-    {
-      def unwrappedSubtype   = UnwrapTypeVar(subtype);
-      def unwrappedSupertype = UnwrapTypeVar(supertype);
-      when (unwrappedSubtype : object == unwrappedSupertype)
-        return true;
-
-      IsSubtypeUnwraped(unwrappedSubtype, unwrappedSupertype)
-    }
-
     protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
+
+    public virtual CreateFreeTypeVar() : TypeVarSymbol
+    {
+      CreateTypeVar(null, null)
+    }
 
     public virtual CreateTypeVar(baseTypeConstraint : TypeSymbol, derivedTypeConstraint : TypeSymbol) : TypeVarSymbol
     {
@@ -40,87 +35,6 @@ namespace Nitra.Declarations
 
       var.EvalProperties(_typeVarInitContext);
       var
-    }
-
-    public TryProvide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
-    {
-      match (UnwrapTypeVar(derivedTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(null, c) => TryUnify(t, tv)
-      }
-    }
-
-    public Provide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
-    {
-      match (UnwrapTypeVar(derivedTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(null, c) => Unify(t, tv)
-      }
-    }
-
-    protected ProvideImpl(t : TypeSymbol, derivedTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
-    {
-      match (UnwrapTypeVar(derivedTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(null, c) => UnifyImpl(t, tv, ref updatedVariables)
-      }
-    }
-
-    public TryRequire(t : TypeSymbol, baseTypeConstraint : TypeSymbol) : bool
-    {
-      match (UnwrapTypeVar(baseTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(c, null) => TryUnify(t, tv)
-      }
-    }
-
-    public Require(t : TypeSymbol, baseTypeConstraint : TypeSymbol) : bool
-    {
-      match (UnwrapTypeVar(baseTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(c, null) => Unify(t, tv)
-      }
-    }
-
-    protected RequireImpl(t : TypeSymbol, baseTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
-    {
-      match (UnwrapTypeVar(baseTypeConstraint))
-      {
-        | TypeVarSymbol as tv
-        | c with tv = CreateTypeVar(c, null) => UnifyImpl(t, tv, ref updatedVariables)
-      }
-    }
-
-    public TryUnify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
-    {
-      mutable updatedVariables;
-      def result = UnifyImpl(t1, t2, ref updatedVariables);
-      ResetTypeVars(ref updatedVariables);
-      result
-    }
-
-    public Unify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
-    {
-      mutable updatedVariables;
-      def result = UnifyImpl(t1, t2, ref updatedVariables);
-      unless (result)
-        ResetTypeVars(ref updatedVariables);
-      result
-    }
-
-    protected UnifyImpl(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
-    {
-      def t1 = UnwrapTypeVar(typeSymbol1);
-      def t2 = UnwrapTypeVar(typeSymbol2);
-      when (t1 : object == t2)
-        return true;
-
-      UnifyUnwraped(t1, t2, ref updatedVariables)
     }
 
     protected virtual UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
@@ -232,6 +146,97 @@ namespace Nitra.Declarations
       }
     }
 
+    public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    {
+      def unwrappedSubtype   = Unwrap(subtype);
+      def unwrappedSupertype = Unwrap(supertype);
+      when (unwrappedSubtype : object == unwrappedSupertype)
+        return true;
+
+      IsSubtypeUnwraped(unwrappedSubtype, unwrappedSupertype)
+    }
+
+    public TryProvide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
+    {
+      match (Unwrap(derivedTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(null, c) => TryUnify(t, tv)
+      }
+    }
+
+    public Provide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
+    {
+      match (Unwrap(derivedTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(null, c) => Unify(t, tv)
+      }
+    }
+
+    protected ProvideImpl(t : TypeSymbol, derivedTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (Unwrap(derivedTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(null, c) => UnifyImpl(t, tv, ref updatedVariables)
+      }
+    }
+
+    public TryRequire(t : TypeSymbol, baseTypeConstraint : TypeSymbol) : bool
+    {
+      match (Unwrap(baseTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(c, null) => TryUnify(t, tv)
+      }
+    }
+
+    public Require(t : TypeSymbol, baseTypeConstraint : TypeSymbol) : bool
+    {
+      match (Unwrap(baseTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(c, null) => Unify(t, tv)
+      }
+    }
+
+    protected RequireImpl(t : TypeSymbol, baseTypeConstraint : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (Unwrap(baseTypeConstraint))
+      {
+        | TypeVarSymbol as tv
+        | c with tv = CreateTypeVar(c, null) => UnifyImpl(t, tv, ref updatedVariables)
+      }
+    }
+
+    public TryUnify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
+    {
+      mutable updatedVariables;
+      def result = UnifyImpl(t1, t2, ref updatedVariables);
+      ResetTypeVars(ref updatedVariables);
+      result
+    }
+
+    public Unify(t1 : TypeSymbol, t2 : TypeSymbol) : bool
+    {
+      mutable updatedVariables;
+      def result = UnifyImpl(t1, t2, ref updatedVariables);
+      unless (result)
+        ResetTypeVars(ref updatedVariables);
+      result
+    }
+
+    protected UnifyImpl(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      def t1 = Unwrap(typeSymbol1);
+      def t2 = Unwrap(typeSymbol2);
+      when (t1 : object == t2)
+        return true;
+
+      UnifyUnwraped(t1, t2, ref updatedVariables)
+    }
+
     protected UnifyAll(ts1 : ref LightList[TypeSymbol], ts2 : ref LightList[TypeSymbol], updatedVariables : ref LightList[TypeVarSymbol]) : bool
     {
       when (ts1.Count != ts2.Count)
@@ -280,9 +285,9 @@ namespace Nitra.Declarations
       true
     }
 
-    protected static UnwrapTypeVar(t : TypeSymbol) : TypeSymbol
+    protected virtual Unwrap(t : TypeSymbol) : TypeSymbol
     {
-      | tv is TypeVarSymbol when tv.IsTypeEvaluated => UnwrapTypeVar(tv.Type)
+      | tv is TypeVarSymbol when tv.IsTypeEvaluated => Unwrap(tv.Type)
       | _ => t
     }
 
@@ -295,25 +300,21 @@ namespace Nitra.Declarations
     protected ResetTypeVars(vars : ref LightList[TypeVarSymbol]) : void
     {
       def e = vars.GetEnumerator();
-      when (e.MoveNext())
+      while (e.MoveNext())
       {
-        do
-        {
-          def var                   = e.Current;
-          def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
-          def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
+        def var                   = e.Current;
+        def baseTypeConstraint    = if (var.IsBaseTypeConstraintEvaluated)    var.BaseTypeConstraint    else null;
+        def derivedTypeConstraint = if (var.IsDerivedTypeConstraintEvaluated) var.DerivedTypeConstraint else null;
 
-          var.ResetProperties();
+        var.ResetProperties();
 
-          when (baseTypeConstraint : object != null)
-            var.BaseTypeConstraint = baseTypeConstraint;
+        when (baseTypeConstraint : object != null)
+          var.BaseTypeConstraint = baseTypeConstraint;
 
-          when (derivedTypeConstraint : object != null)
-            var.DerivedTypeConstraint = derivedTypeConstraint;
+        when (derivedTypeConstraint : object != null)
+          var.DerivedTypeConstraint = derivedTypeConstraint;
 
-          var.EvalProperties(_typeVarInitContext);
-        }
-        while (e.MoveNext())
+        var.EvalProperties(_typeVarInitContext);
       }
     }
   }

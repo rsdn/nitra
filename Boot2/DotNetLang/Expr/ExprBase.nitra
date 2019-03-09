@@ -1,0 +1,22 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+namespace DotNet
+{
+  // TODO: Временный промежуточный тип пока Expr находится в проекте CSharp. Убрать его после переноса АСТ-а обратно в DotNetLang.
+  abstract ast ExprBase
+  {
+    in    Options        : ExprOptions            = ExprOptions.None;
+  stage 2:
+    in    ExpectedType   : TypeSymbol;
+    in    Used           : bool                   = false;
+    inout Scope          : Scope;
+    out   Type           : TypeSymbol;
+    out   Member         : Ref[DeclarationSymbol] = null;
+
+    ScopeOut = ScopeIn;
+
+    unless (Type.IsSubtypeOf(ExpectedType))
+      Error(context, $"Expected $(self.ExpectedType), got $(self.Type)");
+  }
+}

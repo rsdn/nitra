@@ -58,11 +58,6 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable">
-      <Name>System.Collections.Immutable</Name>
-      <AssemblyName>System.Collections.Immutable.dll</AssemblyName>
-      <HintPath>..\..\packages\System.Collections.Immutable.1.1.37\lib\dotnet\System.Collections.Immutable.dll</HintPath>
-    </Reference>
     <Reference Include="System.Core" />
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
@@ -122,10 +117,19 @@
     <Compile Include="Core\QualifiedReference.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Expr\Expr.nitra">
+    <Compile Include="Expr\ExprBase.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Expr\ExprExtensions.n">
+    <Compile Include="Expr\ExprOptions.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IDotNetBackEnd.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Scopes\SubstHelper.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Statments\Statement.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Namespace\Namespace.n">
@@ -147,6 +151,18 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\CustomAttributeHost.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\DefaultValue.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\Functional.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\FunctionType.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\Member\Parametrizable.nitra">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Type\ModifierHost.nitra">
@@ -228,6 +244,15 @@
     <Compile Include="Type\TypeAlias.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\Typed.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\TypedAst.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\TypedDeclaration.nitra">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Type\TypeParameter.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -261,13 +286,22 @@
     <Compile Include="Namespace\UsingDirective.nitra">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Type\WellKnownSymbols.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Type\WellKnownType.nitra">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utils\TypeHintHelper.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utils\TypeUnifier.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\AstUtils.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utils\PlatformTypes.n">
+    <Compile Include="Utils\IPlatformType.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Utils\SymbolUtils.n">
@@ -277,8 +311,9 @@
   <ItemGroup>
     <Folder Include="Collectors\" />
     <Folder Include="Core\" />
+    <Folder Include="Expr\" />
     <Folder Include="Namespace\" />
-    <Folder Include="Expr" />
+    <Folder Include="Statments" />
     <Folder Include="Utils" />
     <Folder Include="Properties\" />
     <Folder Include="Scopes\" />
@@ -286,9 +321,11 @@
     <Folder Include="Type\Member" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="packages.config">
-      <SubType>Content</SubType>
-    </Content>
+    <ProjectReference Include="..\..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Name>System.Collections.Immutable.Light</Name>
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />

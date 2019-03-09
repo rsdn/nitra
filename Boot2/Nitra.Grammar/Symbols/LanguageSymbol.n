@@ -84,7 +84,7 @@ namespace Nitra.Typing
       {
         unless (_isCyclic)
         {
-          foreach (group when group.Nodes.Count > 1 in GraphAlgorithms.FindStronglyConnectedComponents([this]))
+          foreach (group when group.IsNonTrivial() in GraphAlgorithms.FindStronglyConnectedComponents([this]))
           {
             def firstSymbol = group.Nodes.FirstItem;
             using (root = Node.Project.RootError(firstSymbol.FirstLocation, $"Language '$(firstSymbol.FullName)' is cyclic."))

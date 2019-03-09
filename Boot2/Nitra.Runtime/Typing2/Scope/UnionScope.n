@@ -24,14 +24,8 @@ namespace Nitra.Declarations
       Scopes = scopes;
     }
 
-    public override AllSymbols : Seq[DeclarationSymbol]
-    {
-      get
-      {
-        Scopes.SelectMany(scope => scope.AllSymbols).OrderBy(x => x.Name, StringComparer.Ordinal).ToArray()
-      }
-    }
-
+    public override GetAllSymbols() : Seq[DeclarationSymbol] { Scopes.SelectMany(scope => scope.GetAllSymbols()) }
+    
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def result = LightList();

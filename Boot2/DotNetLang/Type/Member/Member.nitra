@@ -1,6 +1,8 @@
 ﻿using Nitra;
 using Nitra.Declarations;
 
+using System.Collections.Immutable;
+
 namespace DotNet
 {
   abstract declaration Member : TypeMember
@@ -10,66 +12,59 @@ namespace DotNet
       FullName = DeclaredIn.FullName + "." + this.Name;
     }
 
-    | Constructor : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Constructor : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "constructor";
           SpanClass = DotNetLang.MethodSpanClass;
 
-          table ParameterScope;
+          ReturnType = DeclaredIn;
         }
 
-        Symbol.Flags              |= Modifiers.Flags;
-        Modifiers.Flags            = ModifierSet(context);
-        Parameters.ContainingTable = Symbol.ParameterScope;
-        Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
+        Symbol.Flags      |= Modifiers.Flags;
+        Modifiers.Flags    = ModifierSet(context);
+        Parameters.Scope   = Scope;
 
-        Parameters  : FormalParameter*;
         Initializer : ConstructorInitializer?;
       }
-    | Destructor : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Destructor : Parameterizable, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "destructor";
           SpanClass = DotNetLang.MethodSpanClass;
-
-          table ParameterScope;
         }
 
-        Parameters.ContainingTable = Symbol.ParameterScope;
         Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
-
-        Parameters : FormalParameter*;
       }
-    | Method : GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Method : Functional, GenericEntity, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
+          in IsExtensionMethod : bool;
+
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
-
-          table ParameterScope;
-          in  ReturnType     : TypeSymbol;
         }
 
       stage 1:
         out ReturnTypeRef : Ref[TypeSymbol] = ReturnType.Ref.Resolve();
 
-        InterfaceType.Scope        = Scope;
-        ReturnType.Scope           = TypeParameterConstraints.Scope;
-        Parameters.ContainingTable = Symbol.ParameterScope;
-        Parameters.Scope           = TypeParameterConstraints.Scope;
-        Parameters.IndexIn         = 0u;
-        Symbol.ReturnType          = ReturnTypeRef.Symbol;
+        InterfaceType.Scope      = Scope;
+        ReturnType.Scope         = TypeParameterConstraints.Scope;
+        Parameters.Scope         = TypeParameterConstraints.Scope;
+        Symbol.ReturnType        = ReturnTypeRef.Symbol;
+        Body.LocalVarsScopeIn    = TableScope(null, "LocalVars");
+        Body.ParameterScope      = Symbol.ParameterScope;
+        Body.ScopeIn             = Scope.HideWith(Symbol.ParameterScope).HideWith(Body.LocalVarsScopeIn);
+        Symbol.IsExtensionMethod = AstUtils.IsExtensionMethod(Symbol.Parameters);
+        HasExtensionMethodOut    = HasExtensionMethodIn || Symbol.IsExtensionMethod;
 
-        InterfaceType            : QualifiedReference?;
-        IsPartial                : bool;
-        Parameters               : FormalParameter*;
-        ReturnType               : QualifiedReference;
+        InterfaceType : QualifiedReference?;
+        IsPartial     : bool;
+        ReturnType    : QualifiedReference;
+        Body          : Statement;
       }
     | Property : CustomAttributeHostDeclaration, ModifierHostAndAst
       {
@@ -116,15 +111,12 @@ namespace DotNet
         Header        : EventHeader;
         Accessors     : EventAccessor*;
       }
-    | Indexer : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Indexer : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
           Kind      = "indexer";
           SpanClass = DotNetLang.PropertySpanClass;
-
-          table ParameterScope;
-          in  Type           : TypeSymbol;
         }
 
       stage 1:
@@ -132,13 +124,10 @@ namespace DotNet
 
         InterfaceType.Scope        = Scope;
         Type.Scope                 = Scope;
-        Parameters.ContainingTable = Symbol.ParameterScope;
         Parameters.Scope           = Scope;
-        Parameters.IndexIn         = 0u;
-        Symbol.Type                = TypeRef.Symbol;
+        Symbol.ReturnType          = TypeRef.Symbol;
         Accessors.Scope            = Scope;
 
-        Parameters    : FormalParameter*;
         Type          : QualifiedReference;
         InterfaceType : QualifiedReference?;
         Accessors     : PropertyAccessor*;
@@ -314,14 +303,14 @@ namespace DotNet
     Type       : QualifiedReference;
   }
 
-  abstract declaration PropertyAccessor : CustomAttributeHost, ModifierHostAndAst
+  abstract declaration PropertyAccessor : CustomAttributeHostDeclaration, ModifierHostAndAst
   {
     // TODO: Map body
     | Get
     | Set
   }
 
-  abstract declaration EventAccessor : CustomAttributeHost
+  abstract declaration EventAccessor : CustomAttributeHostDeclaration
   {
     // TODO: Map body
     | Add

@@ -52,6 +52,8 @@ namespace Nitra.Declarations
     public          ResolvedTo            : IRef                    { get { _resolvedTo } }
     public          IsResolvedToEvaluated : bool                    { get { _resolvedTo != null } }
 
+    IsResolved() : bool { _resolvedTo != null && !(_resolvedTo is Ignore) && _resolvedTo.IsSymbolEvaluated }
+
     [DependentProperty("IsSymbolEvaluated")]
     public abstract Symbol                : TSymbol                 { get; }
     public abstract IsSymbolEvaluated     : bool                    { get; }
@@ -123,7 +125,7 @@ namespace Nitra.Declarations
       get
       {
         if (IsUnresolved)
-          true
+          false
         else if (IsAmbiguous)
         {
           foreach (s when s.IsScopeEvaluated in Symbols)
@@ -146,6 +148,17 @@ namespace Nitra.Declarations
     {
       def bindResult = _result.Filter.[TConcreteSymbol](predicate);
       CreateRevole(bindResult)
+    }
+
+    public ResolveOrCopy[TConcreteSymbol]() : Ref[TConcreteSymbol]
+      where TConcreteSymbol : DeclarationSymbol
+      //where TConcreteSymbol : TSymbol
+    {
+      def bindResult = _result.Filter.[TConcreteSymbol](null);
+      if (IsResolvedToEvaluated)
+        Resolved(bindResult, this)
+      else
+        CreateRevole(bindResult)
     }
 
     public Resolve[TConcreteSymbol]() : Ref[TConcreteSymbol]
@@ -259,12 +272,22 @@ namespace Nitra.Declarations
       {
         base(result);
         Location = location;
-        Symbol   = Symbols[0];
       }
 
       public override Location            : Location { get; }
-      public override Symbol              : TSymbol  { get; }
-      public override IsSymbolEvaluated   : bool     { get { true } }
+      public override Symbol              : TSymbol
+      {
+          get
+          {
+            if (IsResolved())
+              ResolvedTo.Symbol :> TSymbol
+            else if (Symbols.Length == 1)
+              Symbols[0]
+            else
+              assert(false);
+          }
+      }
+      public override IsSymbolEvaluated   : bool     { get { IsResolved() || Symbols.Length == 1 } }
       public override IgnoreAmbiguities   : bool     { get { false } }
       public override IsNameValid         : bool     { get { Symbol.IsNameValid } }
       public override Name                : string   { get { Symbol.Name } }
@@ -312,7 +335,7 @@ namespace Nitra.Declarations
     [Record]
     private abstract class ResolvedBase : Ref[TSymbol]
     {
-      public From : IRef;
+      public          From                : IRef;
       public override Location            : Location { get { From.Location } }
       public override IsNameValid         : bool     { get { From.IsNameValid } }
       public override Name                : string   { get { From.Name } }
@@ -327,19 +350,29 @@ namespace Nitra.Declarations
       }
     }
 
-    [Record]
     private class Resolved : ResolvedBase
     {
       public this(result : BindResult[TSymbol], from : IRef)
       {
         base(result, from);
-        Symbol = Symbols[0];
       }
 
-      public override Symbol              : TSymbol  { get; }
+      public override Symbol              : TSymbol
+      {
+          get
+          {
+            if (IsResolved())
+              ResolvedTo.Symbol :> TSymbol
+            else if (Symbols.Length == 1)
+              Symbols[0]
+            else
+              assert(false);
+          }
+      }
+
+      public override IsSymbolEvaluated   : bool     { get { IsResolved() || Symbols.Length == 1 } }
       public override IsNameValid         : bool     { get { Symbol.IsNameValid } }
       public override Name                : string   { get { Symbol.Name } }
-      public override IsSymbolEvaluated   : bool     { get { true } }
       public override IsFullNameEvaluated : bool     { get { Symbol.IsFullNameEvaluated } }
       public override FullName            : string   { get { Symbol.FullName } }
 

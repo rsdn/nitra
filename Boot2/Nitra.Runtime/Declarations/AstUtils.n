@@ -69,5 +69,10 @@ namespace Nitra.Internal
     {
       text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
     }
-  }
-}
+
+    public ToString(symbol : TypeSymbol) : string
+    {
+      symbol.InitialName
+    }
+  } // module
+} // namespace

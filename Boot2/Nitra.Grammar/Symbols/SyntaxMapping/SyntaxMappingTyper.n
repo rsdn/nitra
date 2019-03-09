@@ -17,7 +17,7 @@ namespace Nitra.Typing
 {
   internal module SyntaxMappingTyper
   {
-    public MakeExpression(type : SyntaxMappingType, astType : AstType, compilerMessages : ICompilerMessages) : SyntaxMappingExpr
+    public MakeExpression(type : SyntaxMappingType, astType : AstType, ntype : ValueOption[NType], compilerMessages : ICompilerMessages) : SyntaxMappingExpr
     {
       match (type)
       {
@@ -36,7 +36,7 @@ namespace Nitra.Typing
           {
             def valueExpr =
               if (valueType is Some(expr))
-                Some(MakeExpression(expr, AstType.Ast(astType, astSymbol), compilerMessages))
+                Some(MakeExpression(expr, AstType.Ast(astType, astSymbol), VNone(), compilerMessages))
               else
                 None();
 
@@ -53,7 +53,7 @@ namespace Nitra.Typing
           {
             | List(astSymbol) | OptionList(astSymbol) =>
               def itemAstType = AstType.Ast(astType, astSymbol);
-              def itemExprs   = itemTypes.Map(MakeExpression(_, itemAstType, compilerMessages));
+              def itemExprs   = itemTypes.Map(MakeExpression(_, itemAstType, VNone(), compilerMessages));
               SyntaxMappingExpr.ListCtor(type, astSymbol, itemExprs)
 
             | _ =>
@@ -61,12 +61,14 @@ namespace Nitra.Typing
               SyntaxMappingExpr.Error(type)
           }
 
+        | ParseTree(path) when astType.IsVoid && ntype.HasValue => SyntaxMappingExpr.ParsedValueOrSpan(type, path, ntype.Value)
+
         | ParseTree(path)       with typeToCheck = ResolveCall(type, path, [],        VSome(astType), compilerMessages)
         | Call(path, arguments) with typeToCheck = ResolveCall(type, path, arguments, VSome(astType), compilerMessages)
         | Match(path, cases)    with typeToCheck = ResolveMatch(type, path, cases, astType, compilerMessages) =>
-          MakeExpression(typeToCheck, astType, compilerMessages)
+          MakeExpression(typeToCheck, astType, VNone(), compilerMessages)
 
-        | DefineVariable(symbol, body) => SyntaxMappingExpr.DefineVariable(type, symbol, MakeExpression(body, astType, compilerMessages))
+        | DefineVariable(symbol, body) => SyntaxMappingExpr.DefineVariable(type, symbol, MakeExpression(body, astType, ntype, compilerMessages))
       }
     }
 
@@ -78,7 +80,7 @@ namespace Nitra.Typing
       else
       {
         def exprType = node.Expr.MakeType(ruleSymbol, VSome(astType));
-        def expr     = MakeExpression(exprType, astType, node.Context);
+        def expr     = MakeExpression(exprType, astType, VNone(), node.Context);
         SyntaxMappingType.Ast(node, astType, expr);
       }
     }
@@ -248,8 +250,8 @@ namespace Nitra.Typing
               unless (node.AccumulatorSymbol.Name == accumulatorReference.Value)
                 node.Context.Error(accumulatorReference, $"Unbound name '$(accumulatorReference.Value)'.");
 
-              def initExpr = MakeExpression(node.InitExpr.MakeType(ruleSymbol, VSome(astType)), astType, node.Context);
-              def eachExpr = MakeExpression(node.EachExpr.MakeType(ruleSymbol, VSome(astType)), astType, node.Context);
+              def initExpr = MakeExpression(node.InitExpr.MakeType(ruleSymbol, VSome(astType)), astType, VNone(), node.Context);
+              def eachExpr = MakeExpression(node.EachExpr.MakeType(ruleSymbol, VSome(astType)), astType, VNone(), node.Context);
               def expr     = SyntaxMappingExpr.Fold(node, itemSymbol, path, node.AccumulatorSymbol, initExpr, eachExpr, astType);
               SyntaxMappingType.Ast(node, astType, expr)
             }
@@ -339,7 +341,7 @@ namespace Nitra.Typing
           {
             | ([], []) => VSome([])
             | (p :: otherParms, a :: otherArgs) =>
-              def expr = MakeExpression(a, p.Type, subMessages);
+              def expr = MakeExpression(a, p.Type, VNone(), subMessages);
               if (expr is SyntaxMappingExpr.Error)
                 VNone()
               else if (applyArguments(otherParms, otherArgs, subMessages) is VSome(otherExprs))
@@ -487,7 +489,7 @@ namespace Nitra.Typing
       def caseExprs = SCG.List();
       foreach ((caseLoc, pattern, caseType) in cases)
       {
-        def expr = MakeExpression(caseType, returnType, compilerMessages);
+        def expr = MakeExpression(caseType, returnType, VNone(), compilerMessages);
         caseExprs.Add(SyntaxMappingCase(caseLoc, pattern, expr));
       }
       SyntaxMappingType.Ast(loc, returnType, SyntaxMappingExpr.Match(loc, path, caseExprs.ToNList(), returnType))

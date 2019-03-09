@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Nitra;
 using Nitra.Declarations;
 using Nitra.ProjectSystem;
@@ -18,6 +18,10 @@ namespace DotNet
 {
   public module AstUtils
   {
+    public static mutable MakeDefault : ExprBase -> DefaultValue;
+
+    public CreateFreeTypeVar() : TypeVarSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
+
     public Append(this lst : QualifiedReference.IAstList, item : QualifiedReference) : QualifiedReference.IAstList
     {
       def newItems = array(lst.Count + 1);
@@ -31,7 +35,7 @@ namespace DotNet
       def makeCurrentScope(scope : Scope) : Scope
       {
         def withAliases =
-          if (aliases.Symbols.Count == 0)
+          if (aliases.IsEmpty)
             scope
           else
             scope.UnionWith(aliases);
@@ -214,6 +218,11 @@ namespace DotNet
 
     public CreateNestedConstructedTypeSymbol(_loc : Location, parentTypeSubst : TypeSymbol, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
     {
+      CreateNestedConstructedTypeSymbol(parentTypeSubst, typeInfo, arguments, context)
+    }
+
+    public CreateNestedConstructedTypeSymbol(parentTypeSubst : TypeSymbol, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    {
       def resultSymbol       = NestedConstructedTypeSymbol();
       resultSymbol.Parent    = parentTypeSubst;
       resultSymbol.TypeSubst = resultSymbol;
@@ -223,13 +232,18 @@ namespace DotNet
       resultSymbol
     }
 
-    public CreateConstructedTypeSymbol(_loc : Location, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    public CreateConstructedTypeSymbol(typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
     {
       def resultSymbol      = TopConstructedTypeSymbol();
       resultSymbol.TypeInfo = typeInfo;
       resultSymbol.Args     = arguments;
       resultSymbol.EvalProperties(context);
       resultSymbol
+    }
+
+    public CreateConstructedTypeSymbol(_loc : Location, typeInfo : GenericTypeSymbol, arguments : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    {
+      CreateConstructedTypeSymbol(typeInfo, arguments, context)
     }
 
     public MakeConstructedType(ast : ILocated, args : ImmutableArray[Ref[DeclarationSymbol]], context : DependentPropertyEvalContext) : ResolutionAlgorithm[DeclarationSymbol, DeclarationSymbol]
@@ -285,24 +299,32 @@ namespace DotNet
       (declaration :> GenericEntity).TypeParameterAliases?.Count
     }
 
-    public GetTypeParameter(alias : TypeParameterAlias, typeParameterSymbols : IList[TypeParameterSymbol], IndexIn : int) : TypeParameterSymbol
+    public GetTypeParameter(alias : TypeParameterAlias, typeParameterSymbols : IList[TypeSymbol], IndexIn : int) : TypeParameterSymbol
     {
-      def typeParameterSymbol = typeParameterSymbols[IndexIn];
+      def typeParameterSymbol = typeParameterSymbols[IndexIn] :> TypeParameterSymbol;
       typeParameterSymbol.AddAliasSymbol(alias);
       typeParameterSymbol
     }
 
     public NoTypeParameters : array[TypeParameterSymbol] = array(0);
 
-    public CreateTypeParameters(count : int) : ImmutableArray[TypeParameterSymbol]
+    public CreateTypeParameters(context : DependentPropertyEvalContext, table : TableScope, aliases : DotNet.TypeParameterAlias.IAstList) : ImmutableArray[TypeSymbol]
     {
+      def count : int = aliases.Count;
       if (count == 0)
         ImmutableArray.Empty
       else
       {
         def result = ImmutableArray.CreateBuilder(count);
         for (mutable i = 0; i < count; ++i)
-          result.Add(TypeParameterSymbol());
+        {
+          def alias  = aliases[i];
+          def name   = Name(alias.Name.Location);
+          // TODO: Подумать не надо ли собрать все атрибуты, со всех частей вместо использования первого попавшегося alias.Attributes
+          def decl   = TypeParameter(alias.Location, name, alias.Attributes, false);
+          def symbol = table.Define(decl, context);
+          result.Add(symbol);
+        }
         result.MoveToImmutable()
       }
     }
@@ -318,73 +340,55 @@ namespace DotNet
       symbols.SelectMany(s => s.OfType.[NestedTypeSymbol]()).ToArray()
     }
 
-    public IsSubtypeOf(this symbol1 : TypeSymbol, symbol2 : TypeSymbol) : bool
+    public IsSubtypeOf[T1, T2](this symbol1 : T1, symbol2 : T2) : bool
+      where T1: class, TypeSymbol
+      where T2: class, TypeSymbol
     {
+      assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
+      assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
       TypeUnifier.Instance.Require(symbol1, symbol2)
     }
 
-    public IsNumeric(this symbol : TypeSymbol) : bool
+    public Unify[T1, T2](this symbol1 : T1, symbol2 : T2) : bool
+      where T1: class, TypeSymbol
+      where T2: class, TypeSymbol
     {
-      match (symbol)
-      {
-        | x when x.FullName == PlatformTypes.Byte.FullName
-        | x when x.FullName == PlatformTypes.SByte.FullName
-        | x when x.FullName == PlatformTypes.Int16.FullName
-        | x when x.FullName == PlatformTypes.UInt16.FullName
-        | x when x.FullName == PlatformTypes.Int32.FullName
-        | x when x.FullName == PlatformTypes.UInt32.FullName
-        | x when x.FullName == PlatformTypes.Int64.FullName
-        | x when x.FullName == PlatformTypes.UInt64.FullName
-        | x when x.FullName == PlatformTypes.Single.FullName
-        | x when x.FullName == PlatformTypes.Double.FullName
-        | x when x.FullName == PlatformTypes.Decimal.FullName => true
-        | _ => false
-      }
+      assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
+      assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
+      TypeUnifier.Instance.Unify(symbol1, symbol2)
     }
 
-    public HasImplicitConversion(this from : TypeSymbol, to : TypeSymbol) : bool
+    public TryUnify[T1, T2](this symbol1 : T1, symbol2 : T2) : bool
+      where T1: class, TypeSymbol
+      where T2: class, TypeSymbol
     {
-      def char = PlatformTypes.Char.FullName;
-      def byte = PlatformTypes.Byte.FullName;
-      def sbyte = PlatformTypes.SByte.FullName;
-      def short = PlatformTypes.Int16.FullName;
-      def ushort = PlatformTypes.UInt16.FullName;
-      def int = PlatformTypes.Int32.FullName;
-      def uint = PlatformTypes.UInt32.FullName;
-      def long = PlatformTypes.Int64.FullName;
-      def ulong = PlatformTypes.UInt64.FullName;
-      def float = PlatformTypes.Single.FullName;
-      def double = PlatformTypes.Double.FullName;
-      def decimal = PlatformTypes.Decimal.FullName;
-
-      match(from) {
-        | x when x.FullName == sbyte => [short, int, long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == byte => [short, ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == short => [int, long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == ushort => [int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == int => [long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == uint => [long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == long => [float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == ulong => [float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == char => [ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == float => [double].Any(s => s == to.FullName)
-        | _ => false
-      }
+      assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
+      assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
+      TypeUnifier.Instance.TryUnify(symbol1, symbol2)
     }
 
-    public GetMemberReturnType(this member : DeclarationSymbol) : TypeSymbol
+    public MapParametersToTypes(parameters : ImmutableArray[FormalParameterSymbol], _dependence : TypeSymbol) : ImmutableArray[TypeSymbol]
     {
-      match (member)
-      {
-        | x is Member.PropertySymbol => x.Type
-        | x is Member.MethodSymbol => x.ReturnType
-        | x is Member.FieldSymbol => x.Type
-        | x is Member.ConstantSymbol => x.Type
-        | x is LambdaParameterSymbol => x.Type
-        | x is EnumMemberSymbol => x.DeclaredIn
-        | TypeSymbol => PlatformTypes.Type
-        | _ => PlatformTypes.GetFreeVar()
-      }
+        def builder = ImmutableArray.CreateBuilder(parameters.Length);
+        foreach (parameter in parameters)
+        {
+          if (parameter.IsTypeEvaluated)
+            builder.Add(parameter.Type);
+          else
+            builder.Add(CreateFreeTypeVar());
+        }
+
+        builder.MoveToImmutable()
     }
-  }
-}
+
+    public IsExtensionMethod(parameters : ImmutableArray[FormalParameterSymbol]) : bool
+    {
+      when (parameters.IsEmpty)
+        return false;
+      if (parameters[0].IsModifierEvaluated)
+        parameters[0].Modifier == ParameterModifier.This
+      else
+        false
+    }
+  } // module
+} // namespace

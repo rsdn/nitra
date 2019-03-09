@@ -33,22 +33,7 @@ namespace Nitra.Compiler
     [Memoize]
     public override CompileStructuralPropertyType(propertySymbol : StructuralPropertySymbol) : AstPropertyType
     {
-      def isParsedValueType(t : FixedType) : bool
-      {
-        | Class(x, [_]) => x.Equals(Environment.ParsedValueTypeInfo)
-        | _ => false
-      }
-
-      def expr   = Compile(propertySymbol.Type);
-      def result = Environment.Manager.CoreEnv.BindFixedType(expr);
-      if (isParsedValueType(result))
-        AstPropertyType.ParsedValue(result)
-      else if (result.TryRequire(Environment.AstTypeVar))
-        AstPropertyType.Ast(result)
-      else if (result.TryRequire(Environment.NSpanTypeVar))
-        AstPropertyType.Span(result)
-      else
-        AstPropertyType.ParsedValue(FixedType.Class(Environment.ParsedValueTypeInfo, [result]))
+      CompileToAstPropertyType(propertySymbol.Type)
     }
 
     [Memoize]

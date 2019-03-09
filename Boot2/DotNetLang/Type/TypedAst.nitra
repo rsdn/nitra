@@ -1,0 +1,11 @@
+﻿using Nitra;
+using Nitra.Declarations;
+
+namespace DotNet
+{
+  abstract ast TypedAst
+  {
+  stage 1:
+    in TypeRef : Ref[TypeSymbol];
+  }
+}

@@ -24,8 +24,7 @@ namespace DotNet
 
     private _scope : Scope;
 
-    // TODO: add type subst
-    public override AllSymbols : Seq[DeclarationSymbol] { get { _scope.AllSymbols } }
+    public override GetAllSymbols() : Seq[DeclarationSymbol] { _scope.GetAllSymbols() }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {

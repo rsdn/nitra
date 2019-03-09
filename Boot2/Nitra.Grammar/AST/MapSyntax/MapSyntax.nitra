@@ -1,7 +1,9 @@
 ﻿using DotNet;
 
 using Nitra.Declarations;
+
 using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Nitra.Ast
 {
@@ -11,8 +13,8 @@ namespace Nitra.Ast
     {
       Kind = "map syntax";
       in ThisType       : TypeSymbol;
-      in Parameters     : IList[MapSyntaxParameterSymbol];
-      in ParameterTypes : IList[TypeSymbol];
+      in Parameters     : ImmutableArray[MapSyntaxParameterSymbol];
+      in ParameterTypes : ImmutableArray[TypeSymbol];
       in ReturnType     : AstTypeSymbol;
 
       Type = AstUtils.CreateFunctionType(FirstDeclarationOrDefault, ThisType, ParameterTypes, ReturnType, context);

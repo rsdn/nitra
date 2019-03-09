@@ -21,15 +21,66 @@ namespace DotNet
       Instance = TypeUnifier();
     }
 
+    protected override Unwrap(t : TypeSymbol) : TypeSymbol
+    {
+      | alias is TypeAliasSymbol when alias.IsReplacementEvaluated =>
+        def replacement = alias.Replacement;
+        when (replacement.IsSymbolEvaluated)
+          when (replacement.Symbol is TypeSymbol as type)
+            return Unwrap(type);
+
+        base.Unwrap(t)
+
+      | _ => base.Unwrap(t)
+    }
+
     protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
-      when (supertype : object == PlatformTypes.Object)
+      when (subtype.Equals(supertype))
         return true;
+      // TODO: оптимизировать рабту с object
+      //when (supertype : object == context.GetVoidType())
+      //  return true;
 
       when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, BaseTypeSet=baseTypeSet))
         return baseTypeSet.AncestorTypes.Contains(supertype);
 
       false
+    }
+
+    protected override UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      match (typeSymbol1, typeSymbol2)
+      {
+        | (FunctionTypeSymbol as f1, FunctionTypeSymbol as f2) =>
+          if (f1.IsParametersEvaluated && !f2.IsParametersEvaluated)
+            f2.Parameters = f1.Parameters;
+          else if (!f1.IsParametersEvaluated && f2.IsParametersEvaluated)
+            f1.Parameters = f2.Parameters;
+          else if (!f1.IsParametersEvaluated && !f2.IsParametersEvaluated)
+          {
+            //assert2(false, "FunctionTypeSymbol Unify failed!");
+            //return false;
+          }
+          else unless (RequireAll(f1.Parameters, f2.Parameters, ref updatedVariables))
+            return false;
+
+          def f1Eval = f1.IsReturnEvaluated;
+          def f2Eval = f2.IsReturnEvaluated;
+
+          if (f1Eval && f2Eval)
+            return ProvideImpl(f1.Return, f2.Return, ref updatedVariables);
+          else if (!f1Eval && !f2Eval)
+            return false;
+          else if (!f2Eval)
+            f2.Return = f1.Return;
+          else
+            f1.Return = f2.Return;
+
+          true
+
+        | _ => base.UnifyUnwraped(typeSymbol1, typeSymbol2, ref updatedVariables)
+      }
     }
   }
 }

@@ -1,0 +1,37 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+
+using System;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace DotNet
+{
+  declaration FunctionType : Type
+  {
+    symbol
+    {
+      in Parameters : ImmutableArray[TypeSymbol];
+      in Return     : TypeSymbol;
+
+      ToString = TypeHintHelper.ToString(this);
+      MakeHint = TypeHintHelper.MakeHintForType(symbolCache, this);
+
+      DecomposeType =
+        if (IsParametersEvaluated && IsReturnEvaluated)
+        {
+          mutable typeArguments = LightList();
+          typeArguments.Add(Return);
+          typeArguments.AddRange(Parameters);
+          VSome(TypeStructure(WellKnownSymbols.FunctionType, typeArguments))
+        }
+        else
+          VNone();
+    }
+  }
+}

@@ -27,7 +27,7 @@ namespace Nitra.Ast
         out ImplicitCastRef : Ref[FunctionTypeSymbol] = AstUtils.CreateImplicitRuleTypeCast(this, VariableRef.Symbol.Type, ExpectedType, context);
 
         Reference.Scope = TempScope;
-        Type            = ImplicitCastRef.Symbol.ReturnType;
+        Type            = ImplicitCastRef.Symbol.Return;
 
         Reference : Reference;
       }
@@ -177,7 +177,7 @@ namespace Nitra.Ast
         Expression.AstScope     = AstScope;
         Expression.Scope        = Scope;
         Reference.Scope         = Expression.Type.Scope;
-        Type                    = ImplicitCastRef.Symbol.ReturnType;
+        Type                    = ImplicitCastRef.Symbol.Return;
 
         Expression : MapSyntaxExpression;
         Reference  : Reference;

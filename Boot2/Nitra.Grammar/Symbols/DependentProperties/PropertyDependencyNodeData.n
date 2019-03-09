@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Extensions;
 using Nemerle.Internal;
@@ -37,14 +37,23 @@ namespace Nitra.Typing
     | Assign
       {
         [RecordCtor]
-        public new this([MappedMember("Location")] location : Location, [MappedMember("DeclaredIn")] declaredIn : PropertyContainerSymbol, [MappedMember("Path")] path : DependencyPath, [MappedMember("DependendOn")] dependendOn : list[int], [MappedMember("IsCollector")] isCollector : bool, [MappedMember("CompiledMethodName")] compiledMethodName : string)
+        public new this(
+          [MappedMember("Location")] location : Location,
+          [MappedMember("DeclaredIn")] declaredIn : PropertyContainerSymbol,
+          [MappedMember("Path")] path : DependencyPath,
+          [MappedMember("DependendOn")] dependendOn : list[int],
+          [MappedMember("IsCollector")] isCollector : bool,
+          [MappedMember("CompiledMethodName")] compiledMethodName : string,
+          [MappedMember("IsValueAwaiting")] isValueAwaiting : bool)
         {
           assert2(!DebugStop || !location.IsEmpty);
           base(location, declaredIn, path, dependendOn, isCollector);
           this.CompiledMethodName = compiledMethodName;
+          this.IsValueAwaiting = isValueAwaiting;
         }
-        
+
         CompiledMethodName : string;
+        IsValueAwaiting : bool;
       }
     | Use
   }

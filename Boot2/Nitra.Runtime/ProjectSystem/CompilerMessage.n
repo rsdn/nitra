@@ -1,17 +1,19 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
 
 namespace Nitra.ProjectSystem
 {
   [Record]
-  public struct CompilerMessage : IComparable[CompilerMessage]
+  public struct CompilerMessage : IEquatable[string], IComparable[CompilerMessage]
   {
     public static EmptyCompilerMessages : ReadOnlyCollection[CompilerMessage] = ReadOnlyCollection(array(0));
 
@@ -29,11 +31,47 @@ namespace Nitra.ProjectSystem
       get { if (HasNestedMessages) ReadOnlyCollection(_nestedMessages) else EmptyCompilerMessages }
     }
 
-    public override ToString() : string { this.Location.ToMessageString() + Text }
-
-    public CompareTo(other : Nitra.ProjectSystem.CompilerMessage) : int
+    public override ToString() : string
     {
-      this.Location.CompareTo(other.Location)
+      def type =
+        match (Type)
+        {
+          | FatalError
+          | Error      => "error: "
+          | Warning    => "warning: "
+          | Hint       => "hint: "
+        }
+      this.Location.ToMessageString() + type + Text
+    }
+
+    public CompareTo(other : CompilerMessage) : int
+    {
+      def result1 = this.Location.CompareTo(other.Location);
+      when (result1 != 0)
+        return result1;
+
+      def result2 = Type :> int - other.Type :> int;
+      when (result2 != 0)
+        return result2;
+
+      string.Compare(Text, other.Text, StringComparison.Ordinal)
+    }
+
+    [OverrideObjectEquals]
+    public Equals(other : CompilerMessage) : bool
+    {
+      when (!this.Location.Equals(other.Location))
+        return false;
+
+      when (Type != other.Type)
+        return false;
+
+      string.Equals(Text, other.Text)
+    }
+
+    public override GetHashCode() : int
+    {
+      this.Location.GetHashCode() ^ Type :> int ^ Text.GetHashCode()
     }
   }
 

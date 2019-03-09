@@ -2,6 +2,7 @@
 using Nitra.Declarations;
 
 using Nemerle.Collections;
+using System.Collections.Immutable;
 
 using SCG = System.Collections.Generic;
 
@@ -9,7 +10,7 @@ namespace DotNet
 {
   //declaration alias TypeParameterAlias = TypeParameter;
 
-  declaration TypeParameter : Type, CustomAttributeHost
+  declaration TypeParameter : Type, CustomAttributeHostDeclaration
   {
     symbol
     {
@@ -22,7 +23,7 @@ namespace DotNet
     }
   }
 
-  declaration TypeParameterAlias : Type, CustomAttributeHost
+  declaration TypeParameterAlias : Type, CustomAttributeHostDeclaration
   {
     symbol
     {
@@ -32,7 +33,7 @@ namespace DotNet
       in TypeParameter : TypeParameterSymbol;
     }
 
-    in    TypeParameterSymbols : SCG.IList[TypeParameterSymbol];
+    in    TypeParameterSymbols : ImmutableArray[TypeSymbol];
     inout Index                : int;
     in    DeclaringMember      : DeclarationSymbol;
 

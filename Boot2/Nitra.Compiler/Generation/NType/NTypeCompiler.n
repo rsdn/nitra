@@ -19,5 +19,19 @@ namespace Nitra.Compiler
     public abstract CompileStructuralPropertyType(propertySymbol : StructuralPropertySymbol) : AstPropertyType;
     public abstract CompileDependentPropertyType(propertySymbol : DependentPropertySymbol) : FixedType;
     public abstract Compile(t : NType) : PExpr;
+
+    public CompileToAstPropertyType(t : NType) : AstPropertyType
+    {
+      def expr   = Compile(t);
+      def result = Environment.Manager.CoreEnv.BindFixedType(expr);
+      if (result is FixedType.Class(x, [argument]) when x.Equals(Environment.ParsedValueTypeInfo))
+        AstPropertyType.ParsedValue(result, argument)
+      else if (result.TryRequire(Environment.AstTypeVar))
+        AstPropertyType.Ast(result)
+      else if (result.TryRequire(Environment.NSpanTypeVar))
+        AstPropertyType.Span(result)
+      else
+        AstPropertyType.ParsedValue(FixedType.Class(Environment.ParsedValueTypeInfo, [result]), result)
+    }
   }
 }
