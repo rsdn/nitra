@@ -261,7 +261,7 @@ namespace Nitra.VisualStudio.Models
         return;
       }
 
-      var findSvc = (IVsObjectSearch)fileModel.Server.ServiceProvider.GetService(typeof(SVsObjectSearch));
+      var findSvc = (IVsFindSymbol)fileModel.Server.ServiceProvider.GetService(typeof(SVsObjectSearch));
       Debug.Assert(findSvc != null);
 
       var caption = _wpfTextView.TextBuffer.CurrentSnapshot.GetText(VsUtils.Convert(span));
@@ -279,7 +279,7 @@ namespace Nitra.VisualStudio.Models
       var criteria =
         new[]
         {
-          new VSOBSEARCHCRITERIA
+          new VSOBSEARCHCRITERIA2
           {
             eSrchType = VSOBSEARCHTYPE.SO_ENTIREWORD,
             grfOptions = (uint)_VSOBSEARCHOPTIONS.VSOBSO_CASESENSITIVE,
@@ -288,8 +288,8 @@ namespace Nitra.VisualStudio.Models
           }
         };
 
-      IVsObjectList results;
-      var hr = findSvc.Find((uint)__VSOBSEARCHFLAGS.VSOSF_EXPANDREFS, criteria, out results);
+      var scope = Library.MagicGuid;
+      var hr = findSvc.DoSearch(ref scope, criteria);
     }
 
     void CheckDisposed()

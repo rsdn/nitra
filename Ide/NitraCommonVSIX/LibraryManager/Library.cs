@@ -8,13 +8,6 @@ namespace Nitra.VisualStudio
 {
   public class Library : IVsSimpleLibrary2
   {
-    Guid _guid;
-
-    public Library()
-    {
-      _guid = new Guid("1CC425ED-A93C-40B1-8A2B-672D9FE337DF");
-    }
-
     #region IVsSimpleLibrary2 Members
 
     public int AddBrowseContainer(VSCOMPONENTSELECTORDATA[] pcdComponent, ref uint pgrfOptions, out string pbstrComponentAdded)
@@ -36,7 +29,7 @@ namespace Nitra.VisualStudio
 
     public int GetGuid(out Guid pguidLib)
     {
-      pguidLib = _guid;
+      pguidLib = MagicGuid;
       return VSConstants.S_OK;
     }
 
@@ -54,6 +47,8 @@ namespace Nitra.VisualStudio
     /// Используется для того чтобы отличить поиск "Find All References" от других видов поиска.
     /// </summary>
     public const uint FindAllReferencesMagicNum = 0x11123334;
+
+    public static readonly Guid MagicGuid = new Guid("1CC425ED-A93C-40B1-8A2B-672D9FE337DF");
 
     /// <summary>
     /// Stores existing "Find All References" results in the _findResults field.
