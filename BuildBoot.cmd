@@ -14,6 +14,8 @@ if defined Value (
 call "%Value%Common7\Tools\VsDevCmd.bat"
 set NoPause=true
 
+%~dp0\ExternalTools\NuGet.exe restore %~dp0\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj -PackagesDirectory %~dp0\packages
+
 MSBuild.exe %~dp0\Common\BootTasks.proj /t:BuildBoot /bl:%~dp0\Boot2\BootTasks.binlog;ProjectImports=Embed
 ) else (
 @echo %KEY_NAME%\%VALUE_NAME% not found.
