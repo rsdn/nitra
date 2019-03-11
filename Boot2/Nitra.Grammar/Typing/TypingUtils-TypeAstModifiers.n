@@ -61,12 +61,12 @@ namespace Nitra.Typing
     {
       if (acc)
       {
-        compilerMessages.Error(loc, $"Duplicate 'ignore-case' modifier");
+        compilerMessages.Error(loc, "Duplicate 'ignore-case' modifier");
         acc
       }
       else if (!isDeclaration)
       {
-        compilerMessages.Error(loc, $"Modifier 'ignore-case' is not valid on ast");
+        compilerMessages.Error(loc, "Modifier 'ignore-case' is not valid on ast");
         acc
       }
       else if (isAbstract)

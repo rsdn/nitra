@@ -229,7 +229,7 @@ namespace Nitra.Compiler
                   symbol.$(info.OriginalName : usesite) = value;
               ]>);
 
-            _tb.DefineWithSource(<[ decl:
+            _ = _tb.DefineWithSource(<[ decl:
               public static Deserialize(reader : System.IO.BinaryReader, metadataReader : Nitra.Serialization2.MetadataReader) : $(symbolType : typed)
               {
                 mutable symbol;
