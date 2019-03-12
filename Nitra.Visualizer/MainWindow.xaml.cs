@@ -460,6 +460,7 @@ namespace Nitra.Visualizer
         var location = message.Location;
         var file     = location.File;
         var span     = location.Span;
+        var kind     = message.Type + ": ";
         if (currentFileId == file.FileId)
         {
           if (span.StartPos >= doc.TextLength)
@@ -471,8 +472,25 @@ namespace Nitra.Visualizer
           var marker = _textMarkerService.Create(span.StartPos, spanLength);
           marker.Tag         = ErrorMarkerTag;
           marker.MarkerType  = TextMarkerType.SquigglyUnderline;
+          switch (message.Type)
+          {
+            case CompilerMessageType.FatalError:
+            case CompilerMessageType.Error:
+              marker.MarkerColor = Colors.Red;
+              break;
+            case CompilerMessageType.Warning:
+              marker.MarkerColor = Colors.DarkGreen;
+              break;
+            case CompilerMessageType.Hint:
+              marker.MarkerColor = Colors.DarkGray;
+              break;
+            default:
+              marker.MarkerColor = Colors.Red;
+              Debug.Assert(false, "Unknown compiler message type: " + message.Type);
+              break;
+          }
           marker.MarkerColor = Colors.Red;
-          marker.ToolTip     = text;
+          marker.ToolTip     = kind + text;
         }
 
         var errorNode = new TreeViewItem();
@@ -480,7 +498,7 @@ namespace Nitra.Visualizer
         errorNode.Tag = message;
         if (currentFileId != -1 && currentFileId == file.FileId)
         {
-          errorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + pos.Line + "," + pos.Column + "): " + text;
+          errorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + pos.Line + "," + pos.Column + "): " + kind + text;
           errorNode.MouseDoubleClick += errorNode_MouseDoubleClick;
         }
         else
@@ -492,7 +510,8 @@ namespace Nitra.Visualizer
           {
             var nestedPos = doc.GetLocation(span.StartPos);
             var nestadErrorNode = new TreeViewItem();
-            nestadErrorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + nestedPos.Line + "," + nestedPos.Column + "): " + nestedMessage.Text;
+            kind = nestedMessage.Type + ": ";
+            nestadErrorNode.Header = Path.GetFileNameWithoutExtension(fullName) + "(" + nestedPos.Line + "," + nestedPos.Column + "): " + kind + nestedMessage.Text;
             nestadErrorNode.Tag = nestedMessage;
             nestadErrorNode.MouseDoubleClick += errorNode_MouseDoubleClick;
             errorNode.Items.Add(nestadErrorNode);
