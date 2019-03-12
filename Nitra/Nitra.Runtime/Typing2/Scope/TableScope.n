@@ -315,8 +315,11 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
       }
     }
 
-    private static ReportRedefinition(name : Name, _declaration : Declaration, context : DependentPropertyEvalContext, formatString : string, ambiguousSymbols : array[DeclarationSymbol]) : void  
+    private static ReportRedefinition(name : Name, _declaration : Declaration, context : DependentPropertyEvalContext, formatString : string, ambiguousSymbols : array[DeclarationSymbol]) : void
     {
+      when (ambiguousSymbols.IsEmpty())
+        return;
+      
       try
       {
         if (context == null)
