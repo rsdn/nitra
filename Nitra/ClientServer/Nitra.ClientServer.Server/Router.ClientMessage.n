@@ -49,7 +49,7 @@ namespace Nitra.ClientServer.Server
       | SolutionStartLoading(id, fullPath)               => assert2(_solution == null); SpanClassesManager.Clear(); _solution = Solution(id, fullPath);
       | SolutionLoaded(id)                               => assert2(_solution.Id == id); _solution.Open();
       | SolutionUnloaded(id)                             => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
-      | ProjectStartLoading(id, fullPath, config)        => _ = Project(_solution, fullPath, id, config, _parseQueue, this);
+      | ProjectStartLoading(id, fullPath, config)        => _ = Project(_solution, fullPath, id, config, _parseQueue, _semanticAnalysisQueue, this);
       | ProjectLoaded      (id)                          => _solution[id].Open();
       | ProjectUnloaded    (id)                          => _solution.RemoveProject(id);
       | ProjectRename      (_oldId, _newId, _newPath)    => assert(false, "Not supported yet.")

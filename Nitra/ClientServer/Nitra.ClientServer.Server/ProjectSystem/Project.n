@@ -47,6 +47,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  IsDisposed                               : bool                         { get; private set; }
     public  IsSemanticAvailable                      : bool                         { get; private set; }
     public  ParseQueue                               : BlockingCollection[ParserMessage];
+    public  SemanticAnalysisQueue                    : BlockingCollection[ParserMessage];
     mutable _semanticAnalysisCancellationTokenSource : CancellationTokenSource;
     mutable _findDeclarationsCancellationTokenSource : CancellationTokenSource;
     public  Router                                   : Router { get; }
@@ -56,21 +57,22 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  IsCompleteWord                           : bool { get; set; }
     
 
-    internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], router : Router)
+    internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], semanticAnalysisQueue : BlockingCollection[ParserMessage], router : Router)
     {
-      _refrashTimer     = Timer(OnRefrashTimer, null, Timeout.Infinite, Timeout.Infinite);
-      DependantProjects = [];
-      DependsOnProjects = [];
-      ParseQueue        = parseQueue;
-      Path              = fullPath;
-      ProjectDir        = if (string.IsNullOrEmpty(fullPath)) "" else Path.GetDirectoryName(fullPath);
-      Id                = id;
-      Parent            = parent;
-      Solution          = parent;
-      Name              = Path.GetFileNameWithoutExtension(fullPath);
-      _config           = config;
-      Libs              = _libs;
-      Router            = router;
+      _refrashTimer         = Timer(OnRefrashTimer, null, Timeout.Infinite, Timeout.Infinite);
+      DependantProjects     = [];
+      DependsOnProjects     = [];
+      ParseQueue            = parseQueue;
+      SemanticAnalysisQueue = semanticAnalysisQueue;
+      Path                  = fullPath;
+      ProjectDir            = if (string.IsNullOrEmpty(fullPath)) "" else Path.GetDirectoryName(fullPath);
+      Id                    = id;
+      Parent                = parent;
+      Solution              = parent;
+      Name                  = Path.GetFileNameWithoutExtension(fullPath);
+      _config               = config;
+      Libs                  = _libs;
+      Router                = router;
 
       unless (config.ProjectSupport.IsNotSpecified)
       {
@@ -266,13 +268,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
           def files = GetEvalPropertiesData(_files.Values.Where(_.IsSupported).OrderByDescending(_.IsActive));
           _semanticResult = ImmutableArray.Empty;
-          foreach (file in files)
-            file.Ast.DeepResetProperties();
-
           _symbolsCache.Clear();
 
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
-          ParseQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
+          SemanticAnalysisQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
         else
           Log.Message("Project support not available!");

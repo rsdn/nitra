@@ -27,8 +27,10 @@ namespace Nitra.ClientServer.Server
   {
             _mainQueue                  : BlockingCollection[RouterMessage] = BlockingCollection();
             _parseQueue                 : BlockingCollection[ParserMessage] = BlockingCollection();
+            _semanticAnalysisQueue      : BlockingCollection[ParserMessage] = BlockingCollection();
             _mainThread                 : Thread;
             _parseWorkers               : list[ParseWorker];
+            _semanticAnalysisWorker     : SemanticAnalysisWorker;
     mutable _cts                        : CancellationTokenSource = CancellationTokenSource();
             _asyncResponseWriter        : IO.BinaryWriter;
             _responseWriter             : IO.BinaryWriter;
@@ -40,14 +42,15 @@ namespace Nitra.ClientServer.Server
 
     public this(responseWriter : IO.BinaryWriter, asyncResponseWriter : IO.BinaryWriter)
     {
-      _responseWriter      = responseWriter;
-      _asyncResponseWriter = asyncResponseWriter;
-      _mainThread          = Thread(RouterThreadMain);
+      _responseWriter         = responseWriter;
+      _asyncResponseWriter    = asyncResponseWriter;
+      _mainThread             = Thread(RouterThreadMain);
       _mainThread.Start();
-      def cores       = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
+      def cores               = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
       Log.Message("Cores: " + cores);
       this.SpanClassesManager = SpanClassesManager(this);
-      _parseWorkers = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
+      _parseWorkers           = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
+      _semanticAnalysisWorker = SemanticAnalysisWorker(this, _semanticAnalysisQueue, _mainQueue, asyncResponseWriter, SpanClassesManager);
     }
 
     public SolutionId : SolutionId { get { if (_solution == null) SolutionId.Invalid else _solution.Id } }
@@ -149,6 +152,7 @@ namespace Nitra.ClientServer.Server
         foreach(worker in _parseWorkers)
           worker.Dispose();
         _parseQueue.Dispose();
+        _semanticAnalysisQueue.Dispose();
       }
     }
 

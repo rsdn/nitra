@@ -27,7 +27,7 @@ using R   = Nitra.Runtime.Reflection;
 
 namespace Nitra.ClientServer.Server
 {
-  class ParseWorker : IDisposable
+  abstract class Worker : IDisposable
   {
     _thread               : Thread;
     _cts                  : CancellationTokenSource = CancellationTokenSource();
@@ -181,7 +181,12 @@ namespace Nitra.ClientServer.Server
           Log.Message($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
           def timer = Stopwatch.StartNew();
           try
+          {
+            foreach (file in files)
+              file.Ast.DeepResetProperties();
+
             projectSupport.RefreshProject(cancellationToken, files, data);
+          }
           catch
           {
             | e is OperationCanceledException => Log.Canceled(e); throw;

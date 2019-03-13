@@ -73,9 +73,6 @@
     <Compile Include="Messages.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ParseWorker.n">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="ProjectSystem\Project.n">
       <SubType>Code</SubType>
     </Compile>
@@ -109,8 +106,18 @@
     <Compile Include="Visitors\FindReferencesAstVisitor.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Workers\ParseWorker.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Workers\SemanticAnalysisWorker.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Workers\Worker.n">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Workers" />
     <Folder Include="Visitors" />
     <Folder Include="ProjectSystem" />
     <Folder Include="Properties\" />
