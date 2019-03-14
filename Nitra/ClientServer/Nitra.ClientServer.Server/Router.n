@@ -152,6 +152,7 @@ namespace Nitra.ClientServer.Server
         foreach(worker in _parseWorkers)
           worker.Dispose();
         _parseQueue.Dispose();
+        _semanticAnalysisWorker.Dispose();
         _semanticAnalysisQueue.Dispose();
       }
     }
