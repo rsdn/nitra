@@ -43,7 +43,7 @@ namespace Nitra.VisualStudio.Highlighting
       get
       {
         if (_server == null)
-          _server = (ServerModel)_buffer.Properties.GetProperty(Constants.ServerKey);
+          _buffer.Properties.TryGetProperty(Constants.ServerKey, out _server);
 
         return _server;
       }
@@ -53,12 +53,17 @@ namespace Nitra.VisualStudio.Highlighting
     {
       get
       {
-        if (_classificationMap.Count == 0 || _classificationMap.Count < Server.SpanClassInfos.Length)
+        var server = Server;
+
+        if (server == null)
+          return _classificationMap;
+
+        if (_classificationMap.Count == 0 || _classificationMap.Count < server.SpanClassInfos.Length)
         {
           _classificationMap.Clear();
           IClassificationFormatMap classificationFormatMap = null;
 
-          foreach (var info in Server.SpanClassInfos)
+          foreach (var info in server.SpanClassInfos)
           {
             var name               = info.FullName;
             var classificationType = _registry.GetClassificationType(name);
@@ -171,9 +176,13 @@ namespace Nitra.VisualStudio.Highlighting
 
     internal Brush SpanClassToBrush(string spanClass, IWpfTextView _wpfTextView)
     {
-      var spanClassOpt = Server.GetSpanClassOpt(spanClass);
+      var server = Server;
+      if (server == null)
+        return Brushes.Black;
+
+      var spanClassOpt = server.GetSpanClassOpt(spanClass);
       if (!spanClassOpt.HasValue)
-        return Server.SpanClassToBrush(spanClass);
+        return server.SpanClassToBrush(spanClass);
 
       IClassificationType classificationType;
       if (_classificationMap.TryGetValue(spanClassOpt.Value.Id, out classificationType))
@@ -183,7 +192,7 @@ namespace Nitra.VisualStudio.Highlighting
         return properties.ForegroundBrush;
       }
 
-      return Server.SpanClassToBrush(spanClass);
+      return server.SpanClassToBrush(spanClass);
     }
 
     #endregion

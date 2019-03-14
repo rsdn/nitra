@@ -162,7 +162,9 @@ namespace Nitra.VisualStudio.Models
       if (newVersion != _caretPosition.Version)
       {
       }
-      var fileModel = textBuffer.Properties.GetProperty<FileModel>(Constants.FileModelKey);
+      if (!textBuffer.Properties.TryGetProperty<FileModel>(Constants.FileModelKey, out var fileModel))
+        return;
+
       var id = fileModel.Id;
 
       if (changes.Count == 1)
@@ -218,8 +220,8 @@ namespace Nitra.VisualStudio.Models
       switch (msg)
       {
         case OutliningCreated outlining:
-          var tegget = (OutliningTagger)textBuffer.Properties.GetProperty(Constants.OutliningTaggerKey);
-          tegget.Update(outlining);
+          if (textBuffer.Properties.TryGetProperty(Constants.OutliningTaggerKey, out OutliningTagger tegget))
+            tegget.Update(outlining);
           break;
         case KeywordsHighlightingCreated keywordHighlighting:
           UpdateSpanInfos(HighlightingType.Keyword, keywordHighlighting.spanInfos, keywordHighlighting.Version);
