@@ -94,7 +94,9 @@ namespace Nitra.Logging
           foreach((msg, color, lineBreak) in _queue.GetConsumingEnumerable(_cts.Token))
           {
             try
-              if (lineBreak)
+              if (msg == null && color :> int == -1)
+                _logFile.Flush();
+              else if (lineBreak)
                 this.WriteLine(msg, color);
               else
                 this.Write(msg, color);
@@ -167,9 +169,7 @@ namespace Nitra.Logging
       
       public Flush() : void
       {
-        try
-          _logFile.Flush();
-        catch ();
+        _queue.Add((null, -1 :> ConsoleColor, true));
       }
       
       public Dispose() : void
