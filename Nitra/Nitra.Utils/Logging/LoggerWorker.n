@@ -119,22 +119,22 @@ namespace Nitra.Logging
 
       static TranslateColor(color : ConsoleColor) : string
       {
-		    | Black       => "Black"
-		    | DarkBlue    => "DarkBlue"
-		    | DarkGreen   => "DarkGreen"
-		    | DarkCyan    => "DarkCyan"
-		    | DarkRed     => "DarkRed"
-		    | DarkMagenta => "DarkMagenta"
-		    | DarkYellow  => "olive"
-		    | Gray        => "Gray"
-		    | DarkGray    => "DarkGray"
-		    | Blue        => "Blue"
-		    | Green       => "limegreen"
-		    | Cyan        => "Cyan"
-		    | Red         => "Red"
-		    | Magenta     => "Magenta"
-		    | Yellow      => "Yellow"
-		    | White       => "White"
+        | Black       => "Black"
+        | DarkBlue    => "DarkBlue"
+        | DarkGreen   => "DarkGreen"
+        | DarkCyan    => "DarkCyan"
+        | DarkRed     => "DarkRed"
+        | DarkMagenta => "DarkMagenta"
+        | DarkYellow  => "olive"
+        | Gray        => "Gray"
+        | DarkGray    => "DarkGray"
+        | Blue        => "Blue"
+        | Green       => "limegreen"
+        | Cyan        => "Cyan"
+        | Red         => "Red"
+        | Magenta     => "Magenta"
+        | Yellow      => "Yellow"
+        | White       => "White"
       }
     
       WriteLine(msg : string, color : ConsoleColor) : void
@@ -167,13 +167,19 @@ namespace Nitra.Logging
       
       public Flush() : void
       {
-        _logFile.Flush();
+        try
+          _logFile.Flush();
+        catch ();
       }
       
       public Dispose() : void
       {
-        _cts.Cancel();
-        _cts.Dispose();
+        try
+        {
+          _cts.Cancel();
+          _cts.Dispose();
+        }
+        catch ();
         _thread.Join();
       }
     } // class LoggerWorker
