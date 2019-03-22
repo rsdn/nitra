@@ -1,0 +1,88 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using Nemerle.Imperative;
+
+using System;
+using System.IO;
+using System.IO.Pipes;
+using System.Collections.Generic;
+using System.Linq;
+
+using Nitra.Logging;
+using Nitra.ClientServer.Messages;
+
+namespace Nitra.ClientServer.Server
+{
+  public class NitraProtocolDriver : IProtocolDriver
+  {
+    _requestPipe         : NamedPipeServerStream;
+    _responsePipe        : NamedPipeServerStream;
+    _asyncResponsePipe   : NamedPipeServerStream;
+    _requestReader       : BinaryReader;
+    _responseWriter      : BinaryWriter;
+    _asyncResponseWriter : BinaryWriter;
+
+    public this(pipeName : string)
+    {
+      _requestPipe         = NamedPipeServerStream(pipeName + Constants.RequestPipeSuffix,       PipeDirection.In);
+      _responsePipe        = NamedPipeServerStream(pipeName + Constants.ResponsePipeSuffix,      PipeDirection.Out);
+      _asyncResponsePipe   = NamedPipeServerStream(pipeName + Constants.AsyncResponsePipeSuffix, PipeDirection.Out);
+      _requestReader       = BinaryReader(_requestPipe);
+      _responseWriter      = BinaryWriter(_responsePipe);
+      _asyncResponseWriter = BinaryWriter(_asyncResponsePipe);
+    }
+
+    public Connect() : void
+    {
+      _requestPipe.      WaitForConnection();
+      _responsePipe.     WaitForConnection();
+      _asyncResponsePipe.WaitForConnection();
+    }
+
+    public Send(message : ServerMessage) : void
+    {
+      lock (_responseWriter)
+        message.Serialize(_responseWriter);
+    }
+
+    public Send(message : AsyncServerMessage) : void
+    {
+      lock (_asyncResponseWriter)
+        message.Serialize(_asyncResponseWriter);
+    }
+
+    public Receive() : Seq[ClientMessage]
+    {
+      while (_requestPipe.IsConnected)
+      {
+        mutable message;
+        try
+          message = Deserializer.Deserialize.[ClientMessage](_requestReader);
+        catch
+        {
+          | _ is EndOfStreamException when !_requestPipe.IsConnected =>
+            Log.Message("The main pipe reader session has been terminated.");
+            message = ClientMessage.Shutdown()
+
+          | e =>
+            ServerUtils.LogException(this, e);
+            continue;
+        }
+
+        yield message;
+
+        when (message is ClientMessage.Shutdown)
+          break;
+      }
+    }
+
+    public Dispose() : void
+    {
+      _requestPipe?.Dispose();
+      _responsePipe?.Dispose();
+      _asyncResponsePipe?.Dispose();
+    }
+  }
+}

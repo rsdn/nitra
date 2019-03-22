@@ -16,8 +16,6 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;
 
-using IO = System.IO;
-
 namespace Nitra.ClientServer.Server
 {
   internal partial class Router

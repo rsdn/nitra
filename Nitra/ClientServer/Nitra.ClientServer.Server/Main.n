@@ -8,7 +8,6 @@ using Nitra.ClientServer.Server;
 using Nitra.Logging;
 
 using System;
-using System.Console;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -36,57 +35,22 @@ module Program
 
     Nitra.NitraUtils.IdeMode = true;
 
-    def mainPipeName = args[0];
-    def requestPipeName       = mainPipeName + Constants.RequestPipeSuffix;
-    def asyncResponsePipeName = mainPipeName + Constants.AsyncResponsePipeSuffix;
-    def responsePipeName      = mainPipeName + Constants.ResponsePipeSuffix;
-
-    using (asyncResponsePipe = NamedPipeServerStream(asyncResponsePipeName, PipeDirection.Out))
-    using (responsePipe      = NamedPipeServerStream(responsePipeName,      PipeDirection.Out))
-    using (requestPipe       = NamedPipeServerStream(requestPipeName,       PipeDirection.In))
+    using (driver = NitraProtocolDriver(args[0]))
     {
-      // Connect to the pipe or wait until the pipe is available.
-      Write("Attempting to connect to pipes...");
-      requestPipe.      WaitForConnection();
-      responsePipe.     WaitForConnection();
-      asyncResponsePipe.WaitForConnection();
 
-      def asyncResponseWriter = BinaryWriter(asyncResponsePipe);
-      def responseWriter      = BinaryWriter(responsePipe);
-      def router              = Router(responseWriter, asyncResponseWriter);
+      Log.Message("Attempting to connect to pipes...");
+      driver.Connect();
 
-      Log.Message("Connected to pipe.");
-      def MainPipeReaderThreadMain()
-      {
-        def thread = Thread.CurrentThread;
-        thread.Name = "Server Pipe Reader";
-        thread.CurrentCulture = CultureInfo.InvariantCulture;
+      def router = Router(driver);
 
-        using (reader = BinaryReader(requestPipe))
-        {
-          while (requestPipe.IsConnected)
-          {
-            try
-            {
-              def msg = Deserializer.Deserialize.[ClientMessage](reader);
+      Log.Message("Connected to pipes.");
 
-              when (msg is ClientMessage.SolutionStartLoading)
-                router.ProjectLoadCancel();
-
-              router.AddMessage(msg);
-            }
-            catch
-            {
-              | _ is EndOfStreamException when !requestPipe.IsConnected =>
-                Log.Message("The main pipe reader session has been terminated.");
-                router.AddMessage(ClientMessage.Shutdown());
-                return;
-              | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
-            }
-          }
-        }
-      }
-      def readerThread = Thread(MainPipeReaderThreadMain);
+      def readerThread = Thread(fun(){
+        foreach (message in driver.Receive())
+          router.AddMessage(message);
+      });
+      readerThread.Name = "Incomming messages reader";
+      readerThread.CurrentCulture = CultureInfo.InvariantCulture;
       readerThread.IsBackground = true;
       readerThread.Start();
       Log.Message("Server started.");

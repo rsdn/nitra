@@ -104,15 +104,14 @@ namespace Nitra.ClientServer.Server
       Log.Message(msg3, color);
     }
     
-    public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
+    public LogException(sink : IServerMessageSink, e : Exception) : void
     {
       Log.Exception(e);
 
       def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
       
       try
-        lock (asyncResponseWriter)
-          msg.Serialize(asyncResponseWriter);
+        sink.Send(msg);
       catch { e is System.IO.IOException => Log.Message("Cant' write responce to client: " + e.Message); }
     }
 

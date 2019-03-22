@@ -69,8 +69,17 @@
     <Compile Include="HtmlPrettyPrintWriter.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="IClientMessageSource.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IServerMessageSink.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main.n" />
     <Compile Include="Messages.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="NitraProtocolDriver.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ProjectSystem\Project.n">
@@ -83,6 +92,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
+    <Compile Include="IProtocolDriver.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Router.n">
       <SubType>Code</SubType>
     </Compile>
