@@ -2,15 +2,12 @@
 
 namespace DotNet
 {
-  abstract declaration TypedDeclaration : TypedAst
+  abstract declaration TypedDeclaration : TypedAst, Typed
   {
     symbol
     {
       Kind  = "typed declaration";
       Scope = Type.Scope;
-
-    stage 1:
-      in Type : TypeSymbol;
     }
 
     Symbol.Type = TypeRef.Symbol;
