@@ -15,7 +15,7 @@ using Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server
 {
-  public class NitraProtocolDriver : IProtocolDriver
+  public class NitraProtocolAdapter : IProtocolAdapter
   {
     _requestPipe         : NamedPipeServerStream;
     _responsePipe        : NamedPipeServerStream;
@@ -72,9 +72,6 @@ namespace Nitra.ClientServer.Server
         }
 
         yield message;
-
-        when (message is ClientMessage.Shutdown)
-          break;
       }
     }
 

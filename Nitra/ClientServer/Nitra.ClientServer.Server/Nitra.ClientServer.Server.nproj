@@ -79,7 +79,7 @@
     <Compile Include="Messages.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="NitraProtocolDriver.n">
+    <Compile Include="NitraProtocolAdapter.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ProjectSystem\Project.n">
@@ -92,7 +92,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
-    <Compile Include="IProtocolDriver.n">
+    <Compile Include="IProtocolAdapter.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Router.n">

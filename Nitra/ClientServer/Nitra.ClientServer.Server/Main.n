@@ -35,19 +35,23 @@ module Program
 
     Nitra.NitraUtils.IdeMode = true;
 
-    using (driver = NitraProtocolDriver(args[0]))
+    using (adapter = NitraProtocolAdapter(args[0]))
     {
-
       Log.Message("Attempting to connect to pipes...");
-      driver.Connect();
+      adapter.Connect();
 
-      def router = Router(driver);
+      def router = Router(adapter);
 
       Log.Message("Connected to pipes.");
 
-      def readerThread = Thread(fun(){
-        foreach (message in driver.Receive())
+      def readerThread = Thread(fun()
+      {
+        foreach (message in adapter.Receive())
+        {
           router.AddMessage(message);
+          when (message is ClientMessage.Shutdown)
+            break;
+        }
       });
       readerThread.Name = "Incomming messages reader";
       readerThread.CurrentCulture = CultureInfo.InvariantCulture;
