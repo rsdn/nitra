@@ -75,6 +75,9 @@
     <Compile Include="IServerMessageSink.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Lsp\LspProtocolAdapter.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main.n" />
     <Compile Include="Messages.n">
       <SubType>Code</SubType>
@@ -129,6 +132,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Lsp" />
     <Folder Include="Workers" />
     <Folder Include="Visitors" />
     <Folder Include="ProjectSystem" />

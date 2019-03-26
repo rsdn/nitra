@@ -1,0 +1,47 @@
+﻿using Nitra.ClientServer.Messages;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  public class LspProtocolAdapter : IProtocolAdapter
+  {
+    private mutable input  : Stream;
+    private mutable output : Stream;
+
+    public Connect() : void
+    {
+      input = Console.OpenStandardInput();
+      output = Console.OpenStandardOutput();
+    }
+
+    public Dispose() : void
+    {
+      input?.Dispose();
+      output?.Dispose();
+    }
+
+    public Receive() : Seq[ClientMessage]
+    {
+      []
+    }
+
+    public Send(message : ServerMessage) : void
+    {
+      
+    }
+
+    public Send(message : AsyncServerMessage) : void
+    {
+      
+    }
+  }
+}
