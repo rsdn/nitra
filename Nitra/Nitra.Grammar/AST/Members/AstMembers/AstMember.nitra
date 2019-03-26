@@ -25,7 +25,7 @@ namespace Nitra.Ast.AstMembers
     Symbol.Parent = Parent;
   }
 
-  declaration StructuralProperty : AstMemberDeclaration, TypedDeclaration
+  declaration StructuralProperty : AstMemberDeclaration, SelfTypedDeclaration
   {
     symbol
     {
@@ -34,10 +34,8 @@ namespace Nitra.Ast.AstMembers
       MakeHint = AstUtils.StructuralPropertyMakeHint(symbolCache, this);
     }
 
-    TypeRef = AstUtils.ResolveStructuralPropertyType(TypeName.Ref, context);
-
+    TypeRef        = AstUtils.ResolveStructuralPropertyType(TypeName.Ref, context);
     TypeName.Scope = Scope;
-    Symbol.Type    = TypeRef.Symbol;
 
     TypeName : QualifiedReference;
   }
