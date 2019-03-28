@@ -1,0 +1,285 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+using System.Text;
+
+using Microsoft.VisualStudio.LanguageServer.Protocol;
+using Newtonsoft.Json;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  class LspReader[TResult]
+  {
+    private static InvalidContentLength = -1;
+    private static RequestChunkSize = 40;
+    private static DefaulRequestBufferSize = 4096;
+
+    private _input         : Stream;
+    private _handlers      : Dictionary[string, Type * (object * object -> TResult)];
+    private _serializer    : JsonSerializer;
+    private _requestBuffer : MemoryStream;
+    private _textReader    : StreamReader;
+
+    public this(input : Stream)
+    {
+      _input         = input;
+      _handlers      = Dictionary(StringComparer.Ordinal);
+      _serializer    = JsonSerializer.CreateDefault();
+      _requestBuffer = MemoryStream(DefaulRequestBufferSize);
+      _textReader    = StreamReader(_requestBuffer, LspDefaults.Encoding, false, 1024, true);
+    }
+
+    public event UnknownRequestHandler : Func[string, object, TResult];
+
+    public RegisterHandler[TRequest, TResponse](request : LspRequest[TRequest, TResponse], handler : Func[TRequest, object, TResult]) : void
+    {
+      _handlers.Add(request.Name, (typeof(TRequest), fun(args, id) { handler(args :> TRequest, id) }))
+    }
+
+    public RegisterHandler[TNotification](request : LspNotification[TNotification], handler : Func[TNotification, TResult]) : void
+    {
+      _handlers.Add(request.Name, (typeof(TNotification), fun (args, _id) { handler(args :> TNotification) }))
+    }
+
+    public ReadRequests() : Seq[TResult]
+    {
+      while (true) unchecked
+      {
+        _requestBuffer.Position = 0;
+        _requestBuffer.SetLength(0);
+        mutable contentLength = InvalidContentLength;
+        mutable position = 0;
+
+        def readHeaders()
+        {
+          def header = ReadHeader(ref position);
+          when (header.Count > 0)
+          {
+            when (contentLength == InvalidContentLength)
+              contentLength = ParseContentLength(header);
+            readHeaders();
+          }
+        }
+        readHeaders();
+
+        when (contentLength == InvalidContentLength)
+          Fail();
+
+        def contentLoadedBytes = _requestBuffer.Length :> int - position;
+        _ = ReadInput(contentLength - contentLoadedBytes);
+        _requestBuffer.Position = position;
+        _textReader.DiscardBufferedData();
+
+        def jsonReader = JsonTextReader(_textReader);
+        jsonReader.CloseInput = false;
+
+        match (ReadToken(jsonReader))
+        {
+          | StartObject => yield ProcessRequestObject(jsonReader)
+          | StartArray  =>
+            def processArray()
+            {
+              match (ReadToken(jsonReader))
+              {
+                | EndArray    => ()
+                | StartObject =>
+                  yield ProcessRequestObject(jsonReader);
+                  processArray()
+
+                | _ => Fail()
+              }
+            }
+            processArray()
+
+          | _ => Fail()
+        }
+
+        jsonReader.Close();
+      }
+    }
+
+    private ProcessRequestObject(jsonReader : JsonReader) : TResult
+    {
+      mutable jsonrpc   : object;
+      mutable id        : object;
+      mutable method    : string;
+      mutable arguments : object;
+      mutable handler;
+
+      def loop()
+      {
+        match (ReadToken(jsonReader))
+        {
+          | EndObject    => ()
+          | PropertyName =>
+            match (jsonReader.Value :> string)
+            {
+              | "jsonrpc" =>
+                if (ReadToken(jsonReader) == JsonToken.String)
+                  jsonrpc = jsonReader.Value;
+                else
+                  Fail()
+
+              | "id" =>
+                match (ReadToken(jsonReader))
+                {
+                  | String | Integer => id = jsonReader.Value
+                  | _ => Fail()
+                }
+
+              | "method" =>
+                if (ReadToken(jsonReader) == JsonToken.String)
+                  method = jsonReader.Value :> string;
+                else
+                  Fail()
+
+              | "params" =>
+                mutable handlerInfo;
+                if (method != null && _handlers.TryGetValue(method, out handlerInfo))
+                {
+                  _ = jsonReader.Read();
+                  arguments = _serializer.Deserialize(jsonReader, handlerInfo[0]);
+                  handler = handlerInfo[1];
+                }
+                else
+                  jsonReader.Skip()
+
+              | _ => jsonReader.Skip()
+            }
+            loop();
+
+          | _  => Fail()
+        }
+      }
+      loop();
+
+      if (handler != null)
+        handler(arguments, id)
+      else
+        UnknownRequestHandler?.Invoke(method, id)
+    }
+
+    private static ReadToken(jsonReader : JsonReader) : JsonToken
+    {
+      if (jsonReader.Read())
+        match (jsonReader.TokenType)
+        {
+          | Comment => ReadToken(jsonReader)
+          | token   => token
+        }
+      else
+        JsonToken.None
+    }
+
+    private static Fail() : void
+    {
+      throw JsonException()
+    }
+
+    private static ParseContentLength(header : ArraySegment[byte]) : int
+    {
+      unchecked
+      {
+        def prefix = LspDefaults.ContentLengthHeader;
+        when (header.Count < prefix.Length + 1)
+          return InvalidContentLength;
+
+        def buffer = header.Array;
+        mutable pos = header.Offset;
+        for (mutable i = 0; i < prefix.Length; {++i; ++pos})
+          when (buffer[pos] :> char != prefix[i]) // TODO: compare case insensitively
+            return InvalidContentLength;
+
+        def end = header.Offset + header.Count;
+
+        while (pos < end && buffer[pos] :> char == ' ')
+          ++pos;
+
+        when (pos == end)
+          return InvalidContentLength;
+
+        mutable contentLength = 0;
+        while (pos < end && '0' <= buffer[pos] :> char && buffer[pos] :> char <= '9')
+        {
+          contentLength = contentLength * 10 + buffer[pos] :> char - '0';
+          ++pos;
+        }
+
+        if (pos == end)
+          contentLength
+        else
+          InvalidContentLength
+      }
+    }
+
+    private ReadHeader(position : ref int) : ArraySegment[byte]
+    {
+      unchecked
+      {
+        def headerStart = position;
+        while (true)
+        {
+          mutable buffer = _requestBuffer.GetBuffer();
+          mutable length = _requestBuffer.Length;
+          while (position < length)
+          {
+            when (buffer[position] :> char == '\r')
+            {
+              ++position;
+              when (position == length)
+                (buffer, length) = ReadInput(RequestChunkSize);
+
+              when (buffer[position] :> char == '\n')
+              {
+                ++position;
+                return ArraySegment(buffer, headerStart, position - headerStart - 2);
+              }
+            }
+            ++position;
+          }
+          (buffer, length) = ReadInput(RequestChunkSize);
+        }
+        ArraySegment() // make compiler happy
+      }
+    }
+
+    private ReadInput(count : int) : array[byte] * int
+    {
+      unchecked
+      {
+        mutable position = _requestBuffer.Length :> int;
+
+        when (count == 0)
+          return (_requestBuffer.GetBuffer(), position);
+
+        def newLength = position + count;
+        _requestBuffer.SetLength(newLength);
+
+        def buffer = _requestBuffer.GetBuffer();
+
+        def loop(count)
+        {
+          def bytesRead = _input.Read(buffer, position, count);
+
+          when (bytesRead == 0)
+            throw EndOfStreamException();
+
+          position += bytesRead;
+
+          when (bytesRead < count)
+            loop(count - bytesRead);
+        }
+        loop(count);
+
+        (buffer, newLength)
+      }
+    }
+  }
+}

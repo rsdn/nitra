@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Nitra.ClientServer.Server</RootNamespace>
     <AssemblyName>Nitra.ClientServer.Server</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NemerleVersion>Net-4.0</NemerleVersion>
@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
     <RunDebugger>false</RunDebugger>
     <DefineConstants Condition="'$(NoServerWindow)' == 'true'">$(DefineConstants);NOSERVERWINDOW</DefineConstants>
+    <StartProgram />
+    <WorkingDirectory />
+    <CmdArgs>-lsp</CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
@@ -42,7 +45,17 @@
     <DefineConstants>TRACE;NOSERVERWINDOW</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.LanguageServer.Protocol, Version=15.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Name>Microsoft.VisualStudio.LanguageServer.Protocol</Name>
+      <AssemblyName>Microsoft.VisualStudio.LanguageServer.Protocol.dll</AssemblyName>
+      <HintPath>..\..\..\packages\Microsoft.VisualStudio.LanguageServer.Protocol.15.9.3032\lib\net46\Microsoft.VisualStudio.LanguageServer.Protocol.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
+      <Name>Newtonsoft.Json</Name>
+      <AssemblyName>Newtonsoft.Json.dll</AssemblyName>
+      <HintPath>..\..\..\packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -75,7 +88,19 @@
     <Compile Include="IServerMessageSink.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Lsp\LspDefaults.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Lsp\LspErrorCodes.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Lsp\LspProtocolAdapter.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Lsp\LspReader.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Lsp\LspWriter.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Main.n" />
@@ -172,6 +197,11 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="packages.config">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

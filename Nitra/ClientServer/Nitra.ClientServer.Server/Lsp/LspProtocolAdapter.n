@@ -10,17 +10,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
+using Microsoft.VisualStudio.LanguageServer.Protocol;
+
 namespace Nitra.ClientServer.Server.Lsp
 {
   public class LspProtocolAdapter : IProtocolAdapter
   {
     private mutable input  : Stream;
     private mutable output : Stream;
+    private mutable reader : LspReader[object * object];
+    private mutable writer : LspWriter;
 
     public Connect() : void
     {
       input = Console.OpenStandardInput();
       output = Console.OpenStandardOutput();
+
+      reader = LspReader(input);
+      writer = LspWriter(output);
+
+      reader.RegisterHandler(Methods.Initialize, fun (initialize, id)
+      {
+        Console.WriteLine($"initialize ($id): $(initialize.RootUri)");
+        def result = InitializeResult();
+        result.Capabilities = ServerCapabilities();
+        (id, result)
+      });
+
+      reader.UnknownRequestHandler += fun (method, id)
+      {
+        System.Diagnostics.Debug.WriteLine("Method is not supported: {0}", method : object);
+        (id, null)
+      };
     }
 
     public Dispose() : void
@@ -31,7 +52,14 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public Receive() : Seq[ClientMessage]
     {
-      []
+      foreach ((id, result) when id != null in reader.ReadRequests())
+      {
+        if (result == null)
+          writer.WriteError(id, LspErrorCode.RequestCancelled, "bla bla");
+        else
+          writer.WriteResult(id, result);
+      }
+      array(0)
     }
 
     public Send(message : ServerMessage) : void
