@@ -1,0 +1,28 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Newtonsoft.Json;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  [Record]
+  public class InvalidRequestException : Exception
+  {
+    public this(reader : JsonReader)
+    {
+      match (reader)
+      {
+        | lineInfo is IJsonLineInfo when lineInfo.HasLineInfo() =>
+          this($"Invalid JSON at line $(lineInfo.LineNumber) column $(lineInfo.LinePosition), path $(reader.Path)")
+
+        | _ => this($"Invalid JSON at path $(reader.Path)")
+      }
+    }
+  }
+}

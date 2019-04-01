@@ -70,7 +70,7 @@ namespace Nitra.ClientServer.Server.Lsp
         readHeaders();
 
         when (contentLength == InvalidContentLength)
-          Fail();
+          throw InvalidRequestException("Content-Length header required");
 
         def contentLoadedBytes = _requestBuffer.Length :> int - position;
         _ = ReadInput(contentLength - contentLoadedBytes);
@@ -93,12 +93,12 @@ namespace Nitra.ClientServer.Server.Lsp
                   yield ProcessRequestObject(jsonReader);
                   processArray()
 
-                | _ => Fail()
+                | _ => throw InvalidRequestException(jsonReader)
               }
             }
             processArray()
 
-          | _ => Fail()
+          | _ => throw InvalidRequestException(jsonReader)
         }
 
         jsonReader.Close();
@@ -123,22 +123,22 @@ namespace Nitra.ClientServer.Server.Lsp
             {
               | "jsonrpc" =>
                 if (ReadToken(jsonReader) == JsonToken.String)
-                  jsonrpc = jsonReader.Value;
+                  jsonrpc = jsonReader.Value :> string;
                 else
-                  Fail()
+                  throw InvalidRequestException(jsonReader)
 
               | "id" =>
                 match (ReadToken(jsonReader))
                 {
                   | String | Integer => id = jsonReader.Value
-                  | _ => Fail()
+                  | _ => throw InvalidRequestException(jsonReader)
                 }
 
               | "method" =>
                 if (ReadToken(jsonReader) == JsonToken.String)
                   method = jsonReader.Value :> string;
                 else
-                  Fail()
+                  throw InvalidRequestException(jsonReader)
 
               | "params" =>
                 mutable handlerInfo;
@@ -155,7 +155,7 @@ namespace Nitra.ClientServer.Server.Lsp
             }
             loop();
 
-          | _  => Fail()
+          | _  => throw InvalidRequestException(jsonReader)
         }
       }
       loop();
@@ -176,11 +176,6 @@ namespace Nitra.ClientServer.Server.Lsp
         }
       else
         JsonToken.None
-    }
-
-    private static Fail() : void
-    {
-      throw JsonException()
     }
 
     private static ParseContentLength(header : ArraySegment[byte]) : int

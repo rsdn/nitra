@@ -88,6 +88,9 @@
     <Compile Include="IServerMessageSink.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Lsp\InvalidRequestException.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Lsp\LspDefaults.n">
       <SubType>Code</SubType>
     </Compile>
