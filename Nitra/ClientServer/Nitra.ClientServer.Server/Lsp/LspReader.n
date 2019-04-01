@@ -182,14 +182,14 @@ namespace Nitra.ClientServer.Server.Lsp
     {
       unchecked
       {
-        def prefix = LspDefaults.ContentLengthHeader;
+        def prefix = "content-length:";
         when (header.Count < prefix.Length + 1)
           return InvalidContentLength;
 
         def buffer = header.Array;
         mutable pos = header.Offset;
         for (mutable i = 0; i < prefix.Length; {++i; ++pos})
-          when (buffer[pos] :> char != prefix[i]) // TODO: compare case insensitively
+          when (char.ToLowerInvariant(buffer[pos] :> char) != prefix[i])
             return InvalidContentLength;
 
         def end = header.Offset + header.Count;

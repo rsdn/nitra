@@ -88,10 +88,10 @@ namespace Nitra.ClientServer.Server.Lsp
 
       def length = _outputBuffer.Length;
 
-      _textWriter.Write(LspDefaults.ContentLengthHeader);
+      _textWriter.Write("Content-Length: ");
       _textWriter.Write(length);
       _textWriter.Write("\r\n");
-      //_textWriter.Write("Content-Type:application/vscode-jsonrpc;charset=utf-8\r\n");
+      //_textWriter.Write("Content-Type: application/vscode-jsonrpc;charset=utf-8\r\n");
       _textWriter.Write("\r\n");
       _textWriter.Flush();
 

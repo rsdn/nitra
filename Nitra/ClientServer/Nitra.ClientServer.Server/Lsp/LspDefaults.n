@@ -14,6 +14,5 @@ namespace Nitra.ClientServer.Server.Lsp
   {
     public JsonRpcVersion = "2.0";
     public Encoding : Encoding = UTF8Encoding(false);
-    public ContentLengthHeader = "Content-Length:";
   }
 }
