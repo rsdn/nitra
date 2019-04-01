@@ -219,29 +219,24 @@ namespace Nitra.ClientServer.Server.Lsp
       unchecked
       {
         def headerStart = position;
-        while (true)
+        mutable buffer = _requestBuffer.GetBuffer();
+        mutable length = _requestBuffer.Length;
+        def loop(crParsed)
         {
-          mutable buffer = _requestBuffer.GetBuffer();
-          mutable length = _requestBuffer.Length;
-          while (position < length)
-          {
-            when (buffer[position] :> char == '\r')
-            {
-              ++position;
-              when (position == length)
-                (buffer, length) = ReadInput(RequestChunkSize);
+          when (position == length)
+            (buffer, length) = ReadInput(RequestChunkSize);
 
-              when (buffer[position] :> char == '\n')
-              {
-                ++position;
-                return ArraySegment(buffer, headerStart, position - headerStart - 2);
-              }
-            }
-            ++position;
+          def c = buffer[position] :> char;
+          ++position;
+
+          match (c)
+          {
+            | '\r'               => loop(true)
+            | '\n' when crParsed => ArraySegment(buffer, headerStart, position - headerStart - 2)
+            | _                  => loop(false)
           }
-          (buffer, length) = ReadInput(RequestChunkSize);
         }
-        ArraySegment() // make compiler happy
+        loop(false)
       }
     }
 
