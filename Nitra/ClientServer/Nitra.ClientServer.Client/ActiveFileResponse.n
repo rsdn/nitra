@@ -29,16 +29,18 @@ namespace Nitra.ClientServer.Client
     {
       _onMessage       = onMessage;
       PipeName         = Guid.NewGuid().ToString();
-      def readerThread = Thread(ActiveFileResponseThreadMain) <- { IsBackground = true; Priority = priority };
+      def readerThread = Thread(ActiveFileResponseThreadMain) <-
+      {
+        Name = "Active Source Pipe - " + PipeName;
+        CurrentCulture = CultureInfo.InvariantCulture;
+        IsBackground = true;
+        Priority = priority;
+      };
       readerThread.Start();
     }
 
     ActiveFileResponseThreadMain() : void
     {
-      def thread = Thread.CurrentThread;
-      thread.Name = "Active Source Pipe - " + PipeName;
-      thread.CurrentCulture = CultureInfo.InvariantCulture;
-
       _responsePipe    = NamedPipeServerStream(PipeName, PipeDirection.In);
       _responsePipe.WaitForConnection();
       Log($"Pipe server started (pipe name = $PipeName).");

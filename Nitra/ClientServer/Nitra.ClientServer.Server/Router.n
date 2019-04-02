@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -41,7 +42,7 @@ namespace Nitra.ClientServer.Server
     public this(messageSink : IServerMessageSink)
     {
       MessageSink             = messageSink;
-      _mainThread             = Thread(RouterThreadMain);
+      _mainThread             = Thread(RouteMessages) <- { Name = "Router"; CurrentCulture = CultureInfo.InvariantCulture; };
       _mainThread.Start();
       def cores               = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
       Log.Message("Cores: " + cores);
@@ -87,15 +88,6 @@ namespace Nitra.ClientServer.Server
     public SendResponse(msg : ServerMessage) : void
     {
       MessageSink.Send(msg);
-    }
-
-    RouterThreadMain() : void
-    {
-      def thread = Thread.CurrentThread;
-      thread.Name = "Router";
-      thread.CurrentCulture = CultureInfo.InvariantCulture;
-
-      RouteMessages();
     }
 
     [HandleProcessCorruptedStateExceptions]

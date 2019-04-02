@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -43,15 +44,12 @@ namespace Nitra.ClientServer.Server
       _mainQueue           = mainQueue;
       _incomeQueue         = incomeQueue;
       _spanClassesManager  = spanClassesManager;
-      _thread              = Thread(ParseWorkerMain);
+      _thread              = Thread(ParseWorkerMain) <- { Name = "Parse Worker"; CurrentCulture = CultureInfo.InvariantCulture; };
       _thread.Start();
     }
 
     ParseWorkerMain() : void
     {
-      def thread = Thread.CurrentThread;
-      thread.Name = "Parse Worker";
-      thread.CurrentCulture = CultureInfo.InvariantCulture;
       while (!_mainQueue.IsCompleted)
       {
         try

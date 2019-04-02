@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Text;
 using Nemerle.Utility;
 
@@ -57,10 +58,14 @@ namespace Nitra.Logging
         }
         else
           _ = Directory.CreateDirectory(logDir);
-        _logFile             = StreamWriter(logPath);
-        _thread              = Thread(ParseWorkerMain);
-        _thread.Priority     = ThreadPriority.BelowNormal;
-        _thread.IsBackground = true;
+        _logFile = StreamWriter(logPath);
+        _thread  = Thread(ParseWorkerMain) <-
+        {
+          Name           = "Logger Worker";
+          CurrentCulture = CultureInfo.InvariantCulture;
+          Priority       = ThreadPriority.BelowNormal;
+          IsBackground   = true;
+        };
         _thread.Start();
       }
 
@@ -71,9 +76,6 @@ namespace Nitra.Logging
 
       ParseWorkerMain() : void
       {
-        def thread = Thread.CurrentThread;
-        thread.Name = "Logger Worker";
-        thread.CurrentCulture = CultureInfo.InvariantCulture;
         def header = $<#<!DOCTYPE html>
   <html>
   <head>
