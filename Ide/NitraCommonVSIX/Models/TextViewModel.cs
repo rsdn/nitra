@@ -150,7 +150,7 @@ namespace Nitra.VisualStudio.Models
       CheckDisposed();
       var fileModel = FileModel;
       var client = fileModel.Server.Client;
-      client.Send(new ClientMessage.FindSymbolReferences(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos()));
+      client.Send(new ClientMessage.FindSymbolReferences(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos(), false));
       var msg = client.Receive<ServerMessage.FindSymbolReferences>();
 
       var locs = msg.symbols.SelectMany(s => s.Definitions.Select(d => d.Location).Concat(s.References.SelectMany(

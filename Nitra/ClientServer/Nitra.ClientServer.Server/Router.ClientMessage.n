@@ -67,7 +67,7 @@ namespace Nitra.ClientServer.Server
       | PrettyPrint        (state)                       => PrettyPrintState = state;
       | CompleteWord      (projectId, id, version, pos)  => _solution.GetFile(projectId, id).CompleteWord(version, pos);
       | CompleteWordDismiss    (projectId, id)           => _solution.GetFile(projectId, id).CompleteWordDismiss();
-      | FindSymbolReferences (projectId, id, pos)        => FindSymbolReferences(projectId, id, pos);
+      | FindSymbolReferences (projectId, id, pos, forHighlighting) => FindSymbolReferences(projectId, id, pos, forHighlighting);
       | FindSymbolDefinitions(projectId, id, pos)        => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos);
       | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
       | GetObjectContent(sId, pId, fId, ver, parentId)   => GetObjectContent(sId, pId, fId, ver, parentId);

@@ -169,9 +169,9 @@ namespace Nitra.VisualStudio
       return GetFilePath((IPersistFileFormat)vsTextLines);
     }
 
-    public static NSpan Convert(Span span)
+    public static UISpan Convert(Span span)
     {
-      return new NSpan(span.Start, span.End);
+      return new UISpan(span.Start, span.End);
     }
 
     public static Span Convert(NSpan span)

@@ -59,7 +59,7 @@ namespace Nitra.ClientServer.Messages
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { projectId : ProjectId; id : FileId; version : FileVersion; pos : int; }
     | CompleteWordDismiss      { projectId : ProjectId; id : FileId }
-    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; }
     | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | ParseTreeReflection      { enable : bool; }
     | GetObjectContent         { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
@@ -82,7 +82,7 @@ namespace Nitra.ClientServer.Messages
   public variant ServerMessage
   {
     | FindSymbolDefinitions { solutionId : SolutionId; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
-    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolRreferences]; }
+    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolReferences]; }
     | ParseTreeReflection   { solutionId : SolutionId; root : ImmutableArray[ParseTreeReflectionStruct]; }
     | ObjectContent         { solutionId : SolutionId; content : ContentDescriptor; }
     | LibsMetadata          { solutionId : SolutionId; metadatas : ImmutableArray[LibMetadata]; }
@@ -115,7 +115,7 @@ namespace Nitra.ClientServer.Messages
     | ReflectionStructCreated     { root : ParseTreeReflectionStruct; }
     | RefreshReferencesFailed     { exception : string; }
     | RefreshProjectFailed        { exception : string; }
-    | FindSymbolReferences        { referenceSpan : NSpan; symbols : ImmutableArray[SymbolRreferences]; }
+    | FindSymbolReferences        { referenceSpan : NSpan; symbols : ImmutableArray[SymbolReferences]; }
     | Hint                        { text : string; referenceSpan : NSpan; }
     | Exception                   { exception : string; }
     | FoundDeclarations           { projectId : ProjectId; declarations : ImmutableArray[DeclarationInfo]; }
@@ -146,7 +146,7 @@ namespace Nitra.ClientServer.Messages
   }
 
   [NitraMessage, StructuralEquality]
-  public struct SymbolRreferences
+  public struct SymbolReferences
   {
     public SymbolId    : int;
     public Definitions : ImmutableArray[SymbolLocation];
@@ -217,12 +217,31 @@ namespace Nitra.ClientServer.Messages
     }
   }
 
+  [NitraMessage, StructuralEquality]
+  public variant UIPosition
+  {
+    | Offset        { pos : int }
+    | LineCharacter { line : int; character : int }
+
+    public static @:(pos : int) : UIPosition
+    {
+      Offset(pos)
+    }
+  }
+
+  [NitraMessage, StructuralEquality]
+  public struct UISpan
+  {
+    public Start : UIPosition;
+    public End   : UIPosition;
+  }
+
   [NitraMessage]
   public variant FileChange
   {
-    | Insert  { pos : int; text : string }
-    | Delete  { span : NSpan }
-    | Replace { span : NSpan; text : string }
+    | Insert  { pos : UIPosition; text : string }
+    | Delete  { span : UISpan }
+    | Replace { span : UISpan; text : string }
   }
 
   [NitraMessage, StructuralEquality]
@@ -882,12 +901,12 @@ namespace Nitra.ClientServer.Messages
   [StructuralEquality]
   public struct VersionedPos
   {
-    public static Invalid : VersionedPos = VersionedPos(-1, FileVersion(-1));
+    public static Invalid : VersionedPos = VersionedPos(UIPosition.Offset(-1), FileVersion(-1));
 
-    public Pos : int;
+    public Pos     : UIPosition;
     public Version : FileVersion;
 
-    public IsInvalid : bool { get { Pos < 0 || Version.IsInvalid } }
+    public IsInvalid : bool { get { Pos is (UIPosition.Offset(p) when p < 0) || Version.IsInvalid } }
 
     public override ToString() : string { if (IsInvalid) "<VersionedPos.Invalid>" else ("VersionedPos(" + Pos + ", " + Version + ")") }
   }

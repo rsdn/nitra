@@ -21,6 +21,8 @@ module Program
 {
   Main(args : array[string]) : void
   {
+    Debugger.Launch();
+
     def isLsp = args.Length == 1 && array["--lsp", "-lsp", "/lsp"].Contains(args[0], StringComparer.OrdinalIgnoreCase);
 
     Log.Init("Nitra.ClientServer.Server", !isLsp);

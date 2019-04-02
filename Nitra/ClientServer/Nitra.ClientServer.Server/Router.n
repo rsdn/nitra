@@ -215,9 +215,9 @@ namespace Nitra.ClientServer.Server
       SendResponse(ServerMessage.FileExtensions(SolutionId, fileExtensions));
     }
 
-    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos) : void
+    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos, forHighlighting : bool) : void
     {
-      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting=false);
+      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting);
       catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty)); throw }
     }
 

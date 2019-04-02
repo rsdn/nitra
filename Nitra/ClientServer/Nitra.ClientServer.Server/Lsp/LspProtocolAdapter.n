@@ -1,25 +1,40 @@
 ﻿using Nitra.ClientServer.Messages;
+using Nitra.ClientServer.Server.ProjectSystem;
 
 using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
+using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Linq;
 using System.IO;
+using System.Threading;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
 
 namespace Nitra.ClientServer.Server.Lsp
 {
   public class LspProtocolAdapter : IProtocolAdapter
   {
+    private static mutable fileCounter : int;
+    private fileIdTable         : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
+    private findReferencesQueue : ConcurrentQueue[object] = ConcurrentQueue();
+    
     private mutable input  : Stream;
     private mutable output : Stream;
-    private mutable reader : LspReader[object * object];
+    private mutable reader : LspReader[HandlerResult];
     private mutable writer : LspWriter;
+
+    private mutable solutionId : SolutionId;
+    private mutable projectId  : ProjectId;
 
     public Connect() : void
     {
@@ -29,19 +44,19 @@ namespace Nitra.ClientServer.Server.Lsp
       reader = LspReader(input);
       writer = LspWriter(output);
 
-      reader.RegisterHandler(Methods.Initialize, fun (initialize, id)
-      {
-        Console.WriteLine($"initialize ($id): $(initialize.RootUri)");
-        def result = InitializeResult();
-        result.Capabilities = ServerCapabilities();
-        (id, result)
-      });
+      reader.UnknownRequestHandler += UnknownHandler;
 
-      reader.UnknownRequestHandler += fun (method, id)
-      {
-        System.Diagnostics.Debug.WriteLine("Method is not supported: {0}", method : object);
-        (id, null)
-      };
+      reader.RegisterHandler("$/cancelRequest",                       CancelRequestHandler);
+      reader.RegisterHandler(Methods.Initialize,                      InitializeHandler);
+      reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
+      reader.RegisterHandler(Methods.Shutdown,                        ShutdownHandler);
+      reader.RegisterHandler(Methods.Exit,                            ExitHandler);
+      reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
+      reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
+      reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
+      reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
+      reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
+      reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
     }
 
     public Dispose() : void
@@ -52,24 +67,265 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public Receive() : Seq[ClientMessage]
     {
-      foreach ((id, result) when id != null in reader.ReadRequests())
+      using (e = reader.ReadRequests().GetEnumerator())
       {
-        if (result == null)
-          writer.WriteError(id, LspErrorCode.RequestCancelled, "bla bla");
-        else
-          writer.WriteResult(id, result);
+        mutable processRequests = true;
+        do
+        {
+          def result = nextResult:
+          {
+            try
+              when (e.MoveNext())
+                nextResult(e.Current);
+            catch
+            {
+              | _ is EndOfStreamException    => ()
+              | e is JsonException           => WriteError(null, LspErrorCode.ParseError, e.Message)
+              | e is InvalidRequestException => WriteError(null, LspErrorCode.InvalidRequest, e.Message)
+              | e is Exception               => WriteError(null, LspErrorCode.InternalError, e.ToString())
+            }
+
+            processRequests = false;
+            HandlerResult.Unit(null, [ClientMessage.Shutdown()]);
+          };
+
+          when (result.Messages != null)
+            foreach (message in result.Messages)
+              yield message;
+
+          match (result)
+          {
+            | Unit                   => ()
+            | Response(body)         => WriteResult(result.Id, body)
+            | Error(code, message)   => WriteError(result.Id, code, message)
+          }
+        }
+        while (processRequests)
       }
-      array(0)
     }
 
     public Send(message : ServerMessage) : void
     {
-      
+      | FindSymbolReferences(solutionId, span, symbols) =>
+        mutable id;
+        when (findReferencesQueue.TryDequeue(out id))
+        {
+          
+        }
+
+      | _ => ()
     }
 
     public Send(message : AsyncServerMessage) : void
     {
-      
+      | FindSymbolReferences(span, symbols) =>
+        mutable id;
+        when (findReferencesQueue.TryDequeue(out id))
+        {
+          def result = List();
+          foreach (s in symbols)
+          foreach (r in s.References)
+          foreach (g in r.Ranges)
+            result.Add(DocumentHighlight() <-
+            {
+              Range = Range() <-
+              {
+                Start = Position() <- { Line = g.StartLine - 1; Character = g.StartColumn - 1 };
+                End = Position() <- { Line = g.EndLine - 1; Character = g.EndColumn - 1 }
+              };
+              Kind = DocumentHighlightKind.Text
+            });
+          writer.WriteResult(id, result);
+        }
+
+      | _ => ()
+    }
+
+    private UnknownHandler(method : string, id : object) : HandlerResult
+    {
+      if (id == null)
+        HandlerResult.Unit()
+      else
+        HandlerResult.Error(id, null, LspErrorCode.MethodNotFound, method)
+    }
+
+    private CancelRequestHandler(p : CancelParams) : HandlerResult
+    {
+      HandlerResult.Unit()
+    }
+
+    private InitializeHandler(p : InitializeParams, id : object) : HandlerResult
+    {
+      def result = InitializeResult() <-
+      {
+        Capabilities = ServerCapabilities() <-
+        {
+          TextDocumentSync = TextDocumentSyncOptions() <-
+            {
+              OpenClose = true;
+              Change = TextDocumentSyncKind.Incremental;
+              Save = SaveOptions() <- { IncludeText = false }
+            };
+          DefinitionProvider = true;
+          ReferencesProvider = true;
+          DocumentHighlightProvider = true;
+          CompletionProvider = CompletionOptions() <- { ResolveProvider = true };
+          HoverProvider = true
+        }
+      };
+
+      def messages =
+        if (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
+        {
+          def options = (p.InitializationOptions :> JObject).ToObject.[InitializationOptions]();
+          LoadSolution(p.RootPath, SolutionId(0), ProjectId(0), options)
+        }
+        else
+          null;
+
+      HandlerResult.Response(id, messages, result);
+    }
+
+    private InitializedHandler(_ : InitializedParams) : HandlerResult
+    {
+      HandlerResult.Unit()
+    }
+
+    private ShutdownHandler(_ : object, id : object) : HandlerResult
+    {
+      HandlerResult.Response(id, null, null)
+    }
+
+    private ExitHandler(_ : object) : HandlerResult
+    {
+      HandlerResult.Unit(null, [ClientMessage.Shutdown()])
+    }
+
+    private WorkspaceDidChangeConfigurationHandler(_ : DidChangeConfigurationParams) : HandlerResult
+    {
+      HandlerResult.Unit()
+    }
+
+    private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : HandlerResult
+    {
+      def document = p.TextDocument;
+      HandlerResult.Unit(null, [ClientMessage.FileActivated(projectId, GetFileId(document.Uri), FileVersion(document.Version))])
+    }
+
+    private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : HandlerResult
+    {
+      HandlerResult.Unit(null, [ClientMessage.FileDeactivated(projectId, GetFileId(p.TextDocument.Uri))])
+    }
+
+    private TextDocumentDidChangeHandler(p : DidChangeTextDocumentParams) : HandlerResult
+    {
+      def document = p.TextDocument;
+      def changes  = p.ContentChanges;
+      def fileId   = GetFileId(document.Uri);
+      def version  = FileVersion(document.Version ?? -1);
+      def message  =
+        if (changes.Length == 1)
+          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes.Last().Range.End), version))
+        else
+          ClientMessage.FileChangedBatch(fileId, version, Array.ConvertAll(changes, Convert).ToImmutableArray(), VersionedPos.Invalid);
+
+      HandlerResult.Unit(null, [message])
+    }
+
+    private TextDocumentDidSaveHandler(_ : DidSaveTextDocumentParams) : HandlerResult
+    {
+      HandlerResult.Unit()
+    }
+
+    private TextDocumentDocumentHighlightHandler(p : TextDocumentPositionParams, id : object) : HandlerResult
+    {
+      def document = p.TextDocument;
+      def fileId   = GetFileId(document.Uri);
+      def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      findReferencesQueue.Enqueue(id);
+      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(projectId, fileId, position, true)])
+    }
+
+    private WriteError(id : object, code : LspErrorCode, message : string) : void
+    {
+      lock (writer)
+        writer.WriteError(id, code, message)
+    }
+
+    private WriteResult(id : object, body : object) : void
+    {
+      lock (writer)
+        writer.WriteResult(id, body)
+    }
+
+    private LoadSolution(path : string, solutionId : SolutionId, projectId : ProjectId, options : InitializationOptions) : Seq[ClientMessage]
+    {
+      yield ClientMessage.SolutionStartLoading(solutionId, path);
+      yield ClientMessage.ProjectStartLoading(projectId, path, options.Config);
+
+      foreach (reference in options.References)
+        yield ClientMessage.ReferenceLoaded(projectId, reference);
+
+      foreach (filePath in IO.Directory.EnumerateFiles(path, "*" + options.FileExtension, IO.SearchOption.AllDirectories))
+      {
+        def id = GetFileId(filePath);
+        def version = FileVersion(1);
+        yield ClientMessage.FileLoaded(projectId, filePath, id, version, false, null);
+      }
+
+      yield ClientMessage.ProjectLoaded(projectId);
+      yield ClientMessage.SolutionLoaded(solutionId);
+    }
+
+    private GetFileId(path : string) : FileId
+    {
+      GetFileId(Uri(path, UriKind.Absolute))
+    }
+    
+    private GetFileId(uri : Uri) : FileId
+    {
+      fileIdTable.GetOrAdd(uri, fun(_){ FileId(Interlocked.Increment(ref fileCounter)) })
+    }
+
+    private static Convert(c : TextDocumentContentChangeEvent) : FileChange
+    {
+        def newText = c.Text;
+        if (c.RangeLength == 0 && !string.IsNullOrEmpty(newText))
+          FileChange.Insert(Convert(c.Range.Start), newText)
+        else if (c.RangeLength > 0 && string.IsNullOrEmpty(c.Text))
+          FileChange.Delete(Convert(c.Range))
+        else
+          FileChange.Replace(Convert(c.Range), c.Text)
+    }
+
+    private static Convert(p : Position) : UIPosition
+    {
+      UIPosition.LineCharacter(p.Line + 1, p.Character + 1)
+    }
+
+    private static Convert(p : Microsoft.VisualStudio.LanguageServer.Protocol.Range) : UISpan
+    {
+      UISpan(Convert(p.Start), Convert(p.End))
+    }
+
+    [Record]
+    private variant HandlerResult
+    {
+      public Id       : object;
+      public Messages : Seq[ClientMessage];
+
+      | Unit     { public this() { base(null, null) } }
+      | Response { Body : object }
+      | Error    { Code : LspErrorCode; Message : string }
+    }
+
+    private class InitializationOptions
+    {
+      public Config : Config { get; set; }
+
+      public FileExtension : string { get; set; }
+
+      public References : array[string] { get; set; }
     }
   }
 }
