@@ -220,7 +220,7 @@ namespace Nitra.ViewModels
     {
       def client = _client;
       Debug.Assert(client != null);
-      client.Send(ClientMessage.CompleteWord(this.Project.Id, this.Id, this.Version, pos));
+      client.Send(ClientMessage.CompleteWord(this.Project.Id, this.Id, VersionedPos(pos, this.Version)));
     }
 
     public override GetAllTests() : Seq[FileVm] { [this] }

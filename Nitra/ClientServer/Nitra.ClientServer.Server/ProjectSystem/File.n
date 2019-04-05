@@ -54,6 +54,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _objToIdMap             : ConcurrentDictionary[object, int];
     mutable _idToObjMap             : ConcurrentDictionary[int, object];
     mutable _needHint               : bool;
+    mutable _hintTag                : uint;
     mutable _caretPosOpt            : VersionedPos = VersionedPos.Invalid;
     mutable _highlightingPosOpt     : VersionedPos = VersionedPos.Invalid;
     mutable _isCompleteWord         : bool;
@@ -208,7 +209,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     // overrides
 
-    GetReParseMessage(completePos : int = -1) : ParserMessage.ParseFile
+    GetReParseMessage(completePos : UIPosition = null) : ParserMessage.ParseFile
     {
       _parseMessages.Clear();
       _astMessages.Clear();
@@ -237,7 +238,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                                         language.CompositeGrammar,
                                         cancellationToken = cancellationToken,
                                         dynamicExtensions = DynamicExtensions,
-                                        completionStartPos = completePos);
+                                        completionStartPos = if (completePos == null) -1 else completePos.ToPosition(source));
       CancellationTokenSource = cancellationTokenSource;
 
       ParserMessage.ParseFile(Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
@@ -258,7 +259,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _ast = ast;
 
       when (completionPos < 0)
-        TryHighlightSymbolReferences();
+        FindSymbolReferences(_highlightingPosOpt, forHighlighting=true, tag=0);
 
       if (_isCompleteWord && CanCompleteWord())
       {
@@ -367,12 +368,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsActive = false;
     }
 
-    public CompleteWord(version : FileVersion, pos : int) : void
+    public CompleteWord(pos : VersionedPos) : void
     {
-      Log.Message($"CompleteWord started in the $version file in position: $pos");
+      Log.Message($"CompleteWord started file in position: $pos");
       _isCompleteWord = true;
       Parent.IsCompleteWord = true;
-      TrySendParseMessage(pos);
+      TrySendParseMessage(pos.Pos);
     }
 
     public CompleteWordDismiss() : void
@@ -412,18 +413,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       Parent.AddSemanticAction(action);
     }
 
-    public FindSymbolReferences(pos : VersionedPos, forHighlighting : bool) : void
+    public FindSymbolReferences(pos : VersionedPos, forHighlighting : bool, tag : uint) : void
     {
       def ast      = _ast;
       def needHint = _needHint && forHighlighting;
       _needHint    = false;
       def symbolCache = Parent : ISymbolCache;
 
-      when (ast == null || (ast.Location.Source.Version != pos.Version && pos.Version >= 0))
+      when (ast == null || pos.IsIncompatible(ast.Location.Source))
       {
         // maybe better return special message?
         assert2(false);
-        Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty));
+        Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty, tag));
         return;
       }
 
@@ -498,17 +499,17 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         {
           def source = ast.Location.Source;
           def hint   = hintBuilderOpt.Append("</hint>").ToString();
-          router.SendAsyncResponse(AsyncServerMessage.Hint(FileId(source.File.Id), FileVersion(source.Version), solutionId, hint, refSpan));
+          router.SendAsyncResponse(AsyncServerMessage.Hint(FileId(source.File.Id), FileVersion(source.Version), solutionId, hint, refSpan, _hintTag));
         }
 
         if (forHighlighting)
-          router.SendAsyncResponse(AsyncServerMessage.FindSymbolReferences(FileId.Invalid, FileVersion.Invalid, solutionId, refSpan, symbolsBiulder.MoveToImmutable()));
+          router.SendAsyncResponse(AsyncServerMessage.FindSymbolReferences(FileId.Invalid, FileVersion.Invalid, solutionId, refSpan, symbolsBiulder.MoveToImmutable(), tag));
         else
-          router.SendResponse(ServerMessage.FindSymbolReferences(solutionId, refSpan, symbolsBiulder.MoveToImmutable()));
+          router.SendResponse(ServerMessage.FindSymbolReferences(solutionId, refSpan, symbolsBiulder.MoveToImmutable(), tag));
 
           Log.Message("action(FindSymbolReferences) finished", ConsoleColor.DarkYellow);
         }
-        catch { | _ => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty)); throw; }
+        catch { | _ => Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty, tag)); throw; }
       }
 
       Log.Message("AddSemanticAction(FindSymbolReferences)", ConsoleColor.DarkCyan);
@@ -858,7 +859,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       newFile.TrySendParseMessage();
     }
 
-    public TrySendParseMessage(completePos : int = -1) : void
+    public TrySendParseMessage(completePos : UIPosition = null) : void
     {
       when (this.IsSupported)
         _parseQueue.Add(this.GetReParseMessage(completePos));
@@ -871,42 +872,27 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       _highlightingPosOpt = pos;
 
       TryMatchBrackets();
-      TryHighlightSymbolReferences();
+      FindSymbolReferences(_highlightingPosOpt, forHighlighting=true, tag=0);
     }
 
-    public GetHint(pos : VersionedPos) : void
+    public GetHint(pos : VersionedPos, tag : uint) : void
     {
       _needHint           = true;
+      _hintTag            = tag;
       _highlightingPosOpt = pos;
 
-      TryHighlightSymbolReferences();
+      FindSymbolReferences(_highlightingPosOpt, forHighlighting=true, tag=0);
     }
 
     TryMatchBrackets() : void
     {
-      when (_caretPosOpt.IsInvalid)
-        return;
-
       def parseResult = _parseResult;
       def snapshot    = parseResult.SourceSnapshot;
-      when (parseResult != null && snapshot.Version == _caretPosOpt.Version)
-      {
-        def solutionId  = Parent.Parent.Id;
-        _parseQueue.Add(ParserMessage.CreateMatchBrackets(solutionId, Parent.Id, this.FileId, parseResult, _caretPosOpt.ToPosition(snapshot)));
-      }
-    }
-
-    TryHighlightSymbolReferences() : void
-    {
-      when (_highlightingPosOpt.IsInvalid)
+      when (parseResult == null || _caretPosOpt.IsIncompatible(snapshot))
         return;
 
-      def ast = _ast;
-
-      when (ast == null || ast.Location.Source.Version != _highlightingPosOpt.Version)
-        return;
-
-      FindSymbolReferences(_highlightingPosOpt, forHighlighting=true);
+      def solutionId  = Parent.Parent.Id;
+      _parseQueue.Add(ParserMessage.CreateMatchBrackets(solutionId, Parent.Id, this.FileId, parseResult, _caretPosOpt.ToPosition(snapshot)));
     }
 
     public override ToString() : string { $"$Name($(Parent.Name) project)" }
@@ -934,6 +920,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     private static ToPosition(this position : VersionedPos, snapshot : SourceSnapshot) : int
     {
       position.Pos.ToPosition(snapshot)
+    }
+
+    private static IsIncompatible(this version : FileVersion, snapshot : SourceSnapshot) : bool
+    {
+      version.Value != snapshot.Version && version.Value >= 0
+    }
+
+    private static IsIncompatible(this versionedPos : VersionedPos, snapshot : SourceSnapshot) : bool
+    {
+      versionedPos.Version.IsIncompatible(snapshot)
     }
   }
 }

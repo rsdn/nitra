@@ -57,9 +57,9 @@ namespace Nitra.ClientServer.Messages
     | FileChanged              { id : FileId; version : FileVersion; change : FileChange;                  caretPos : VersionedPos; }
     | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : VersionedPos; }
     | PrettyPrint              { state : PrettyPrintState; }
-    | CompleteWord             { projectId : ProjectId; id : FileId; version : FileVersion; pos : int; }
+    | CompleteWord             { projectId : ProjectId; id : FileId; pos : VersionedPos; }
     | CompleteWordDismiss      { projectId : ProjectId; id : FileId }
-    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; }
+    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; tag : uint }
     | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
     | ParseTreeReflection      { enable : bool; }
     | GetObjectContent         { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
@@ -70,7 +70,7 @@ namespace Nitra.ClientServer.Messages
     | GetLibsProjectSupports   { libs : ImmutableArray[string]; }
     | GetFileExtensions        { projectId : ProjectId; languageNames : ImmutableArray[string]; }
     | SetCaretPos              { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
-    | GetHint                  { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | GetHint                  { projectId : ProjectId; fileId : FileId; pos : VersionedPos; tag : uint; }
     | GetSubHint               { projectId : ProjectId; symbolId : int; }
     | FindDeclarations         { pattern : string; primaryProjectId : ProjectId; hideExternalItems : bool; kinds : ImmutableArray[string]; }
     | Shutdown                 { }
@@ -82,7 +82,7 @@ namespace Nitra.ClientServer.Messages
   public variant ServerMessage
   {
     | FindSymbolDefinitions { solutionId : SolutionId; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
-    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolReferences]; }
+    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolReferences]; tag : uint }
     | ParseTreeReflection   { solutionId : SolutionId; root : ImmutableArray[ParseTreeReflectionStruct]; }
     | ObjectContent         { solutionId : SolutionId; content : ContentDescriptor; }
     | LibsMetadata          { solutionId : SolutionId; metadatas : ImmutableArray[LibMetadata]; }
@@ -115,8 +115,8 @@ namespace Nitra.ClientServer.Messages
     | ReflectionStructCreated     { root : ParseTreeReflectionStruct; }
     | RefreshReferencesFailed     { exception : string; }
     | RefreshProjectFailed        { exception : string; }
-    | FindSymbolReferences        { referenceSpan : NSpan; symbols : ImmutableArray[SymbolReferences]; }
-    | Hint                        { text : string; referenceSpan : NSpan; }
+    | FindSymbolReferences        { referenceSpan : NSpan; symbols : ImmutableArray[SymbolReferences]; tag : uint }
+    | Hint                        { text : string; referenceSpan : NSpan; tag : uint; }
     | Exception                   { exception : string; }
     | FoundDeclarations           { projectId : ProjectId; declarations : ImmutableArray[DeclarationInfo]; }
     | CompleteWord                { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
@@ -226,6 +226,15 @@ namespace Nitra.ClientServer.Messages
     public static @:(pos : int) : UIPosition
     {
       Offset(pos)
+    }
+
+    public override ToString() : string
+    {
+      match (this)
+      {
+        | Offset(pos) => pos.ToString()
+        | LineCharacter(line, character) => $"($line:$character)"
+      }
     }
   }
 
@@ -906,7 +915,7 @@ namespace Nitra.ClientServer.Messages
     public Pos     : UIPosition;
     public Version : FileVersion;
 
-    public IsInvalid : bool { get { Pos is (UIPosition.Offset(p) when p < 0) || Version.IsInvalid } }
+    public IsInvalid : bool { get { Pos is (UIPosition.Offset(p) when p < 0) && Version.IsInvalid } }
 
     public override ToString() : string { if (IsInvalid) "<VersionedPos.Invalid>" else ("VersionedPos(" + Pos + ", " + Version + ")") }
   }

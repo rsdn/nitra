@@ -1519,8 +1519,8 @@ namespace Nitra.Visualizer
 
       var client = ViewModel.CurrentSuite.Client;
       var currentFile = ViewModel.CurrentFile;
-
-      client.Send(new ClientMessage.CompleteWord(ViewModel.CurrentProject.Id, currentFile.Id, currentFile.Version, pos));
+      var versionedPos = new VersionedPos(pos, currentFile.Version);
+      client.Send(new ClientMessage.CompleteWord(ViewModel.CurrentProject.Id, currentFile.Id, versionedPos));
     }
 
     private void TryMatchBraces()

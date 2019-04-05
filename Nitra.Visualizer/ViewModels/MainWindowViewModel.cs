@@ -69,7 +69,7 @@ namespace Nitra.Visualizer.ViewModels
     {
       var client = CurrentSuite.Client;
       var pos = Editor.CaretOffset;
-      client.Send(new ClientMessage.FindSymbolReferences(CurrentProject.Id, CurrentFile.Id, new VersionedPos(pos, CurrentFile.Version), false));
+      client.Send(new ClientMessage.FindSymbolReferences(CurrentProject.Id, CurrentFile.Id, new VersionedPos(pos, CurrentFile.Version), false, 0));
       var msg = client.Receive<ServerMessage.FindSymbolReferences>();
 
       if (msg.symbols.Length == 0)

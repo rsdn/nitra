@@ -215,10 +215,10 @@ namespace Nitra.ClientServer.Server
       SendResponse(ServerMessage.FileExtensions(SolutionId, fileExtensions));
     }
 
-    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos, forHighlighting : bool) : void
+    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos, forHighlighting : bool, tag : uint) : void
     {
-      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting);
-      catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty)); throw }
+      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting, tag);
+      catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty, tag)); throw }
     }
 
     GetSubHint(projectId : ProjectId, symbolId : int) : void

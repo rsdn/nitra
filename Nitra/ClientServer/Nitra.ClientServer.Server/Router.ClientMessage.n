@@ -65,9 +65,9 @@ namespace Nitra.ClientServer.Server
       | FileChanged        (id, version, change, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
       | FileChangedBatch   (id, version, changes, caret) => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);
       | PrettyPrint        (state)                       => PrettyPrintState = state;
-      | CompleteWord      (projectId, id, version, pos)  => _solution.GetFile(projectId, id).CompleteWord(version, pos);
+      | CompleteWord       (projectId, id, pos)          => _solution.GetFile(projectId, id).CompleteWord(pos);
       | CompleteWordDismiss    (projectId, id)           => _solution.GetFile(projectId, id).CompleteWordDismiss();
-      | FindSymbolReferences (projectId, id, pos, forHighlighting) => FindSymbolReferences(projectId, id, pos, forHighlighting);
+      | FindSymbolReferences (projectId, id, pos, forHighlighting, tag) => FindSymbolReferences(projectId, id, pos, forHighlighting, tag);
       | FindSymbolDefinitions(projectId, id, pos)        => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos);
       | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
       | GetObjectContent(sId, pId, fId, ver, parentId)   => GetObjectContent(sId, pId, fId, ver, parentId);
@@ -78,7 +78,7 @@ namespace Nitra.ClientServer.Server
       | GetLibsProjectSupports(libs)                     => GetLibsProjectSupports(libs)
       | GetFileExtensions(projectId, languageNames)      => GetFileExtensions(projectId, languageNames)
       | SetCaretPos(projectId, fileId, pos)              => _solution.GetFile(projectId, fileId).SetCaretPos(pos);
-      | GetHint(projectId, fileId, pos)                  => _solution.GetFile(projectId, fileId).GetHint(pos);
+      | GetHint(projectId, fileId, pos, tag)             => _solution.GetFile(projectId, fileId).GetHint(pos, tag);
       | FindDeclarations(pat, projectId, hide, kinds)    => _solution.FindDeclarations(pat, projectId, hide, kinds)
       | GetSubHint(projectId, symbolId)                  => GetSubHint(projectId, symbolId);
       | FileSaved                                        => ()
