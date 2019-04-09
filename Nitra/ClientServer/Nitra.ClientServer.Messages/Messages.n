@@ -233,7 +233,7 @@ namespace Nitra.ClientServer.Messages
       match (this)
       {
         | Offset(pos) => pos.ToString()
-        | LineCharacter(line, character) => $"($line:$character)"
+        | LineCharacter(line, character) => $"$line:$character"
       }
     }
   }

@@ -19,21 +19,24 @@ namespace Nitra.ClientServer.Server.Lsp
   {
     private static InvalidContentLength = -1;
     private static RequestChunkSize = 40;
-    private static DefaulRequestBufferSize = 4096;
+    private static DefaulRequestBufferSize = 64;
 
-    private _input         : Stream;
-    private _handlers      : Dictionary[string, Type * (object * object -> TResult)];
-    private _serializer    : JsonSerializer;
-    private _requestBuffer : MemoryStream;
-    private _textReader    : StreamReader;
+    private         _input         : Stream;
+    private         _handlers      : Dictionary[string, Type * (object * object -> TResult)];
+    private         _serializer    : JsonSerializer;
+    private         _contentStream : RequestContentStream;
+    private         _textReader    : StreamReader;
+    private mutable _buffer        : array[byte];
+    private mutable _bufferLength  : int;
 
     public this(input : Stream)
     {
       _input         = input;
       _handlers      = Dictionary(StringComparer.Ordinal);
       _serializer    = JsonSerializer.CreateDefault();
-      _requestBuffer = MemoryStream(DefaulRequestBufferSize);
-      _textReader    = StreamReader(_requestBuffer, LspDefaults.Encoding, false, 1024, true);
+      _contentStream = RequestContentStream(input);
+      _textReader    = StreamReader(_contentStream, LspDefaults.Encoding, false, 1024, true);
+      _buffer        = array(DefaulRequestBufferSize);
     }
 
     public event UnknownRequestHandler : Func[string, object, TResult];
@@ -62,8 +65,7 @@ namespace Nitra.ClientServer.Server.Lsp
     {
       while (true) unchecked
       {
-        _requestBuffer.Position = 0;
-        _requestBuffer.SetLength(0);
+        _bufferLength = 0;
         mutable contentLength = InvalidContentLength;
         mutable position = 0;
 
@@ -82,9 +84,8 @@ namespace Nitra.ClientServer.Server.Lsp
         when (contentLength == InvalidContentLength)
           throw InvalidRequestException("Content-Length header required");
 
-        def contentLoadedBytes = _requestBuffer.Length :> int - position;
-        _ = ReadInput(contentLength - contentLoadedBytes);
-        _requestBuffer.Position = position;
+        def contentLoadedBytes = _bufferLength - position;
+        _contentStream.Reset(ArraySegment(_buffer, position, contentLoadedBytes), contentLength);
         _textReader.DiscardBufferedData();
 
         def jsonReader = JsonTextReader(_textReader);
@@ -229,20 +230,18 @@ namespace Nitra.ClientServer.Server.Lsp
       unchecked
       {
         def headerStart = position;
-        mutable buffer = _requestBuffer.GetBuffer();
-        mutable length = _requestBuffer.Length;
         def loop(crParsed)
         {
-          when (position == length)
-            (buffer, length) = ReadInput(RequestChunkSize);
+          when (position == _bufferLength)
+            ReadInput(RequestChunkSize);
 
-          def c = buffer[position] :> char;
+          def c = _buffer[position] :> char;
           ++position;
 
           match (c)
           {
             | '\r'               => loop(true)
-            | '\n' when crParsed => ArraySegment(buffer, headerStart, position - headerStart - 2)
+            | '\n' when crParsed => ArraySegment(_buffer, headerStart, position - headerStart - 2)
             | _                  => loop(false)
           }
         }
@@ -250,35 +249,27 @@ namespace Nitra.ClientServer.Server.Lsp
       }
     }
 
-    private ReadInput(count : int) : array[byte] * int
+    private ReadInput(count : int) : void
     {
       unchecked
       {
-        mutable position = _requestBuffer.Length :> int;
-
-        when (count == 0)
-          return (_requestBuffer.GetBuffer(), position);
-
-        def newLength = position + count;
-        _requestBuffer.SetLength(newLength);
-
-        def buffer = _requestBuffer.GetBuffer();
+        def newLength = _bufferLength + count;
+        when (_buffer.Length < newLength)
+          Array.Resize(ref _buffer, Math.Max(_buffer.Length * 2, newLength));
 
         def loop(count)
         {
-          def bytesRead = _input.Read(buffer, position, count);
+          def bytesRead = _input.Read(_buffer, _bufferLength, count);
 
           when (bytesRead == 0)
             throw EndOfStreamException();
 
-          position += bytesRead;
+          _bufferLength += bytesRead;
 
           when (bytesRead < count)
             loop(count - bytesRead);
         }
         loop(count);
-
-        (buffer, newLength)
       }
     }
   }
