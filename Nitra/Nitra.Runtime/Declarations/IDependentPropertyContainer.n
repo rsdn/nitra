@@ -3,6 +3,7 @@
   public interface IDependentPropertyContainer
   {
     EvalProperties(context : DependentPropertyEvalContext) : void;
+    UnevalProperties(context : DependentPropertyEvalContext) : void;
     ResetProperties() : void;
     IsAllPropertiesEvaluated : bool { get }
     PropertiesEvalState      : int  { get }

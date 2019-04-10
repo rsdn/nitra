@@ -1,4 +1,4 @@
-using Nitra.Internal;
+﻿using Nitra.Internal;
 using Nitra.ProjectSystem;
 
 using Nemerle;
@@ -159,6 +159,11 @@ namespace Nitra.Declarations
     public virtual EvalProperties(context : DependentPropertyEvalContext) : void
     {
       AstUtils.EvalAmbiguitiesProperties(context, this)
+    }
+
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      AstUtils.UnevalAmbiguitiesProperties(context, this)
     }
 
     public PropertiesEvalState : int

@@ -5,6 +5,10 @@ namespace Nitra.Internal
   [Record, AttributeUsage(AttributeTargets.Property)]
   public sealed class DependentPropertyAttribute : Attribute
   {
+    public this(isEvaluatedName : string) { this(isEvaluatedName, null) }
+
     public IsEvaluatedName : string { get; }
+
+    public ResetValueName : string { get; }
   }
 }

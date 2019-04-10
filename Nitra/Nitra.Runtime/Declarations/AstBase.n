@@ -27,6 +27,11 @@ namespace Nitra.Declarations
       _ = context;
     }
 
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      _ = context;
+    }
+
     public virtual ResetProperties() : void
     {
     }

@@ -32,6 +32,12 @@ namespace Nitra.Internal
         ambiguity.EvalProperties(context);
     }
 
+    public UnevalAmbiguitiesProperties(context : DependentPropertyEvalContext, ast : IAmbiguousAst) : void
+    {
+      foreach (ambiguity in ast.Ambiguities)
+        ambiguity.UnevalProperties(context);
+    }
+
     public ResetAmbiguitiesProperties(ast : IAmbiguousAst) : void
     {
       foreach (ambiguity in ast.Ambiguities)

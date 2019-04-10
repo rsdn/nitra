@@ -111,6 +111,11 @@ namespace Nitra.Declarations
       AstUtils.EvalAmbiguitiesProperties(context, this)
     }
 
+    public UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      AstUtils.UnevalAmbiguitiesProperties(context, this)
+    }
+
     public PropertiesEvalState : int
     {
       get { Ambiguities[0].PropertiesEvalState }
