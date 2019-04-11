@@ -182,8 +182,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public Change(version : FileVersion, change : FileChange, caretPos : VersionedPos) : void
     {
       Log.Message($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
-      //_ = memcpy(IntPtr.Zero, IntPtr.Zero, UIntPtr(42));
       _ = GetSource();
+      
       FileVersion = version;
       ApplyChange(change);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
@@ -217,24 +217,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       CancellationTokenSource?.Cancel();
       CancellationTokenSource?.Dispose();
 
-      if (_ast == null)
-        Parent.CancelSemanticAnalysisCancellation();
-      else
-      {
-        _parseResult = null;
-        _ast         = null;
-        _parseTree   = null;
+      Parent.CancelSemanticAnalysisCancellation();
+
+      when (_ast != null)
         Parent.AstDropped(this);
-      }
 
       def cancellationTokenSource = CancellationTokenSource();
       def cancellationToken       = cancellationTokenSource.Token;
       def source                  = GetSource();
       def parseSession            = ParseSession(language.StartRule,
-                                        language.CompositeGrammar,
-                                        cancellationToken = cancellationToken,
-                                        dynamicExtensions = DynamicExtensions,
-                                        completionStartPos = completePos);
+                                                 language.CompositeGrammar,
+                                                 cancellationToken  = cancellationToken,
+                                                 dynamicExtensions  = DynamicExtensions,
+                                                 completionStartPos = completePos);
       CancellationTokenSource = cancellationTokenSource;
 
       ParserMessage.ParseFile(Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
@@ -251,11 +246,23 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int, parseResultOpt : IParseResult) : void
     {
-      _parseTree = parseTree;
-      _ast = ast;
+      def oldAst            = _ast;
+      def newAst            = ast;
+      def cancellationToken = CancellationTokenSource.Token;
+      _parseTree            = parseTree;
+      _ast                  = ast;
 
       when (completionPos < 0)
         TryHighlightSymbolReferences();
+
+      when (oldAst != null && newAst != null && !cancellationToken.IsCancellationRequested && Parent.Data != null)
+      {
+        def projectSupport = Parent.GetProjectSupport();
+        when (projectSupport.TryIncrementalRefreshProject(cancellationToken, oldAst, newAst, Parent.Data))
+        {
+          return;
+        }
+      }
 
       if (_isCompleteWord && CanCompleteWord())
       {
