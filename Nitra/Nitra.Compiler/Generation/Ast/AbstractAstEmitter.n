@@ -1,4 +1,4 @@
-using Nitra.Model;
+﻿using Nitra.Model;
 using Nitra.Typing;
 
 using Nemerle;
@@ -149,12 +149,13 @@ namespace Nitra.Compiler
 
     private DefineAmbiguousDependentProperty(symbol : DependentPropertySymbol, mask : int) : void
     {
-      def propertyType    = TypeCompiler.CompileDependentPropertyType(symbol);
-      def name            = symbol.Name;
-      def isEvaluatedName = GetIsEvaluatedPropertyName(symbol);
-      def mods            = AttributesAndModifiers(NemerleAttributes.Public, [MakePropertyAttribute(symbol, mask)]);
-      def backingFieldName = Util.tmpname(symbol.Name);
-      def hasValueBit = _ambiguousTb.GetBitFieldManager().Allocate();
+      def propertyType       = TypeCompiler.CompileDependentPropertyType(symbol);
+      def name               = symbol.Name;
+      def isEvaluatedName    = Util.GetIsEvaluatedPropertyName(symbol);
+      def resetEvaluatedName = Util.GetResetEvaluatedMethodName(symbol);
+      def mods               = AttributesAndModifiers(NemerleAttributes.Public, [MakePropertyAttribute(symbol, mask)]);
+      def backingFieldName   = Util.tmpname(symbol.Name);
+      def hasValueBit        = _ambiguousTb.GetBitFieldManager().Allocate();
       _ambiguousTb.Define(<[ decl:  private mutable $(backingFieldName : usesite) : $(propertyType : typed) ]>);
       _ambiguousTb.Define(<[ decl:
         ..$mods $(name : usesite) : $(propertyType : typed)
@@ -194,6 +195,20 @@ namespace Nitra.Compiler
             else
               $(hasValueBit.Read())
           }
+        }
+      ]>);
+
+      _ambiguousTb.Define(<[ decl:
+        public $(resetEvaluatedName : usesite)() : void
+        {
+            if (this.IsAmbiguous)
+            {
+              foreach (y in this.Ambiguities)
+                y.$(resetEvaluatedName : usesite)();
+              assert(true);
+            }
+            else
+              $(hasValueBit.Clear());
         }
       ]>);
 

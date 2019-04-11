@@ -1,4 +1,4 @@
-using Nitra.Typing;
+﻿using Nitra.Typing;
 using Nitra.Model;
 
 using Nemerle;
@@ -127,12 +127,22 @@ namespace Nitra.Compiler
         }
       ]>);
 
-      def isEvaluatedName = GetIsEvaluatedPropertyName(symbol);
+      def isEvaluatedName = Util.GetIsEvaluatedPropertyName(symbol);
       def isEvaluatedMods = AttributesAndModifiers(modifiers, []);
       tb.Define(<[ decl:
         ..$isEvaluatedMods $(isEvaluatedName : usesite) : bool
         {
           get { this.Ambiguities[0].$(isEvaluatedName : usesite) }
+        }
+      ]>);
+
+      def resetEvaluatedName = Util.GetResetEvaluatedMethodName(symbol);
+      def resetMods          = AttributesAndModifiers(modifiers, []);
+      tb.Define(<[ decl:
+        ..$resetMods $(resetEvaluatedName : usesite)() : void
+        {
+          foreach (x in this.Ambiguities)
+            x.$(resetEvaluatedName : usesite)();
         }
       ]>);
 

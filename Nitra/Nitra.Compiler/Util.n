@@ -21,6 +21,16 @@ namespace Nitra
 {
   internal module Util
   {
+    public GetIsEvaluatedPropertyName(propertySymbol : PropertySymbol) : string
+    {
+      AstUtils.GetIsEvaluatedPropertyName(propertySymbol.Name);
+    }
+
+    public GetResetEvaluatedMethodName(propertySymbol : PropertySymbol) : string
+    {
+      AstUtils.GetResetEvaluatedMethodName(propertySymbol.Name);
+    }
+
     public DefineConditional(this tb : N.TypeBuilder, classMember : ClassMember) : void
     {
       DefineConditional(tb, null, classMember)

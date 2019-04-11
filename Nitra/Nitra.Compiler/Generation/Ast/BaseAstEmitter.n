@@ -1,4 +1,4 @@
-using Nitra.Typing;
+﻿using Nitra.Typing;
 using Nitra.Model;
 
 using Nemerle;
@@ -34,24 +34,16 @@ namespace Nitra.Compiler
 
     protected DefineInterfaceDependentProperty(propertySymbol : DependentPropertySymbol, tb : TypeBuilder, isOverride : bool) : void
     {
-      when (propertySymbol.FullName == "DotNet.QualifiedReference.Scope")
-      {
-        assert2(true);
-      }
-
-      when (propertySymbol.FullName == "Nitra.Declarations.BindableAst.Scope")
-      {
-        assert2(true);
-      }
-
       def propertyType = TypeCompiler.CompileDependentPropertyType(propertySymbol);
       def attribute    = MakePropertyAttribute(propertySymbol);
       def mods         = AttributesAndModifiers(if (isOverride) NemerleModifiers.New else NemerleModifiers.None, [attribute]);
       tb.Define(<[ decl: ..$mods $(propertySymbol.Name : usesite) : $(propertyType : typed) { get; set; } ]>);
       unless (isOverride)
-        tb.Define(<[ decl: $(GetIsEvaluatedPropertyName(propertySymbol) : usesite) : bool { get; } ]>);
-      unless (isOverride)
+      {
+        tb.Define(<[ decl: $(Util.GetIsEvaluatedPropertyName(propertySymbol) : usesite) : bool { get; } ]>);
+        tb.Define(<[ decl: $(Util.GetResetEvaluatedMethodName(propertySymbol) : usesite)() : void; ]>);
         tb.Define(<[ decl: $(propertySymbol.Name + "_Location" : usesite) : string * int * int { get; set; } ]>);
+      }
     }
 
     protected DefineDependentProperty(tb : TypeBuilder, symbol : DependentPropertySymbol, bit : BitField, mask : int, modifiers : NemerleModifiers, acceptVisitorBody : SCG.List[PExpr], overrideSetter : bool = true) : void
@@ -85,12 +77,21 @@ namespace Nitra.Compiler
           }
         ]>);
 
-        def isEvaluatedName = GetIsEvaluatedPropertyName(symbol);
+        def isEvaluatedName = Util.GetIsEvaluatedPropertyName(symbol);
         def isEvaluatedMods = AttributesAndModifiers(modifiers, []);
         tb.Define(<[ decl:
           ..$isEvaluatedMods $(isEvaluatedName : usesite) : bool
           {
             get { $(bit.Read()) }
+          }
+        ]>);
+
+        def isResetName = Util.GetResetEvaluatedMethodName(symbol);
+        def isResetMods = AttributesAndModifiers(modifiers, []);
+        tb.Define(<[ decl:
+          ..$isResetMods $(isResetName : usesite)() : void
+          {
+            $(bit.Clear())
           }
         ]>);
 
@@ -135,11 +136,6 @@ namespace Nitra.Compiler
 
         tb.Define(decl)
       }
-    }
-
-    protected static GetIsEvaluatedPropertyName(propertySymbol : PropertySymbol) : string
-    {
-      "Is" + propertySymbol.Name + "Evaluated"
     }
 
     protected static MakeAccessAssertion(propertySymbol : DependentPropertySymbol) : PExpr
@@ -309,7 +305,7 @@ namespace Nitra.Compiler
       match (path)
       {
         | DeclaredProperty(This, DependentPropertySymbol as symbol, _) when dependentProperties.TryGetValue(symbol, out bitField) => dependentProperties[symbol].Read()
-        | DeclaredProperty(obj, DependentPropertySymbol as symbol, _) with isEvaluatedName = GetIsEvaluatedPropertyName(symbol)
+        | DeclaredProperty(obj, DependentPropertySymbol as symbol, _) with isEvaluatedName = Util.GetIsEvaluatedPropertyName(symbol)
         | DependentProperty(obj, _, isEvaluatedName) => CallIsPropertyEvaluated(CompilePath(obj), isEvaluatedName)
         | _ => <[ true ]>
       }
@@ -337,7 +333,7 @@ namespace Nitra.Compiler
       }
       def getIsEvaluatedName(obj : DependencyPath) : string
       {
-        | DeclaredProperty(_, DependentPropertySymbol as symbol, _) => GetIsEvaluatedPropertyName(symbol)
+        | DeclaredProperty(_, DependentPropertySymbol as symbol, _) => Util.GetIsEvaluatedPropertyName(symbol)
         | DependentProperty(_, _, isEvaluatedName) => isEvaluatedName
         | _ => assert(false)
       }
