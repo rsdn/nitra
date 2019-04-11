@@ -37,14 +37,14 @@ namespace Nitra.Declarations
 
     private mutable _baseTypeConstraint : TypeSymbol;
 
-    [DependentProperty("IsBaseTypeConstraintEvaluated", "Reset_BaseTypeConstraint")]
+    [DependentProperty("IsBaseTypeConstraintEvaluated", "ResetBaseTypeConstraintEvaluated")]
     public BaseTypeConstraint : TypeSymbol
     {
       get { assert(IsBaseTypeConstraintEvaluated);  _baseTypeConstraint }
       set { assert(!IsBaseTypeConstraintEvaluated); _baseTypeConstraint = value; _state |= EvalState.BaseTypeConstraint }
     }
 
-    public Reset_BaseTypeConstraint() : void { _state &= ~EvalState.DerivedTypeConstraint }
+    public ResetBaseTypeConstraintEvaluated() : void { _state &= ~EvalState.DerivedTypeConstraint }
 
     public IsDerivedTypeConstraintEvaluated : bool
     {
@@ -53,14 +53,14 @@ namespace Nitra.Declarations
 
     private mutable _derivedTypeConstraint : TypeSymbol;
 
-    [DependentProperty("IsDerivedTypeConstraintEvaluated", "Reset_DerivedTypeConstraint")]
+    [DependentProperty("IsDerivedTypeConstraintEvaluated", "ResetDerivedTypeConstraintEvaluated")]
     public DerivedTypeConstraint : TypeSymbol
     {
       get { assert(IsDerivedTypeConstraintEvaluated);  _derivedTypeConstraint}
       set { assert(!IsDerivedTypeConstraintEvaluated); _derivedTypeConstraint = value; _state |= EvalState.DerivedTypeConstraint }
     }
 
-    public Reset_DerivedTypeConstraint() : void { _state &= ~EvalState.DerivedTypeConstraint }
+    public ResetDerivedTypeConstraintEvaluated() : void { _state &= ~EvalState.DerivedTypeConstraint }
 
     public IsTypeEvaluated : bool
     {
@@ -69,14 +69,14 @@ namespace Nitra.Declarations
 
     private mutable _type : TypeSymbol;
 
-    [DependentProperty("IsTypeEvaluated", "Reset_Type")]
+    [DependentProperty("IsTypeEvaluated", "ResetTypeEvaluated")]
     public Type : TypeSymbol
     {
       get { assert(IsTypeEvaluated);  _type }
       set { assert(!IsTypeEvaluated); _type = value; _state |= EvalState.Type }
     }
 
-    public Reset_Type() : void { _state &= ~EvalState.Type }
+    public ResetTypeEvaluated() : void { _state &= ~EvalState.Type }
 
     public IsTypeSubstEvaluated : bool
     {
@@ -85,14 +85,14 @@ namespace Nitra.Declarations
 
     private mutable _typeSubst : TypeSymbol;
 
-    [DependentProperty("IsTypeSubstEvaluated", "Reset_TypeSubst")]
+    [DependentProperty("IsTypeSubstEvaluated", "ResetTypeSubstEvaluated")]
     public TypeSubst : TypeSymbol
     {
       get { assert(IsTypeSubstEvaluated); _typeSubst }
       set { assert(!IsTypeSubstEvaluated); _typeSubst = value; _state |= EvalState.TypeSubst }
     }
 
-    public Reset_TypeSubst() : void { _state &= ~EvalState.TypeSubst }
+    public ResetTypeSubstEvaluated() : void { _state &= ~EvalState.TypeSubst }
 
     public IsFullNameEvaluated : bool
     {
