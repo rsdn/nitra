@@ -35,13 +35,17 @@ namespace Nitra.Declarations
       get { __NameImpl.Symbol }
       set { __NameImpl.Symbol = value }
     }
+    public ResetSymbol() : void { }
 
+    
     public IsContainingTableEvaluated : bool              { get { _containingTable : object != null } }
     public ContainingTable            : TableScope
     {
       get { assert(IsContainingTableEvaluated); _containingTable }
       set { assert(!IsContainingTableEvaluated); _containingTable = value }
     }
+
+    public ResetContainingTable() : void { }
 
     public override IsParsed : bool { get { false } }
 

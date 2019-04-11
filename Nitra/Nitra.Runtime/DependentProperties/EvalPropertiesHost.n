@@ -47,6 +47,10 @@ namespace Nitra.Declarations
       AfterStage(context, passName);
     }
 
+    public UnevalProperties([NotNull] context : DependentPropertyEvalContext) : void
+    {
+    }
+    
     protected abstract ExecutePass(context : DependentPropertyEvalContext, passName : string) : void;
 
     protected virtual BeforeStage(context : DependentPropertyEvalContext, passName : string) : void

@@ -37,14 +37,14 @@ namespace Nitra.Declarations
 
     private mutable _baseTypeConstraint : TypeSymbol;
 
-    [DependentProperty("IsBaseTypeConstraintEvaluated", "ResetBaseTypeConstraintEvaluated")]
+    [DependentProperty("IsBaseTypeConstraintEvaluated", "ResetBaseTypeConstraint")]
     public BaseTypeConstraint : TypeSymbol
     {
       get { assert(IsBaseTypeConstraintEvaluated);  _baseTypeConstraint }
       set { assert(!IsBaseTypeConstraintEvaluated); _baseTypeConstraint = value; _state |= EvalState.BaseTypeConstraint }
     }
 
-    public ResetBaseTypeConstraintEvaluated() : void { _state &= ~EvalState.DerivedTypeConstraint }
+    public ResetBaseTypeConstraint() : void { _state &= ~EvalState.DerivedTypeConstraint }
 
     public IsDerivedTypeConstraintEvaluated : bool
     {
@@ -60,7 +60,7 @@ namespace Nitra.Declarations
       set { assert(!IsDerivedTypeConstraintEvaluated); _derivedTypeConstraint = value; _state |= EvalState.DerivedTypeConstraint }
     }
 
-    public ResetDerivedTypeConstraintEvaluated() : void { _state &= ~EvalState.DerivedTypeConstraint }
+    public ResetDerivedTypeConstraint() : void { _state &= ~EvalState.DerivedTypeConstraint }
 
     public IsTypeEvaluated : bool
     {
@@ -69,14 +69,14 @@ namespace Nitra.Declarations
 
     private mutable _type : TypeSymbol;
 
-    [DependentProperty("IsTypeEvaluated", "ResetTypeEvaluated")]
+    [DependentProperty("IsTypeEvaluated", "ResetType")]
     public Type : TypeSymbol
     {
       get { assert(IsTypeEvaluated);  _type }
       set { assert(!IsTypeEvaluated); _type = value; _state |= EvalState.Type }
     }
 
-    public ResetTypeEvaluated() : void { _state &= ~EvalState.Type }
+    public ResetType() : void { _state &= ~EvalState.Type }
 
     public IsTypeSubstEvaluated : bool
     {
@@ -85,74 +85,84 @@ namespace Nitra.Declarations
 
     private mutable _typeSubst : TypeSymbol;
 
-    [DependentProperty("IsTypeSubstEvaluated", "ResetTypeSubstEvaluated")]
+    [DependentProperty("IsTypeSubstEvaluated", "ResetTypeSubst")]
     public TypeSubst : TypeSymbol
     {
       get { assert(IsTypeSubstEvaluated); _typeSubst }
       set { assert(!IsTypeSubstEvaluated); _typeSubst = value; _state |= EvalState.TypeSubst }
     }
 
-    public ResetTypeSubstEvaluated() : void { _state &= ~EvalState.TypeSubst }
+    public ResetTypeSubst() : void { _state &= ~EvalState.TypeSubst }
 
     public IsFullNameEvaluated : bool
     {
       get { IsTypeEvaluated && Type.IsFullNameEvaluated }
     }
 
-    [DependentProperty("IsFullNameEvaluated")]
+    [DependentProperty("IsFullNameEvaluated", "ResetFullName")]
     public FullName : string
     {
-      get { Type.FullName }
+      get { this.Type.FullName }
       set { _ = value }
     }
 
+    public ResetFullName() : void { }
+    
     public IsKindEvaluated : bool
     {
       get { true }
     }
 
-    [DependentProperty("IsKindEvaluated")]
+    [DependentProperty("IsKindEvaluated", "ResetKind")]
     public Kind : string
     {
       get { if (IsTypeEvaluated && Type.IsKindEvaluated) Type.Kind else "type var" }
       set { _ = value; }
     }
 
+    public ResetKind() : void { }
+    
     public IsScopeEvaluated : bool
     {
       get { IsTypeEvaluated && Type.IsScopeEvaluated }
     }
 
-    [DependentProperty("IsScopeEvaluated")]
+    [DependentProperty("IsScopeEvaluated", "ResetScope")]
     public Scope : Scope
     {
       get { Type.Scope }
       set { _ = value; }
     }
 
+    public ResetScope() : void { Type.ResetScope() }
+
     public IsSpanClassEvaluated : bool
     {
       get { IsTypeEvaluated && Type.IsSpanClassEvaluated }
     }
 
-    [DependentProperty("IsSpanClassEvaluated")]
+    [DependentProperty("IsSpanClassEvaluated", "ResetSpanClass")]
     public SpanClass : SpanClass
     {
       get { Type.SpanClass }
       set { _ = value; }
     }
 
+    public ResetSpanClass() : void { Type.ResetSpanClass(); }
+    
     public IsDeclaredInOptEvaluated : bool
     {
       get { IsTypeEvaluated && Type.IsDeclaredInOptEvaluated }
     }
 
-    [DependentProperty("IsDeclaredInOptEvaluated")]
+    [DependentProperty("IsDeclaredInOptEvaluated", "ResetDeclaredInOpt")]
     public DeclaredInOpt : ValueOption[DeclarationSymbol]
     {
       get { Type.DeclaredInOpt }
       set { _ = value }
     }
+
+    public ResetDeclaredInOpt() : void { Type.ResetDeclaredInOpt(); }
 
     public IsAllPropertiesEvaluated : bool
     {

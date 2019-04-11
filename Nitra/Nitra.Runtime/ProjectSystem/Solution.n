@@ -22,5 +22,14 @@ namespace Nitra.ProjectSystem
         foreach (project in projects)
           project.EvalProperties(context, passName, stage);
     }
+
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      def projects = this.Projects;
+
+      when (projects != null)
+        foreach (project in projects)
+          project.UnevalProperties(context);
+    }
   }
 }

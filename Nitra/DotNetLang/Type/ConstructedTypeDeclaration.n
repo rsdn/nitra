@@ -1,4 +1,4 @@
-using Nitra.ProjectSystem;
+﻿using Nitra.ProjectSystem;
 using Nitra.Declarations;
 
 using Nemerle;
@@ -34,6 +34,7 @@ namespace Nitra.Declarations
       get { __NameImpl.Symbol :> TSymbol }
       set { __NameImpl.Symbol = value }
     }
+    public ResetSymbol() : void { }
 
     set_Symbol(value : DeclarationSymbol) : void implements Declaration.set_Symbol
     {
@@ -46,7 +47,7 @@ namespace Nitra.Declarations
       get { throw NotImplementedException() }
       set { IgnoreParams(); throw NotImplementedException() }
     }
-
+    public ResetContainingTable() : void { }
     public ContainingTable_Location : string * int * int { get; set; }
     public Symbol_Location : string * int * int { get; set; }
 

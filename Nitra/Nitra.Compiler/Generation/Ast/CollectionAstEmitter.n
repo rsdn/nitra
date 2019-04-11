@@ -85,6 +85,13 @@ namespace Nitra.Compiler
             $(MakeEvalPropertiesBody(collectionProperties))
           }
         ]>);
+
+        _concreteTb.DefineConditional("DEBUG_EVAL_DEPENDENT_PROPERTIES", <[ decl:
+          public override UnevalProperties($("context" : global) : Nitra.Declarations.DependentPropertyEvalContext) : void
+          {
+            //$(MakeEvalPropertiesBody(collectionProperties))
+          }
+        ]>);
       }
 
       Util.locate(Symbol.FirstLocation.NLocation(), Environment.Manager.MacroColors.InGlobalColor(define))

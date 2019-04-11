@@ -67,6 +67,12 @@ namespace Nitra.Declarations
         _value.EvalProperties(context);
     }
 
+    public override UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      when (HasValue)
+        _value.EvalProperties(context);
+    }
+
     public override ToXaml() : string
     {
       if (HasValue)

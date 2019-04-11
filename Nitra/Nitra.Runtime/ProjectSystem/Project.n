@@ -158,6 +158,12 @@ namespace Nitra.ProjectSystem
       evalHost.EvalProperties(context, passName, stage);
     }
 
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      def evalHost = ProjectEvalPropertiesHost(File.GetEvalPropertiesData(this.Files));
+      evalHost.UnevalProperties(context);
+    }
+
     public virtual AddSymbolRef(_symbol : Symbol, _loc : Location) : void
     {
     }
