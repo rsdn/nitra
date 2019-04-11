@@ -1,4 +1,4 @@
-using Nitra.ProjectSystem;
+﻿using Nitra.ProjectSystem;
 using Nitra.Internal;
 
 using Nemerle;
@@ -23,6 +23,11 @@ namespace Nitra.Declarations
     public virtual  IsMissing   : bool           { get { false } }
 
     public virtual EvalProperties(context : DependentPropertyEvalContext) : void
+    {
+      _ = context;
+    }
+
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
     {
       _ = context;
     }
@@ -60,7 +65,7 @@ namespace Nitra.Declarations
       match (this)
       {
         | decl is Declaration => decl.Name?.Text + ": " + this.GetType().FullName
-        | _ => base.ToString()
+        | _ => Location.GetText();
       }
     }
 

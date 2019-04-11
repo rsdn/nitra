@@ -6,7 +6,7 @@ using Nitra.Internal;
 
 namespace DotNet
 {
-  declaration FormalParameter : TypedDeclaration, CustomAttributeHostDeclaration
+  declaration FormalParameter : SelfTypedDeclaration, CustomAttributeHostDeclaration
   {
     symbol
     {
@@ -32,7 +32,6 @@ namespace DotNet
     IndexOut             = IndexIn + 1u;
     Type.Scope           = Scope;
     TypeRef              = Type.Ref.Resolve();
-    Symbol.Type          = TypeRef.Symbol;
     Symbol.Modifier      = Modifier.ValueOrDefault;
     Symbol.Index         = IndexIn;
     ParametersOut        = Symbol :: ParametersIn;

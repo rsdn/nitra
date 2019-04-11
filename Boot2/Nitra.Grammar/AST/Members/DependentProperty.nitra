@@ -1,24 +1,20 @@
-using DotNet;
+﻿using DotNet;
 
 using Nitra.AstUtils;
 using Nitra.Declarations;
 
 namespace Nitra.Ast
 {
-  abstract declaration DependentProperty : BindableAst
+  abstract declaration DependentProperty : BindableAst, SelfTypedDeclaration
   {
     symbol
     {
-      in Type : TypeSymbol;
-
       SpanClass = NitraLang.DependentPropertySpanClass;
       Kind      = "dependent property";
     }
 
-    in TypeRef : Ref[TypeSymbol] = Type.Ref.Resolve();
-
+    TypeRef    = Type.Ref.Resolve();
     Type.Scope = PreferScope(Scope);
-    Symbol.Type = TypeRef.Symbol;
 
     Type : QualifiedReference;
   }

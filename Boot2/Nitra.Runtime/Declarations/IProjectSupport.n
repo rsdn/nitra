@@ -15,6 +15,8 @@ namespace Nitra.Declarations
   {
     Reset(project : Project) : void;
     RefreshReferences(cancellationToken : CancellationToken, project : Project) : object;
+    /// <returns>Returns true if the method was able to perform an incremental update.</returns>
+    TryIncrementalRefreshProject(cancellationToken : CancellationToken, before : IAst, after : IAst, data : object) : bool;
     RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void;
     GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol];
     DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool;

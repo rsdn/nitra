@@ -1,4 +1,4 @@
-using Nitra.Internal;
+﻿using Nitra.Internal;
 using Nitra.ProjectSystem;
 
 using Nemerle;
@@ -87,6 +87,12 @@ namespace Nitra.Declarations
         item.EvalProperties(context);
     }
 
+    public override UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      foreach (item in _items)
+        item.UnevalProperties(context);
+    }
+
     public override ToXaml() : string { "List Count: " + _items.Length }
 
     public override Accept(visitor : IAstVisitor) : void
@@ -159,6 +165,11 @@ namespace Nitra.Declarations
     public virtual EvalProperties(context : DependentPropertyEvalContext) : void
     {
       AstUtils.EvalAmbiguitiesProperties(context, this)
+    }
+
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      AstUtils.UnevalAmbiguitiesProperties(context, this)
     }
 
     public PropertiesEvalState : int

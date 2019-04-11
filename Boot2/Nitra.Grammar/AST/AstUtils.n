@@ -30,6 +30,16 @@ namespace Nitra
       TypeHintHelper.AddTypeHintHandler(MakeHintForAstType);
     }
 
+    public GetIsEvaluatedPropertyName(propertyName : string) : string
+    {
+      "Is" + propertyName + "Evaluated"
+    }
+
+    public GetResetEvaluatedMethodName(propertyName : string) : string
+    {
+      "Reset" + propertyName
+    }
+
     public Wait[V, R](value : V, result : R) : R
     {
       _ = value;
@@ -852,7 +862,7 @@ namespace Nitra
         mutable locProp;
         try
         {
-          when (nameToPropMap.TryGetValue("Is" + name + "Evaluated", out isEvalProp))
+          when (nameToPropMap.TryGetValue(GetIsEvaluatedPropertyName(name), out isEvalProp))
           when (nameToPropMap.TryGetValue(name + "_Location", out locProp))
           {
             when (count > 0)

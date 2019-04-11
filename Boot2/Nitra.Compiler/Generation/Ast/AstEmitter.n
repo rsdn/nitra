@@ -79,6 +79,16 @@ namespace Nitra.Compiler
         }
       ]>);
 
+      nestedType.DefineConditional("DEBUG_EVAL_DEPENDENT_PROPERTIES", <[ decl:
+        public override UnevalProperties(context : Nitra.Declarations.DependentPropertyEvalContext) : void
+        {
+          if (this.IsAmbiguous)
+            Nitra.Internal.AstUtils.UnevalAmbiguitiesProperties(context, this)
+          else
+            base.UnevalProperties(context)
+        }
+      ]>);
+      
       nestedType
     }
 

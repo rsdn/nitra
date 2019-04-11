@@ -305,5 +305,7 @@ namespace Nitra.Declarations
       def symbol  = this :> DeclarationSymbol;
       symbol.InitialName
     }
+
+    public virtual UnevalProperties(context : DependentPropertyEvalContext) : void { }
   }
 }

@@ -57,6 +57,11 @@ namespace Nitra.Compiler
           evalMethod.Ast.Body = evalMethod.Body;
           tb.TyManager.GenerateFakeSourceCode(tb, evalMethod.Ast);
         }
+
+        def _evalMethod = tb.DefineWithSource(<[ decl:
+          ..$(GetDependentEvaluationModifiers()) UnevalProperties($("context" : global) : Nitra.Declarations.DependentPropertyEvalContext) : void { }
+        ]>);
+        
       }));
     }
 

@@ -96,6 +96,12 @@ namespace DotNet
       }
     }
 
+    public TryIncrementalRefreshProject(cancellationToken : CancellationToken, before : IAst, after : IAst, data : object) : bool
+    {
+      IgnoreParams();
+      false // we not support incremental refresh yet.
+    }
+    
     public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
       def oldManager = ManagerClass.Instance;

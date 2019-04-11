@@ -67,6 +67,12 @@ namespace Nitra.Declarations
         _value.EvalProperties(context);
     }
 
+    public override UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      when (HasValue)
+        _value.EvalProperties(context);
+    }
+
     public override ToXaml() : string
     {
       if (HasValue)
@@ -109,6 +115,11 @@ namespace Nitra.Declarations
     public EvalProperties(context : DependentPropertyEvalContext) : void
     {
       AstUtils.EvalAmbiguitiesProperties(context, this)
+    }
+
+    public UnevalProperties(context : DependentPropertyEvalContext) : void
+    {
+      AstUtils.UnevalAmbiguitiesProperties(context, this)
     }
 
     public PropertiesEvalState : int
