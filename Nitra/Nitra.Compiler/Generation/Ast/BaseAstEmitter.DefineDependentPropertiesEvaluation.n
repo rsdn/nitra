@@ -51,17 +51,18 @@ namespace Nitra.Compiler
         ]>);
 
         def graph = TypeDependentEvaluation(evalMethod, symbol);
-        evalMethod.Body = GenerateCode(tb, symbol, graph, dependentProperties, structuralProperties);
+        evalMethod.Body = GenerateEvalPropertiesBody(tb, symbol, graph, dependentProperties, structuralProperties);
         when (tb.Manager.Options.IsConstantDefined("DEBUG_EVAL_DEPENDENT_PROPERTIES"))
         {
           evalMethod.Ast.Body = evalMethod.Body;
           tb.TyManager.GenerateFakeSourceCode(tb, evalMethod.Ast);
         }
 
-        def _evalMethod = tb.DefineWithSource(<[ decl:
+        def unevalMethod = tb.DefineWithSource(<[ decl:
           ..$(GetDependentEvaluationModifiers()) UnevalProperties($("context" : global) : Nitra.Declarations.DependentPropertyEvalContext) : void { }
-        ]>);
-        
+        ]>) :> MethodBuilder;
+
+        unevalMethod.Body = GenerateUnevalPropertiesBody(tb, symbol, graph, dependentProperties, structuralProperties);
       }));
     }
 
@@ -589,7 +590,7 @@ namespace Nitra.Compiler
       }
     }
 
-    private GenerateCode(tb : TypeBuilder, symbol : PropertyContainerSymbol, dependencyGraph : PropertyDependencyGraph, dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField], structuralProperties : SCG.Dictionary[PropertySymbol, FixedType]) : PExpr
+    private GenerateEvalPropertiesBody(tb : TypeBuilder, symbol : PropertyContainerSymbol, dependencyGraph : PropertyDependencyGraph, dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField], structuralProperties : SCG.Dictionary[PropertySymbol, FixedType]) : PExpr
     {
       def compileCode(symbol : PropertyContainerSymbol, code : PropertyDependencyCode) : PExpr
       {

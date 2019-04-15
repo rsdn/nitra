@@ -1,0 +1,233 @@
+﻿using Nitra.Runtime.GraphUtils;
+using Nitra.Typing;
+using Nitra.Model;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Compiler;
+using Nemerle.Compiler.Parsetree;
+using Nemerle.Compiler.Typedtree;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+using Nemerle.Surround;
+
+using System;
+using System.IO;
+using System.Linq;
+using SCG = System.Collections.Generic;
+
+namespace Nitra.Compiler
+{
+  internal abstract partial class BaseAstEmitter
+  {
+    private GenerateUnevalPropertiesBody(tb : TypeBuilder, symbol : PropertyContainerSymbol, dependencyGraph : PropertyDependencyGraph, dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField], structuralProperties : SCG.Dictionary[PropertySymbol, FixedType]) : PExpr
+    {
+      assert2(false);
+      def collectDependendOn(node : IPropertyDependencyNode, checkedPaths : SCG.HashSet[DependencyPath]) : SCG.List[DependencyPath] * SCG.List[DependencyPath]
+      {
+        def properties          = SCG.List();
+        def collectorProperties = SCG.List();
+
+        def walkPath(path : DependencyPath)
+        {
+          mutable nodeForPath;
+          when (dependencyGraph.Nodes.TryGetValue(path, out nodeForPath) && nodeForPath.IsCollector)
+            collectorProperties.Add(path);
+
+          match (path)
+          {
+            | This | Variable => ()
+            | SimpleProperty(p, _) => walkPath(p)
+            | DeclaredProperty(p, s, _) =>
+              walkPath(p);
+              when (s is DependentPropertySymbol)
+              when (checkedPaths.Add(path))
+                properties.Add(path);
+
+            | DependentProperty(p, _, _) =>
+              walkPath(p);
+              when (checkedPaths.Add(path))
+                properties.Add(path);
+          }
+        }
+
+        foreach (dependency in node.DependendOn)
+          walkPath(dependency.Path);
+
+        (properties, collectorProperties)
+      }
+      def makeCondition(properties : SCG.List[DependencyPath], collectorProperties : SCG.List[DependencyPath], trueExpr : PExpr, falseExpr : PExpr = null) : PExpr
+      {
+        mutable pred;
+        when (properties.Count > 0)
+          PExprUtils.CombineAnd(ref pred, GenerateHasValueCheck(properties, dependentProperties));
+
+        match (pred)
+        {
+          | null | <[ true ]> => trueExpr
+          | _ when falseExpr : object != null => <[ if ($pred) $trueExpr else $falseExpr ]>
+          | _                                 => <[ when ($pred) $trueExpr ]>
+        }
+      }
+
+      def result = SCG.List();
+      result.Add(<[ _ = context ]>);
+
+      def unevaluatedStructuralProperties = SCG.HashSet();
+      def unevalStructuralProperty(propertySymbol : PropertySymbol, propertyType : FixedType) : void
+      {
+        when (unevaluatedStructuralProperties.Add(propertySymbol))
+        when (propertyType.TryRequire(Environment.AstTypeVar))
+          result.Add(<[ this.$(propertySymbol.Name : global).UnevalProperties(context) ]>);
+      }
+      def makeInitIterationNumberCheck(call : PropertyDependencyCall, expr : PExpr) : PExpr
+      {
+        <[ when (context.Pass == $(CompilePath(call.Path)).CreatedOnPass) $expr ]>
+      }
+      def makeUseIterationNumberCheck(call : PropertyDependencyCall, expr : PExpr) : PExpr
+      {
+        <[ when (context.Pass > $(CompilePath(call.Path)).CreatedOnPass) $expr ]>
+      }
+      def makeIsEvaluatedCheck(path : DependencyPath, dependentProperties) : PExpr * SCG.HashSet[DependencyPath]
+      {
+        def checkedPaths = SCG.HashSet();
+        mutable acc;
+
+        def loop(_ : ValueOption[DependencyPath])
+        {
+          | VSome(path) =>
+            // TODO: add collector access check
+            _ = checkedPaths.Add(path);
+            loop(path.BasePath);
+            PExprUtils.CombineAnd(ref acc, GenerateHasValueCheck(path, dependentProperties));
+
+          | VNone => ()
+        }
+        loop(path.BasePath);
+
+        PExprUtils.CombineAnd(ref acc, <[ ! $(GenerateHasValueCheck(path, dependentProperties)) ]>);
+        (acc, checkedPaths)
+      }
+
+      foreach (node in dependencyGraph.GetOrderedNodes())
+      {
+        | Assign(code, _) =>
+          def (predicate, checkedPaths)         = makeIsEvaluatedCheck(node.Path, dependentProperties);
+          def (properties, collectorProperties) = collectDependendOn(node, checkedPaths);
+
+          /*
+            this.Symbol.AggregateParametersScope
+
+            unless (CurredParameters.IsDefinitionScopeEvaluated && IsSymbolEvaluated && Symbol.IsExcludedParamsEvaluated)
+            {                                                   ^^^^^^^^^^^^^^^^^^^^
+              def x = this;
+              when (x.IsSymbolEvaluated)
+              {
+                  def x = this.Symbol;
+                  when (x.IsAggregateParametersScopeEvaluated)
+                  {
+                      x.ResetAggregateParametersScope();
+                      context.Increment();
+                  }
+              }
+            }
+            
+          */
+
+          def compileReset(path : DependencyPath) : PExpr
+          {
+            match (path)
+            {
+              | DeclaredProperty(_, symbol, _) with name = symbol.Name
+              | DependentProperty(_, name, _) =>
+                def resetMethodName = AstUtils.GetResetEvaluatedMethodName(name);
+                <[
+                    x.$(resetMethodName : usesite)();
+                    context.CalculatedCountInc();
+                ]>
+              | _ => null
+            }
+          }
+          def compileResetPath(path : DependencyPath, code : PExpr) : PExpr
+          {
+            match (path)
+            {
+              | This           => <[ def x = this; $code; ]>
+              | Variable(name) => <[ def x = $(name : usesite); $code; ]>
+              | DeclaredProperty(path, symbol, _) with name = symbol.Name
+              | DependentProperty(path, name, _)
+              | SimpleProperty(path, name) =>
+                compileResetPath(path, 
+                  <[
+                    when (x.$(AstUtils.GetIsEvaluatedPropertyName(name) : usesite))
+                    {
+                      $code;
+                    }
+                  ]>)
+            }
+          }
+          
+          def expr1 = Util.locate(code.Location, {
+            def resetCod = compileReset(node.Path);
+            compileResetPath(node.Path, resetCod);
+          });
+          def expr2 = makeCondition(properties, collectorProperties, expr1);
+          def expr4 = <[ when ($predicate) $expr2; ]>;
+          result.Add(expr4);
+
+        | Use =>
+          match (node.Path)
+          {
+            | DeclaredProperty(This, StructuralPropertySymbol as propertySymbol, _) =>
+              unevalStructuralProperty(propertySymbol, structuralProperties[propertySymbol])
+
+            | DeclaredProperty(This, ProjectedPropertySymbol as propertySymbol, _) when IsEvaluatableProjectedProperty(propertySymbol) =>
+              unevalStructuralProperty(propertySymbol, structuralProperties[propertySymbol])
+
+            | _ => ()
+          }
+      }
+
+      foreach (call in dependencyGraph.Calls)
+      {
+        def (properties, collectorProperties) = collectDependendOn(call, SCG.HashSet());
+        _ = collectorProperties.RemoveAll(x => x.Equals(call.Path));
+        def bit   = tb.GetBitFieldManager().Allocate();
+        def expr1 = <[ $(bit.Clear()); ]>;
+        def expr2 =
+          match (call)
+          {
+            | Normal => expr1
+            | Collect(Path = DeclaredProperty(This, DependentPropertySymbol(Direction = DependentPropertyDirection.In), _)) => makeInitIterationNumberCheck(call, expr1)
+            | Collect(Path = DeclaredProperty(_, DependentPropertySymbol as p, _)) =>
+              _ = properties.RemoveAll(x => x.Equals(call.Path));
+              TryAddStageCheck(call.Path,
+              <[
+                unless ($(GenerateHasValueCheck(call.Path, dependentProperties)))
+                  $(CompilePath(call.Path)) = $(Environment.DefaultTypeCompiler.CompileDependentPropertyType(p) : typed)(context);
+                $(makeInitIterationNumberCheck(call, expr1));
+              ]>)
+
+            | Collect => makeInitIterationNumberCheck(call, expr1)
+            | StagedUse  => makeUseIterationNumberCheck(call, expr1)
+          };
+        def expr3 = makeCondition(properties, collectorProperties, expr2);
+        def expr4 = <[ unless ($(bit.Read())) $expr3 ]>;
+        result.Add(expr4);
+      }
+
+      foreach (pair in structuralProperties)
+        unevalStructuralProperty(pair.Key, pair.Value);
+
+      when (symbol is AstSymbol(IsDeclaration = true))
+      when (symbol.LookupProperty("Symbol") is VSome(symbolProperty is DependentPropertySymbol))
+      {
+        def path = DependencyPath.DeclaredProperty(DependencyPath.This(), symbolProperty, 0);
+        result.Add(<[ when ($(GenerateHasValueCheck(path, dependentProperties))) this.$(symbolProperty.Name : usesite).EvalProperties(context); ]>);
+      }
+
+      <[ { ..$result } ]>
+    }
+  }
+}

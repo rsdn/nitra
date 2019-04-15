@@ -8,7 +8,8 @@
     <NeedAddVersionToAssemblyName>False</NeedAddVersionToAssemblyName>
     <DocumentationFile />
   </PropertyGroup>
-  <PropertyGroup> <!-- Common properties -->
+  <PropertyGroup>
+    <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
     <NameSuffix2 Condition=" '$(NeedAddVersionToAssemblyName)' == 'True' And $(NameSuffix) != '' ">.$(NameSuffix)</NameSuffix2>
@@ -122,6 +123,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Generation\Ast\BaseAstEmitter.DefineDependentPropertiesEvaluation.n">
+      <SubType>Code</SubType>
+      <DependentUpon>Generation\Ast\BaseAstEmitter.n</DependentUpon>
+    </Compile>
+    <Compile Include="Generation\Ast\BaseAstEmitter.GenerateUnevalPropertiesBody.n">
       <SubType>Code</SubType>
       <DependentUpon>Generation\Ast\BaseAstEmitter.n</DependentUpon>
     </Compile>

@@ -49,6 +49,7 @@ namespace Nitra.Declarations
 
     public UnevalProperties([NotNull] context : DependentPropertyEvalContext) : void
     {
+      IgnoreParams();
     }
     
     protected abstract ExecutePass(context : DependentPropertyEvalContext, passName : string) : void;

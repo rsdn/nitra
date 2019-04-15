@@ -35,6 +35,7 @@ namespace Nitra.Compiler
     protected abstract CreateConcreteTb(ownerTb : TypeBuilder, itemType : FixedType,  baseType : FixedType) : TypeBuilder;
     protected abstract CreateAmbiguousTb(ownerTb : TypeBuilder, itemType : FixedType, baseType : FixedType) : TypeBuilder;
     protected abstract MakeEvalPropertiesBody(dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField]) : PExpr;
+    protected abstract MakeUnevalPropertiesBody(dependentProperties : SCG.Dictionary[DependentPropertySymbol, BitField]) : PExpr;
 
     public DefineTypes(ownerTb : TypeBuilder) : void
     {
@@ -89,7 +90,8 @@ namespace Nitra.Compiler
         _concreteTb.DefineConditional("DEBUG_EVAL_DEPENDENT_PROPERTIES", <[ decl:
           public override UnevalProperties($("context" : global) : Nitra.Declarations.DependentPropertyEvalContext) : void
           {
-            //$(MakeEvalPropertiesBody(collectionProperties))
+              IgnoreParams();
+            $(MakeUnevalPropertiesBody(collectionProperties))
           }
         ]>);
       }

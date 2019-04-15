@@ -181,7 +181,7 @@ namespace Nitra.Declarations
 
     public UnevalProperties(context : DependentPropertyEvalContext) : void
     {
-      _ = context;
+      IgnoreParams();
     }
 
     public ResetProperties() : void
