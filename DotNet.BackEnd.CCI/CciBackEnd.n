@@ -359,7 +359,7 @@ namespace Nitra.BackEnd.Cci
       when (defaultValue == null)
         return DefaultValue.None();
       //ResolvedType(defaultValue.Type);
-      match (defaultValue.Value)
+      unchecked match (defaultValue.Value)
       {
         | null                => DefaultValue.Null()
         | x is string         => DefaultValue.String(x)
