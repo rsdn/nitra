@@ -533,14 +533,13 @@ namespace DotNet
     //stage 2:
     //out AstValue : BuildResult = this.BuildAstValue(Expression, Expression.Type, Parameter.Symbol.Name, Parameter.Symbol.Type, context);
   }
-  declaration LambdaParameter
+  declaration LambdaParameter : TypedDeclaration
   {
     symbol
     {
       Kind      = "lambda parameter";
       SpanClass = DotNetLang.ParameterSpanClass;
-      in Type : TypeSymbol;
-      Scope = Type.Scope;
+      Scope     = Type.Scope;
     }
 
     Type : LambdaParameterType?;

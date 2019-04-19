@@ -90,13 +90,8 @@ namespace DotNet
         | 1 =>
           match (memberCandidats[0])
           {
-            | x is Member.PropertySymbol when x.IsTypeEvaluated       => x.Type
-            | x is Member.MethodSymbol   when x.IsTypeEvaluated       => x.Type
-            | x is Member.FieldSymbol    when x.IsTypeEvaluated       => x.Type
-            | x is Member.ConstantSymbol when x.IsTypeEvaluated       => x.Type
-            | x is LambdaParameterSymbol when x.IsTypeEvaluated       => x.Type
-            | x is LocalVarSymbol        when x.IsTypeEvaluated       => x.Type
-            | x is EnumMemberSymbol      when x.IsDeclaredInEvaluated => x.DeclaredIn
+            | x is TypedDeclarationSymbol when x.IsTypeEvaluated       => x.Type
+            | x is EnumMemberSymbol       when x.IsDeclaredInEvaluated => x.DeclaredIn
             | _                                                       => context.GetVoidType()
           }
         | _ =>
