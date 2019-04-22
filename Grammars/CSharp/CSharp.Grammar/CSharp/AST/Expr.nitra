@@ -567,12 +567,13 @@ namespace DotNet
   }
   abstract ast Unary : Expr
   {
+    out Operation : UnaryOp;
+
     Expr1 : Expr;
 
     Expr1.ScopeIn = ScopeIn;
     Expr1.Used = true;
     Type = Expr1.Type;
-    out Operation : UnaryOp;
   }
   abstract ast NumericUnary : Unary
   {
@@ -582,8 +583,7 @@ namespace DotNet
   }
   abstract ast BoolUnary : Unary
   {
-    //unless (Expr1.Type.IsSubtypeOf(context.GetBooleanType()))
-    //  Expr1.Error(context, $"Expected bool but found $(self.Expr1.Type)");
+    Expr1.ExpectedType = context.GetBooleanType();
   }
   abstract ast BinaryExpr : Expr
   {
@@ -599,6 +599,8 @@ namespace DotNet
   abstract ast SameTypesExpr : BinaryExpr { }
   abstract ast OrAndExpr : SameTypesExpr
   {
+    Expr1.ExpectedType = context.GetBooleanType();
+    Expr2.ExpectedType = Expr1.ExpectedType;
     Type = context.GetBooleanType();
   }
   abstract ast EqualExpr : SameTypesExpr
