@@ -274,7 +274,7 @@ namespace CSharp
     Is
     {
       Expr1 -> Expr1;
-      //Expr2 -> TypeName; // FIXME
+      Expr2 -> TypeName; // FIXME
     }
   }
 
@@ -283,7 +283,7 @@ namespace CSharp
     As
     {
       Expr1 -> Expr1;
-      // Expr2 -> TypeName;
+      Expr2 -> TypeName;
     }
   }
 
@@ -375,15 +375,6 @@ namespace CSharp
     }
   }
 
-  map syntax Expressions.Expression.Invocation -> DotNet.Expr
-  {
-    Invocation
-    {
-      LeftExpression -> Left;
-      Arguments.Item1 -> Arguments;
-    }
-  }
-
   map syntax Expressions.Argument -> Argument
   {
     // TODO: Доделать поддержку именованных аргументов и out/ref-аргументов.
@@ -392,12 +383,21 @@ namespace CSharp
     | Simple -> Expr.Argument    { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName?                  Expression;
   }
 
+  map syntax Expressions.Expression.Invocation -> DotNet.Expr
+  {
+    Invocation
+    {
+      LeftExpression  -> Left;
+      Arguments.Item1 -> Arguments;
+    }
+  }
+
   map syntax Expressions.Expression.IndexerAccess -> DotNet.Expr
   {
     IndexerAccess
     {
-      Expression -> Expr1;
-      // Arguments.Item1 -> Arguments;
+      Expression      -> Left;
+      Arguments.Item1 -> Arguments;
     }
   }
 

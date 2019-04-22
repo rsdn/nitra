@@ -219,6 +219,11 @@ namespace DotNet
       GetPlatformType(context).Void
     }
 
+    public GetTypeType(this context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      GetPlatformType(context).Type
+    }
+
     //public GetBindingBaseType(this context : DependentPropertyEvalContext) : TypeSymbol
     //{
     //  (context :> AmmyDependentPropertyEvalContext).Types.BindingBase;

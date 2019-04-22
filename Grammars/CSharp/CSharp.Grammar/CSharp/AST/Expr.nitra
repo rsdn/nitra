@@ -50,6 +50,7 @@ namespace DotNet
         Expression : Expr;
 
         Expression.ScopeIn = ScopeIn;
+        Expression.ExpectedType = ExpectedType;
         Type = Expression.Type;
       }
     | Argument : ExprArgument { }
@@ -78,12 +79,16 @@ namespace DotNet
         Expr1     : Expr;
         Expr2     : Expr;
 
+        Condition.ExpectedType = context.GetBooleanType();
+        Expr1.ExpectedType = ExpectedType;
+        Expr2.ExpectedType = ExpectedType;
         Condition.ScopeIn = ScopeIn;
         Condition.Used = true;
         Expr1.ScopeIn = ScopeIn;
         Expr1.Used = true;
         Expr2.ScopeIn = ScopeIn;
         Expr2.Used = true;
+        //Type = TypeUnifier.Instance.Unify(Expr1.Type, Expr2.Type);
         Type = Expr1.Type;
         ScopeOut = Condition.ScopeOut;
       }
@@ -96,6 +101,7 @@ namespace DotNet
         Expr1.Used = true;
         Expr2.ScopeIn = ScopeIn;
         Expr2.Used = true;
+        //Type = TypeUnifier.Instance.Unify(Expr1.Type, Expr2.Type);
         Type = Expr1.Type;
       }
     | Cast
@@ -128,7 +134,7 @@ namespace DotNet
       }
     | TypeOf
       {
-        Type = context.GetObjectType(); // FIXME
+        Type = context.GetTypeType();
       }
     | Checked
       {
@@ -232,28 +238,31 @@ namespace DotNet
       }
     | Is
       {
-        Expr1 : Expr;
-
-        Expr1.ScopeIn = ScopeIn;
-        // TypeName : QualifiedReference;
-        // TypeName.Scope = Scope;
       stage 2:
-        // out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
-        Type = context.GetBooleanType();
+        out TypeNameTypeRef : Ref[TypeSymbol];
+        out TypeNameType : TypeSymbol;
+
+        Expr1.ScopeIn   = ScopeIn;
+        TypeName.Scope  = ScopeIn;
+        TypeNameTypeRef = TypeName.Ref.Resolve();
+        TypeNameType    = TypeNameTypeRef.Symbol;
+        Type            = context.GetBooleanType();
+
+        Expr1    : Expr;
+        TypeName : QualifiedReference;
       }
     | As
       {
+        stage 2:
+          out TypeRef : Ref[TypeSymbol];
 
-        Expr1.ScopeIn = ScopeIn;
-      //    TypeName : QualifiedReference;
-      //    TypeName.Scope = Scope;
-      //
-      //  stage 2:
-      //    out TypeRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
-      //  Type = TypeRef.Symbol;
-        Type = context.GetVoidType();
+        Expr1.ScopeIn  = ScopeIn;
+        TypeName.Scope = ScopeIn;
+        TypeRef        = TypeName.Ref.Resolve();
+        Type           = TypeRef.Symbol;
 
-        Expr1 : Expr;
+        Expr1    : Expr;
+        TypeName : QualifiedReference;
       }
     | ShiftLeft       : Arithmetic
       {
@@ -354,7 +363,6 @@ namespace DotNet
         Arguments.IndexIn              = 0;
         Arguments.Used                 = true;
 
-
         //ExpectedFunctionType.Return    = ExpectedType; // возможно здесь нужно использовать унификацию
         Type                           = Method.Symbol.ReturnType;
         Member                         = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
@@ -368,17 +376,17 @@ namespace DotNet
       }
     | IndexerAccess
       {
-        Expr1 : Expr;
+        Left.Options                   = ExprOptions.Invocation;
+        Left.ScopeIn                   = ScopeIn;
 
-        Expr1.ScopeIn = ScopeIn;
-        // Arguments : Expr.Argument*;
-        // Arguments.Scope = Scope;
-        // Arguments.IndexIn = 0;
-        // Arguments.Used = true;
-        // Type = Method.Symbol.ReturnType;
-        Type = context.GetVoidType();
-      stage 2:
-        // out Method : Ref[Member.MethodSymbol] = this.InvocationResolveMethod(Expr1, Expr1.Type, Arguments.Type, context);
+        Arguments.ScopeIn              = ScopeIn;
+        Arguments.IndexIn              = 0;
+        Arguments.Used                 = true;
+
+        Type                           = context.CreateFreeTypeVar();
+
+        Left      : Expr;
+        Arguments : DotNet.Argument*;
       }
     | PostIncrement : NumericUnary
       {

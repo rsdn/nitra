@@ -15,6 +15,8 @@ namespace DotNet
     {
       in TypeInfo : GenericTypeSymbol;
       in Args     : ImmutableArray[TypeSymbol];
+
+      FullName = AstUtils.MakeFullName(TypeInfo.DeclaredInOpt, TypeInfo.Name, Args);
     }
   }
 
