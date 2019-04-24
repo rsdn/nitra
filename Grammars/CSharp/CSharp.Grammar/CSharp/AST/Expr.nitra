@@ -36,15 +36,7 @@ namespace DotNet
       {
         Type = context.CreateNullTypeVar();
       }
-    | QualifiedName
-      {
-        Key : QualifiedReference;
 
-        Key.Scope = if (Options == ExprOptions.Invocation) ExtensionScope(ScopeIn, Key) else ScopeIn;
-      stage 2:
-        Member = Key.Ref.Resolve(); // Результат Ref может быть неоднозначным.
-        Type = context.GetOverloadedMemberType(Member.Symbols);
-      }
     | Parenthesized
       {
         Expression : Expr;
@@ -328,16 +320,29 @@ namespace DotNet
       {
         Operation = UnaryOp.PreDecrement();
       }
+    | SimpleName
+      {
+        Reference.Scope = ScopeIn;
+        Ref             = Reference.Ref.Resolve();
+        Type            = Ref.Symbol.Type;
+        Member          = Ref.Resolve(); // Результат Ref может быть неоднозначным.
+      stage 2:
+        out Ref : Ref[TypedDeclarationSymbol];
+
+        Reference : Reference;
+      }
     | MemberAccess1
       {
-        Expr1 : Expr;
-
-        Expr1.ScopeIn = ScopeIn;
-        // QualifiedName : Reference;
-        // QualifiedName.ScopeIn = Expr1.Type.Scope;
-        Type = context.GetVoidType(); //this.GetMemberAccessReturnType(Ref);
+        Expr1.ScopeIn   = ScopeIn;
+        Reference.Scope = Expr1.Type.Scope;
+        Ref             = Reference.Ref.Resolve();
+        Type            = Ref.Symbol.Type;
+        Member          = Ref.Resolve(); // Результат Ref может быть неоднозначным.
       stage 2:
-        out Ref : Ref[DeclarationSymbol] = null; // QualifiedName.Ref.Resolve();
+        out Ref : Ref[TypedDeclarationSymbol];
+
+        Expr1 : Expr;
+        Reference : Reference;
       }
     | MemberAccess2
       {
@@ -367,6 +372,7 @@ namespace DotNet
         Type                           = Method.Symbol.ReturnType;
         Member                         = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
         Method                         = Left.Member.Resolve();
+        Left.Type                      = Method.Symbol.Type;
 
         //unless (Left.Type.Unify(Member.Symbol.Type))
         //  Error(context, $"The $(Left.Type) not unify with $(Member.Symbol.Type)");

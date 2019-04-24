@@ -154,7 +154,7 @@ namespace DotNet
 
     public HasDefault(this formalParameterSymbol : FormalParameterSymbol) : bool
     {
-      if (formalParameterSymbol.IsDefaultEvaluated)
+      if (!formalParameterSymbol.IsDefaultEvaluated)
         false
       else match (formalParameterSymbol.Default)
       {

@@ -55,11 +55,6 @@ namespace CSharp
     NullLiteral    { }
   }
 
-  map syntax Expressions.Expression.QualifiedName -> DotNet.Expr
-  {
-    QualifiedName  { QualifiedName -> Key; }
-  }
-
   map syntax Expressions.Expression.Parenthesized -> DotNet.Expr
   {
     Parenthesized {
@@ -357,12 +352,17 @@ namespace CSharp
     PreDecrement { Expr1 -> Expr1; }
   }
 
+  map syntax Expressions.Expression.SimpleName -> DotNet.Expr
+  {
+    SimpleName  { Reference -> Reference; }
+  }
+
   map syntax Expressions.Expression.MemberAccess1 -> DotNet.Expr
   {
     MemberAccess1
     {
       Expr1 -> Expr1;
-      // \ -> QualifiedName;
+      Reference -> Reference;
     }
   }
 

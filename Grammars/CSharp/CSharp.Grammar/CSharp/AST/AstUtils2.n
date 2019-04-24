@@ -291,5 +291,17 @@ namespace DotNet
         | _ => false
       }
     }
+
+    public mutable ExtensionScopeFactory : Scope -> ScopeFactory = CreateExtensionScopeFactory;
+
+    public CreateExtensionScopeFactory(scope : Scope) : ScopeFactory
+    {
+      def self(scope : Scope)
+      {
+        scope
+      }
+
+      self
+    }
   } // module
 } // namespace

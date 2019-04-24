@@ -377,8 +377,9 @@ namespace Nitra.BackEnd.Cci
       }
     }
 
-    internal LoadParameters(paremeters : Seq[IParameterDefinition], containingScope : TableScope, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
+    internal LoadParameters(paremeters : Seq[IParameterDefinition], parameterizable : ParameterizableSymbol, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
+      def containingScope = parameterizable.ParameterScope;
       def builder = ImmutableArray.CreateBuilder();
       foreach (p in paremeters)
       {
@@ -396,6 +397,7 @@ namespace Nitra.BackEnd.Cci
         parameter.Modifier = parameterModifier;
         parameter.Index = p.Index;
         parameter.Default = LoadDefaultValue(p.DefaultValue);
+        parameter.DeclaredIn = parameterizable;
         parameter.EvalProperties(context);
         builder.Add(parameter);
       }
@@ -433,7 +435,7 @@ namespace Nitra.BackEnd.Cci
             method.Flags = flags;
             unless (method.IsDeclaredInEvaluated)
               method.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-            method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.Parameters = LoadParameters(m.Parameters, method, context);
             method
 
           | m is IMethodDefinition   =>
@@ -451,7 +453,14 @@ namespace Nitra.BackEnd.Cci
             method.IsExtensionMethod = m.IsStatic && HasExtensionAttribute(m.Attributes);
 
             method.ReturnType = CciTypeToTypeSymbol(m.Type, context);
-            method.Parameters = LoadParameters(m.Parameters, method.ParameterScope, context);
+            method.Parameters = LoadParameters(m.Parameters, method, context);
+            def type = FunctionTypeSymbol();
+            type.Parameters = method.Parameters.Select(p => p.Type).ToImmutableArray();
+            type.Return = method.ReturnType;
+            type.EvalProperties(context);
+            method.FunctionType = type;
+            method.Type = type;
+            method.IsExtensionMethod = false;
             method
 
           | m is IFieldDefinition    =>
