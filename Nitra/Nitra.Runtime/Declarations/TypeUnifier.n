@@ -56,7 +56,7 @@ namespace Nitra.Declarations
             | (true,   true) =>
               def c1 = v1.BaseTypeConstraint;
               def c2 = v2.BaseTypeConstraint;
-              if (c1.Equals(c2))
+              if (c1.Equals(c2) || TryUnify(c1, c2))
                 newBaseTypeConstraint = c1
               else if (IsSubtype(c1, c2))
                 newBaseTypeConstraint = c1
@@ -75,7 +75,7 @@ namespace Nitra.Declarations
             | (true,   true) =>
               def c1 = v1.DerivedTypeConstraint;
               def c2 = v2.DerivedTypeConstraint;
-              if (c1.Equals(c2))
+              if (c1.Equals(c2) || TryUnify(c1, c2))
                 newDerivedTypeConstraint = c1
               else if (IsSubtype(c1, c2))
                 newDerivedTypeConstraint = c2
@@ -88,7 +88,7 @@ namespace Nitra.Declarations
           mutable type;
           when (newBaseTypeConstraint : object != null && newDerivedTypeConstraint : object != null)
           {
-            if (newBaseTypeConstraint.Equals(newDerivedTypeConstraint))
+            if (newBaseTypeConstraint.Equals(newDerivedTypeConstraint) || TryUnify(newBaseTypeConstraint, newDerivedTypeConstraint))
               type = newBaseTypeConstraint;
             else unless (IsSubtype(newDerivedTypeConstraint, newBaseTypeConstraint))
               return false; // merged constraints are not consistent

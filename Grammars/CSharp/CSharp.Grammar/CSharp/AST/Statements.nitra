@@ -49,6 +49,7 @@ namespace DotNet
 
     Type.Scope = Scope;
     Expression.ScopeIn = Scope;
+    //Expression.BuildInvocationScope = ???;
     // The type of a local variable can be shared between two declarations.
     // Use ResolveOrCopy() method to avoid multiple type resolutions.
     TypeRef = Type.Ref.ResolveOrCopy();
@@ -68,6 +69,7 @@ namespace DotNet
   ast ExpressionStatement : Statement
   {
     Expr.ScopeIn = ScopeIn;
+    //Expr.BuildInvocationScope = ???;
     Expr.ExpectedType = Expr.Type; // В C# допускается игнорировать возвращаемые значения. После типизации такие случаи можно превратить в ворнинги.
 
     Expr : Expr;

@@ -126,6 +126,9 @@
     <Compile Include="IDotNetBackEnd.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Scopes\InvocationScope.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Scopes\SubstHelper.n">
       <SubType>Code</SubType>
     </Compile>

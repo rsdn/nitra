@@ -354,12 +354,12 @@ namespace Nitra.BackEnd.Cci
       false
     }
 
-    LoadDefaultValue(defaultValue : IMetadataConstant) : DefaultValue
+    LoadDefaultValue(parameter : IParameterDefinition) : DefaultValue
     {
-      when (defaultValue == null)
+      unless (parameter.HasDefaultValue)
         return DefaultValue.None();
       //ResolvedType(defaultValue.Type);
-      unchecked match (defaultValue.Value)
+      unchecked match (parameter.DefaultValue.Value)
       {
         | null                => DefaultValue.Null()
         | x is string         => DefaultValue.String(x)
@@ -396,7 +396,7 @@ namespace Nitra.BackEnd.Cci
           parameterModifier |= ParameterModifier.Params;
         parameter.Modifier = parameterModifier;
         parameter.Index = p.Index;
-        parameter.Default = LoadDefaultValue(p.DefaultValue);
+        parameter.Default = LoadDefaultValue(p);
         parameter.DeclaredIn = parameterizable;
         parameter.EvalProperties(context);
         builder.Add(parameter);
