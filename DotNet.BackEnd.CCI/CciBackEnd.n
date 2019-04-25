@@ -288,6 +288,7 @@ namespace Nitra.BackEnd.Cci
         | c is IMetadataConstant =>
           match (c.Value)
           {
+            | null        => CustomAttributeExpression.Null  ()
             | v is bool   => CustomAttributeExpression.Bool  (v)
             | v is byte   => CustomAttributeExpression.Byte  (v)
             | v is char   => CustomAttributeExpression.Char  (v)

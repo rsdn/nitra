@@ -31,6 +31,7 @@ namespace DotNet
 
   abstract ast CustomAttributeExpression
   {
+    | Null
     | Bool   { out Literal : bool   = default(bool  ); }
     | Byte   { out Literal : byte   = default(byte  ); }
     | Char   { out Literal : char   = default(char  ); }
