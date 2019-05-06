@@ -176,11 +176,11 @@ namespace Nitra.BackEnd.Cci
           {
             def name = Name(NoLocation, type.Name.Value); // TODO: type.Name.UniqueKey
             def symbol : NestedTypeSymbol  =
-                     if (type.IsDelegate)  ExternalNestsdTypeDeclaration.[NestedDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
-                else if (type.IsInterface) ExternalNestsdTypeDeclaration.[NestedInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
-                else if (type.IsEnum)      ExternalNestsdTypeDeclaration.[NestedEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable)
-                else if (type.IsValueType) ExternalNestsdTypeDeclaration.[NestedStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
-                else                       ExternalNestsdTypeDeclaration.[NestedClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
+                     if (type.IsDelegate)  ExternalNestedTypeDeclaration.[NestedDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
+                else if (type.IsInterface) ExternalNestedTypeDeclaration.[NestedInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
+                else if (type.IsEnum)      ExternalNestedTypeDeclaration.[NestedEnumSymbol]     (name, type).DefineSymbol(declaredIn.MemberTable)
+                else if (type.IsValueType) ExternalNestedTypeDeclaration.[NestedStructSymbol]   (name, type).DefineSymbol(declaredIn.MemberTable)
+                else                       ExternalNestedTypeDeclaration.[NestedClassSymbol]    (name, type).DefineSymbol(declaredIn.MemberTable);
 
             unless (symbol.IsDeclaredInEvaluated)
               symbol.DeclaredIn = declaredIn;
@@ -723,7 +723,7 @@ namespace Nitra.BackEnd.Cci
     Type : INamespaceTypeDefinition { get; }
   }
 
-  public interface IExternalNestsdTypeDeclaration
+  public interface IExternalNestedTypeDeclaration
   {
     Type : INestedTypeDefinition { get; }
   }
@@ -748,7 +748,7 @@ namespace Nitra.BackEnd.Cci
   }
 
   [Record]
-  public class ExternalNestsdTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol], IExternalNestsdTypeDeclaration, IExternalTypeDeclaration
+  public class ExternalNestedTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol], IExternalNestedTypeDeclaration, IExternalTypeDeclaration
     where TSymbol : DeclarationSymbol
   {
     public Type : INestedTypeDefinition { get; private set; }
