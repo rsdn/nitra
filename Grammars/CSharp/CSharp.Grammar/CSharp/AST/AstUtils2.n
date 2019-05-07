@@ -125,6 +125,23 @@ namespace DotNet
     }
 
     public CreateFreeTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
+    
+    public CreateFreeTypeVars(this _context : DependentPropertyEvalContext, count : int) : ImmutableArray[TypeSymbol]
+    {
+      match (count)
+      {
+        | 0 => ImmutableArray.Empty
+        | 1 => ImmutableArray.Create(_context.CreateNullTypeVar())
+        | 2 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | 3 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | 4 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | _ =>
+          def builder = ImmutableArray.CreateBuilder(count);
+          for (mutable i = 0; i < count; i++)
+            builder.Add(_context.CreateNullTypeVar());
+          builder.MoveToImmutable()
+      }
+    }
 
     public CreateNullTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol
     {

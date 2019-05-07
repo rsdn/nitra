@@ -590,10 +590,17 @@ namespace Nitra.BackEnd.Cci
 
     CreateGenericParameter(genericParam : IGenericParameter, context : DependentPropertyEvalContext) : TypeSymbol
     {
-      def tps   = TypeParameterSymbol();
-      tps.UpdateName(genericParam.Name.Value); // TODO: type.Name.UniqueKey
-      tps.EvalProperties(context);
-      tps
+      mutable typeSymbol;
+      if (_cciInternedKeyToSymbolMap.TryGetValue(genericParam.InternedKey, out typeSymbol))
+        typeSymbol :> TypeParameterSymbol
+      else
+      {
+        def tps = TypeParameterSymbol();
+        tps.UpdateName(genericParam.Name.Value); // TODO: type.Name.UniqueKey
+        tps.EvalProperties(context);
+        _cciInternedKeyToSymbolMap[genericParam.InternedKey] = tps;
+        tps
+      }
     }
 
     CreateGenericParameters(genericParameterCount : ushort, genericParams : Seq[IGenericParameter], context : DependentPropertyEvalContext) : ImmutableArray[TypeSymbol]
@@ -644,7 +651,11 @@ namespace Nitra.BackEnd.Cci
     ResolvedType(ccTypeRef : ITypeReference) : ITypeDefinition
     {
       mutable result;
-      _ = _cciInternedKeyToCCiSymbolMap.TryGetValue(ccTypeRef.InternedKey, out result);
+      unless (_cciInternedKeyToCCiSymbolMap.TryGetValue(ccTypeRef.InternedKey, out result))
+      when (ccTypeRef is IGenericTypeInstanceReference as gtr)
+      {
+        _ = _cciInternedKeyToCCiSymbolMap.TryGetValue(gtr.GenericType.InternedKey, out result);
+      }
       result
     }
 
@@ -657,7 +668,7 @@ namespace Nitra.BackEnd.Cci
       mutable resolvedByKey = 0;
       mutable resolvedByResolvedTypeProp = 0;
 
-      foreach (x in _cciInternedKeyToSymbolMap.Values)
+      foreach (x when x.FirstDeclarationOrDefault != null in _cciInternedKeyToSymbolMap.Values)
       {
         def cciType = (x.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
         match (x)
@@ -684,7 +695,9 @@ namespace Nitra.BackEnd.Cci
               {
                 def typeSymbol = CciTypeToTypeSymbol(cciInterfaceDef, context);
                 when (typeSymbol : object != _objectSymbol)
+                {
                   baseTypeSet.AddParent(typeSymbol);
+                }
               }
             }
           | _ => ()
