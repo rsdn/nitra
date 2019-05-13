@@ -371,36 +371,35 @@ namespace DotNet
         out Method : Ref[FunctionalSymbol];
 
         //Left.ExpectedType       = ExpectedFunctionType;
-        Left.Options              = ExprOptions.Invocation;
-        Left.ScopeIn              = ScopeIn;
-        Left.BuildInvocationScope = BuildInvocationScope;
+        Left.Options                   = ExprOptions.Invocation;
+        Left.ScopeIn                   = ScopeIn;
+        Left.BuildInvocationScope      = BuildInvocationScope;
 
-        Arguments.ScopeIn         = ScopeIn;
-        Arguments.IndexIn         = 0;
-        Arguments.Used            = true;
+        Arguments.ScopeIn              = ScopeIn;
+        Arguments.IndexIn              = 0;
+        Arguments.Used                 = true;
+        Arguments.BuildInvocationScope = BuildInvocationScope;
 
-        Type                      = Method.Symbol.ReturnType;
-        Member                    = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
-        Method                    = Left.Member.Resolve();
-        Left.Type                 = Method.Symbol.Type;
-
-        //unless (Left.Type.Unify(Member.Symbol.Type))
-        //  Error(context, $"The $(Left.Type) not unify with $(Member.Symbol.Type)");
+        Type                           = Method.Symbol.ReturnType;
+        Member                         = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
+        Method                         = Left.Member.Resolve();
+        Left.Type                      = Method.Symbol.Type;
 
         Left      : Expr;
         Arguments : DotNet.Argument*;
       }
     | IndexerAccess
       {
-        Left.Options              = ExprOptions.Invocation;
-        Left.ScopeIn              = ScopeIn;
-        Left.BuildInvocationScope = BuildInvocationScope;
+        Left.Options                   = ExprOptions.Invocation;
+        Left.ScopeIn                   = ScopeIn;
+        Left.BuildInvocationScope      = BuildInvocationScope;
 
-        Arguments.ScopeIn         = ScopeIn;
-        Arguments.IndexIn         = 0;
-        Arguments.Used            = true;
+        Arguments.ScopeIn              = ScopeIn;
+        Arguments.IndexIn              = 0;
+        Arguments.Used                 = true;
+        Arguments.BuildInvocationScope = BuildInvocationScope;
 
-        Type                      = context.CreateFreeTypeVar();
+        Type                           = context.CreateFreeTypeVar();
 
         Left      : Expr;
         Arguments : DotNet.Argument*;
@@ -413,9 +412,21 @@ namespace DotNet
       {
         Operation = UnaryOp.PostDecrement();
       }
+    | Lambda
+      {
+        out MemberTable : TableScope = TableScope("Lambda");
+
+        Type                       = context.CreateFreeTypeVar();
+        Parameters.Scope           = ScopeIn;
+        Parameters.ContainingTable = MemberTable;
+
+        Parameters : LocalParameter*;
+      }
     | Lambda_SingleParam1
       {
         Type = context.GetVoidType(); // FIXME
+
+        Name : Name;
       }
     | Lambda_ExplicitParams1
       {
@@ -503,8 +514,6 @@ namespace DotNet
   {
     inout Index : int;
     IndexOut = IndexIn + 1;
-    // Name : Reference?;
-    // Modifier : ArgumentModifier?;
   }
 
   abstract ast OptionalName
@@ -515,17 +524,19 @@ namespace DotNet
 
   abstract ast ExprArgument : Argument
   {
-    ParameterNameOpt : OptionalName;
-
-    Expr.ScopeIn              = ScopeIn;
-    Expr.BuildInvocationScope = BuildInvocationScope;
-    Expr.Used                 = true;
-    //ExpectedType            = ???;
-    Type                      = Expr.Type;
   stage 2:
     out ArgumentType : TypeSymbol = Type;
 
-    Expr : Expr;
+    Expr.ScopeIn              = ScopeIn;
+    ScopeOut = Expr.ScopeOut;
+    Expr.BuildInvocationScope = BuildInvocationScope;
+    Expr.Used                 = true;
+    
+    //ExpectedType            = ???;
+    Type                      = Expr.Type;
+
+    Expr             : Expr;
+    ParameterNameOpt : OptionalName;
   }
 
   abstract ast OutVarArgumentBase : Argument
@@ -545,25 +556,7 @@ namespace DotNet
     Type = ExpectedType; // TODO: Временное решение. Нужно производить унификацию с VariableType.
   }
 
-  //ast LambdaExpr
-  //{
-  //  in TypeScope    : Scope;
-  //  in ExpectedType : TypeSymbol;
-  //
-  //  //Parameter.ContainingTable = ???; // TODO: Make separate TableScope for parameters.
-  //  Parameter.TypeScope             = TypeScope;
-  //  Expression.ExpectedType         = ExpectedType;
-  //  Expression.ScopeIn              = TypeScope;
-  //  Expression.BuildInvocationScope = BuildInvocationScope;
-  //  //stage 2:
-  //  //out AstValue : BuildResult = this.BuildAstValue(Expression, Expression.Type, Parameter.Symbol.Name, Parameter.Symbol.Type, context);
-  //
-  //  // TODO: Convert to declaration
-  //  Parameter : LambdaParameter;
-  //  Expression : Expr;
-  //}
-
-  declaration LambdaParameter : TypedDeclaration
+  abstract declaration LocalParameter : TypedDeclaration, BindableAst
   {
     symbol
     {
@@ -572,21 +565,22 @@ namespace DotNet
       Scope     = Type.Scope;
     }
 
-    Type : LambdaParameterType?;
+    | Explicit
+      {
+      stage 1:
+        out TypeRef : Ref[TypeSymbol];
 
-    Type.TypeScope = TypeScope;
-    Symbol.Type = this.ResolveLambdaParameterType(Type.TypeNameRef, context);
-    in TypeScope : Scope;
-  }
+        Type.Scope  = Scope;
+        TypeRef     = Type.Ref.Resolve();
+        Symbol.Type = TypeRef.Symbol;
+        
+        Type : QualifiedReference;
+      }
 
-  ast LambdaParameterType
-  {
-    TypeName : QualifiedReference;
-
-    TypeName.Scope = TypeScope;
-    in TypeScope : Scope;
-  stage 2:
-    out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
+    | Implicit
+      {
+        Symbol.Type = context.CreateFreeTypeVar();
+      }
   }
 
   abstract ast ArgumentModifier

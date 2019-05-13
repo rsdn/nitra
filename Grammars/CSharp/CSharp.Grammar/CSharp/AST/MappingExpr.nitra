@@ -413,7 +413,10 @@ namespace CSharp
 
   map syntax AnonymousFunction.Expression.Lambda_SingleParam1 -> DotNet.Expr
   {
-    Lambda_SingleParam1 { }
+    Lambda
+    {
+      [LocalParameter.Implicit { Name -> Name; }] -> Parameters;
+    }
   }
 
   map syntax AnonymousFunction.Expression.Lambda_ExplicitParams1 -> DotNet.Expr

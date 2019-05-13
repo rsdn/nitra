@@ -28,7 +28,7 @@ namespace DotNet
       | lit is DotNet.Expr.BooleanLiteral => DefaultValue.Bool(lit.Value.ValueOrDefault)
       | lit is DotNet.IntegerLiteral when lit.Value.Value.Overflow => DefaultValue.Overflow()
       | lit is DotNet.IntegerLiteral with x = lit.Value.Value => DefaultValue.Number(x.Value, x.IsUnsigned, x.IsLong)
-      | lit is DotNet.Expr.NullLiteral    => DefaultValue.Null()
+      | _   is DotNet.Expr.NullLiteral    => DefaultValue.Null()
       | lit is DotNet.RealLiteral =>
         match (lit.Value.Value)
         {
@@ -73,7 +73,7 @@ namespace DotNet
         | x is Member.MethodSymbol   => x.ReturnType
         | x is Member.FieldSymbol    => x.Type
         | x is Member.ConstantSymbol => x.Type
-        | x is LambdaParameterSymbol => x.Type
+        | x is LocalParameterSymbol  => x.Type
         | x is EnumMemberSymbol      => x.DeclaredIn
         | TypeSymbol                 => GetPlatformType(context).Type;
         | _                          => context.CreateFreeTypeVar()
@@ -311,7 +311,7 @@ namespace DotNet
 
     public mutable ExtensionScopeFactory : Scope -> ScopeFactory = CreateExtensionScopeFactory;
 
-    public CreateExtensionScopeFactory(scope : Scope) : ScopeFactory
+    public CreateExtensionScopeFactory(_scope : Scope) : ScopeFactory
     {
       def self(scope : Scope)
       {

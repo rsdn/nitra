@@ -140,7 +140,7 @@ namespace DotNet
       if (args.IsDefaultOrEmpty)
         result
       else
-        $<#$result<..$(args; ", "; _.Name)>#>
+        $<#$result<..$(args; ", "; MakeFullName)>#>
     }
 
     public MakeFullName[TTypeSymbol](parentFullName : string, name : string) : string
@@ -346,7 +346,7 @@ namespace DotNet
     {
       assert2(symbol1 != null, "Symbol of type " + typeof(T1).Name + " is null!");
       assert2(symbol2 != null, "Symbol of type " + typeof(T2).Name + " is null!");
-      TypeUnifier.Instance.Require(symbol1, symbol2)
+      TypeUnifier.Instance.TryRequire(symbol1, symbol2)
     }
 
     public Unify[T1, T2](this symbol1 : T1, symbol2 : T2) : bool
@@ -389,6 +389,27 @@ namespace DotNet
         parameters[0].Modifier == ParameterModifier.This
       else
         false
+    }
+
+    public MakeFullName(symbol : DeclarationSymbol) : string
+    {
+      def declaredIn = if (symbol.IsDeclaredInOptEvaluated) symbol.DeclaredInOpt else VNone();
+      match (symbol)
+      {
+        | GenericEntitySymbol as g when g.IsTypeParametersEvaluated => MakeFullName(declaredIn, symbol.InitialName, g.TypeParameters)
+        | GenericEntitySymbol                                       => MakeFullName(declaredIn, symbol.InitialName) + "<not evaluated>"
+        | _ => MakeFullName(declaredIn, if (symbol.IsNameValid) symbol.Name else symbol.ToString())
+      }
+    }
+    
+    public FunctionalToString(symbol : FunctionalSymbol) : string
+    {
+      $<#$(symbol.FullName)(..$(symbol.Parameters)) : $(symbol.ReturnType)#>
+    }
+
+    public FormalParameterToString(symbol : FormalParameterSymbol) : string
+    {
+      $<#$(symbol.InitialName) : $(symbol.Type)#>
     }
   } // module
 } // namespace

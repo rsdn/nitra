@@ -17,11 +17,17 @@ using DotNet;
 
 namespace DotNet
 {
-  [Record]
+  //[Record]
   class ExtensionScope : Scope
   {
     _scope : Scope;
     _ast   : QualifiedReference;
+    
+    public this(scope : Scope, ast : QualifiedReference)
+    {
+      _scope = scope;
+      _ast = ast;
+    }
 
     public override GetAllSymbols() : Seq[DeclarationSymbol]
     {

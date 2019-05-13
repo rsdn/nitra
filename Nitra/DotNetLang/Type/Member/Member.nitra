@@ -9,13 +9,14 @@ namespace DotNet
   {
     symbol
     {
-      FullName = DeclaredIn.FullName + "." + this.Name;
+      FullName = AstUtils.MakeFullName(this);
     }
 
     | Constructor : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "constructor";
           SpanClass = DotNetLang.MethodSpanClass;
 
@@ -44,6 +45,7 @@ namespace DotNet
         {
           in IsExtensionMethod : bool;
 
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
         }
@@ -109,6 +111,7 @@ namespace DotNet
       {
         symbol
         {
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "indexer";
           SpanClass = DotNetLang.PropertySpanClass;
         }
