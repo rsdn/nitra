@@ -16,7 +16,7 @@ namespace Nitra.Declarations
 
     protected _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
-    protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
+    protected abstract SubtypeUnifyUnwraped(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool;
 
     public virtual CreateFreeTypeVar() : TypeVarSymbol
     {
@@ -90,7 +90,7 @@ namespace Nitra.Declarations
           {
             if (newBaseTypeConstraint.Equals(newDerivedTypeConstraint) || TryUnify(newBaseTypeConstraint, newDerivedTypeConstraint))
               type = newBaseTypeConstraint;
-            else unless (IsSubtype(newDerivedTypeConstraint, newBaseTypeConstraint))
+            else unless (SubtypeUnifyUnwraped(newDerivedTypeConstraint, newBaseTypeConstraint, ref updatedVariables))
               return false; // merged constraints are not consistent
           }
 
@@ -146,6 +146,23 @@ namespace Nitra.Declarations
       }
     }
 
+    public SubtypeUnify(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    {
+      def unwrappedSubtype   = Unwrap(subtype);
+      def unwrappedSupertype = Unwrap(supertype);
+      when (unwrappedSubtype : object == unwrappedSupertype)
+        return true;
+
+      mutable updatedVariables;
+      def result = SubtypeUnifyUnwraped(unwrappedSubtype, unwrappedSupertype, ref updatedVariables);
+      result
+    }
+
+    protected SubtypeUnify(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      SubtypeUnifyUnwraped(Unwrap(subtype), Unwrap(supertype), ref updatedVariables) : bool;
+    }
+    
     public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       def unwrappedSubtype   = Unwrap(subtype);
@@ -153,7 +170,10 @@ namespace Nitra.Declarations
       when (unwrappedSubtype : object == unwrappedSupertype)
         return true;
 
-      IsSubtypeUnwraped(unwrappedSubtype, unwrappedSupertype)
+      mutable updatedVariables;
+      def result = SubtypeUnifyUnwraped(unwrappedSubtype, unwrappedSupertype, ref updatedVariables);
+      ResetTypeVars(ref updatedVariables);
+      result
     }
 
     public TryProvide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
