@@ -25,7 +25,7 @@ namespace DotNet
     symbol
     {
       MakeHint = ConstructedTypeImpl.MakeHint(this);
-
+      DecomposeType = VSome(TypeStructure(TypeInfo, Args));
       Scope = TopSubstScope(TypeInfo, TypeInfo.Scope, Args);
     }
   }
@@ -37,6 +37,7 @@ namespace DotNet
       in Parent : TypeSymbol; //TODO: excude TypeParameterSymbol
 
       MakeHint = ConstructedTypeImpl.MakeHint(this);
+      DecomposeType = VSome(TypeStructure(TypeInfo, Args));
       Scope = NestedSubstScope(TypeInfo, TypeInfo.Scope, Args, Parent);
     }
   }
