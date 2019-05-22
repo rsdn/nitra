@@ -255,11 +255,19 @@ namespace DotNet
       {
         def makeArguments(symbol : GenericTypeSymbol) : ImmutableArray[TypeSymbol]
         {
+          def typeParameters = symbol.TypeParameters;
           unless (allArgumentsResolved)
           {
-            def typeParameters = symbol.TypeParameters;
             foreach (arg when arg == null in resolvedArgs with index)
               resolvedArgs[index] = typeParameters[index];
+          }
+
+          foreach (tp is TypeParameterSymbol when tp.IsVarianceEvaluated in typeParameters with i)
+          {
+            if (tp.Variance == Variance.Covariant)
+              resolvedArgs[i] = TypeUnifier.Instance.CreateTypeVar(resolvedArgs[i], null)
+            else when (tp.Variance == Variance.Contravariant)
+              resolvedArgs[i] = TypeUnifier.Instance.CreateTypeVar(null, resolvedArgs[i]);
           }
           resolvedArgs.MoveToImmutable()
         }

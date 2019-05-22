@@ -456,7 +456,8 @@ namespace Nitra.Visualizer
 
       foreach (var message in cmpilerMessages)
       {
-        var text     = regex.Replace(message.Text, "");
+        var text     = regex.Replace(message.Text, "").Replace("&amp;", "&").Replace("&lt;", "<").Replace("&gt;", ">")
+                            .Replace("&#39;", "'").Replace("&#34;", "\"");
         var location = message.Location;
         var file     = location.File;
         var span     = location.Span;

@@ -597,6 +597,13 @@ namespace Nitra.BackEnd.Cci
       {
         def tps = TypeParameterSymbol();
         tps.UpdateName(genericParam.Name.Value); // TODO: type.Name.UniqueKey
+        tps.Variance =
+          match (genericParam.Variance)
+          {
+            | TypeParameterVariance.Contravariant => Variance.Contravariant
+            | TypeParameterVariance.Covariant     => Variance.Covariant
+            | _                                   => Variance.None
+          };
         tps.EvalProperties(context);
         _cciInternedKeyToSymbolMap[genericParam.InternedKey] = tps;
         tps
