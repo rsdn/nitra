@@ -155,7 +155,6 @@ namespace Nitra.BackEnd.Cci
             {
               def memberTable = TypeMemberScope(cont, "MemberTable", this);
               cont.MemberTable = memberTable;
-              typeSymbol.Scope = memberTable;
             }
 
             typeSymbol.EvalProperties(context);
@@ -707,6 +706,8 @@ namespace Nitra.BackEnd.Cci
                 }
               }
             }
+            type.EvalProperties(context);
+            
           | _ => ()
         }
       }
