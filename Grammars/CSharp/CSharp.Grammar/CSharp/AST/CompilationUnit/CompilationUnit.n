@@ -35,7 +35,7 @@ namespace CSharp
     
     public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
-      DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParameters;
+      DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParametersOpt;
       TypeUnifier.InitInstance();
 
       def bindNs(scope : Scope, name : string) : Ref[NamespaceSymbol]

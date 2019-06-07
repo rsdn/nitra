@@ -21,6 +21,11 @@ namespace DotNet
 {
   public module Coverters
   {
+    public MakeDefaultParametersOpt(ast : ExprBase) : ValueOption[DefaultValue]
+    {
+      VSome(MakeDefaultParameters(ast))
+    }
+    
     public MakeDefaultParameters(ast : ExprBase) : DefaultValue
     {
       | _ is Expr.Nop                     => DefaultValue.None()

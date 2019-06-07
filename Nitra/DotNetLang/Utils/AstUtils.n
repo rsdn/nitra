@@ -18,7 +18,7 @@ namespace DotNet
 {
   public module AstUtils
   {
-    public static mutable MakeDefault : ExprBase -> DefaultValue;
+    public static mutable MakeDefault : ExprBase -> ValueOption[DefaultValue];
 
     public CreateFreeTypeVar() : TypeVarSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
 

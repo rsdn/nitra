@@ -37,7 +37,7 @@ namespace DotNet
     Symbol.Index         = IndexIn;
     ParametersOut        = Symbol :: ParametersIn;
     TypesOut             = Symbol.Type :: TypesIn;
-    Symbol.Default       = AstUtils.MakeDefault(Default);
+    Symbol.Default       = await AstUtils.MakeDefault(Default);
     Default.ExpectedType = TypeRef.Symbol;
     Default.ScopeIn      = Scope;
 
