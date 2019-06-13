@@ -28,7 +28,7 @@ namespace CSharp
   {
     public Reset(project : Project) : void
     {
-      def (backEnd, _, _) = DecomposeData(project.Data);
+      def backEnd = DecomposeData(project.Data).BackEnd;
       backEnd.Dispose();
       project.Data = null;
     }

@@ -52,7 +52,7 @@ namespace Nitra.ClientServer.Server
               id
             else
             {
-              LosdLanguage(spanClass.Language);
+              LoadLanguage(spanClass.Language);
               this[spanClass]
             }
           }
@@ -65,27 +65,27 @@ namespace Nitra.ClientServer.Server
       _spanClassMap.Keys.ToArray()
     }
 
-    public LosdLanguages(languages : List[Nitra.Language]) : void
+    public LoadLanguages(languages : List[Nitra.Language]) : void
     {
       lock (_sync)
-        LosdLanguagesImpl(languages);
+        LoadLanguagesImpl(languages);
     }
 
-    LosdLanguagesImpl(languages : List[Nitra.Language]) : void
+    LoadLanguagesImpl(languages : List[Nitra.Language]) : void
     {
-      LosdSpanClasses(fun(spanClassMapBilder, spanClassInfosBilder)
+      LoadSpanClasses(fun(spanClassMapBilder, spanClassInfosBilder)
       {
         foreach (language in languages)
-          LosdLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages);
+          LoadLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages);
       });
     }
 
-    LosdLanguage(language : Nitra.Language) : void
+    LoadLanguage(language : Nitra.Language) : void
     {
-      LosdSpanClasses((spanClassMapBilder, spanClassInfosBilder) => LosdLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages));
+      LoadSpanClasses((spanClassMapBilder, spanClassInfosBilder) => LoadLanguageImpl(language, spanClassMapBilder, spanClassInfosBilder, _languages));
     }
 
-    LosdSpanClasses(load : ImmutableDictionary[SpanClass, int].Builder * ImmutableArray[SpanClassInfo].Builder -> void) : void
+    LoadSpanClasses(load : ImmutableDictionary[SpanClass, int].Builder * ImmutableArray[SpanClassInfo].Builder -> void) : void
     {
       def spanClassMapBilder   = _spanClassMap.ToBuilder();
       def spanClassInfosBilder = ImmutableArray.CreateBuilder();
@@ -94,7 +94,7 @@ namespace Nitra.ClientServer.Server
       Send(spanClassInfosBilder);
     }
 
-    LosdLanguageImpl(language : Nitra.Language, spanClassMapBilder : ImmutableDictionary[SpanClass, int].Builder, spanClassInfosBilder : ImmutableArray[SpanClassInfo].Builder, langs : HashSet[Nitra.Language]) : void
+    LoadLanguageImpl(language : Nitra.Language, spanClassMapBilder : ImmutableDictionary[SpanClass, int].Builder, spanClassInfosBilder : ImmutableArray[SpanClassInfo].Builder, langs : HashSet[Nitra.Language]) : void
     {
       unless (langs.Add(language))
         return;
@@ -108,7 +108,7 @@ namespace Nitra.ClientServer.Server
       }
 
       when (language.Parent != null)
-        LosdLanguageImpl(language.Parent, spanClassMapBilder, spanClassInfosBilder, langs);
+        LoadLanguageImpl(language.Parent, spanClassMapBilder, spanClassInfosBilder, langs);
     }
 
     Send(spanClassInfosBilder : ImmutableArray[SpanClassInfo].Builder) : void

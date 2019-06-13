@@ -72,6 +72,7 @@ namespace Nitra.VisualStudio
     readonly StringManager _stringManager = new StringManager();
     RunningDocTableEvents _runningDocTableEventse;
     ProjectItemsEvents _prjItemsEvents;
+    EnvDTE.SolutionEvents _solutionEvents;
     uint _objectManagerCookie;
     Library _library;
     SolutionLoadingSate _backgroundLoading;
@@ -116,7 +117,16 @@ namespace Nitra.VisualStudio
       Assumes.Present(dte);
       //Debug.Assert(false);
       // We must cache ProjectItemsEvents in a field to prevent free it by GC. Don't in-line the _prjItemsEvents!
-      _prjItemsEvents = ((Events2)dte.Events).ProjectItemsEvents;
+      var events = (Events2)dte.Events;
+      var x = events.SolutionItemsEvents;
+      _solutionEvents = events.SolutionEvents;
+      _solutionEvents.Opened += _solutionEvents_Opened;
+      _solutionEvents.BeforeClosing += _solutionEvents_BeforeClosing;
+      _solutionEvents.ProjectAdded += _solutionEvents_ProjectAdded;
+      _solutionEvents.ProjectRemoved += _solutionEvents_ProjectRemoved;
+      _solutionEvents.ProjectRenamed += _solutionEvents_ProjectRenamed;
+      _solutionEvents.Renamed += _solutionEvents_Renamed;
+      _prjItemsEvents = events.ProjectItemsEvents;
       _prjItemsEvents.ItemAdded += PrjItemsEvents_ItemAdded;
       _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
       _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
@@ -133,6 +143,39 @@ namespace Nitra.VisualStudio
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
       }
+    }
+
+    private void _solutionEvents_Renamed(string OldName)
+    {
+      Debug.WriteLine($"tr: _solutionEvents_Renamed(OldName='{OldName}')");
+    }
+
+    private void _solutionEvents_ProjectRenamed(Project Project, string OldName)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      Debug.WriteLine($"tr: _solutionEvents_ProjectRenamed(Project='{Project.FullName}', OldName='{OldName}')");
+    }
+
+    private void _solutionEvents_ProjectRemoved(Project Project)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      Debug.WriteLine($"tr: _solutionEvents_ProjectRemoved(Project='{Project.FullName}')");
+    }
+
+    private void _solutionEvents_ProjectAdded(Project Project)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      Debug.WriteLine($"tr: _solutionEvents_ProjectAdded(Project='{Project.FullName}')");
+    }
+
+    private void _solutionEvents_BeforeClosing()
+    {
+      Debug.WriteLine($"tr: _solutionEvents_BeforeClosing()");
+    }
+
+    private void _solutionEvents_Opened()
+    {
+      Debug.WriteLine($"tr: _solutionEvents_Opened()");
     }
 
     private void _runningDocTableEventse_DocumentSaved(object sender, string path)
@@ -446,10 +489,6 @@ namespace Nitra.VisualStudio
       ThreadHelper.ThrowIfNotOnUIThread();
 
       Debug.WriteLine($"tr: ScanFiles(started) Project='{project.Name}'");
-
-      if (project.Name == "Autotest.Kis.Tdl.BvtPvt")
-      {
-      }
 
       if (project.Object is VSProject vsproject)
       {

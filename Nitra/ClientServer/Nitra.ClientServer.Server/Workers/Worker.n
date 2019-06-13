@@ -22,6 +22,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
+using NSP = Nitra.ProjectSystem;
 using SCG = System.Collections.Generic;
 using R   = Nitra.Runtime.Reflection;
 
@@ -36,7 +37,6 @@ namespace Nitra.ClientServer.Server
     _asyncResponseWriter  : BinaryWriter;
     _spanClassesManager   : SpanClassesManager;
     _router               : Router;
-    _semanticAnalysisLock : object = object();
 
     public this(router : Router, incomeQueue : BlockingCollection[ParserMessage], mainQueue : BlockingCollection[RouterMessage], responseWriter : BinaryWriter, spanClassesManager : SpanClassesManager)
     {
@@ -175,63 +175,89 @@ namespace Nitra.ClientServer.Server
         _router.SendAsyncResponse(AsyncServerMessage.ReflectionStructCreated(fileId, version, solutionId, convertedRoot));
         ServerUtils.LogMsgHandled("ParseTreeReflection " + fileId, timer, 100);
 
-      | SemanticAnalysisStart(solutionId, projectId, cancellationToken, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
-        lock (_semanticAnalysisLock)
+      | SemanticAnalysisStart(solutionId, projectId, cancellationToken, project, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
+        when (project.Data == null)
         {
-          Log.Message($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
+          Log.Message("Project support: RefreshReferences " + project.Name + " ");
           def timer = Stopwatch.StartNew();
-          try
-          {
-            foreach (file in files)
-              file.Ast.DeepResetProperties();
-
-            projectSupport.RefreshProject(cancellationToken, files, data);
-          }
-          catch
-          {
-            | e is OperationCanceledException => Log.Canceled(e); throw;
-            | e when completeWordPosOpt < 0 => SendAsyncResponse(AsyncServerMessage.RefreshProjectFailed(FileId.Invalid, FileVersion.Invalid, solutionId, e.ToString())); throw
-          }
-
-          when (cancellationToken.IsCancellationRequested)
-            return;
-        
-          def isCompleteWord = completeWordPosOpt >= 0 && completeWordFileIdOpt.IsValid;
-
-          when (isCompleteWord)
-          {
-            // word complete
-            foreach (file when file.FileId == completeWordFileIdOpt in files)
+          def messages = project.CompilerMessages :> NSP.CompilerMessageList;
+          messages.Clear();
+          def data =
+            try projectSupport.RefreshReferences(cancellationToken, project)
+            catch
             {
-              CompleteWord(solutionId, completeWordPosOpt, file, parseResultOpt);
-              break;
-            }
-          }
+              | e is OperationCanceledException => Log.Canceled(e); null
+              | e =>
+              Log.Exception(e);
+              SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, solutionId, e.ToString()));
+              null
+            };
 
-          when (cancellationToken.IsCancellationRequested)
+          project.Data = data;
+
+          //Router.ProjectLoadFinish();
+
+          def cm = ServerUtils.ConvertCompilerMessages(CompilerMessageSource.ProjectLoading, messages);
+          SendAsyncResponse(AsyncServerMessage.ProjectLoadingMessages(FileId.Invalid, FileVersion.Invalid, solutionId, projectId, cm));
+
+          LogMsgHandled("RefreshReferences " + project.Name + " ", timer, 1000);
+
+          when (data == null)
             return;
-          
-          _mainQueue.Add(RouterAnswerMessage.SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt));
+        }          
+        Log.Message($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
+        def timer = Stopwatch.StartNew();
+        try
+        {
+          foreach (file in files)
+            file.Ast.DeepResetProperties();
 
-          unless (isCompleteWord)
-          {
-            def empty = array(0);
-            for (mutable i = 0; i < files.Length; i++)
-            {
-              def file = files[i];
-              if (file.HasCompilerMessage)
-              {
-                def msgs = file.GetCompilerMessage();
-                def cm   = ConvertCompilerMessages(CompilerMessageSource.SemanticAnalysis, msgs);
-                SendAsyncResponse(AsyncServerMessage.SemanticAnalysisMessages(FileId(file.FileId), FileVersion(file.FileVersion), solutionId, projectId, cm));
-              }
-              else
-                SendAsyncResponse(AsyncServerMessage.SemanticAnalysisMessages(FileId(file.FileId), FileVersion(file.FileVersion), solutionId, projectId, empty));
-            }
-          }
-
-          ServerUtils.LogMsgHandled("SemanticAnalysisStart", timer, 100);
+          projectSupport.RefreshProject(cancellationToken, files, data);
         }
+        catch
+        {
+          | e is OperationCanceledException => Log.Canceled(e); throw;
+          | e when completeWordPosOpt < 0 => SendAsyncResponse(AsyncServerMessage.RefreshProjectFailed(FileId.Invalid, FileVersion.Invalid, solutionId, e.ToString())); throw
+        }
+
+        when (cancellationToken.IsCancellationRequested)
+          return;
+        
+        def isCompleteWord = completeWordPosOpt >= 0 && completeWordFileIdOpt.IsValid;
+
+        when (isCompleteWord)
+        {
+          // word complete
+          foreach (file when file.FileId == completeWordFileIdOpt in files)
+          {
+            CompleteWord(solutionId, completeWordPosOpt, file, parseResultOpt);
+            break;
+          }
+        }
+
+        when (cancellationToken.IsCancellationRequested)
+          return;
+          
+        _mainQueue.Add(RouterAnswerMessage.SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt));
+
+        unless (isCompleteWord)
+        {
+          def empty = array(0);
+          for (mutable i = 0; i < files.Length; i++)
+          {
+            def file = files[i];
+            if (file.HasCompilerMessage)
+            {
+              def msgs = file.GetCompilerMessage();
+              def cm   = ConvertCompilerMessages(CompilerMessageSource.SemanticAnalysis, msgs);
+              SendAsyncResponse(AsyncServerMessage.SemanticAnalysisMessages(FileId(file.FileId), FileVersion(file.FileVersion), solutionId, projectId, cm));
+            }
+            else
+              SendAsyncResponse(AsyncServerMessage.SemanticAnalysisMessages(FileId(file.FileId), FileVersion(file.FileVersion), solutionId, projectId, empty));
+          }
+        }
+
+        ServerUtils.LogMsgHandled("SemanticAnalysisStart", timer, 100);
 
       | CreateOutlining(solutionId, projectId, fileId, parseResult) =>
         Log.Message("CreateOutlining " + fileId);

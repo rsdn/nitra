@@ -46,7 +46,16 @@ namespace Nitra.ClientServer.Server
           Log.Message($"Incorrect version of messaging assembly: '$(asm.Assembly.Location)'.");
           Environment.Exit(42);
         }
-      | SolutionStartLoading(id, fullPath)               => assert2(_solution == null); SpanClassesManager.Clear(); _solution = Solution(id, fullPath);
+      | SolutionStartLoading(id, fullPath)               =>
+        when (_solution != null)
+        {
+          Log.Error($"Try to open new solution (ID=$id Path='$(fullPath)') without closing the previous one (ID=$(_solution.Id) '$(_solution.Path)').");
+          _solution.Dispose();
+          _solution = null;
+        }
+        SpanClassesManager.Clear();
+        _solution = Solution(id, fullPath);
+        
       | SolutionLoaded(id)                               => assert2(_solution.Id == id); _solution.Open();
       | SolutionUnloaded(id)                             => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
       | ProjectStartLoading(id, fullPath, config)        => _ = Project(_solution, fullPath, id, config, _parseQueue, _semanticAnalysisQueue, this);
