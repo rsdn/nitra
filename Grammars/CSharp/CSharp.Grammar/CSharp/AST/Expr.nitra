@@ -382,7 +382,7 @@ namespace DotNet
 
         Type                           = Method.Symbol.ReturnType;
         Member                         = context.InvocationResolveFunc(Left, Method, Arguments.Type, Arguments);
-        Method                         = Left.Member.Resolve();
+        Method                         = if (Left.Member == null) Ref.CreateUnresolved(Left.Location) else Left.Member.Resolve();
         Left.Type                      = Method.Symbol.Type;
 
         Left      : Expr;
