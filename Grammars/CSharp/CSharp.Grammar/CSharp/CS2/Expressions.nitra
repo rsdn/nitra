@@ -109,7 +109,7 @@
       | LogicalXor             = Expr1 = Expression sm "^"  sm Expr2 = Expression;
 
       precedence LogicalAND:
-      | LogicalAnd             = Expr1 = Expression sm "&"  sm Expr2 = Expression;
+      | LogicalAnd             = Expr1 = Expression sm !"&&" "&"  sm Expr2 = Expression;
 
       precedence Equality:
       | Equal                  = Expr1 = Expression sm "==" sm Expr2 = Expression;
