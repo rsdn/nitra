@@ -45,9 +45,11 @@ namespace Nitra.ClientServer.Server
       _incomeQueue         = incomeQueue;
       _asyncResponseWriter = responseWriter;
       _spanClassesManager  = spanClassesManager;
-      _thread              = Thread(ParseWorkerMain);
+      _thread              = Thread(ParseWorkerMain, StackSize);
       _thread.Start();
     }
+
+    protected virtual StackSize : int { get { 0 } }
 
     SendAsyncResponse(msg : AsyncServerMessage) : void
     {
