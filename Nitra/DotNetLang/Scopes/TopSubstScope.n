@@ -28,7 +28,7 @@ namespace DotNet
 
       def typeParams    = typeInfo.TypeParameters;
       def typeParamsMap = Hashtable();
-      assert2(args.Length == typeParams.Length);
+      //assert2(args.Length == typeParams.Length);
       // TODO: Add support of parent type type parameters.
       foreach (tp in typeParams with i)
         typeParamsMap[tp.Id] = args[i];

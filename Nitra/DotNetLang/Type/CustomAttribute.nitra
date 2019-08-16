@@ -57,10 +57,12 @@ namespace DotNet
   ast CustomAttributeReference
   {
   stage 1:
-    in NameScope : Scope;
+    in  NameScope : Scope;
+    out Symbol    : DeclarationSymbol;
 
     Name.NameScopeFactory = ScopeFactories.Attribute;
     Name.Scope            = NameScope;
+    Symbol                = Name.Ref.Symbol;
 
     Target : CustomAttributeTarget?;
     Name   : QualifiedReference;
