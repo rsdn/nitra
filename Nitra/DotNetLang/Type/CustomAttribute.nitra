@@ -64,9 +64,10 @@ namespace DotNet
     Name.Scope            = NameScope;
     Symbol                = Name.Ref.Symbol;
 
-    Target : CustomAttributeTarget?;
-    Name   : QualifiedReference;
+    Target    : CustomAttributeTarget?;
+    Name      : QualifiedReference;
     // TODO: Map arguments
+    Arguments : ExprBase*;
   }
 
   abstract ast CustomAttributeTarget
