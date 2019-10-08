@@ -8,6 +8,7 @@ using Nitra.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -37,7 +38,8 @@ namespace Nitra.Logging
         def programDataPath  = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         _date                = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         def logDir           = Path.Combine(programDataPath, "RSDN", "Nitra");
-        def logPath          = Path.Combine(logDir, $"$name-$_date.html");
+        def procId           = Process.GetCurrentProcess().Id;
+        def logPath          = Path.Combine(logDir, $"$name-$_date-PID-$procId.html");
         if (Directory.Exists(logDir))
         {
           def files         = Directory.GetFiles(logDir, name + "-*.html");
