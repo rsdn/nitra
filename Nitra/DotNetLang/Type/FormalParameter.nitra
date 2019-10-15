@@ -15,6 +15,7 @@ namespace DotNet
       in Default    : DefaultValue;
       in DeclaredIn : DeclarationSymbol;
 
+      ToString  = AstUtils.FormalParameterToString(this);
       DeclaredInOpt = VSome(DeclaredIn);
 
       // TODO: add support of optional, custom modifiers, index and default value
@@ -36,7 +37,7 @@ namespace DotNet
     Symbol.Index         = IndexIn;
     ParametersOut        = Symbol :: ParametersIn;
     TypesOut             = Symbol.Type :: TypesIn;
-    Symbol.Default       = AstUtils.MakeDefault(Default);
+    Symbol.Default       = await AstUtils.MakeDefault(Default);
     Default.ExpectedType = TypeRef.Symbol;
     Default.ScopeIn      = Scope;
 

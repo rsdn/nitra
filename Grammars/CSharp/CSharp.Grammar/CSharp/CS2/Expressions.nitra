@@ -57,7 +57,7 @@
       | CharacterLiteral;
       | NullLiteral            = "null";
 
-      | QualifiedName; // simple-name || member-access
+      //| QualifiedName; // simple-name || member-access
       | Parenthesized          = "(" Expression ")"; // parenthesized-expression
       | Cast1                  = "(" !Expression AnyType ")" Expression;
       | Cast2                  = "(" &Expression AnyType ")" &CastPredicate Expression;
@@ -109,7 +109,7 @@
       | LogicalXor             = Expr1 = Expression sm "^"  sm Expr2 = Expression;
 
       precedence LogicalAND:
-      | LogicalAnd             = Expr1 = Expression sm "&"  sm Expr2 = Expression;
+      | LogicalAnd             = Expr1 = Expression sm !"&&" "&"  sm Expr2 = Expression;
 
       precedence Equality:
       | Equal                  = Expr1 = Expression sm "==" sm Expr2 = Expression;
@@ -149,9 +149,10 @@
       //ExplicitlyCast         = (T) Expression ;
 
       precedence Primary:
-      | MemberAccess1          =  Expr1 = Expression ^ Primary "." QualifiedName=QualifiedReferenceParts; // member-access
+      | SimpleName             = Reference // simple-name
+      | MemberAccess1          =  Expr1=Expression ^ Primary "." Reference; // member-access
       | MemberAccess2          =  PredefinedType "." QualifiedName=QualifiedReferenceParts; // member-access
-      | Invocation             =  !"var" LeftExpression=Expression ^ Primary "(" (Argument; ","sm)* ")";
+      | Invocation             =  LeftExpression=Expression ^ Primary "(" (Argument; ","sm)* ")";
       | IndexerAccess          =  Expression ^ Primary "[" (Argument; ","sm)* "]";
       | PostIncrement          =  Expression "++";
       | PostDecrement          =  Expression "--";

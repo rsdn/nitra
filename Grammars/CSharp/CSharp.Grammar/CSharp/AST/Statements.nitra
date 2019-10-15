@@ -38,26 +38,24 @@ namespace DotNet
     LocalVars : LocalVar*;
   }
 
-  declaration LocalVar
+  declaration LocalVar : TypedDeclaration
   {
     symbol
     {
       Kind  = "variable";
-
-      Scope = TypeRef.Scope;
-      Type = TypeRef.Symbol;
-
-      in TypeRef : Ref[TypeSymbol];
-      out Type : TypeSymbol;
     }
     in Scope : Scope;
+    in TypeRef : Ref[TypeSymbol];
 
     Type.Scope = Scope;
     Expression.ScopeIn = Scope;
+    //Expression.BuildInvocationScope = ???;
     // The type of a local variable can be shared between two declarations.
     // Use ResolveOrCopy() method to avoid multiple type resolutions.
-    Symbol.TypeRef = Type.Ref.ResolveOrCopy();
-    Expression.ExpectedType = Symbol.TypeRef.Symbol;
+    TypeRef = Type.Ref.ResolveOrCopy();
+    Expression.ExpectedType = TypeRef.Symbol;
+    Symbol.Scope = TypeRef.Scope;
+    Symbol.Type  = TypeRef.Symbol;
 
     Type : QualifiedReference;
     Expression : Expr;
@@ -71,6 +69,7 @@ namespace DotNet
   ast ExpressionStatement : Statement
   {
     Expr.ScopeIn = ScopeIn;
+    //Expr.BuildInvocationScope = ???;
     Expr.ExpectedType = Expr.Type; // В C# допускается игнорировать возвращаемые значения. После типизации такие случаи можно превратить в ворнинги.
 
     Expr : Expr;

@@ -145,7 +145,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _extToLanguages[".test"] = (language, dynamicExtensions);
       }
 
-      Router.SpanClassesManager.LosdLanguages(languages);
+      Router.SpanClassesManager.LoadLanguages(languages);
 
       assert2(_extToLanguages != null);
     }
@@ -271,7 +271,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _symbolsCache.Clear();
 
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
-          SemanticAnalysisQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
+          SemanticAnalysisQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, this, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
         else
           Log.Message("Project support not available!");

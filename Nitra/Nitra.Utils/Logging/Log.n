@@ -25,7 +25,8 @@ namespace Nitra.Logging
 
     public Canceled(e : OperationCanceledException) : void
     {
-      Message(e.Message, ConsoleColor.Yellow);
+      IgnoreParams();
+      //Message(e.Message, ConsoleColor.Yellow);
     }
 
     public Message(msg : string) : void

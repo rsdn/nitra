@@ -55,11 +55,6 @@ namespace CSharp
     NullLiteral    { }
   }
 
-  map syntax Expressions.Expression.QualifiedName -> DotNet.Expr
-  {
-    QualifiedName  { QualifiedName -> Key; }
-  }
-
   map syntax Expressions.Expression.Parenthesized -> DotNet.Expr
   {
     Parenthesized {
@@ -274,7 +269,7 @@ namespace CSharp
     Is
     {
       Expr1 -> Expr1;
-      //Expr2 -> TypeName; // FIXME
+      Expr2 -> TypeName; // FIXME
     }
   }
 
@@ -283,7 +278,7 @@ namespace CSharp
     As
     {
       Expr1 -> Expr1;
-      // Expr2 -> TypeName;
+      Expr2 -> TypeName;
     }
   }
 
@@ -357,12 +352,17 @@ namespace CSharp
     PreDecrement { Expr1 -> Expr1; }
   }
 
+  map syntax Expressions.Expression.SimpleName -> DotNet.Expr
+  {
+    SimpleName  { Reference -> Reference; }
+  }
+
   map syntax Expressions.Expression.MemberAccess1 -> DotNet.Expr
   {
     MemberAccess1
     {
       Expr1 -> Expr1;
-      // \ -> QualifiedName;
+      Reference -> Reference;
     }
   }
 
@@ -375,15 +375,6 @@ namespace CSharp
     }
   }
 
-  map syntax Expressions.Expression.Invocation -> DotNet.Expr
-  {
-    Invocation
-    {
-      LeftExpression -> Left;
-      Arguments.Item1 -> Arguments;
-    }
-  }
-
   map syntax Expressions.Argument -> Argument
   {
     // TODO: Доделать поддержку именованных аргументов и out/ref-аргументов.
@@ -392,12 +383,21 @@ namespace CSharp
     | Simple -> Expr.Argument    { Expression -> Expr; match (ArgumentNameOpt) { | Some(name) -> OptionalName.Some { name.Reference -> Name; } | None -> OptionalName.None {} } -> ParameterNameOpt; } //= ArgumentName?                  Expression;
   }
 
+  map syntax Expressions.Expression.Invocation -> DotNet.Expr
+  {
+    Invocation
+    {
+      LeftExpression  -> Left;
+      Arguments.Item1 -> Arguments;
+    }
+  }
+
   map syntax Expressions.Expression.IndexerAccess -> DotNet.Expr
   {
     IndexerAccess
     {
-      Expression -> Expr1;
-      // Arguments.Item1 -> Arguments;
+      Expression      -> Left;
+      Arguments.Item1 -> Arguments;
     }
   }
 
@@ -413,7 +413,10 @@ namespace CSharp
 
   map syntax AnonymousFunction.Expression.Lambda_SingleParam1 -> DotNet.Expr
   {
-    Lambda_SingleParam1 { }
+    Lambda
+    {
+      [LocalParameter.Implicit { Name -> Name; }] -> Parameters;
+    }
   }
 
   map syntax AnonymousFunction.Expression.Lambda_ExplicitParams1 -> DotNet.Expr

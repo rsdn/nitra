@@ -34,13 +34,10 @@ namespace DotNet
       | _ => base.Unwrap(t)
     }
 
-    protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    protected override SubtypeUnifyUnwraped(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
     {
       when (subtype.Equals(supertype))
         return true;
-      // TODO: оптимизировать рабту с object
-      //when (supertype : object == context.GetVoidType())
-      //  return true;
 
       when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, BaseTypeSet=baseTypeSet))
         return baseTypeSet.AncestorTypes.Contains(supertype);

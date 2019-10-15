@@ -20,15 +20,14 @@ namespace DotNet
       Instance = AstTypeUnifier();
     }
 
-    protected override IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    protected override SubtypeUnifyUnwraped(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
     {
-      //subtype.GetType().IsAssignableFrom
-      if (base.IsSubtypeUnwraped(subtype, supertype))
+      if (base.SubtypeUnifyUnwraped(subtype, supertype, ref updatedVariables))
         true
       else match (subtype, supertype)
       {
         | (subtypeList is ListAstTypeSymbol, supertypeList is ListAstTypeSymbol) =>
-          def result = IsSubtype(subtypeList.ElemType, supertypeList.ElemType);
+          def result = SubtypeUnify(subtypeList.ElemType, supertypeList.ElemType, ref updatedVariables);
           result
 
         | (extension is Nitra.Ast.ExtensionRuleSymbol, extensible is Nitra.Ast.TopExtensibleRuleSymbol)

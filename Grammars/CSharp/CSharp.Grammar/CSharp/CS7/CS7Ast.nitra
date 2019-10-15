@@ -24,9 +24,10 @@ namespace DotNet
 
   ast PatternMatching : Expr
   {
-    TypeName.Scope = ScopeOut;
-    Expr1.ScopeIn    = ScopeOut;
-    Type = context.GetVoidType();
+    TypeName.Scope    = ScopeOut;
+    Expr1.ScopeIn     = ScopeOut;
+    Type              = context.GetVoidType();
+    //Expr1.BuildInvocationScope = ???;
   stage 2:
     out TypeNameRef : Ref[TypeSymbol] = TypeName.Ref.Resolve();
 

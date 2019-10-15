@@ -30,5 +30,6 @@ namespace Nitra.ClientServer.Server
   [Record]
   class ParseWorker : Worker
   {
+    protected override StackSize : int { get { IntPtr.Size * 1024 * 1024 * 2 } }
   }
 }

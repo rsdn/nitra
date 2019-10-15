@@ -22,7 +22,7 @@ namespace Nitra.ClientServer.Server
   }
 
   [Record]
-  public variant ParserMessage : Message
+  internal variant ParserMessage : Message
   {
     | ParseFile                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseSession : ParseSession; source : SourceSnapshot; } // CancellationToken in ParseSession
     | CreateAst                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; isActive : bool; }
@@ -34,6 +34,7 @@ namespace Nitra.ClientServer.Server
         solutionId            : SolutionId;
         projectId             : ProjectId;
         cancellationToken     : CancellationToken;
+        project               : Nitra.ClientServer.Server.ProjectSystem.Project; // TODO: Надо заменить на неизменяемый вариант
         projectSupport        : IProjectSupport;
         files                 : ImmutableArray[FileEvalPropertiesData];
         data                  : object;

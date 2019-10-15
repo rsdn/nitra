@@ -31,6 +31,7 @@ namespace DotNet
 
   abstract ast CustomAttributeExpression
   {
+    | Null
     | Bool   { out Literal : bool   = default(bool  ); }
     | Byte   { out Literal : byte   = default(byte  ); }
     | Char   { out Literal : char   = default(char  ); }
@@ -56,14 +57,17 @@ namespace DotNet
   ast CustomAttributeReference
   {
   stage 1:
-    in NameScope : Scope;
+    in  NameScope : Scope;
+    out Symbol    : DeclarationSymbol;
 
     Name.NameScopeFactory = ScopeFactories.Attribute;
     Name.Scope            = NameScope;
+    Symbol                = Name.Ref.Symbol;
 
-    Target : CustomAttributeTarget?;
-    Name   : QualifiedReference;
+    Target    : CustomAttributeTarget?;
+    Name      : QualifiedReference;
     // TODO: Map arguments
+    Arguments : ExprBase*;
   }
 
   abstract ast CustomAttributeTarget

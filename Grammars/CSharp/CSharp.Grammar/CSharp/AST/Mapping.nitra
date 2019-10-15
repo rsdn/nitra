@@ -697,6 +697,11 @@ namespace CSharp
   {
     targetOpt     -> Target;
     QualifiedName -> Name;
+    match (AttributeArgumentsOpt)
+    {
+      | Some(args) -> args.Arguments.Item1
+      | None -> []
+    } -> Arguments;
   }
 
   map syntax Attributes.AttributeList(targetOpt : CustomAttributeTarget?) -> CustomAttributeReference*

@@ -154,7 +154,9 @@ namespace DotNet
 
     public HasDefault(this formalParameterSymbol : FormalParameterSymbol) : bool
     {
-      match (formalParameterSymbol.Default)
+      if (!formalParameterSymbol.IsDefaultEvaluated)
+        false
+      else match (formalParameterSymbol.Default)
       {
         | DefaultValue.Overflow | DefaultValue.Error | DefaultValue.None => false
         | _ => true
@@ -247,7 +249,77 @@ namespace DotNet
 
             unless (parameter.IsTypeEvaluated)
               return false;
-            unless (hasImplicitConversions(argumentType, parameter.Type))
+            if (hasImplicitConversions(argumentType, parameter.Type))
+            {
+              // Надо клонировать выражение или откатывать все измененные переменные.
+              // Но при втором подходе, в случае успешной типизации двух вариантов, надо как-то сравнивать их результат.
+              // Если откатывать результаты типизации в рамках предыдущей перегрузки, то сравнивать будет нечего.
+              // Поэтому нам нужна функциональность, позволяющая получать некий слепок типизации, состоящий из
+              // Поддерева AST и переменных измененных в рамках его типизации.
+              // Предположим мы типизируем две перегрузки
+              // Foo<T>(this IEnumerable<T>, Func<T, int> func) и
+              // Foo<T>(this IEnumerable<T>, Func<T, double> func)
+              // class Order { public int ItemCount; }
+              // Co стейтментами:
+              // List<Order> list;
+              // var result = list.Foo(x => x.ItemCount);
+              // Обе перегрузки подойдут и дадут одинаковый результат x => x.ItemCount с типом Order -> int
+              // Но вторая перегрузка потребует приведение типа от Order -> int к Order -> double.
+              // На следующей стадии (выбора лучшей перегрузки) вторая перегрузка будет отброшена, так как она потребует
+              // неявного приведения типов. Однако до второй стадии мы не должны сохранять выведенные типы
+              // Итого алгоритм (проверки применимости текущей перегрузки метода) должна выглядеть следующим образом:
+              // Для каждой перегрузки метода:
+              // 1. Создаем объект транзакции типизации, который будет хранить список ЗС (а, следовательно, и узлах AST) изменённых
+              // в процессе типизации каждой из перегрузок.
+              // 2. Клонируем AST всех аргументов, которые заданы лямбдами.
+              // 3. Берем типы каждого из формальных параметров перегрузки и присваиваем их в ЗС ExpectedType соответствующих AST аргументов.
+              // 4. В цикле, повышая стадии типизации на каждой итерации пока в объектах транзакций (из п.1) не перестанут
+              //    появляться новые переменные типов, производим типизацию каждого из АСТ аргументов.
+              // 5. Проверяем вычислялись ли значение ЗС Type каждого из аргументов. Если вычислилось, проверяем совместимы ли
+              //    ЗС ExpectedType и Type. Так же проверяем требуется ли подстановка неявного приведения типов.
+              // Результатом данного алгоритма должен быть список перегрузок, успешно прошедших типизацию (в результате которой
+              // вывелись типы всех аргументов, и они совместимы с типами формальных параметров.
+              // На следующем этапе должны быть выбрана лучшая перегрузка.
+              // В случае, если все перегрузки имеют АСТ аргументов с не выведенными типами, типизацию нужно отложить для следующего прохода.
+              // При этом промежуточные результаты (клонированные деревья и объекты транзакций типизации нужно сохранить).
+              // Отдельный вопрос, что делать если некоторые из перегрузок смогли вычислить все типы, а некоторые - нет.
+              // Скорее всего, лучше отложить такие перегрузки для следующего прохода, в котором могут появляться дополнительные данные.
+
+              // Пример на базе методов-расширений Any:
+              // public static bool Any<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate);
+              // public static bool Any<TSource>(this IEnumerable<TSource> source);
+              // 
+              // var list = new List<int>() { 1, 2, 3 };
+              // // C#-варианты:
+              // bool func(int x) => x > 0;
+              // Func<int, bool> func = x => x > 0;
+              // // Расширенные варианты, которы длжен поддерживать наш типизатор.
+              // var func = x => x > 0;
+              // var func(var x) => x > 0;
+              // var func(x) => x > 0;
+              // func func(x) => x > 0;
+              // 
+              // Console.WriteLine(list.Any(func));
+              //
+              //
+              //when (arg.Expr is Expr.Lambda as e)
+              //{
+              //  try
+              //  {
+              //    unless (TypeUnifier.Instance.Require(argumentType, parameter.Type))
+              //      return false;
+              //    e.EvalProperties(context);
+              //    // Проверяем есть ли ошибки в "e"?
+              //  }
+              //  finally
+              //  {
+              //    // Сбрасываем argumentType и все зависимые свойства выражения (e).
+              //    e.ResetProperties();
+              //    Rollback();
+              //  }
+              //}
+            }
+            else
               return false;
           }
 
@@ -490,17 +562,6 @@ namespace DotNet
     //  }
     //}
 
-    public ResolveLambdaParameterType(this _parm : LambdaParameter, typeRef : ValueOption[Ref[TypeSymbol]], context : DependentPropertyEvalContext) : TypeSymbol
-    {
-      if (typeRef.HasValue && typeRef.Value.IsSymbolEvaluated) {
-        match (typeRef.Value.Symbol) {
-          | alias is TypeAliasSymbol => alias.Replacement.Symbol :> TypeSymbol
-          | x => x
-        }
-      } else {
-        context.GetObjectType();
-      }
-    }
     /*
     public ArrayRefGetType(this expr : Expr, leftType : TypeSymbol, indexType : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
     {

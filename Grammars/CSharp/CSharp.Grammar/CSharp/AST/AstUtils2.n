@@ -21,6 +21,11 @@ namespace DotNet
 {
   public module Coverters
   {
+    public MakeDefaultParametersOpt(ast : ExprBase) : ValueOption[DefaultValue]
+    {
+      VSome(MakeDefaultParameters(ast))
+    }
+    
     public MakeDefaultParameters(ast : ExprBase) : DefaultValue
     {
       | _ is Expr.Nop                     => DefaultValue.None()
@@ -28,7 +33,7 @@ namespace DotNet
       | lit is DotNet.Expr.BooleanLiteral => DefaultValue.Bool(lit.Value.ValueOrDefault)
       | lit is DotNet.IntegerLiteral when lit.Value.Value.Overflow => DefaultValue.Overflow()
       | lit is DotNet.IntegerLiteral with x = lit.Value.Value => DefaultValue.Number(x.Value, x.IsUnsigned, x.IsLong)
-      | lit is DotNet.Expr.NullLiteral    => DefaultValue.Null()
+      | _   is DotNet.Expr.NullLiteral    => DefaultValue.Null()
       | lit is DotNet.RealLiteral =>
         match (lit.Value.Value)
         {
@@ -73,7 +78,7 @@ namespace DotNet
         | x is Member.MethodSymbol   => x.ReturnType
         | x is Member.FieldSymbol    => x.Type
         | x is Member.ConstantSymbol => x.Type
-        | x is LambdaParameterSymbol => x.Type
+        | x is LocalParameterSymbol  => x.Type
         | x is EnumMemberSymbol      => x.DeclaredIn
         | TypeSymbol                 => GetPlatformType(context).Type;
         | _                          => context.CreateFreeTypeVar()
@@ -90,13 +95,8 @@ namespace DotNet
         | 1 =>
           match (memberCandidats[0])
           {
-            | x is Member.PropertySymbol when x.IsTypeEvaluated       => x.Type
-            | x is Member.MethodSymbol   when x.IsTypeEvaluated       => x.Type
-            | x is Member.FieldSymbol    when x.IsTypeEvaluated       => x.Type
-            | x is Member.ConstantSymbol when x.IsTypeEvaluated       => x.Type
-            | x is LambdaParameterSymbol when x.IsTypeEvaluated       => x.Type
-            | x is LocalVarSymbol        when x.IsTypeEvaluated       => x.Type
-            | x is EnumMemberSymbol      when x.IsDeclaredInEvaluated => x.DeclaredIn
+            | x is TypedDeclarationSymbol when x.IsTypeEvaluated       => x.Type
+            | x is EnumMemberSymbol       when x.IsDeclaredInEvaluated => x.DeclaredIn
             | _                                                       => context.GetVoidType()
           }
         | _ =>
@@ -130,6 +130,23 @@ namespace DotNet
     }
 
     public CreateFreeTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
+    
+    public CreateFreeTypeVars(this _context : DependentPropertyEvalContext, count : int) : ImmutableArray[TypeSymbol]
+    {
+      match (count)
+      {
+        | 0 => ImmutableArray.Empty
+        | 1 => ImmutableArray.Create(_context.CreateNullTypeVar())
+        | 2 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | 3 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | 4 => ImmutableArray.Create(_context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar(), _context.CreateNullTypeVar())
+        | _ =>
+          def builder = ImmutableArray.CreateBuilder(count);
+          for (mutable i = 0; i < count; i++)
+            builder.Add(_context.CreateNullTypeVar());
+          builder.MoveToImmutable()
+      }
+    }
 
     public CreateNullTypeVar(this _context : DependentPropertyEvalContext) : TypeSymbol
     {
@@ -224,6 +241,11 @@ namespace DotNet
       GetPlatformType(context).Void
     }
 
+    public GetTypeType(this context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      GetPlatformType(context).Type
+    }
+
     //public GetBindingBaseType(this context : DependentPropertyEvalContext) : TypeSymbol
     //{
     //  (context :> AmmyDependentPropertyEvalContext).Types.BindingBase;
@@ -290,6 +312,18 @@ namespace DotNet
         | x when x.FullName == float => [double].Any(s => s == to.FullName)
         | _ => false
       }
+    }
+
+    public mutable ExtensionScopeFactory : Scope -> ScopeFactory = CreateExtensionScopeFactory;
+
+    public CreateExtensionScopeFactory(_scope : Scope) : ScopeFactory
+    {
+      def self(scope : Scope)
+      {
+        scope
+      }
+
+      self
     }
   } // module
 } // namespace

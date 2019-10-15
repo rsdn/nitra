@@ -24,24 +24,6 @@ namespace Nitra.BackEnd.Cci
 {
   public class TypeMemberScope : TableScope
   {
-#if MEASUREMENT
-    private static mutable _materializeMembersTime : TimeSpan;
-    private static mutable _materializeMemberCount : int;
-    private static mutable _loadMembersTime        : TimeSpan;
-    private static mutable _loadMemberTypeCount    : int;
-    private static _timer                          : Stopwatch = Stopwatch.StartNew();
-
-    public static MaterializeMembersTime : TimeSpan { get { _materializeMembersTime } }
-    public static LoadMembersTime        : TimeSpan { get { _loadMembersTime } }
-    public static MaterializeMemberCount : int { get { _materializeMemberCount } }
-    public static LoadMemberTypeCount    : int { get { _loadMemberTypeCount } }
-    public static ResetTime() : void
-    {
-      _materializeMembersTime = _loadMembersTime     <- default(TimeSpan);
-      _materializeMemberCount = _loadMemberTypeCount <- 0;
-    }
-#endif
-
     _cciBackEnd               : CciBackEnd;
     mutable _isLoaded         : bool;
 #if LAZY
@@ -69,9 +51,9 @@ namespace Nitra.BackEnd.Cci
 #endif
 
       def context = DependentPropertyEvalContext(null);
-      def owner = Owner :> ContainerSymbol;
-      def type = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
-      def props = List();
+      def owner   = Owner :> ContainerSymbol;
+      def type    = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
+      def props   = List();
       def methods = Dictionary();
 
       def getTypeScope(type : TypeSymbol)
@@ -81,14 +63,7 @@ namespace Nitra.BackEnd.Cci
         | _ => type.Scope
       }
 
-#if MEASUREMENT
-      _timer.Restart();
-#endif
       def members : array[ITypeDefinitionMember] = type.Members.ToArray();
-#if MEASUREMENT
-      _loadMemberTypeCount++;
-      _materializeMemberCount += members.Length;
-#endif
 #if LAZY
       foreach (m in members)
       {
@@ -98,10 +73,6 @@ namespace Nitra.BackEnd.Cci
           backendSymbols = [];
         _backundNameTable[id] = m :: backendSymbols;
       }
-#endif
-#if MEASUREMENT
-      _materializeMembersTime += _timer.Elapsed;
-      _timer.Restart();
 #endif
 
       foreach (m in members)
@@ -130,14 +101,11 @@ namespace Nitra.BackEnd.Cci
           }
       }
 
-      foreach((propDef, propSym) in props) {
+      foreach((propDef, propSym) in props)
+      {
         propSym.Getter = if (propDef.Getter != null) Some(methods[propDef.Getter.Name.UniqueKey]) else None();
         propSym.Setter = if (propDef.Setter != null) Some(methods[propDef.Setter.Name.UniqueKey]) else None();
       }
-
-#if MEASUREMENT
-      _loadMembersTime += _timer.Elapsed;
-#endif
     }
 
     public override GetAllSymbols() : System.Collections.Generic.IEnumerable[Nitra.Declarations.DeclarationSymbol]

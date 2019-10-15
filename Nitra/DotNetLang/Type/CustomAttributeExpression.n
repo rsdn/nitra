@@ -13,6 +13,7 @@ namespace DotNet
 {
   public variant CustomAttributeExpression
   {
+    | Null
     | Bool   { Literal : bool; }
     | Byte   { Literal : byte; }
     | Char   { Literal : char; }
@@ -37,6 +38,7 @@ namespace DotNet
     {
       match (this)
       {
+        | Null      => "<null>"
         | Bool  (v) => v.ToString()
         | Byte  (v) => v.ToString()
         | Char  (v) => v.ToString()

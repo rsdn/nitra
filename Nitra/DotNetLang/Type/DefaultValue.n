@@ -9,7 +9,7 @@
     | Bool      { Value : bool; }
     | String    { Value : string; }
     | Number    { Value : ulong; IsUnsigned : bool; IsLong : bool; }
-    | Reference { name  : string; }
+    | Custom    { Value : object; }
     | Single    { Value : float; }   // f
     | Double    { Value : double; }  // d
     | Decimal   { Value : decimal; } // m
