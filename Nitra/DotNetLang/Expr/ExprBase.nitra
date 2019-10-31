@@ -7,7 +7,7 @@ namespace DotNet
   abstract ast ExprBase
   {
     in    Options              : ExprOptions            = ExprOptions.None;
-  stage 2                      :
+  stage 2:
     in    ExpectedType         : TypeSymbol;
     in    Used                 : bool                   = false;
     in    BuildInvocationScope : InvocationScopeBuilder;
