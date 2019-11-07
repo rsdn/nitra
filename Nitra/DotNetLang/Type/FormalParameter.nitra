@@ -28,18 +28,21 @@ namespace DotNet
     in    DeclaredIn : DeclarationSymbol;
   stage 1:
     inout Types      : list[TypeSymbol];
+  stage 2:
+    in BuildInvocationScope : InvocationScopeBuilder;
 
-    Symbol.DeclaredIn    = DeclaredIn;
-    IndexOut             = IndexIn + 1u;
-    Type.Scope           = Scope;
-    TypeRef              = Type.Ref.Resolve();
-    Symbol.Modifier      = Modifier.ValueOrDefault;
-    Symbol.Index         = IndexIn;
-    ParametersOut        = Symbol :: ParametersIn;
-    TypesOut             = Symbol.Type :: TypesIn;
-    Symbol.Default       = await AstUtils.MakeDefault(Default);
-    Default.ExpectedType = TypeRef.Symbol;
-    Default.ScopeIn      = Scope;
+    Symbol.DeclaredIn            = DeclaredIn;
+    IndexOut                     = IndexIn + 1u;
+    Type.Scope                   = Scope;
+    TypeRef                      = Type.Ref.Resolve();
+    Symbol.Modifier              = Modifier.ValueOrDefault;
+    Symbol.Index                 = IndexIn;
+    ParametersOut                = Symbol :: ParametersIn;
+    TypesOut                     = Symbol.Type :: TypesIn;
+    Symbol.Default               = await AstUtils.MakeDefault(Default);
+    Default.ExpectedType         = TypeRef.Symbol;
+    Default.ScopeIn              = Scope;
+    Default.BuildInvocationScope = BuildInvocationScope;
 
     Type     : QualifiedReference;
     Modifier : ParameterModifier;

@@ -211,7 +211,7 @@ namespace Nitra.ClientServer.Server.Lsp
       def version  = FileVersion(document.Version ?? -1);
       def message  =
         if (changes.Length == 1)
-          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes.Last().Range.End), version))
+          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
         else
           ClientMessage.FileChangedBatch(fileId, version, Array.ConvertAll(changes, Convert).ToImmutableArray(), VersionedPos.Invalid);
 
