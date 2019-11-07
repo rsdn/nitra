@@ -25,7 +25,7 @@ namespace DotNet
     {
       TypeHintHelper.AddTypeHintHandler(MakeHintForType);
     }
-    
+
     public GetNestedSymbol(ns : NamespaceSymbol) : Seq[DeclarationSymbol]
     {
       foreach (symbols in ns.MemberTable.Symbols)
@@ -78,7 +78,7 @@ namespace DotNet
             _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.Type);
           else match (x.IsBaseTypeConstraintEvaluated, x.IsDerivedTypeConstraintEvaluated)
           {
-            | (false, false) => builder.Append("<keyword>unbound</keyword>")
+            | (false, false) => _ = builder.Append("<keyword>unbound</keyword>");
             | (true,  false) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append("+");
             | (false,  true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.DerivedTypeConstraint).Append("-");
             | (true,   true) => _ = TypeHintHelper.MakeHintForType(builder, symbolCache, x.BaseTypeConstraint).Append(" TILL ").MakeHintForType(symbolCache, x.DerivedTypeConstraint);
