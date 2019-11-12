@@ -12,12 +12,12 @@ namespace Nitra.Logging
   public partial module Log
   {
     mutable _logger : LoggerWorker;
-    
+
     public Init(name : string) : void
     {
       _logger = LoggerWorker(name);
     }
-    
+
     public Exception(e : Exception) : void
     {
       Message("Exception: " + e, ConsoleColor.Red);
@@ -53,7 +53,7 @@ namespace Nitra.Logging
     {
       _logger.Log(msg, color, lineBreak=false);
     }
-    
+
     public Flush() : void
     {
       _logger.Flush();
