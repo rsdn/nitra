@@ -192,6 +192,9 @@ namespace Nitra.VisualStudio
       ThreadHelper.ThrowIfNotOnUIThread();
 
       string fullPath = projectItem.FileNames[1];
+      if (fullPath == null)
+        return;
+
       AddFile(projectItem, fullPath);
     }
 
