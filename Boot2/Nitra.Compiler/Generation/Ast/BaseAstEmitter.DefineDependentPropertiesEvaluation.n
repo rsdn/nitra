@@ -163,7 +163,7 @@ namespace Nitra.Compiler
         {
           | FunBody.Typed(TExpr.Block(_, TExpr.Literal(Literal.Void))) => PropertyDependencyGraph(symbol)
           | FunBody.Typed(TExpr.Block(_, bodyExpr)) =>
-            def expr = ValidateEvalFieldsCode(bodyExpr);
+            def expr = ValidateEvalFieldsCode(typer, bodyExpr);
             MakeLocalDependencyGraph(evalMethod.DeclaringType, symbol, expr)
 
           | _ =>
@@ -196,7 +196,7 @@ namespace Nitra.Compiler
       Message.FatalError(expr.Location, "Delayed typing detected: " + expr)
     }
 
-    private static ValidateEvalFieldsCode(expr : TExpr) : TExpr
+    private static ValidateEvalFieldsCode(typer : Typer, expr : TExpr) : TExpr
     {
       def walker = ExprWalker();
       def checkInvalidExpre(info : ExprWalkInfo) : void
@@ -219,7 +219,7 @@ namespace Nitra.Compiler
       def removeDelayed(expr : TExpr) : TExpr
       {
         | PropertyMember as e =>
-          def newObj = e.obj.Walk(removeDelayed);
+          def newObj = e.obj.Walk(typer.Walker, removeDelayed);
           if (newObj : object != e.obj)
           {
             def res = TExpr.PropertyMember(e.Type, newObj, e.prop);
@@ -231,8 +231,8 @@ namespace Nitra.Compiler
 
         | TExpr.StaticPropertyRef as e => e
         | TExpr.Call(TExpr.Delayed(Typer.DelayedTyping(DtKind = Typer.DelayedTyping.Kind.Resolved as resolved)), _, _) as originalCall =>
-          def func  = resolved.expr.Walk(removeDelayed);
-          def parms = (resolved.parms ?? originalCall.parms).Map(p => Parm(p.kind, p.expr.Walk(removeDelayed), p.name, p.required_type));
+          def func  = resolved.expr.Walk(typer.Walker, removeDelayed);
+          def parms = (resolved.parms ?? originalCall.parms).Map(p => Parm(p.kind, p.expr.Walk(typer.Walker, removeDelayed), p.name, p.required_type));
           TExpr.Call(originalCall.Location, originalCall.Type, func, parms, originalCall.is_tail)
 
         | TExpr.Delayed as d when d.susp.IsResolved => d.susp.ResolutionResult
@@ -240,7 +240,7 @@ namespace Nitra.Compiler
       }
 
       //assert2(false);
-      expr.Walk(removeDelayed)
+      expr.Walk(typer.Walker, removeDelayed)
     }
 
     private MakeFullDepencyGraph(symbol : PropertyContainerSymbol, graph : PropertyDependencyGraph) : void
@@ -480,11 +480,11 @@ namespace Nitra.Compiler
         {
           | TExpr.Delayed as e when e.susp.IsResolved => addAssigns(e.susp.ResolutionResult)
           | TExpr.Delayed as e => ErrorDelayedTypingDetected(e)
-          | TExpr.DebugInfo as e => addAssigns(e.expr)
           | TExpr.Sequence as e => addAssigns(e.e1); addAssigns(e.e2);
           | TExpr.Assign(target, TExpr.MacroEnvelope(_, m, source, rawSourceExpr)) as e when IsPExprAnchor(m) => addKey(e.Location, target, source, rawSourceExpr);
           | TExpr.MacroEnvelope(_, m, TExpr.Call, _)
           | TExpr.MacroEnvelope(_, m, TExpr.Match, _) when IsPExprAnchor(m) => ()
+          | TExpr.Literal(Literal.Void) => ()
           | e => ErrorUnexpectedExpr(e)
         }
       }
@@ -527,11 +527,11 @@ namespace Nitra.Compiler
         {
           | TExpr.Delayed as e when e.susp.IsResolved => calcDependents(e.susp.ResolutionResult)
           | TExpr.Delayed as e => ErrorDelayedTypingDetected(e)
-          | TExpr.DebugInfo as e => calcDependents(e.expr)
           | TExpr.Sequence as e => calcDependents(e.e1); calcDependents(e.e2);
           | TExpr.Assign(target, TExpr.MacroEnvelope(_, m, source, _)) when IsPExprAnchor(m) => processAssign(target, source);
           | TExpr.MacroEnvelope(_, m, callExpr, rawExpr) when IsPExprAnchor(m) => processCall(callExpr, rawExpr, []);
           | TExpr.MacroEnvelope(_, _, e, _)
+          | TExpr.Literal(Literal.Void) => ()
           | e => ErrorUnexpectedExpr(e)
         }
       }
@@ -549,16 +549,9 @@ namespace Nitra.Compiler
 
     private static TryUnwrapAwaitOptionValue(e : TExpr) : ValueOption[TExpr * PExpr]
     {
-      | TExpr.MacroEnvelope(_, m, result, <[ $expr.Value ]>) when m.GetName() == "AwaitOptionValue" && m.GetNamespace() == "Nitra" =>
-        def tryUnwrapResult(_ : TExpr)
-        {
-          | TExpr.PropertyMember(obj, _) => VSome((obj, expr))
-          | TExpr.DebugInfo(e, _) => tryUnwrapResult(e)
-          | _ => VNone()
-        }
-        tryUnwrapResult(result)
+      | TExpr.MacroEnvelope(_, m, TExpr.PropertyMember as property, <[ $expr.Value ]>) when m.GetName() == "AwaitOptionValue" && m.GetNamespace() == "Nitra" =>
+          VSome((property.obj, expr))
 
-      | TExpr.DebugInfo(e, _) => TryUnwrapAwaitOptionValue(e)
       | _ => VNone()
     }
 

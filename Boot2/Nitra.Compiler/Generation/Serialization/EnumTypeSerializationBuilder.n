@@ -14,12 +14,12 @@ namespace Nitra.Serialization
 {
   public sealed class EnumTypeSerializationBuilder : PrimitiveTypeSerializationBuilder
   {
-    public UnderlyingType : TypeVar { get; }
+    public UnderlyingType : FixedType { get; }
 
-    public this(compiler : SerializationCompiler, type : FixedType, underlyingTypeInfo : TypeInfo)
+    public this(compiler : SerializationCompiler, type : FixedType, underlyingType : FixedType)
     {
-      base(compiler, type, underlyingTypeInfo);
-      UnderlyingType = underlyingTypeInfo.GetMemType();
+      base(compiler, type, underlyingType.TypeInfo);
+      UnderlyingType = underlyingType;
     }
 
     public override Write(obj : PExpr) : PExpr

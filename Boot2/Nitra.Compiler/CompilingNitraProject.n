@@ -17,6 +17,7 @@ using System.Text;
 using SCG  = System.Collections.Generic;
 using Path = System.IO.Path;
 using IOFile = System.IO.File;
+using NC = Nemerle.Compiler;
 
 namespace Nitra.Compiler
 {
@@ -47,7 +48,7 @@ namespace Nitra.Compiler
       }
     }
 
-    public override Files : Seq[File] { get { _sourceFiles } }
+    public override Files : Seq[Nitra.ProjectSystem.File] { get { _sourceFiles } }
 
     public override Init(referencedAssemblies : Seq[AssemblyName]) : void
     {
@@ -124,10 +125,10 @@ namespace Nitra.Compiler
       catch { | _e => assert2(false); Nitra.Location(source, 0) }
     }
 
-    public override CreateNemerleFile(source : ISource) : NemerleFile
+    public override CreateNemerleFile(source : NC.SourceSnapshot) : NemerleFile
     {
       def file = InMemoryNemerleFile(this, source);
-      _allFiles[file.Index] = file;
+      _allFiles[source.FileIndex] = file;
       _sourceFiles.Add(file);
 
       mutable processingCount = 0;
@@ -139,7 +140,7 @@ namespace Nitra.Compiler
           file.SourceChanged(source);
         catch
         {
-          | e => Message.Error(Nemerle.Compiler.Location(file.Index, 1, 1), e.ToString());
+          | e => Message.Error(Nemerle.Compiler.Location(source, 1, 1), e.ToString());
         }
 
         when (processingCount > 1 && Manager.IsIntelliSenseMode)

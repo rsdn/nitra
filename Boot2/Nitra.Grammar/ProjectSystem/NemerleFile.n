@@ -10,48 +10,40 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
+using NC = Nemerle.Compiler;
+
 namespace Nitra.ProjectSystem
 {
   public abstract class NemerleFile : ConcreteFile
   {
-    protected this(project : Project, index : int)
+    protected this(project : Project, file : NC.File)
     {
       base(null);
-      Project = project;
-      Index   = index;
+      Project      = project;
+      InternalFile = file;
     }
 
-    public override Project  : Project  { get; }
-    public override FullName : string
-    {
-      get
-      {
-        def filePath = Location.GetFileName(Index);
-        if (Path.IsPathRooted(filePath))
-          filePath
-        else
-          Path.Combine(Project.ProjectDir, filePath)
-      }
-    }
-    public override Language : Language { get { NitraLang.Instance } }
-    public          Index    : int      { get; }
-    public override Id       : int      { get { Index } }
+    public          InternalFile : NC.File  { get; }
+    public override Project      : Project  { get; }
+    public override FullName     : string   { get { InternalFile.FullName } }
+    public override Language     : Language { get { NitraLang.Instance } }
+    public override Id           : int      { get { InternalFile.Id } }
   }
 
   public class InMemoryNemerleFile : NemerleFile
   {
-    public this(project : Project, source : ISource)
+    public this(project : Project, source : NC.SourceSnapshot)
     {
-      base(project, source.FileIndex);
+      base(project, source.File);
       _source = source;
     }
 
-    private mutable _source : ISource;
+    private mutable _source : NC.SourceSnapshot;
 
-    public override GetSource() : SourceSnapshot  { SourceSnapshot(_source.GetText(), this) }
+    public override GetSource() : Nitra.SourceSnapshot  { Nitra.SourceSnapshot(_source.GetText(), this) }
     public override Length      : int             { get { _source.GetText().Length } }
 
-    public SourceChanged(newSource : ISource) : void
+    public SourceChanged(newSource : NC.SourceSnapshot) : void
     {
       _source = newSource;
 
@@ -62,9 +54,9 @@ namespace Nitra.ProjectSystem
 
   public class FakeNemerleFile : NemerleFile
   {
-    public this (project : Project, index : int)
+    public this (project : Project, name : string)
     {
-      base(project, index);
+      base(project, NC.FileUtils.GetFile(name));
       def fullName     = FullName;
       def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
       if (!isExecutable && NitraUtils.IsFileExists(fullName))

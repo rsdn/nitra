@@ -57,6 +57,18 @@
     <NccFile Include="$(_Nemerle)\Nemerle.MSBuild.targets">
       <CopyPdb>False</CopyPdb>
     </NccFile>
+	<NccFile Include="$(_Nemerle)\dnlib.dll">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+	<NccFile Include="$(_Nemerle)\System*.dll">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+	<NccFile Include="$(_Nemerle)\Microsoft*.dll">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+	<NccFile Include="$(_Nemerle)\netstandard.dll">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
   </ItemGroup>
 
   <Target Name="BuildBoot">

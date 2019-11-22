@@ -18,9 +18,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Linq;
-
 using System.Threading;
+
 using NRB = Nitra.Declarations;
+using SR = System.Reflection;
 
 [assembly: ProjectSupport("Nitra DotNet", typeof(DotNet.CompilationUnit))]
 
@@ -190,13 +191,13 @@ namespace DotNet
         def compilerDir     = IO.Path.GetDirectoryName(localPath);
         this.Options.DoNotLoadMacros = true;
         unless (string.IsNullOrEmpty(macroLibPath))
-          this.Options.MacrosToLoad ::= macroLibPath;
-        this.Options.LibraryPaths ::= compilerDir;
+          this.Options.MacrosToLoad.Add(macroLibPath);
+        this.Options.LibraryPaths.Add(compilerDir);
         foreach (lib in libs)
         {
-          | FullNameLibReference     => this.Options.ReferencedLibraries ::= lib.ToString();
-          | FileLibReference as file => this.Options.ReferencedLibraries ::= IO.Path.GetFullPath(IO.Path.Combine(project.ProjectDir, file.Path));
-          | ProjectReference as prj  => this.Options.ReferencedLibraries ::= prj.Path;
+          | FullNameLibReference     => this.Options.References.Add(lib.ToString());
+          | FileLibReference as file => this.Options.References.Add(IO.Path.GetFullPath(IO.Path.Combine(project.ProjectDir, file.Path)));
+          | ProjectReference as prj  => this.Options.References.Add(prj.Path);
           | _ => assert2(false, "Not supported LibReference");
         }
         InitCompiler ();
@@ -204,7 +205,7 @@ namespace DotNet
       }
     }
 
-    private static OnSymbolAssemblyResolve(_ : Project, fullName : System.Reflection.AssemblyName) : System.Reflection.Assembly
+    private static OnSymbolAssemblyResolve(_ : Project, fullName : SR.AssemblyName) : SR.Assembly
     {
       def name = fullName.Name;
 
@@ -222,22 +223,26 @@ namespace DotNet
 
     private static LoadNitraMetadata(cancellationToken : CancellationToken, project : Project, manager : ManagerClass, rootNamespace : NamespaceSymbol) : void
     {
+	  def getAssemblyName(r) 
+	  {
+		SR.AssemblyName(r.FullName)
+	  }
+	
       when (manager is StubCompiler)
-        project.Init(manager.ReferencedAssemblies.Select(a => a.Assembly.GetName()));
+        project.Init(manager.References.Select(getAssemblyName));
 
       def assemblyWithMetadata = Dictionary();
-      foreach (reference in manager.ReferencedAssemblies)
+      foreach (reference in manager.References)
       {
         when (cancellationToken.IsCancellationRequested)
           return;
 
-        def assembly       = reference.Assembly;
-        def metadataStream = assembly.GetManifestResourceStream(NitraMetadataStreamName);
+        def metadataStream = reference.TryGetResourceStream(NitraMetadataStreamName);
         when (metadataStream != null)
         {
-          def assemblyId = project.GetAssemblyId(assembly.GetName());
-          def file       = AssemblyFile(project, assembly.CodeBase);
-          assemblyWithMetadata.Add(assemblyId, (assembly, metadataStream, file));
+          def assemblyId = project.GetAssemblyId(getAssemblyName(reference));
+          def file       = AssemblyFile(project, reference.Location.File);
+          assemblyWithMetadata.Add(assemblyId, (reference, metadataStream, file));
         }
       }
 
@@ -249,9 +254,9 @@ namespace DotNet
           mutable data;
           when (assemblyWithMetadata.TryGetValue(assemblyId, out data))
           {
-            def (assembly, metadataStream, file) = data;
-            foreach (dependency in assembly.GetReferencedAssemblies())
-              visitAssembly(project.GetAssemblyId(dependency));
+            def (reference, metadataStream, file) = data;
+            foreach (dependency in reference.GetReferencedAssemblies())
+              visitAssembly(project.GetAssemblyId(SR.AssemblyName(dependency)));
 
             def source = SingleLineSourceSnapshot("Fake source: " + file.Name, file);
             def reader = Nitra.Serialization2.MetadataReader(project, source);
@@ -342,7 +347,7 @@ namespace DotNet
         def metadataWriter   = Nitra.Serialization2.MetadataWriter(project);
         using (stream = IO.File.OpenWrite(metadataFileName))
           metadataWriter.WriteRoot(rootNamespace, stream);
-        manager.Options.EmbeddedResources ::= metadataFileName + "," + NitraMetadataStreamName;
+        manager.Options.EmbeddedResources.Add(metadataFileName + "," + NitraMetadataStreamName);
       }
       catch
       {
@@ -365,7 +370,7 @@ namespace DotNet
         else
         {
           def result = ImmutableArray.CreateBuilder(count);
-          mutable typarms = tycon.Typarms;
+          mutable typarms = tycon.TypePparms;
           for (mutable i = 0; i < count; ++i)
           {
             def tp    = typarms.Head;
@@ -653,13 +658,13 @@ namespace DotNet
       FullName = fullName;
     }
 
-    private mutable _source   : SourceSnapshot;
+    private mutable _source   : Nitra.SourceSnapshot;
 
     public override Project     : Project        { get; }
     public override Length      : int            { get { 0 } }
     public override FullName    : string         { get; }
     public override Language    : Nitra.Language { get { Nitra.Language.Instance } }
-    public override GetSource() : SourceSnapshot { when(_source == null) _source = SingleLineSourceSnapshot("", this); _source }
+    public override GetSource() : Nitra.SourceSnapshot { when(_source == null) _source = Nitra.SingleLineSourceSnapshot("", this); _source }
     public override IsFake      : bool           { get { true } }
   }
 }

@@ -67,23 +67,21 @@ namespace Nitra
     //  value
     //}
 
+    [DebuggerStepThroughAttribute]
+    private MakeNLocation(source : SourceSnapshot, startPos : int, endPos : int) : Compiler.Location
+    {
+      match (source.File)
+      {
+        | NemerleFile(InternalFile = compilerFile)         => Compiler.Location(Compiler.FileUtils.GetSource(compilerFile),  startPos, endPos)
+        | file when NitraUtils.IsFileExists(file.FullName) => Compiler.Location(Compiler.FileUtils.GetSource(file.FullName), startPos, endPos)
+        | _                                                => Compiler.Location.Default
+      }
+    }
+
     //[DebuggerStepThroughAttribute]
     public NLocation(this loc : Nitra.Location) : Compiler.Location
     {
-      def (startLine, startCol) = loc.StartLineColumn;
-      def (endLine, endCol) = loc.EndLineColumn;
-      def file = loc.Source.File;
-      if (file is NemerleFile(Index = index))
-        Compiler.Location(index, startLine, startCol, endLine, endCol)
-      else
-      {
-        def fullName = file.FullName;
-        def isExecutable = fullName.EndsWith(".dll",  StringComparison.OrdinalIgnoreCase) || fullName.EndsWith(".exe",  StringComparison.OrdinalIgnoreCase);
-        if (!isExecutable && NitraUtils.IsFileExists(fullName))
-          Compiler.Location(fullName, startLine, startCol, endLine, endCol)
-        else
-          Compiler.Location.Default
-      }
+      MakeNLocation(loc.Source, loc.StartPos, loc.EndPos)
     }
 
     [DebuggerStepThroughAttribute]
@@ -96,14 +94,7 @@ namespace Nitra
     [DebuggerStepThroughAttribute]
     public NLocation(located : Nitra.Located, tok : NSpan) : Compiler.Location
     {
-      def loc = located.Location;
-      def source = loc.Source;
-      def (startLine, startCol) = source.PositionToLineColumn(tok.StartPos);
-      def (endLine,   endCol)   = source.PositionToLineColumn(tok.EndPos);
-      if (source.File is NemerleFile(Index = index))
-        Compiler.Location(index, startLine, startCol, endLine, endCol)
-      else
-        Compiler.Location.Default
+      MakeNLocation(located.Location.Source, tok.StartPos, tok.EndPos)
     }
 
     [DebuggerStepThroughAttribute]

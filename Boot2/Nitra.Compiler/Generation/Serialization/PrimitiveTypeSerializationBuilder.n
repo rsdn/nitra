@@ -18,7 +18,27 @@ namespace Nitra.Serialization
     public this(compiler : SerializationCompiler, type : FixedType, typeInfo : TypeInfo)
     {
       base(compiler, type);
-      Tag = System.Type.GetTypeCode(typeInfo.SystemType) :> TypeTag;
+      Tag = 
+        match (typeInfo.FullName)
+        {
+          | "System.Object"   => TypeTag.Object
+          | "System.Boolean"  => TypeTag.Boolean
+          | "System.Char"     => TypeTag.Char
+          | "System.SByte"    => TypeTag.SByte
+          | "System.Byte"     => TypeTag.Byte
+          | "System.Int16"    => TypeTag.Int16
+          | "System.UInt16"   => TypeTag.UInt16
+          | "System.Int32"    => TypeTag.Int32
+          | "System.UInt32"   => TypeTag.UInt32
+          | "System.Int64"    => TypeTag.Int64
+          | "System.UInt64"   => TypeTag.UInt64
+          | "System.Single"   => TypeTag.Single
+          | "System.Double"   => TypeTag.Double
+          | "System.Decimal"  => TypeTag.Decimal
+          | "System.DateTime" => TypeTag.DateTime
+          | "System.String"   => TypeTag.String
+          | x                 => assert(false, $"Invalid primitive type '$x'")
+        };
     }
 
     public override Write(obj : PExpr) : PExpr

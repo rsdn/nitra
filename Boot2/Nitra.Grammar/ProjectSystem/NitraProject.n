@@ -81,7 +81,7 @@ namespace Nitra.ProjectSystem
     public abstract GetNemerleType(symbol : Symbol) : FixedType;
     public abstract MakeFakeNitraLocation(location : Nemerle.Compiler.Location) : Nitra.Location;
     public abstract MakeNitraLocation(location : Nemerle.Compiler.Location) : Nitra.Location;
-    public abstract CreateNemerleFile(source : ISource) : NemerleFile;
+    public abstract CreateNemerleFile(source : Nemerle.Compiler.SourceSnapshot) : NemerleFile;
     public virtual EmitSymbol(symbol : DeclarationSymbol, context : DependentPropertyEvalContext) : void
     {
       IgnoreParams();

@@ -20,13 +20,13 @@ namespace Nitra.Compiler.Integration
 
     private static _compilerInvokeTag : object = object();
 
-    public Parse(source : ISource) : Nemerle.Compiler.ParseResult
+    public Parse(source : Nemerle.Compiler.SourceSnapshot) : Nemerle.Compiler.ParseResult
     {
       unless (manager.UserData.Contains(_compilerInvokeTag))
       {
         manager.UserData.Add(_compilerInvokeTag, _compilerInvokeTag);
 
-        def fakeLoc = Location(source.FileIndex, 1, 1);
+        def fakeLoc = Location(source, 1, 1);
         def attr    = Util.locate(fakeLoc, <[ Nitra.InvokeNitraCompiler ]>);
         manager.Hierarchy.AddAssemblyAttribute(manager.CoreEnv, attr);
       }
