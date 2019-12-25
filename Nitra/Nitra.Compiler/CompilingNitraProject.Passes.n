@@ -73,7 +73,7 @@ namespace Nitra.Compiler
       {
         | null =>
           def project = CompilingNitraProject(manager);
-          project.Init(manager.ReferencedAssemblies.Select(a => a.Assembly.GetName()));
+          project.Init(manager.References.Select(a => System.Reflection.AssemblyName(a.FullName)));
           manager.UserData.Add(key, project);
           project
 
@@ -291,15 +291,14 @@ namespace Nitra.Compiler
         def externalSymbolPropertyReader = NitraExternalSymbolPropertyReader();
 
         def assemblyWithMetadata = SCG.Dictionary();
-        foreach (reference in Manager.ReferencedAssemblies)
+        foreach (reference in Manager.References)
         {
-          def assembly       = reference.Assembly;
-          def metadataStream = assembly.GetManifestResourceStream(NitraMetadataStreamName);
+          def metadataStream = reference.TryGetResourceStream(NitraMetadataStreamName);
           when (metadataStream != null)
           {
-            def assemblyId = this.GetAssemblyId(assembly.GetName());
-            def location   = this.MakeFakeNitraLocation(Nemerle.Compiler.Location(assembly.Location, 1, 1, 1, 1));
-            assemblyWithMetadata.Add(assemblyId, (assembly, metadataStream, location));
+            def assemblyId = this.GetAssemblyId(reference.FullName);
+            def location   = this.MakeFakeNitraLocation(reference.Location);
+            assemblyWithMetadata.Add(assemblyId, (reference, metadataStream, location));
           }
         }
 
@@ -311,8 +310,8 @@ namespace Nitra.Compiler
             mutable data;
             when (assemblyWithMetadata.TryGetValue(assemblyId, out data))
             {
-              def (assembly, metadataStream, location) = data;
-              foreach (dependency in assembly.GetReferencedAssemblies())
+              def (reference, metadataStream, location) = data;
+              foreach (dependency in reference.GetReferencedAssemblies())
                 visitAssembly(this.GetAssemblyId(dependency));
 
               def reader = MetadataReader(metadataStream, loader.Registry, externalSymbolPropertyReader, this, assemblyId, location);
@@ -326,6 +325,12 @@ namespace Nitra.Compiler
 
         loader.Load();
       }
+    }
+    
+    private GetAssemblyId(fullName : string) : byte
+    {
+      def assemblyName = System.Reflection.AssemblyName(fullName);
+      GetAssemblyId(assemblyName)
     }
 
     private mutable _beforeTypedMembers : bool = false;
@@ -393,7 +398,7 @@ namespace Nitra.Compiler
         using(symbolWriter = MetadataWriter(FileStream(metadataFileName, FileMode.Create, FileAccess.Write), this))
           symbolWriter.WriteSymbols();
 
-        Manager.Options.EmbeddedResources ::= metadataFileName + "," + NitraMetadataStreamName;
+        Manager.Options.EmbeddedResources.Add(metadataFileName + "," + NitraMetadataStreamName);
 
         Manager.BeforeSaveAssembly -= writeMetadataCallback;
       }

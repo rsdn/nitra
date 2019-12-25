@@ -13,6 +13,7 @@ using Nemerle.Utility;
 using System;
 using System.Linq;
 using SCG = System.Collections.Generic;
+using TryCase = Nemerle.Compiler.Parsetree.TryCase;
 
 namespace Nitra.Compiler
 {
@@ -277,10 +278,10 @@ namespace Nitra.Compiler
             when (isChildrenModified)
               result(SyntaxElement.Expression(newBody))
 
-          | MatchCase(body) =>
+          | PMatchCase(body) =>
             def newBody = PrepareExprForInheritableEvaluation(symbol, body, isQuotation, ref isChildrenModified);
             when (isChildrenModified)
-              result(SyntaxElement.MatchCase(newBody))
+              result(SyntaxElement.PMatchCase(newBody))
 
           | Function(body) =>
             def newBody = PrepareExprForInheritableEvaluation(symbol, body, isQuotation, ref isChildrenModified);
