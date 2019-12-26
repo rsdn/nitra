@@ -217,7 +217,7 @@ namespace Nitra.ClientServer.Macros
 
       if (type.IsEnum)
       {
-        def underlyingType = FixedType.Class(type.TypeInfo.UnderlyingType, []);
+        def underlyingType = type.TypeInfo.UnderlyingType;
         SerializeValue(underlyingType, <[ $valueExpr :> $(underlyingType : typed) ]>)
       }
       else if (GetSerializeMethod(type).IsSome)
@@ -328,7 +328,7 @@ namespace Nitra.ClientServer.Macros
 
       if (type.IsEnum)
       {
-        def underlyingType = FixedType.Class(type.TypeInfo.UnderlyingType, []);
+        def underlyingType = type.TypeInfo.UnderlyingType;
         def result = DeserializePrimitiveValue(underlyingType);
         <[ $result :> $(type : typed) ]>
       }
