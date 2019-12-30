@@ -64,7 +64,7 @@ namespace Nitra.BackEnd.Cci
       false
     }
 
-    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, addError : Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
+    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, addError : System.Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       Debug.WriteLine("LoadExternalSymbols started");
 

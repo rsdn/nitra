@@ -11,9 +11,10 @@
     <_Nemerle Condition=" '$(_Nemerle)' == '' ">$(_NemerleBinPathRoot)\$(_NemerleVersion)</_Nemerle>
     <_CommonFilesPath>$(MSBuildThisFileDirectory)</_CommonFilesPath>
     <BuildTarget Condition=" '$(BuildTarget)' == '' ">Build</BuildTarget>
-    <Boot1>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..\Boot1'))</Boot1>
-    <Boot2>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..\Boot2'))</Boot2>
-    <Source>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..\Nitra'))</Source>
+    <NitraRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\..'))</NitraRoot>
+    <Boot1>$(NitraRoot)\Boot1</Boot1>
+    <Boot2>$(NitraRoot)\Boot2</Boot2>
+    <Source>$(NitraRoot)\Nitra</Source>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
     <BootProject Include="$(Boot2)\Nitra.Grammar\Nitra.Grammar.nproj" />
     <BootProject Include="$(Boot2)\Nitra.Runtime\Nitra.Runtime.nproj" />
     <BootProject Include="$(Boot2)\DotNetLang\DotNetLang.nproj" />
+    <BootProject Include="$(NitraRoot)\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,6 +76,16 @@
   <Target Name="BuildBoot">
     <PropertyGroup>
       <BootVersion>$([System.Xml.Linq.XDocument]::Load('$(Boot1)\version.xml').Root.Value)</BootVersion>
+      <BuildProperties>
+        Configuration=$(Configuration);
+        Platform=$(Platform);
+        CommonFilesPath=$(_CommonFilesPath);
+        OutputPath=$(Boot2)\$(_NemerleVersion);
+        Stage=Boot;
+        NameSuffix=Boot$(BootVersion);
+        BuildConstant=BOOT;
+        SCITargetFramework=net45
+      </BuildProperties>
     </PropertyGroup>
     
     <!--Message Text="BootVersion=$(BootVersion)" Importance="High" /-->
@@ -81,8 +93,8 @@
     <RemoveDir Directories="$(Boot2)\$(_NemerleVersion)" />
     <MakeDir Directories="$(Boot2)\$(_NemerleVersion)"/>
     
-    <MSBuild Projects="@(BootProject)" Targets="$(BuildTarget)" 
-      Properties='Configuration=$(Configuration);Platform=$(Platform);CommonFilesPath=$(_CommonFilesPath);OutputPath=$(Boot2)\$(_NemerleVersion);Stage=Boot;NameSuffix=Boot$(BootVersion);BuildConstant=BOOT'/>
+    <MSBuild Projects="@(BootProject)" Properties="$(BuildProperties);_dummy=1" Targets="Restore"/>
+    <MSBuild Projects="@(BootProject)" Properties="$(BuildProperties);_dummy=2" Targets="$(BuildTarget)"/>
   </Target>
 
   <Target Name="ShiftBoot">

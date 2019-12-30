@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
   <PropertyGroup>
     <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\Common</CommonFilesPath>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -11,7 +11,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DotNet.BackEnd.CCI</RootNamespace>
     <AssemblyName>DotNet.BackEnd.CCI</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFramework>netstandard20</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NemerleVersion>Net-4.0</NemerleVersion>
@@ -39,61 +39,11 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.props" />
   <ItemGroup>
-    <Reference Include="Microsoft.Cci.ILGenerator, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.ILGenerator</Name>
-      <AssemblyName>Microsoft.Cci.ILGenerator.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.ILGenerator.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.MetadataHelper, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.MetadataHelper</Name>
-      <AssemblyName>Microsoft.Cci.MetadataHelper.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.MetadataHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.MetadataModel, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.MetadataModel</Name>
-      <AssemblyName>Microsoft.Cci.MetadataModel.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.MetadataModel.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.MutableMetadataModel, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.MutableMetadataModel</Name>
-      <AssemblyName>Microsoft.Cci.MutableMetadataModel.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.MutableMetadataModel.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.PdbReader, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.PdbReader</Name>
-      <AssemblyName>Microsoft.Cci.PdbReader.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.PdbReader.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.PdbWriter, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.PdbWriter</Name>
-      <AssemblyName>Microsoft.Cci.PdbWriter.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.PdbWriter.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.PeReader, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.PeReader</Name>
-      <AssemblyName>Microsoft.Cci.PeReader.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.PeReader.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.PeWriter, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.PeWriter</Name>
-      <AssemblyName>Microsoft.Cci.PeWriter.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.PeWriter.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Cci.SourceModel, Version=1.0.65055.0, Culture=neutral, PublicKeyToken=736440c9b414ea16">
-      <Name>Microsoft.Cci.SourceModel</Name>
-      <AssemblyName>Microsoft.Cci.SourceModel.dll</AssemblyName>
-      <HintPath>..\packages\CustomMetadataFix.Microsoft.Cci.Metadata.3.0.0\lib\net40\Microsoft.Cci.SourceModel.dll</HintPath>
-    </Reference>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Microsoft.Cci" Version="4.0.0-rc3*" IncludeAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
@@ -139,26 +89,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="packages.config">
-      <SubType>Content</SubType>
-    </Content>
-  </ItemGroup>
-  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
-  <!--
-		To modify your build process, add your task inside one of the targets below and uncomment it. 
-		Other similar extension points exist, see Microsoft.Common.targets.
-
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
 </Project>
