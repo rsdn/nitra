@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using VSLangProj;
 
@@ -89,6 +90,20 @@ namespace Nitra.VisualStudio
       // any Visual Studio service because at this point the package object is created but
       // not sited yet inside Visual Studio environment. The place to do all the other
       // initialization is the Initialize method.
+      AppDomain.CurrentDomain.FirstChanceException +=
+      (object source, FirstChanceExceptionEventArgs e) =>
+      {
+        var ex = e.Exception;
+
+        switch (ex)
+        {
+          case FileLoadException _:
+          case OperationCanceledException _:
+            return;
+        }
+
+        Log.Exception(ex);
+      };
     }
 
     public void SetFindResult(IVsSimpleObjectList2 findResults)
@@ -192,6 +207,9 @@ namespace Nitra.VisualStudio
       ThreadHelper.ThrowIfNotOnUIThread();
 
       string fullPath = projectItem.FileNames[1];
+      if (fullPath == null)
+        return;
+
       AddFile(projectItem, fullPath);
     }
 

@@ -1,5 +1,8 @@
-﻿namespace DotNet
+﻿using Nemerle.Extensions;
+
+namespace DotNet
 {
+  [StructuralEquality]
   public variant DefaultValue
   {
     | None      { }

@@ -23,8 +23,8 @@ namespace Nitra.Logging
     class LoggerWorker : IDisposable
     {
       public static SaveLogsCount = 3;
-      
-      _queue      : BlockingCollection[string * ConsoleColor * bool] = BlockingCollection();
+
+      _queue      : BlockingCollection[string * ConsoleColor * bool * int * DateTime] = BlockingCollection();
       _logFile    : StreamWriter;
       _date       : string;
       _name       : string;
@@ -73,7 +73,7 @@ namespace Nitra.Logging
 
       public Log(msg : string, color : ConsoleColor, lineBreak : bool) : void
       {
-        _queue.Add((msg, color, lineBreak));
+        _queue.Add((msg, color, lineBreak, Thread.CurrentThread.ManagedThreadId, DateTime.Now));
       }
 
       ParseWorkerMain() : void
@@ -94,17 +94,17 @@ namespace Nitra.Logging
   </head>
 
   <body>#>;
-      
+
         try
         {
           _logFile.WriteLine(header);
-          foreach((msg, color, lineBreak) in _queue.GetConsumingEnumerable(_cts.Token))
+          foreach((msg, color, lineBreak, threadId, time) in _queue.GetConsumingEnumerable(_cts.Token))
           {
             try
               if (msg == null && color :> int == -1)
                 _logFile.Flush();
               else if (lineBreak)
-                this.WriteLine(msg, color);
+                this.WriteLine(threadId, time, msg, color);
               else
                 this.Write(msg, color);
             catch
@@ -145,7 +145,23 @@ namespace Nitra.Logging
         | Yellow      => "Yellow"
         | White       => "White"
       }
-    
+
+      WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
+      {
+        _logFile.Write(<#<span style="color:#>);
+        _logFile.Write(TranslateColor(color));
+        _logFile.Write(<#">#>);
+        _logFile.Write(threadId);
+        _logFile.Write(time.ToString("│HH:mm:ss.ffffff│"));
+        _logFile.Write(msg);
+        _logFile.WriteLine(<#</span>#>);
+        when (_queue.Count == 0)
+          _logFile.Flush();
+        Console.ForegroundColor = color;
+        Console.WriteLine(msg);
+        Console.ResetColor();
+      }
+
       WriteLine(msg : string, color : ConsoleColor) : void
       {
         _logFile.Write(<#<span style="color:#>);
@@ -179,12 +195,12 @@ namespace Nitra.Logging
           Console.ResetColor();
         }
       }
-      
+
       public Flush() : void
       {
-        _queue.Add((null, -1 :> ConsoleColor, true));
+        _queue.Add((null, -1 :> ConsoleColor, true, 0, DateTime()));
       }
-      
+
       public Dispose() : void
       {
         try
