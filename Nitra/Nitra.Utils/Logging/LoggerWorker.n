@@ -157,9 +157,13 @@ namespace Nitra.Logging
         _logFile.WriteLine(<#</span>#>);
         when (_queue.Count == 0)
           _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg);
-        Console.ResetColor();
+
+        when (_needStdout)
+        {
+          Console.ForegroundColor = color;
+          Console.WriteLine(msg);
+          Console.ResetColor();
+        }
       }
 
       WriteLine(msg : string, color : ConsoleColor) : void
@@ -169,8 +173,10 @@ namespace Nitra.Logging
         _logFile.Write(<#">#>);
         _logFile.Write(msg);
         _logFile.WriteLine(<#</span>#>);
+
         when (_queue.Count == 0)
           _logFile.Flush();
+
         when (_needStdout)
         {
           Console.ForegroundColor = color;
@@ -186,8 +192,10 @@ namespace Nitra.Logging
         _logFile.Write(<#">#>);
         _logFile.Write(msg);
         _logFile.Write(<#</span>#>);
+
         when (_queue.Count == 0)
           _logFile.Flush();
+
         when (_needStdout)
         {
           Console.ForegroundColor = color;
