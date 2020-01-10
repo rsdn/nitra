@@ -118,7 +118,7 @@ namespace Nitra.Visualizer.ViewModels
       var client = CurrentSuite.Client;
       var pos = Editor.CaretOffset;
 
-      client.Send(new ClientMessage.FindSymbolDefinitions(CurrentProject.Id, CurrentFile.Id, new VersionedPos(pos, CurrentFile.Version)));
+      client.Send(new ClientMessage.FindSymbolDefinitions(CurrentProject.Id, CurrentFile.Id, new VersionedPos(pos, CurrentFile.Version), 42));
 
       var msg = client.Receive<ServerMessage.FindSymbolDefinitions>();
 

@@ -383,14 +383,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       TrySendParseMessage(); // Restore normal state
     }
 
-    public FindSymbolDefinitions(pos : VersionedPos) : void
+    public FindSymbolDefinitions(pos : VersionedPos, tag : uint) : void
     {
       def ast = _ast;
       when (ast == null || (ast.Location.Source.Version != pos.Version && pos.Version >= 0))
       {
         // maybe better return special message?
         assert2(false);
-        Parent.Router.SendResponse(ServerMessage.FindSymbolDefinitions(Parent.Parent.Id, NSpan(), ImmutableArray.Empty));
+        Parent.Router.SendResponse(ServerMessage.FindSymbolDefinitions(Parent.Parent.Id, NSpan(), ImmutableArray.Empty, tag));
         return;
       }
 
@@ -407,7 +407,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             biulder.Add(SymbolLocation(symbol.Id, ServerUtils.ConvertLocation(decl.Name.Location, withText=true)));
 
         def names = biulder.ToImmutableArray();
-        router.SendResponse(ServerMessage.FindSymbolDefinitions(solutionId, refSpan, names));
+        router.SendResponse(ServerMessage.FindSymbolDefinitions(solutionId, refSpan, names, tag));
       }
 
       Parent.AddSemanticAction(action);

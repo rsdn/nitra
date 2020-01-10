@@ -53,7 +53,7 @@ namespace Nitra.ClientServer.Server
         }
         SpanClassesManager.Clear();
         _solution = Solution(id, fullPath);
-        
+
       | SolutionLoaded(id)                               => assert2(_solution.Id == id); _solution.Open();
       | SolutionUnloaded(id)                             => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
       | ProjectStartLoading(id, fullPath, config)        => _ = Project(_solution, fullPath, id, config, _parseQueue, _semanticAnalysisQueue, this);
@@ -77,7 +77,7 @@ namespace Nitra.ClientServer.Server
       | CompleteWord       (projectId, id, pos)          => _solution.GetFile(projectId, id).CompleteWord(pos);
       | CompleteWordDismiss    (projectId, id)           => _solution.GetFile(projectId, id).CompleteWordDismiss();
       | FindSymbolReferences (projectId, id, pos, forHighlighting, tag) => FindSymbolReferences(projectId, id, pos, forHighlighting, tag);
-      | FindSymbolDefinitions(projectId, id, pos)        => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos);
+      | FindSymbolDefinitions(projectId, id, pos, tag)   => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos, tag);
       | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
       | GetObjectContent(sId, pId, fId, ver, parentId)   => GetObjectContent(sId, pId, fId, ver, parentId);
       | GetObjectGraph  (sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectGraph(sId, ver, parentId);

@@ -20,7 +20,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
 
-using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using LSP      = Microsoft.VisualStudio.LanguageServer.Protocol;
+using Messages = Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server.Lsp
 {
@@ -66,6 +67,7 @@ namespace Nitra.ClientServer.Server.Lsp
       reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
       reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
       reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocumentCompletionHandler);
+      reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocumentDefinition);
     }
 
     public Dispose() : void
@@ -115,7 +117,8 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public Send(message : ServerMessage) : void
     {
-      | FindSymbolReferences(_solutionId, _span, symbols, tag) => CompleteRequest(tag, symbols)
+      | FindSymbolDefinitions(_solutionId, _span, symbols, tag) => CompleteRequest(tag, symbols)
+      | FindSymbolReferences (_solutionId, _span, symbols, tag) => CompleteRequest(tag, symbols)
       | _ => ()
     }
 
@@ -263,6 +266,19 @@ namespace Nitra.ClientServer.Server.Lsp
         HandlerResult.Unit(id, messages)
     }
 
+    private TextDocumentDefinition(p : TextDocumentPositionParams, id : object) : HandlerResult
+    {
+      def document        = p.TextDocument;
+      def fileId          = GetFileId(document.Uri);
+      def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      def messages        = [ClientMessage.FindSymbolDefinitions(projectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _)))];
+      def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
+      if (oldCompletionId != null)
+        HandlerResult.Error(oldCompletionId, messages, LspErrorCode.RequestCancelled, "")
+      else
+        HandlerResult.Unit(id, messages)
+    }
+
     private WriteError(id : object, code : LspErrorCode, message : string) : void
     {
       lock (writer)
@@ -322,6 +338,20 @@ namespace Nitra.ClientServer.Server.Lsp
       WriteResult(id, result);
     }
 
+    private FindDefinitions(symbols : ImmutableArray[SymbolLocation], id : object) : void
+    {
+      def result = List();
+      foreach ((range, fileId) in ConvertRanges(symbols))
+      {
+        result.Add(LSP.Location() <-
+        {
+          Range = range;
+          Uri = fileIdToUriTable[fileId]
+        });
+      }
+      WriteResult(id, result);
+    }
+
     private ShowHint(text : string, id : object, position : LSP.Position) : void
     {
       WriteResult(id, Hover() <-
@@ -344,28 +374,37 @@ namespace Nitra.ClientServer.Server.Lsp
       WriteResult(id, result);
     }
 
+    private Convert(range : Messages.Range) : LSP.Range
+    {
+      Range() <-
+      {
+        Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
+        End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
+      }
+    }
+
+    private ConvertRanges(symbols : ImmutableArray[SymbolLocation]) : Seq[LSP.Range * FileId]
+    {
+      foreach (s in symbols)
+      {
+        def loc = s.Location;
+        yield (Convert(loc.Range), loc.File.FileId);
+      }
+    }
+
     private ConvertRanges(symbols : ImmutableArray[SymbolReferences], includeDeclaration : bool) : Seq[LSP.Range * FileId]
     {
-      def convert(g)
-      {
-        Range() <-
-        {
-          Start = Position() <- { Line = g.StartLine - 1; Character = g.StartColumn - 1 };
-          End = Position() <- { Line = g.EndLine - 1; Character = g.EndColumn - 1 }
-        }
-      }
-
       foreach (s in symbols)
       {
         when (includeDeclaration)
         {
           foreach (d in s.Definitions)
-            yield (convert(d.Location.Range), d.Location.File.FileId);
+            yield (Convert(d.Location.Range), d.Location.File.FileId);
         }
 
         foreach (r in s.References)
         foreach (g in r.Ranges)
-          yield (convert(g), r.File.FileId);
+          yield (Convert(g), r.File.FileId);
       }
     }
 

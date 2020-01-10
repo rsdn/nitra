@@ -163,7 +163,7 @@ namespace Nitra.VisualStudio.Models
       CheckDisposed();
       var fileModel = FileModel;
       var client = fileModel.Server.Client;
-      client.Send(new ClientMessage.FindSymbolDefinitions(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos()));
+      client.Send(new ClientMessage.FindSymbolDefinitions(fileModel.GetProjectId(), fileModel.Id, point.ToVersionedPos(), 42));
       var msg = client.Receive<ServerMessage.FindSymbolDefinitions>();
       var len = msg.definitions.Length;
 

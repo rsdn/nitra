@@ -59,8 +59,8 @@ namespace Nitra.ClientServer.Messages
     | PrettyPrint              { state : PrettyPrintState; }
     | CompleteWord             { projectId : ProjectId; id : FileId; pos : VersionedPos; }
     | CompleteWordDismiss      { projectId : ProjectId; id : FileId }
-    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; tag : uint }
-    | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; tag : uint; }
+    | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; tag : uint; }
     | ParseTreeReflection      { enable : bool; }
     | GetObjectContent         { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
     | GetObjectGraph           { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; objectId : int; }
@@ -81,8 +81,8 @@ namespace Nitra.ClientServer.Messages
   [NitraMessage]
   public variant ServerMessage
   {
-    | FindSymbolDefinitions { solutionId : SolutionId; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation]; }
-    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolReferences]; tag : uint }
+    | FindSymbolDefinitions { solutionId : SolutionId; referenceSpan   : NSpan; definitions    : ImmutableArray[SymbolLocation];   tag : uint; }
+    | FindSymbolReferences  { solutionId : SolutionId; referenceSpan   : NSpan; symbols        : ImmutableArray[SymbolReferences]; tag : uint; }
     | ParseTreeReflection   { solutionId : SolutionId; root : ImmutableArray[ParseTreeReflectionStruct]; }
     | ObjectContent         { solutionId : SolutionId; content : ContentDescriptor; }
     | LibsMetadata          { solutionId : SolutionId; metadatas : ImmutableArray[LibMetadata]; }
