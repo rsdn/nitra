@@ -54,8 +54,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _expectsToBuildAst                       : int;
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
-    public  IsCompleteWord                           : bool { get; set; }
-    
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], semanticAnalysisQueue : BlockingCollection[ParserMessage], router : Router)
     {
@@ -194,7 +192,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(_expectsToBuildAst >= 0);
 
       Log.Message("AstCreated(_expectsToBuildAst=" + _expectsToBuildAst + ")");
-      
+
       TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
     }
 
@@ -223,7 +221,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         IsSemanticAvailable = true;
         return;
       }
-        
+
       when (IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
       {
         CancelSemanticAnalysisCancellation();
@@ -474,7 +472,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       when (IsDisposed)
         return;
-        
+
       try
       {
         IsSemanticAvailable = false;
@@ -499,7 +497,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       Router.AddMessage(RouterAnswerMessage.ProjectReload(Id));
     }
-    
+
     [HandleProcessCorruptedStateExceptions]
     private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
     {
@@ -587,7 +585,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _libMap[r.Path] = _libs.Count;
         AddWatcher(r.Path);
         _libs.Add(r);
-        
+
         when (IsOpened)
           RefrashReference();
       }
@@ -599,7 +597,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(separatorPos > 0);
       def fullPath = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
       def fullPath = fullPath;
-      
+
       def matchLibReference(libRef : NSP.LibReference) : bool
       {
         def fullPath = fullPath;

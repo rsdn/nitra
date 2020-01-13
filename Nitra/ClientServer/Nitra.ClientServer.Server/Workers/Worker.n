@@ -196,7 +196,7 @@ namespace Nitra.ClientServer.Server
 
           when (data == null)
             return;
-        }          
+        }
         Log.Message($<#SemanticAnalysisStart: $(if (completeWordPosOpt < 0) "CompletePos" + completeWordPosOpt else "") ..$(files.Select(_.Title))#>);
         def timer = Stopwatch.StartNew();
         try
@@ -214,7 +214,7 @@ namespace Nitra.ClientServer.Server
 
         when (cancellationToken.IsCancellationRequested)
           return;
-        
+
         def isCompleteWord = completeWordPosOpt >= 0 && completeWordFileIdOpt.IsValid;
 
         when (isCompleteWord)
@@ -229,7 +229,7 @@ namespace Nitra.ClientServer.Server
 
         when (cancellationToken.IsCancellationRequested)
           return;
-          
+
         _mainQueue.Add(RouterAnswerMessage.SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt));
 
         unless (isCompleteWord)
@@ -376,7 +376,7 @@ namespace Nitra.ClientServer.Server
       foreach (keyword in parseResult.Keywords)
       {
         def literal = keyword.Keyword.Str;
-        
+
         when (pos < keyword.StartPos || pos >= keyword.StartPos + literal.Length)
           continue;
 
@@ -392,9 +392,9 @@ namespace Nitra.ClientServer.Server
             matchedKeyWordsMap[literal] = keyword.Keyword.Owner.Description;
         }
       }
-      
+
       def symbolsSet = HashSet.[DeclarationSymbol]();
-      
+
       when (reference != null)
       {
         // Вычисляем префикс комплита (если есть). Он будет использоваться для фильтрации списка и будет заменен выбранным словом

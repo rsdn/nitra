@@ -28,58 +28,66 @@ namespace Nitra.ClientServer.Server.Lsp
 {
   public class LspProtocolAdapter : IProtocolAdapter
   {
-    private static mutable fileCounter : int;
-    private static mutable tagCounter  : int;
-    private uriToFileIdTable : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
-    private fileIdToUriTable : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
-    private requestTable     : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
+    private static mutable _tagCounter  : int;
+    private static mutable _fileCounter : int;
 
-    private mutable input  : Stream;
-    private mutable output : Stream;
-    private mutable reader : LspReader[HandlerResult];
-    private mutable writer : LspWriter;
+    private _uriToFileIdTable   : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
+    private _fileIdToUriTable   : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
+    private _requestTable       : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
 
-    private mutable solutionId : SolutionId;
-    private mutable projectId  : ProjectId;
+    private mutable _input      : Stream;
+    private mutable _output     : Stream;
+    private mutable _reader     : LspReader[HandlerResult];
+    private mutable _writer     : LspWriter;
+
+    private mutable _solutionId : SolutionId;
+    private mutable _projectId  : ProjectId;
 
     private mutable pendingCompletionId : object;
 
+    public IsLsp : bool { get true; }
+
     public Connect() : void
     {
-      input = Console.OpenStandardInput();
-      output = Console.OpenStandardOutput();
+      def di = IO.DirectoryInfo(@"c:\!Logs\");
 
-      reader = LspReader(input);
-      writer = LspWriter(output);
+      foreach (file in di.GetFiles())
+          file.Delete();
 
-      reader.UnknownRequestHandler += UnknownHandler;
+      _input = Console.OpenStandardInput();
+      _output = Console.OpenStandardOutput();
 
-      reader.RegisterHandler("$/cancelRequest",                       CancelRequestHandler);
-      reader.RegisterHandler(Methods.Initialize,                      InitializeHandler);
-      reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
-      reader.RegisterHandler(Methods.Shutdown,                        ShutdownHandler);
-      reader.RegisterHandler(Methods.Exit,                            ExitHandler);
-      reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
-      reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
-      reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
-      reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
-      reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
-      reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
-      reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
-      reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
-      reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocumentCompletionHandler);
-      reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocumentDefinition);
+      _reader = LspReader(_input);
+      _writer = LspWriter(_output);
+
+      _reader.UnknownRequestHandler += UnknownHandler;
+
+      _reader.RegisterHandler("$/cancelRequest",                       CancelRequestHandler);
+      _reader.RegisterHandler(Methods.Initialize,                      InitializeHandler);
+      _reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
+      _reader.RegisterHandler(Methods.Shutdown,                        ShutdownHandler);
+      _reader.RegisterHandler(Methods.Exit,                            ExitHandler);
+      _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
+      _reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
+      _reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
+      _reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocumentCompletionHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocumentDefinition);
     }
 
     public Dispose() : void
     {
-      input?.Dispose();
-      output?.Dispose();
+      _input?.Dispose();
+      _output?.Dispose();
     }
 
     public Receive() : Seq[ClientMessage]
     {
-      using (e = reader.ReadRequests().GetEnumerator())
+      using (e = _reader.ReadRequests().GetEnumerator())
       {
         mutable processRequests = true;
         do
@@ -199,12 +207,12 @@ namespace Nitra.ClientServer.Server.Lsp
     private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : HandlerResult
     {
       def document = p.TextDocument;
-      HandlerResult.Unit(null, [ClientMessage.FileActivated(projectId, GetFileId(document.Uri), FileVersion(document.Version))])
+      HandlerResult.Unit(null, [ClientMessage.FileActivated(_projectId, GetFileId(document.Uri), FileVersion(document.Version))])
     }
 
     private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : HandlerResult
     {
-      HandlerResult.Unit(null, [ClientMessage.FileDeactivated(projectId, GetFileId(p.TextDocument.Uri))])
+      HandlerResult.Unit(null, [ClientMessage.FileDeactivated(_projectId, GetFileId(p.TextDocument.Uri))])
     }
 
     private static ToStringDidChangeTextDocumentParamsToString(msg : DidChangeTextDocumentParams) : string
@@ -251,7 +259,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(projectId, fileId, position, true,
+      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, true,
         RegisterRequest(id, DocumentHighlight))])
     }
 
@@ -260,7 +268,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(projectId, fileId, position, false,
+      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, false,
         RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration)))])
     }
 
@@ -269,7 +277,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.GetHint(projectId, fileId, position,
+      HandlerResult.Unit(id, [ClientMessage.GetHint(_projectId, fileId, position,
         RegisterRequest(id, ShowHint(_, _, p.Position)))]);
     }
 
@@ -278,7 +286,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def messages = [ClientMessage.CompleteWord(projectId, fileId, position)];
+      def messages = [ClientMessage.CompleteWord(_projectId, fileId, position)];
       def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
       if (oldCompletionId != null)
         HandlerResult.Error(oldCompletionId, messages, LspErrorCode.RequestCancelled, "")
@@ -291,7 +299,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document        = p.TextDocument;
       def fileId          = GetFileId(document.Uri);
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def messages        = [ClientMessage.FindSymbolDefinitions(projectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _)))];
+      def messages        = [ClientMessage.FindSymbolDefinitions(_projectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _)))];
       def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
       if (oldCompletionId != null)
         HandlerResult.Error(oldCompletionId, messages, LspErrorCode.RequestCancelled, "")
@@ -301,14 +309,14 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private WriteError(id : object, code : LspErrorCode, message : string) : void
     {
-      lock (writer)
-        writer.WriteError(id, code, message)
+      lock (_writer)
+        _writer.WriteError(id, code, message)
     }
 
     private WriteResult(id : object, body : object) : void
     {
-      lock (writer)
-        writer.WriteResult(id, body)
+      lock (_writer)
+        _writer.WriteResult(id, body)
     }
 
     private LoadSolution(path : string, solutionId : SolutionId, projectId : ProjectId, options : InitializationOptions) : Seq[ClientMessage]
@@ -352,7 +360,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = fileIdToUriTable[fileId]
+          Uri = _fileIdToUriTable[fileId]
         });
       }
       WriteResult(id, result);
@@ -366,7 +374,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = fileIdToUriTable[fileId]
+          Uri = _fileIdToUriTable[fileId]
         });
       }
       WriteResult(id, result);
@@ -440,8 +448,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private GetFileId(uri : Uri) : FileId
     {
-      def id = uriToFileIdTable.GetOrAdd(uri, fun(_){ FileId(Interlocked.Increment(ref fileCounter)) });
-      _ = fileIdToUriTable.GetOrAdd(id, uri);
+      def id = _uriToFileIdTable.GetOrAdd(uri, fun(_){ FileId(Interlocked.Increment(ref _fileCounter)) });
+      _ = _fileIdToUriTable.GetOrAdd(id, uri);
       id
     }
 
@@ -468,15 +476,15 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private RegisterRequest[TResponse](id : object, completionHandler : Action[TResponse, object]) : uint
     {
-      def tag = unchecked (Interlocked.Increment(ref tagCounter) :> uint);
-      requestTable[tag] = (id, completionHandler);
+      def tag = unchecked (Interlocked.Increment(ref _tagCounter) :> uint);
+      _requestTable[tag] = (id, completionHandler);
       tag
     }
 
     private CompleteRequest[TResponse](tag : uint, response : TResponse) : void
     {
       mutable result;
-      when (requestTable.TryRemove(tag, out result))
+      when (_requestTable.TryRemove(tag, out result))
       {
         def completionHandler = result[1] :> Action[TResponse, object];
         completionHandler(response, result[0])

@@ -269,7 +269,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (completionPos < 0)
         FindSymbolReferences(_highlightingPosOpt, forHighlighting=true, tag=0);
 
-      if (_isCompleteWord && CanCompleteWord())
+      if (completionPos >= 0 && CanCompleteWord())
       {
         def snapshot = parseResultOpt.SourceSnapshot;
         def currentCompleteWordPos =
@@ -379,15 +379,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public CompleteWord(pos : VersionedPos) : void
     {
       Log.Message($"CompleteWord started file in position: $pos");
-      _isCompleteWord = true;
-      Parent.IsCompleteWord = true;
+      unless (Parent.Router.MessageSink.IsLsp)
+        _isCompleteWord = true;
       TrySendParseMessage(pos.Pos);
     }
 
     public CompleteWordDismiss() : void
     {
       _isCompleteWord = false;
-      Parent.IsCompleteWord = false;
       TrySendParseMessage(); // Restore normal state
     }
 

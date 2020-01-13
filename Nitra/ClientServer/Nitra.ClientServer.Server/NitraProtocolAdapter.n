@@ -34,6 +34,8 @@ namespace Nitra.ClientServer.Server
       _asyncResponseWriter = BinaryWriter(_asyncResponsePipe);
     }
 
+    public IsLsp : bool { get false; }
+
     public Connect() : void
     {
       _requestPipe.      WaitForConnection();
