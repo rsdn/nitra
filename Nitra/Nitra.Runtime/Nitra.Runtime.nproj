@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Name>Nitra.Runtime</Name>
     <RootNamespace>Nitra.Runtime</RootNamespace>
@@ -7,8 +7,6 @@
     <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{9DB13EB2-28E3-432B-8C8F-0E39EF5BCC38}</ProjectGuid>
     <NeedAddVersionToAssemblyName>True</NeedAddVersionToAssemblyName>
     <AdditionalDefineConstants>NITRA_RUNTIME</AdditionalDefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->

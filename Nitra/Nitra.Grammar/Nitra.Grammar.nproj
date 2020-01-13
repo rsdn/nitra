@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Name>Nitra.Grammar</Name>
     <RootNamespace>Nitra.Grammar</RootNamespace>
@@ -7,8 +7,6 @@
     <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{792f6159-9ff0-4352-8323-591a9bad3472}</ProjectGuid>
     <NeedAddVersionToAssemblyName>False</NeedAddVersionToAssemblyName>
     <CustomArguments>$(CustomArguments) -nowarn:114</CustomArguments>
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
