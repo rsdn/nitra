@@ -243,6 +243,11 @@ namespace Nitra.ClientServer.Messages
   {
     public Start : UIPosition;
     public End   : UIPosition;
+
+    public override ToString() : string
+    {
+      $"UISpan($Start, $End)"
+    }
   }
 
   [NitraMessage]
@@ -251,6 +256,16 @@ namespace Nitra.ClientServer.Messages
     | Insert  { pos : UIPosition; text : string }
     | Delete  { span : UISpan }
     | Replace { span : UISpan; text : string }
+
+    public override ToString() : string
+    {
+      match (this)
+      {
+        | Insert  (pos, text)  => $"Insert  ($pos,  '$text')"
+        | Delete  (span)       => $"Delete  ($span)"
+        | Replace (span, text) => $"Replace ($span, '$text')"
+      }
+    }
   }
 
   [NitraMessage, StructuralEquality]

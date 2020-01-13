@@ -26,9 +26,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
-using NSP  = Nitra.ProjectSystem;
-using SC   = System.Collections;
-using Span = Nitra.ClientServer.Messages.NSpan;
+using NSP    = Nitra.ProjectSystem;
+using SC     = System.Collections;
+using Span   = Nitra.ClientServer.Messages.NSpan;
+using IoFile = System.IO.File;
 
 namespace Nitra.ClientServer.Server.ProjectSystem
 {
@@ -156,12 +157,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     Insert(pos: int, text: string) : void
     {
-      _ = _text.Insert(pos, text)
+      _ = _text.Insert(pos, text);
+      def ver = FileVersion.Value.ToString("D6");
+      def trace = $"Insert pos: $pos\r\ntext: «$text»\r\ncontent:\r\n$_text";
+      IoFile.WriteAllText($@"c:\!Logs\(_name)_$ver", trace);
     }
 
     Delete(span: NSpan) : void
     {
-      _ = _text.Remove(span.StartPos, span.Length)
+      _ = _text.Remove(span.StartPos, span.Length);
+      def ver = FileVersion.Value.ToString("D6");
+      def trace = $"Delete: span: $span\r\ncontent:\r\n$_text";
+      IoFile.WriteAllText($@"c:\!Logs\(_name)_$ver", trace);
     }
 
     Replace(span: NSpan, text: string) : void
@@ -197,6 +204,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : VersionedPos) : void
     {
+      Log.Message($"Change fileId=$Id caretPos=$caretPos changes={} _isCompleteWord=$_isCompleteWord");
       def oldSource = GetSource();
       FileVersion = version;
       for (mutable i = changes.Length - 1; i >= 0; i--)
