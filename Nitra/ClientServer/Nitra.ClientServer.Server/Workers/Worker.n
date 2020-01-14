@@ -394,7 +394,7 @@ namespace Nitra.ClientServer.Server
         }
       }
 
-      def symbolsSet = HashSet.[DeclarationSymbol]();
+      def symbolsSet = HashSet(ComletionSymbolEqualityComparer());
 
       when (reference != null)
       {
@@ -525,6 +525,21 @@ namespace Nitra.ClientServer.Server
       _cts.Cancel();
       _cts.Dispose();
       _thread.Join()
+    }
+
+    private class ComletionSymbolEqualityComparer : IEqualityComparer[DeclarationSymbol]
+    {
+      public Equals(x : DeclarationSymbol, y : DeclarationSymbol) : bool
+      {
+        x.Id == y.Id
+        || x.InitialName == y.InitialName
+          && x.GetDeclarationsUntyped().FirstOrDefault().Name?.Location == y.GetDeclarationsUntyped().FirstOrDefault().Name?.Location
+      }
+
+      public GetHashCode(obj : DeclarationSymbol) : int
+      {
+        obj.InitialName.GetHashCode()
+      }
     }
   }
 }
