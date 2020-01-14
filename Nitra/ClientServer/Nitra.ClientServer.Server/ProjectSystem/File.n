@@ -155,35 +155,55 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsDisposed = true;
     }
 
-    Insert(pos: int, text: string) : void
+    [Conditional("NitraServerChangeLog")]
+    WriteChangeLog(changeIndex : int, trace : string) : void
     {
-      _ = _text.Insert(pos, text);
       def ver = FileVersion.Value.ToString("D6");
-      def trace = $"Insert pos: $pos\r\ntext: «$text»\r\ncontent:\r\n$_text";
-      IoFile.WriteAllText($@"c:\!Logs\(_name)_$ver", trace);
+      def suffix = if (changeIndex < 0) null else "-" + changeIndex;
+      IoFile.WriteAllText($@"c:\!Logs\(_name)-$ver$suffix", trace);
     }
 
-    Delete(span: NSpan) : void
+    [Conditional("NitraServerChangeLog")]
+    LogInsert(pos: int, text: string, changeIndex : int) : void
+    {
+      def index = if (changeIndex < 0) null else " changeIndex=" + changeIndex;
+      Log.Message($"Insert fileId=$Id Version=$(FileVersion.Value)$index pos=$pos text=«$text» _isCompleteWord=$_isCompleteWord");
+    }
+
+    Insert(pos: int, text: string, changeIndex : int) : void
+    {
+      LogInsert(pos, text, changeIndex);
+      _ = _text.Insert(pos, text);
+      WriteChangeLog(changeIndex, $"Insert pos: $pos\r\ntext: «$text»\r\ncontent:\r\n$_text");
+    }
+
+    [Conditional("NitraServerChangeLog")]
+    LogDelete(span: NSpan, changeIndex : int) : void
+    {
+      def index = if (changeIndex < 0) null else " changeIndex=" + changeIndex;
+      def text = _text.ToString(span.StartPos, span.Length);
+      Log.Message($"Delete fileId=$Id Version=$(FileVersion.Value)$index span=$span text=«$text» _isCompleteWord=$_isCompleteWord");
+    }
+
+    Delete(span: NSpan, changeIndex : int) : void
     {
       _ = _text.Remove(span.StartPos, span.Length);
-      def ver = FileVersion.Value.ToString("D6");
-      def trace = $"Delete: span: $span\r\ncontent:\r\n$_text";
-      IoFile.WriteAllText($@"c:\!Logs\(_name)_$ver", trace);
+      WriteChangeLog(changeIndex, $"Delete: span: $span\r\ncontent:\r\n$_text");
     }
 
-    Replace(span: NSpan, text: string) : void
+    Replace(span: NSpan, text: string, changeIndex : int) : void
     {
-      Delete(span);
-      Insert(span.StartPos, text)
+      Delete(span, changeIndex);
+      Insert(span.StartPos, text, changeIndex)
     }
 
-    ApplyChange(change : FileChange, snapshot : SourceSnapshot) : void
+    ApplyChange(change : FileChange, snapshot : SourceSnapshot, changeIndex : int) : void
     {
       match (change)
       {
-        | FileChange.Insert(pos, text)   => Insert(pos.ToPosition(snapshot), text)
-        | FileChange.Delete(span)        => Delete(span.ToNSpan(snapshot))
-        | FileChange.Replace(span, text) => Replace(span.ToNSpan(snapshot), text)
+        | FileChange.Insert(pos, text)   => Insert(pos.ToPosition(snapshot), text, changeIndex)
+        | FileChange.Delete(span)        => Delete(span.ToNSpan(snapshot), changeIndex)
+        | FileChange.Replace(span, text) => Replace(span.ToNSpan(snapshot), text, changeIndex)
       }
     }
 
@@ -192,11 +212,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public Change(version : FileVersion, change : FileChange, caretPos : VersionedPos) : void
     {
-      Log.Message($"Change fileId=$Id caretPos=$caretPos _isCompleteWord=$_isCompleteWord");
+      //Log.Message($"Change fileId=$Id caretPos=$caretPos change=change _isCompleteWord=$_isCompleteWord");
       //_ = memcpy(IntPtr.Zero, IntPtr.Zero, UIntPtr(42));
       def oldSource = GetSource();
       FileVersion = version;
-      ApplyChange(change, oldSource);
+      ApplyChange(change, oldSource, changeIndex = -1);
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
 
       TrySendParseMessage(if (_isCompleteWord) caretPos.ToPosition(oldSource) else -1);
@@ -204,14 +224,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public Change(version : FileVersion, changes : ImmutableArray[FileChange], caretPos : VersionedPos) : void
     {
-      Log.Message($"Change fileId=$Id caretPos=$caretPos changes={} _isCompleteWord=$_isCompleteWord");
+      //Log.Message($"Change fileId=$Id caretPos=$caretPos changes={..$changes} _isCompleteWord=$_isCompleteWord");
+      mutable changeIndex = 0;
       def oldSource = GetSource();
       FileVersion = version;
       for (mutable i = changes.Length - 1; i >= 0; i--)
-        ApplyChange(changes[i], oldSource);
+      {
+        ApplyChange(changes[i], oldSource, changeIndex);
+        changeIndex++;
+      }
       _snapshot = SourceSnapshot(_text.ToString(), this, version);
-      //IO.File.WriteAllText($@"C:\Temp\005\$Name$(version.Value).ncs", _snapshot.Text);
-
       TrySendParseMessage(if (_isCompleteWord) caretPos.ToPosition(oldSource) else -1);
     }
 

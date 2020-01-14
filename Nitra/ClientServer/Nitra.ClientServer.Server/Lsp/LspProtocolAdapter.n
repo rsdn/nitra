@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using System.Threading;
@@ -49,10 +50,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public Connect() : void
     {
-      def di = IO.DirectoryInfo(@"c:\!Logs\");
-
-      foreach (file in di.GetFiles())
-          file.Delete();
+      InitChangeLog();
 
       _input = Console.OpenStandardInput();
       _output = Console.OpenStandardOutput();
@@ -243,7 +241,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         }
         else
         {
-          ClientMessage.FileChangedBatch(fileId, version, Array.ConvertAll(changes, Convert).ToImmutableArray(), VersionedPos.Invalid);
+          def builder = ImmutableArray.CreateBuilder(changes.Length);
+          for (mutable i = changes.Length - 1; i >= 0; i--)
+            builder.Add(Convert(changes[i]));
+          ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
         }
 
       HandlerResult.Unit(null, [message])
@@ -456,12 +457,13 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
     private static Convert(c : TextDocumentContentChangeEvent) : FileChange
     {
         def newText = c.Text;
-        if (c.RangeLength == 0 && !string.IsNullOrEmpty(newText))
+        def isEmpty = string.IsNullOrEmpty(newText);
+        if (c.RangeLength == 0 && !isEmpty)
           FileChange.Insert(Convert(c.Range.Start), newText)
-        else if (c.RangeLength > 0 && string.IsNullOrEmpty(c.Text))
+        else if (c.RangeLength > 0 && isEmpty)
           FileChange.Delete(Convert(c.Range))
         else
-          FileChange.Replace(Convert(c.Range), c.Text)
+          FileChange.Replace(Convert(c.Range), newText)
     }
 
     private static Convert(p : Position) : UIPosition
@@ -489,6 +491,21 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         def completionHandler = result[1] :> Action[TResponse, object];
         completionHandler(response, result[0])
       }
+    }
+
+    [Conditional("NitraServerChangeLog")]
+    private InitChangeLog() : void
+    {
+      def logDir = @"c:\!Logs\";
+
+      if (IO.Directory.Exists(logDir))
+      {
+        def di = IO.DirectoryInfo(logDir);
+        foreach (file in di.GetFiles())
+            file.Delete();
+      }
+      else
+        _ = IO.Directory.CreateDirectory(logDir);
     }
 
     [Record]

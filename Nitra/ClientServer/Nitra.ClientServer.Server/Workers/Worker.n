@@ -330,6 +330,7 @@ namespace Nitra.ClientServer.Server
     {
       def astRoot = fileData.Ast;
       def source  = astRoot.Location.Source;
+      def text    = source.Text;
 
       // находим цепочку ветвей AST ведущую к позиции комплита
 
@@ -380,7 +381,7 @@ namespace Nitra.ClientServer.Server
         when (pos < keyword.StartPos || pos >= keyword.StartPos + literal.Length)
           continue;
 
-        def pattern = source.Text.Substring(keyword.StartPos, pos - keyword.StartPos);
+        def pattern = text.Substring(keyword.StartPos, pos - keyword.StartPos);
 
         when (pattern.Length == 0 || StringPatternMatching.MatchPattern(literal, pattern))
         {
@@ -399,11 +400,12 @@ namespace Nitra.ClientServer.Server
       {
         // Вычисляем префикс комплита (если есть). Он будет использоваться для фильтрации списка и будет заменен выбранным словом
         def startPos        = reference.Span.StartPos;
-        def span            = Nitra.NSpan(reference.Span.StartPos, pos);
-        def pattern         = source.Text.Substring(span.StartPos, span.Length);
+        def offset          = if (startPos < text.Length && text[startPos] == '\"') 1 else 0;
+        def span            = Nitra.NSpan(startPos + offset, pos);
+        def pattern         = text.Substring(span.StartPos, span.Length);
         def pattern         = pattern;
         def isPatternEmpty  = pattern.Length == 0;
-        replacementSpan = Nitra.NSpan(reference.Span.StartPos, reference.Span.EndPos);
+        replacementSpan = Nitra.NSpan(startPos, reference.Span.EndPos);
 
         Log.Message($"    replacementSpan=$replacementSpan pattern='$pattern'");
 
