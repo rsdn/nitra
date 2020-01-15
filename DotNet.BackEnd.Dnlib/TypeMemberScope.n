@@ -1,6 +1,4 @@
-﻿//#define MEASUREMENT
-//#define LAZY
-using DotNet;
+﻿using DotNet;
 
 using Microsoft.Cci;
 
@@ -24,36 +22,22 @@ namespace Nitra.BackEnd.Dnlib
 {
   public class TypeMemberScope : TableScope
   {
-    _cciBackEnd               : DnlibBackEnd;
-    mutable _isLoaded         : bool;
-#if LAZY
-    mutable _backundNameTable : Hashtable[int, list[ITypeDefinitionMember]];
-#endif
+    _backEnd               : DnlibBackEnd;
+    mutable _isLoaded      : bool;
 
-    public this(owner : ContainerSymbol, name : string, cciBackEnd : DnlibBackEnd)
+    public this(owner : ContainerSymbol, name : string, backEnd : DnlibBackEnd)
     {
       base(owner, name);
-      _cciBackEnd = cciBackEnd;
+      _backEnd = backEnd;
     }
-
-#if LAZY
-    Init() : void
-    {
-      _backundNameTable = Hashtable();
-    }
-#endif
 
     Load() : void
     {
       _isLoaded = true;
-#if LAZY
-      Init();
-#endif
 
       def context = DependentPropertyEvalContext(null);
       def owner   = Owner :> ContainerSymbol;
-      def type    = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
-      def props   = List();
+      def typeDef = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
       def methods = Dictionary();
 
       def getTypeScope(type : TypeSymbol)
@@ -63,48 +47,44 @@ namespace Nitra.BackEnd.Dnlib
         | _ => type.Scope
       }
 
-      def members : array[ITypeDefinitionMember] = type.Members.ToArray();
-#if LAZY
-      foreach (m in members)
+      foreach (fieldDef in typeDef.Fields)
       {
-        def id = StringIndex.GetId(m.Name.Value);
-        mutable backendSymbols;
-        unless (_backundNameTable.TryGetValue(id, out backendSymbols))
-          backendSymbols = [];
-        _backundNameTable[id] = m :: backendSymbols;
-      }
-#endif
-
-      foreach (m in members)
-      {
-        | _ is ITypeDefinition => ()
-        | member =>
-          def symbol = _cciBackEnd.LoadTypeMembers(member, owner, context);
-
-          match (member, symbol)
-          {
-            | (member is IPropertyDefinition, propSymbol is Member.PropertySymbol) =>
-              // Remember property for getter/setter resolution
-              props.Add((member, propSymbol));
-
-              // Link Type scope to property Scope
-              propSymbol.Scope = getTypeScope(propSymbol.Type);
-            | (_ is IFieldDefinition, fieldSymbol is Member.FieldSymbol) =>
-              // Link Type scope to field Scope
-              fieldSymbol.Scope = getTypeScope(fieldSymbol.Type);
-            | (_, symbol is Member.MethodSymbol) =>
-              // Save methods for getter/setter resolution
-              // don't care about overloads, since this is for properties
-              methods[member.Name.UniqueKey] = symbol;
-              symbol.Scope = getTypeScope(symbol.ReturnType);
-            | _ => ()
-          }
+        def symbol = _backEnd.TryLoadField(fieldDef, owner, context);
+        when (symbol is Member.FieldSymbol as fieldSymbol)
+          fieldSymbol.Scope = getTypeScope(fieldSymbol.Type);
       }
 
-      foreach((propDef, propSym) in props)
+      foreach (methodDef in typeDef.Methods)
       {
-        propSym.Getter = if (propDef.Getter != null) Some(methods[propDef.Getter.Name.UniqueKey]) else None();
-        propSym.Setter = if (propDef.Setter != null) Some(methods[propDef.Setter.Name.UniqueKey]) else None();
+        def symbol = _backEnd.LoadMethod(methodDef, owner, context);
+        when (symbol is Member.MethodSymbol as methodSymbol)
+        {
+          methodSymbol.Scope = getTypeScope(methodSymbol.ReturnType);
+          methods.Add(methodDef, methodSymbol);
+        }
+      }
+
+      foreach (eventDef in typeDef.Events)
+        _ = _backEnd.LoadEvent(eventDef, owner, context);
+
+      def processAccessor(propertySymbol, accessor)
+      {
+        if (accessor != null)
+        {
+          def methodSymbol = methods[accessor];
+          when (!propertySymbol.IsFlagsEvaluated && methodSymbol.IsFlagsEvaluated)
+            propertySymbol.Flags = methodSymbol.Flags; // TODO: Blind copying is wrong! Unite getter & setter modifiers.
+          Some(methodSymbol)
+        }
+        else
+          None()
+      }
+
+      foreach (propertyDef in typeDef.Properties)
+      {
+        def symbol = _backEnd.LoadProperty(propertyDef, owner, context);
+        symbol.Getter = processAccessor(symbol, propertyDef.GetMethod);
+        symbol.Setter = processAccessor(symbol, propertyDef.SetMethod);
       }
     }
 
