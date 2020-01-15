@@ -418,7 +418,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (ast == null || (ast.Location.Source.Version != pos.Version && pos.Version >= 0))
       {
         // maybe better return special message?
-        assert2(false);
+        //assert2(false);
+        if (ast == null)
+          Log.Error("FindSymbolDefinitions() ast == null");
+        else
+          Log.Error($"FindSymbolDefinitions() ast.Location.Source.Version=$(ast.Location.Source.Version) pos=$pos");
         Parent.Router.SendResponse(ServerMessage.FindSymbolDefinitions(Parent.Parent.Id, NSpan(), ImmutableArray.Empty, tag));
         return;
       }
