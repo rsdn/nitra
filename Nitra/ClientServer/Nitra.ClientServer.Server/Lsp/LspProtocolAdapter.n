@@ -18,6 +18,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using System.Threading;
+using System.Xml.Linq;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -323,8 +324,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.GetHint(_projectId, fileId, position,
-        RegisterRequest(id, ShowHint(_, _, p.Position)))]);
+      HandlerResult.Unit(id, [ClientMessage.GetHint(_projectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position)))]);
     }
 
     private TextDocumentCompletionHandler(p : CompletionParams, id : object) : HandlerResult
@@ -434,16 +434,32 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private ShowHint(text : string, id : object, position : LSP.Position) : void
     {
+      def value = HintMlToMarkdown(text);
+
       WriteResult(id, Hover() <-
       {
-        Contents = new (language = "markdown", value = HintMlToMarkdown(text)); // TODO: transform XML to Markdown
+        Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
         Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
       });
     }
 
     private static HintMlToMarkdown(text : string) : string
     {
-      text
+      def builder = Text.StringBuilder();
+      def processNode(node : XNode) : void
+      {
+        | XText as t => _ = builder.Append(t.Value);
+        | XElement as e when e.Name == "keyword" => _ = builder.Append("**"); _ = builder.Append(e.Value); _ = builder.Append("**");
+        | XElement as e when e.Name == "symbol"  => _ = builder.Append("*"); _ = builder.Append(e.Value); _ = builder.Append("*");
+        | XElement as e when e.Name == "ref"     => _ = builder.Append(e.Attribute("hint").Value);
+        | XElement as e when e.Name == "br"      => _ = builder.AppendLine();
+        | XElement as e => _ = builder.Append(e.Value);
+        | _ => ()
+      }
+      def root = XElement.Parse(text, LoadOptions.PreserveWhitespace);
+      foreach (n in root.Nodes())
+        processNode(n);
+      builder.ToString()
     }
 
     private CompleteWord(fileId : FileId, completionList : ImmutableArray[CompletionElem], id : object) : void
