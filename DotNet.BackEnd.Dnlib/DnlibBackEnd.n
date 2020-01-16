@@ -70,10 +70,11 @@ namespace Nitra.BackEnd.Dnlib
     mutable _corlibTypes           : ICorLibTypes;
     _multiDimensionArrays          : Dictionary[uint, MultiDimensionArraySymbol] = Dictionary();
     _loadedModules                 : Dictionary[AssemblyIdentity, ModuleDef]     = Dictionary();
-    _loadedTypes                   : Dictionary[ITypeDefOrRef, TypeSymbol]       = Dictionary();
+    _loadedTypeDefs                : Dictionary[TypeDef, TypeSymbol]             = Dictionary();
+    _loadedTypeSpecs               : Dictionary[TypeSpec, TypeSymbol]            = Dictionary();
     _loadedNamespaces              : Dictionary[string, NamespaceSymbol]         = Dictionary();
 
-    public Types                : Seq[TypeSymbol]            { get { _loadedTypes.Values } }
+    public Types                : Seq[TypeSymbol]            { get { _loadedTypeDefs.Values.Concat(_loadedTypeSpecs.Values) } }
     public Object               : TypeSymbol                 { get { _objectSymbol } }
     public SingleDimensionArray : SingleDimensionArraySymbol { get { _singleDimensionArray } }
 
@@ -101,7 +102,8 @@ namespace Nitra.BackEnd.Dnlib
       _multiDimensionArrays.Clear();
 
       _loadedModules.Clear();
-      _loadedTypes.Clear();
+      _loadedTypeDefs.Clear();
+      _loadedTypeSpecs.Clear();
       _loadedNamespaces.Clear();
 
       _corlibReference      = null;
@@ -198,18 +200,6 @@ namespace Nitra.BackEnd.Dnlib
         | _ => throw NotImplementedException("Loading types from " + lib + " not supported yet.")
       }
 
-      foreach (path in pathsToLoad)
-      {
-        this.CancellationToken.ThrowIfCancellationRequested();
-
-        try
-          RegisterLoadedModule(LoadModule(path))
-        catch
-        {
-          | e is Exception => addError(NoLocation, $"Failed to load reference assembly '$path': $(e)");
-        }
-      }
-
       foreach (name in namesToLoad)
       {
         this.CancellationToken.ThrowIfCancellationRequested();
@@ -227,6 +217,18 @@ namespace Nitra.BackEnd.Dnlib
           | e is Exception => addError(NoLocation, $"Failed to resolve reference assembly '$name': $(e)");
         }
       }
+
+      foreach (path in pathsToLoad)
+      {
+        this.CancellationToken.ThrowIfCancellationRequested();
+
+        try
+          RegisterLoadedModule(LoadModule(path))
+        catch
+        {
+          | e is Exception => addError(NoLocation, $"Failed to load reference assembly '$path': $(e)");
+        }
+      }
     }
 
     RegisterLoadedModule(identity : AssemblyIdentity, moduleDef : ModuleDef) : void
@@ -238,7 +240,19 @@ namespace Nitra.BackEnd.Dnlib
           _ = _assemblyResolver.Remove(moduleDef);
       }
       else
+      {
         _loadedModules.Add(identity, moduleDef);
+
+        when (_corlibReference == null && moduleDef.IsCoreLibraryModule.GetValueOrDefault())
+        {
+          def assemblyRef = AssemblyRefUser(identity.Name, identity.Version, identity.PublicKeyToken, UTF8String.Empty);
+          assemblyRef.Attributes = moduleDef.Assembly.Attributes & ~(AssemblyAttributes.PublicKey | AssemblyAttributes.PA_FullMask);
+
+          _corlibReference      = assemblyRef;
+          _corlibRuntimeVersion = moduleDef.RuntimeVersion;
+          _corlibTypes          = moduleDef.CorLibTypes;
+        }
+      }
     }
 
     LoadModule(assemblyPath : string) : AssemblyIdentity * ModuleDef
@@ -247,18 +261,7 @@ namespace Nitra.BackEnd.Dnlib
       loadOptions.CorLibAssemblyRef    = _corlibReference;
       loadOptions.TryToLoadPdbFromDisk = false;
       def moduleDef                    = ModuleDefMD.Load(assemblyPath, loadOptions);
-      def assembly                     = moduleDef.Assembly;
-      def identity                     = AssemblyIdentity(assembly);
-      when (_corlibReference == null && moduleDef.IsCoreLibraryModule.GetValueOrDefault())
-      {
-        def assemblyRef = AssemblyRefUser(identity.Name, identity.Version, identity.PublicKeyToken, UTF8String.Empty);
-        assemblyRef.Attributes = assembly.Attributes & ~(AssemblyAttributes.PublicKey | AssemblyAttributes.PA_FullMask);
-
-        _corlibReference      = assemblyRef;
-        _corlibRuntimeVersion = moduleDef.RuntimeVersion;
-        _corlibTypes          = moduleDef.CorLibTypes;
-      }
-
+      def identity                     = AssemblyIdentity(moduleDef.Assembly);
       (identity, moduleDef)
     }
 
@@ -294,7 +297,7 @@ namespace Nitra.BackEnd.Dnlib
 
       def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, typeDef : TypeDef) : void
       {
-        _loadedTypes[typeDef] = typeSymbol;
+        _loadedTypeDefs[typeDef] = typeSymbol;
 
         when (typeSymbol is GenericTypeSymbol as genericSymbol)
           MakeTypeParameters(context, genericSymbol, typeDef);
@@ -397,9 +400,18 @@ namespace Nitra.BackEnd.Dnlib
         when (typeDef.IsPublic && !IgnoreName(namespaceName) && !IgnoreName(typeName))
         {
           def namespaceSymbol = getNamespace(namespaceName);
-          loadType(typeDef, typeName, namespaceSymbol);
+          loadType(typeDef, StripGenericMark(typeName), namespaceSymbol);
         }
       }
+    }
+
+    StripGenericMark(name : string) : string
+    {
+      def index = name.IndexOf('`');
+      if (index < 0)
+        name
+      else
+        name.Substring(0, index)
     }
 
     MakeTypeParameters(context : DependentPropertyEvalContext, symbol : GenericEntitySymbol, typeDef : TypeDef) : void
@@ -760,16 +772,16 @@ namespace Nitra.BackEnd.Dnlib
       match (typeDefOrRef)
       {
         | typeSpec is TypeSpec =>
-          unless (_loadedTypes.TryGetValue(typeSpec, out typeSymbol))
+          unless (_loadedTypeSpecs.TryGetValue(typeSpec, out typeSymbol))
           {
             typeSymbol = ConvertType(typeSpec.TypeSig, methodTypeParameters, context);
-            _loadedTypes.Add(typeSpec, typeSymbol);
+            _loadedTypeSpecs.Add(typeSpec, typeSymbol);
           }
           typeSymbol
 
         | typeDef  is TypeDef
         | typeRef  is TypeRef with typeDef = typeRef.Resolve() =>
-          if (typeDef != null && _loadedTypes.TryGetValue(typeDef, out typeSymbol))
+          if (typeDef != null && _loadedTypeDefs.TryGetValue(typeDef, out typeSymbol))
             typeSymbol
           else
             _objectSymbol
@@ -859,7 +871,7 @@ namespace Nitra.BackEnd.Dnlib
       mutable resolvedByKey = 0;
       mutable resolvedByResolvedTypeProp = 0;
 
-      foreach (x in _loadedTypes.Values)
+      foreach (x in _loadedTypeDefs.Values)
       {
         when ((x.FirstDeclarationOrDefault : object) is IExternalTypeDeclaration(TypeDef = typeDef))
         {
@@ -898,7 +910,7 @@ namespace Nitra.BackEnd.Dnlib
 
       context.NextPass();
 
-      foreach (x in _loadedTypes.Values)
+      foreach (x in Types)
       {
         x.EvalProperties(context);
 
