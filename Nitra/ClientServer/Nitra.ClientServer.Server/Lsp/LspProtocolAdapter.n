@@ -260,8 +260,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, true,
-        RegisterRequest(id, DocumentHighlight))])
+      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, true, RegisterRequest(id, DocumentHighlight))])
     }
 
     private TextDocumentReferencesHandler(p : ReferenceParams, id : object) : HandlerResult
@@ -269,8 +268,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, false,
-        RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration)))])
+      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration)))])
     }
 
     private TextDocumentHoverHandler(p : TextDocumentPositionParams, id : object) : HandlerResult

@@ -63,7 +63,7 @@ namespace Nitra.ClientServer.Server
     {
       when (r == null || !_refs.Add(r))
         return;
-      
+
       when (r.ResolvedTo != null)
       {
         Visit(r.ResolvedTo);
