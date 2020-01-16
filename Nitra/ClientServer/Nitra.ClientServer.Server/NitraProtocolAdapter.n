@@ -15,7 +15,7 @@ using Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server
 {
-  public class NitraProtocolAdapter : IProtocolAdapter
+  internal class NitraProtocolAdapter : IProtocolAdapter
   {
     _requestPipe         : NamedPipeServerStream;
     _responsePipe        : NamedPipeServerStream;
@@ -36,7 +36,7 @@ namespace Nitra.ClientServer.Server
 
     public IsLsp : bool { get false; }
 
-    public Connect() : void
+    public Connect(_router : Router) : void
     {
       _requestPipe.      WaitForConnection();
       _responsePipe.     WaitForConnection();

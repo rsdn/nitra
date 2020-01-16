@@ -21,7 +21,6 @@ module Program
 {
   Main(args : array[string]) : void
   {
-    //assert2(false, "Start debugger");
     def isLsp = args.Length == 1 && array["--lsp", "-lsp", "/lsp"].Contains(args[0], StringComparer.OrdinalIgnoreCase);
 
     Log.Init("Nitra.ClientServer.Server", !isLsp);
@@ -42,9 +41,10 @@ module Program
     using (adapter = if (isLsp) LspProtocolAdapter() else NitraProtocolAdapter(args[0]))
     {
       Log.Message("Attempting to connect to pipes...");
-      adapter.Connect();
 
       def router = Router(adapter);
+
+      adapter.Connect(router);
 
       Log.Message("Connected to pipes.");
 

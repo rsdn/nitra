@@ -28,6 +28,19 @@ namespace Nitra.ClientServer.Server.Lsp
       _serializer.Formatting = Formatting.None;
     }
 
+    public WriteNotification(method : string, @params : object) : void
+    {
+      try
+      {
+        def jsonWriter = StartRequestObject(null, method);
+
+        _serializer.Serialize(jsonWriter, @params);
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
     public WriteResult(id : object, result : object) : void
     {
       try
@@ -36,7 +49,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
         _serializer.Serialize(jsonWriter, result);
 
-        EndResponseObject(jsonWriter);
+        EndObject(jsonWriter);
       }
       finally ResetOutput();
     }
@@ -59,10 +72,32 @@ namespace Nitra.ClientServer.Server.Lsp
         }
         jsonWriter.WriteEndObject();
 
-        EndResponseObject(jsonWriter);
+        EndObject(jsonWriter);
       }
       finally ResetOutput();
     }
+
+    private StartRequestObject(id : object, method : string) : JsonWriter
+    {
+      def jsonWriter = JsonTextWriter(StreamWriter(_outputBuffer, LspDefaults.Encoding, 1024, true));
+      jsonWriter.CloseOutput = false;
+      jsonWriter.Formatting = Formatting.None;
+
+      jsonWriter.WriteStartObject();
+      jsonWriter.WritePropertyName("jsonrpc");
+      jsonWriter.WriteValue(LspDefaults.JsonRpcVersion);
+      when (id != null)
+      {
+        jsonWriter.WritePropertyName("id");
+        jsonWriter.WriteValue(id);
+      }
+      jsonWriter.WritePropertyName("method");
+      jsonWriter.WriteValue(method);
+
+      jsonWriter.WritePropertyName("params");
+      jsonWriter
+    }
+
 
     private StartResponseObject(id : object, payloadName : string) : JsonWriter
     {
@@ -79,7 +114,7 @@ namespace Nitra.ClientServer.Server.Lsp
       jsonWriter
     }
 
-    private EndResponseObject(jsonWriter : JsonWriter) : void
+    private EndObject(jsonWriter : JsonWriter) : void
     {
       jsonWriter.WriteEndObject();
       jsonWriter.WriteRaw("\r\n");

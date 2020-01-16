@@ -2,6 +2,7 @@
 using Nitra.ClientServer.Server.ProjectSystem;
 
 using Nemerle;
+using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Extensions;
 using Nemerle.Imperative;
@@ -27,15 +28,17 @@ using Messages = Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server.Lsp
 {
-  public class LspProtocolAdapter : IProtocolAdapter
+  internal class LspProtocolAdapter : IProtocolAdapter
   {
     private static mutable _tagCounter  : int;
     private static mutable _fileCounter : int;
 
-    private _uriToFileIdTable   : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
-    private _fileIdToUriTable   : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
-    private _requestTable       : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
+    private _uriToFileIdTable         : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
+    private _fileIdToUriTable         : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
+    private _requestTable             : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
+    private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, List[Diagnostic]] = ConcurrentDictionary();
 
+    private mutable _router     : Router;
     private mutable _input      : Stream;
     private mutable _output     : Stream;
     private mutable _reader     : LspReader[HandlerResult];
@@ -48,8 +51,9 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public IsLsp : bool { get true; }
 
-    public Connect() : void
+    public Connect([NotNull] router : Router) : void
     {
+      _router = router;
       InitChangeLog();
 
       _input = Console.OpenStandardInput();
@@ -133,8 +137,51 @@ namespace Nitra.ClientServer.Server.Lsp
     {
       | FindSymbolReferences(_span, symbols, tag) => CompleteRequest(tag, symbols)
       | Hint(text, _span, tag)                    => CompleteRequest(tag, text)
-      | CompleteWord(_span, completionList)       => CompleteWord(completionList, Interlocked.Exchange(ref pendingCompletionId, null))
+      | CompleteWord(_span, completionList)       => CompleteWord(message.FileId, completionList, Interlocked.Exchange(ref pendingCompletionId, null))
+      //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
+      | ParsingMessages         (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=true);
+      | MappingMessages         (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=false);
+      | SemanticAnalysisMessages(projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=false);
       | _ => ()
+    }
+
+    private SendCompilerMessagesToClient(_projectId : ProjectId, fileId : FileId, messages : array[CompilerMessage], isFirst : bool) : void
+    {
+      when (fileId == FileId.Invalid)
+        return;
+
+      def diagnostics = if (isFirst) { def x = List(); _fileToCompilerMessageMap[fileId] = x; x } else _fileToCompilerMessageMap.GetOrAdd(fileId, List());
+
+      lock (diagnostics)
+      {
+        def count       = diagnostics.Count;
+        def uri         = _fileIdToUriTable[fileId];
+        foreach (m in messages)
+        {
+          def severity =
+            match (m.Type)
+            {
+              | FatalError => DiagnosticSeverity.Error
+              | Error      => DiagnosticSeverity.Error
+              | Warning    => DiagnosticSeverity.Warning
+              | Hint       => DiagnosticSeverity.Hint
+            };
+          def loc = m.Location;
+          diagnostics.Add(Diagnostic() <-
+          {
+            Range = Convert(loc.Range);
+            Severity = severity;
+            Code = if (m.Number < 0) null else m.Number.ToString();
+            Message = m.Text;
+            // Source = ???
+          });
+        }
+        when (isFirst || count != diagnostics.Count)
+        {
+          def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
+          WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
+        }
+      }
     }
 
     private UnknownHandler(method : string, id : object) : HandlerResult
@@ -318,6 +365,12 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         _writer.WriteResult(id, body)
     }
 
+    private WriteNotification[T](method : LspNotification[T], @params : T) : void
+    {
+      lock (_writer)
+        _writer.WriteNotification(method.Name, @params)
+    }
+
     private LoadSolution(path : string, solutionId : SolutionId, projectId : ProjectId, options : InitializationOptions) : Seq[ClientMessage]
     {
       yield ClientMessage.SolutionStartLoading(solutionId, path);
@@ -393,8 +446,9 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       text
     }
 
-    private CompleteWord(completionList : ImmutableArray[CompletionElem], id : object) : void
+    private CompleteWord(fileId : FileId, completionList : ImmutableArray[CompletionElem], id : object) : void
     {
+      _router.AddMessage(ClientMessage.FileReparse(fileId));
       def result = List();
       foreach (x in completionList)
       {

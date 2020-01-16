@@ -11,8 +11,8 @@ using Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server
 {
-  public interface IProtocolAdapter : IServerMessageSink, IClientMessageSource, IDisposable
+  internal interface IProtocolAdapter : IServerMessageSink, IClientMessageSource, IDisposable
   {
-    Connect() : void;
+    Connect(router : Router) : void;
   }
 }

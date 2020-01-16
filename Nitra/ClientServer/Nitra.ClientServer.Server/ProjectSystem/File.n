@@ -456,7 +456,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (ast == null || pos.IsIncompatible(ast.Location.Source))
       {
         // maybe better return special message?
-        assert2(false);
+        //assert2(false);
+        if (ast == null)
+          Log.Error("FindSymbolReferences() ast == null");
+        else
+          Log.Error($"FindSymbolReferences() ast.Location.Source.Version=$(ast.Location.Source.Version) pos=$pos");
         Parent.Router.SendResponse(ServerMessage.FindSymbolReferences(Parent.Parent.Id, NSpan(), ImmutableArray.Empty, tag));
         return;
       }
