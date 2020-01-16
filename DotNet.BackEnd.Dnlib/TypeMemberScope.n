@@ -1,7 +1,5 @@
 ﻿using DotNet;
 
-using Microsoft.Cci;
-
 using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Extensions;
@@ -37,7 +35,7 @@ namespace Nitra.BackEnd.Dnlib
 
       def context = DependentPropertyEvalContext(null);
       def owner   = Owner :> ContainerSymbol;
-      def typeDef = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).Type;
+      def typeDef = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).TypeDef;
       def methods = Dictionary();
 
       def getTypeScope(type : TypeSymbol)

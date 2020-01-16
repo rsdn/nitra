@@ -1,0 +1,62 @@
+﻿using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Declarations;
+
+using dnlib.DotNet;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+namespace Nitra.BackEnd.Dnlib
+{
+  internal class DnlibPlatformType : IPlatformType
+  {
+    public this(backEnd : DnlibBackEnd, corlibTypes : ICorLibTypes, context : DependentPropertyEvalContext)
+    {
+      Object  = backEnd.Object;
+      Void    = backEnd.ConvertType(corlibTypes.Void,                            ImmutableArray.Empty, context);
+      Type    = backEnd.ConvertType(corlibTypes.GetTypeRef("System", "Type"),    ImmutableArray.Empty, context);
+      String  = backEnd.ConvertType(corlibTypes.String,                          ImmutableArray.Empty, context);
+      Char    = backEnd.ConvertType(corlibTypes.Char,                            ImmutableArray.Empty, context);
+      Byte    = backEnd.ConvertType(corlibTypes.Byte,                            ImmutableArray.Empty, context);
+      SByte   = backEnd.ConvertType(corlibTypes.SByte,                           ImmutableArray.Empty, context);
+      Int16   = backEnd.ConvertType(corlibTypes.Int16,                           ImmutableArray.Empty, context);
+      Int32   = backEnd.ConvertType(corlibTypes.Int32,                           ImmutableArray.Empty, context);
+      Int64   = backEnd.ConvertType(corlibTypes.Int64,                           ImmutableArray.Empty, context);
+      UInt16  = backEnd.ConvertType(corlibTypes.UInt16,                          ImmutableArray.Empty, context);
+      UInt32  = backEnd.ConvertType(corlibTypes.UInt32,                          ImmutableArray.Empty, context);
+      UInt64  = backEnd.ConvertType(corlibTypes.UInt64,                          ImmutableArray.Empty, context);
+      Single  = backEnd.ConvertType(corlibTypes.Single,                          ImmutableArray.Empty, context);
+      Double  = backEnd.ConvertType(corlibTypes.Double,                          ImmutableArray.Empty, context);
+      Decimal = backEnd.ConvertType(corlibTypes.GetTypeRef("System", "Decimal"), ImmutableArray.Empty, context);
+      Boolean = backEnd.ConvertType(corlibTypes.Boolean,                         ImmutableArray.Empty, context);
+    }
+
+    public CreateFreeTypeVar() : TypeSymbol { TypeUnifier.Instance.CreateFreeTypeVar() }
+
+    public Void    : TypeSymbol { get; }
+    public Object  : TypeSymbol { get; }
+    public Type    : TypeSymbol { get; }
+    public String  : TypeSymbol { get; }
+    public Char    : TypeSymbol { get; }
+    public Byte    : TypeSymbol { get; }
+    public SByte   : TypeSymbol { get; }
+    public Int16   : TypeSymbol { get; }
+    public Int32   : TypeSymbol { get; }
+    public Int64   : TypeSymbol { get; }
+    public UInt16  : TypeSymbol { get; }
+    public UInt32  : TypeSymbol { get; }
+    public UInt64  : TypeSymbol { get; }
+    public Single  : TypeSymbol { get; }
+    public Double  : TypeSymbol { get; }
+    public Decimal : TypeSymbol { get; }
+    public Boolean : TypeSymbol { get; }
+  } // class PlatformType
+} // namespace

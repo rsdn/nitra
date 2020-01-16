@@ -68,7 +68,7 @@
     <Compile Include="LazyList.n">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PlatformType.n">
+    <Compile Include="DnlibPlatformType.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.n" />
