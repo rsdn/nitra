@@ -40,7 +40,7 @@ namespace DotNet
         return true;
 
       when (subtype is SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, BaseTypeSet=baseTypeSet))
-        return baseTypeSet.AncestorTypes.Contains(supertype);
+        return baseTypeSet.ContainsAncestor(supertype);
 
       false
     }

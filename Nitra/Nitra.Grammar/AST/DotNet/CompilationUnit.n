@@ -371,6 +371,7 @@ namespace DotNet
             def tp    = typarms.Head;
             def tps   = TypeParameterSymbol();
             tps.UpdateName(tp.Name);
+            tps.Index = i;
             tps.EvalProperties(context);
             result.Add(tps);
             typarms   = typarms.Tail;

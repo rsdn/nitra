@@ -536,7 +536,7 @@ namespace Nitra.BackEnd.Cci
             constructedType.EvalProperties(context);
             constructedType
 
-          | gp is IGenericParameter => CreateGenericParameter(gp, context)
+          | gp is IGenericParameter => CreateGenericParameter(gp, 0, context)
           | t is ITypeDefinition =>
             mutable typeSymbol;
             if (_cciInternedKeyToSymbolMap.TryGetValue(t.InternedKey, out typeSymbol))
@@ -587,7 +587,7 @@ namespace Nitra.BackEnd.Cci
         result
     }
 
-    CreateGenericParameter(genericParam : IGenericParameter, context : DependentPropertyEvalContext) : TypeSymbol
+    CreateGenericParameter(genericParam : IGenericParameter, index : int, context : DependentPropertyEvalContext) : TypeSymbol
     {
       mutable typeSymbol;
       if (_cciInternedKeyToSymbolMap.TryGetValue(genericParam.InternedKey, out typeSymbol))
@@ -596,6 +596,7 @@ namespace Nitra.BackEnd.Cci
       {
         def tps = TypeParameterSymbol();
         tps.UpdateName(genericParam.Name.Value); // TODO: type.Name.UniqueKey
+        tps.Index = index;
         tps.Variance =
           match (genericParam.Variance)
           {
@@ -617,7 +618,7 @@ namespace Nitra.BackEnd.Cci
       {
         def result = ImmutableArray.CreateBuilder(genericParameterCount : int);
         foreach (tp in genericParams with i)
-          result.Add(CreateGenericParameter(tp, context));
+          result.Add(CreateGenericParameter(tp, i, context));
         result.MoveToImmutable()
       }
     }
@@ -650,6 +651,7 @@ namespace Nitra.BackEnd.Cci
     {
       def tps = TypeParameterSymbol();
       tps.UpdateName("T");
+      tps.Index = 0;
       tps.EvalProperties(context);
       tps
     }

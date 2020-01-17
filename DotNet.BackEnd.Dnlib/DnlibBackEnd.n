@@ -71,7 +71,7 @@ namespace Nitra.BackEnd.Dnlib
     _multiDimensionArrays          : Dictionary[uint, MultiDimensionArraySymbol] = Dictionary();
     _loadedModules                 : Dictionary[AssemblyIdentity, ModuleDef]     = Dictionary();
     _loadedTypeDefs                : Dictionary[TypeDef, TypeSymbol]             = Dictionary();
-    _loadedTypeSpecs               : Dictionary[TypeSpec, TypeSymbol]            = Dictionary();
+    _loadedTypeSpecs               : Dictionary[GenericInstSig, TypeSymbol]      = Dictionary(TypeEqualityComparer.Instance);
     _loadedNamespaces              : Dictionary[string, NamespaceSymbol]         = Dictionary();
 
     public Types                : Seq[TypeSymbol]            { get { _loadedTypeDefs.Values.Concat(_loadedTypeSpecs.Values) } }
@@ -742,22 +742,28 @@ namespace Nitra.BackEnd.Dnlib
           symbol
 
         | t is GenericInstSig  =>
-          def genericType = ConvertType(t.GenericType, methodTypeParameters, context) :> GenericTypeSymbol;
-          if (genericType : object != _objectSymbol)
+          mutable typeSymbol;
+          unless (_loadedTypeSpecs.TryGetValue(t, out typeSymbol))
           {
-            def genericArguments = ImmutableArray.CreateBuilder(t.GenericArguments.Count);
-            foreach (arg in t.GenericArguments)
-              genericArguments.Add(ConvertType(arg, methodTypeParameters, context));
+            def genericType = ConvertType(t.GenericType, methodTypeParameters, context) :> GenericTypeSymbol;
+            if (genericType : object != _objectSymbol)
+            {
+              def genericArguments = ImmutableArray.CreateBuilder(t.GenericArguments.Count);
+              foreach (arg in t.GenericArguments)
+                genericArguments.Add(ConvertType(arg, methodTypeParameters, context));
 
-            def name        = NRB.Name(NoLocation, t.TypeName);
-            def symbol      = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol](name, t).DefineSymbol(null);
-            symbol.TypeInfo = genericType;
-            symbol.Args     = genericArguments.MoveToImmutable();
-            symbol.EvalProperties(context);
-            symbol
+              def name            = NRB.Name(NoLocation, t.TypeName);
+              def symbol          = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol](name, t).DefineSymbol(null);
+              symbol.TypeInfo     = genericType;
+              symbol.Args         = genericArguments.MoveToImmutable();
+              symbol.EvalProperties(context);
+              typeSymbol          = symbol;
+              _loadedTypeSpecs[t] = typeSymbol;
+            }
+            else
+              typeSymbol = genericType
           }
-          else
-            genericType
+          typeSymbol
 
         | FnPtrSig => _pointerSymbol // TODO: поддержать указатели на функции
         | _ =>
@@ -771,14 +777,7 @@ namespace Nitra.BackEnd.Dnlib
       mutable typeSymbol;
       match (typeDefOrRef)
       {
-        | typeSpec is TypeSpec =>
-          unless (_loadedTypeSpecs.TryGetValue(typeSpec, out typeSymbol))
-          {
-            typeSymbol = ConvertType(typeSpec.TypeSig, methodTypeParameters, context);
-            _loadedTypeSpecs.Add(typeSpec, typeSymbol);
-          }
-          typeSymbol
-
+        | typeSpec is TypeSpec => ConvertType(typeSpec.TypeSig, methodTypeParameters, context)
         | typeDef  is TypeDef
         | typeRef  is TypeRef with typeDef = typeRef.Resolve() =>
           if (typeDef != null && _loadedTypeDefs.TryGetValue(typeDef, out typeSymbol))
@@ -792,10 +791,11 @@ namespace Nitra.BackEnd.Dnlib
       }
     }
 
-    CreateGenericParameter(genericParam : GenericParam, context : DependentPropertyEvalContext) : TypeSymbol
+    CreateGenericParameter(genericParam : GenericParam, index : int, context : DependentPropertyEvalContext) : TypeParameterSymbol
     {
       def tps = TypeParameterSymbol();
       tps.UpdateName(genericParam.Name);
+      tps.Index = index;
       tps.Variance =
         match (genericParam.Variance %& GenericParamAttributes.VarianceMask)
         {
@@ -814,8 +814,8 @@ namespace Nitra.BackEnd.Dnlib
       else
       {
         def result = ImmutableArray.CreateBuilder(genericParameters.Count : int);
-        foreach (tp in genericParameters)
-          result.Add(CreateGenericParameter(tp, context));
+        foreach (tp in genericParameters with index)
+          result.Add(CreateGenericParameter(tp, index, context));
         result.MoveToImmutable()
       }
     }
@@ -857,6 +857,7 @@ namespace Nitra.BackEnd.Dnlib
     {
       def tps = TypeParameterSymbol();
       tps.UpdateName("T");
+      tps.Index = 0;
       tps.EvalProperties(context);
       tps
     }
