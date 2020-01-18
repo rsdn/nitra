@@ -34,7 +34,7 @@ namespace Nitra.ClientServer.Server.Lsp
     private static mutable _tagCounter  : int;
 
     private _requestTable             : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
-    private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, List[Diagnostic]] = ConcurrentDictionary();
+    private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, array[array[Diagnostic]]] = ConcurrentDictionary();
 
     private mutable _router     : Router;
     private mutable _input      : Stream;
@@ -102,51 +102,62 @@ namespace Nitra.ClientServer.Server.Lsp
       | Hint(text, _span, tag)                    => CompleteRequest(tag, text)
       | CompleteWord(_span, completionList)       => CompleteWord(message.FileId, completionList, Interlocked.Exchange(ref pendingCompletionId, null))
       //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
-      | ParsingMessages         (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=true);
-      | MappingMessages         (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=false);
-      | SemanticAnalysisMessages(projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages, isFirst=false);
+      | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
+      | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
+      | SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
       | _ => ()
     }
 
-    private SendCompilerMessagesToClient(_projectId : ProjectId, fileId : FileId, messages : array[CompilerMessage], isFirst : bool) : void
-    {
-      Log.Message($"LSP $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId messages.Length=$(messages.Length)", ConsoleColor.Cyan);
+    private _locker : object = object();
 
+    private SendCompilerMessagesToClient(_projectId : ProjectId, fileId : FileId, messages : array[CompilerMessage], pass : int) : void
+    {
       when (fileId == FileId.Invalid)
         return;
 
-      def diagnostics = if (isFirst) { def x = List(); _fileToCompilerMessageMap[fileId] = x; x } else _fileToCompilerMessageMap.GetOrAdd(fileId, List());
+      def diagnosticsPass =
+        if (pass == 0)
+        {
+          def x = array[array(0), array(0), array(0)];
+          _fileToCompilerMessageMap[fileId] = x;
+          x
+        }
+        else
+          _fileToCompilerMessageMap[fileId];
 
-      lock (diagnostics)
+      def diagnostics = List();
+      def uri         = _solution.GetUri(fileId);
+      foreach (m in messages)
       {
-        def count       = diagnostics.Count;
-        def uri         = _solution.GetUri(fileId);
-        foreach (m in messages)
-        {
-          def severity =
-            match (m.Type)
-            {
-              | FatalError => DiagnosticSeverity.Error
-              | Error      => DiagnosticSeverity.Error
-              | Warning    => DiagnosticSeverity.Warning
-              | Hint       => DiagnosticSeverity.Hint
-            };
-          def loc = m.Location;
-          diagnostics.Add(Diagnostic() <-
+        def severity =
+          match (m.Type)
           {
-            Range = Convert(loc.Range);
-            Severity = severity;
-            Code = if (m.Number < 0) null else m.Number.ToString();
-            Message = m.Text;
-            // Source = ???
-          });
-        }
-        when (isFirst || count != diagnostics.Count)
+            | FatalError => DiagnosticSeverity.Error
+            | Error      => DiagnosticSeverity.Error
+            | Warning    => DiagnosticSeverity.Warning
+            | Hint       => DiagnosticSeverity.Hint
+          };
+        def loc = m.Location;
+        diagnostics.Add(Diagnostic() <-
         {
-          def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
-          WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
-        }
+          Range = Convert(loc.Range);
+          Severity = severity;
+          Code = if (m.Number < 0) null else m.Number.ToString();
+          Message = m.Text;
+          // Source = ???
+        });
       }
+
+      diagnosticsPass[pass] = diagnostics.ToArray();
+
+      diagnostics.Clear();
+      diagnostics.AddRange(diagnosticsPass[0]);
+      diagnostics.AddRange(diagnosticsPass[1]);
+      diagnostics.AddRange(diagnosticsPass[2]);
+
+      def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
+      WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
+      Log.Message($"LSP $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.Cyan);
     }
 
     private UnknownHandler(method : string, id : object) : void
