@@ -32,21 +32,16 @@ namespace Nitra.ClientServer.Server.Lsp
   internal class LspProtocolAdapter : IProtocolAdapter
   {
     private static mutable _tagCounter  : int;
-    private static mutable _fileCounter : int;
 
-    private _uriToFileIdTable         : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
-    private _fileIdToUriTable         : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
     private _requestTable             : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
     private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, List[Diagnostic]] = ConcurrentDictionary();
 
     private mutable _router     : Router;
     private mutable _input      : Stream;
     private mutable _output     : Stream;
-    private mutable _reader     : LspReader[HandlerResult];
+    private mutable _reader     : LspReader;
     private mutable _writer     : LspWriter;
-
-    private mutable _solutionId : SolutionId;
-    private mutable _projectId  : ProjectId;
+    private mutable _solution   : LspSolution;
 
     private mutable pendingCompletionId : object;
 
@@ -88,43 +83,10 @@ namespace Nitra.ClientServer.Server.Lsp
       _output?.Dispose();
     }
 
-    public Receive() : Seq[ClientMessage]
+    public ProcessMessage() : void
     {
-      using (e = _reader.ReadRequests().GetEnumerator())
-      {
-        mutable processRequests = true;
-        do
-        {
-          def result = nextResult:
-          {
-            try
-              when (e.MoveNext())
-                nextResult(e.Current);
-            catch
-            {
-              | _ is EndOfStreamException    => ()
-              | e is JsonException           => WriteError(null, LspErrorCode.ParseError, e.Message)
-              | e is InvalidRequestException => WriteError(null, LspErrorCode.InvalidRequest, e.Message)
-              | e is Exception               => WriteError(null, LspErrorCode.InternalError, e.ToString())
-            }
-
-            processRequests = false;
-            HandlerResult.Unit(null, [ClientMessage.Shutdown()]);
-          };
-
-          when (result.Messages != null)
-            foreach (message in result.Messages)
-              yield message;
-
-          match (result)
-          {
-            | Unit                   => ()
-            | Response(body)         => WriteResult(result.Id, body)
-            | Error(code, message)   => WriteError(result.Id, code, message)
-          }
-        }
-        while (processRequests)
-      }
+      _reader.ReadRequests();
+      _router.AddMessage(ClientMessage.Shutdown());
     }
 
     public Send(message : ServerMessage) : void
@@ -148,6 +110,8 @@ namespace Nitra.ClientServer.Server.Lsp
 
     private SendCompilerMessagesToClient(_projectId : ProjectId, fileId : FileId, messages : array[CompilerMessage], isFirst : bool) : void
     {
+      Log.Message($"LSP $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId messages.Length=$(messages.Length)", ConsoleColor.Cyan);
+
       when (fileId == FileId.Invalid)
         return;
 
@@ -156,7 +120,7 @@ namespace Nitra.ClientServer.Server.Lsp
       lock (diagnostics)
       {
         def count       = diagnostics.Count;
-        def uri         = _fileIdToUriTable[fileId];
+        def uri         = _solution.GetUri(fileId);
         foreach (m in messages)
         {
           def severity =
@@ -185,80 +149,89 @@ namespace Nitra.ClientServer.Server.Lsp
       }
     }
 
-    private UnknownHandler(method : string, id : object) : HandlerResult
+    private UnknownHandler(method : string, id : object) : void
     {
-      if (id == null)
-        HandlerResult.Unit()
-      else
-        HandlerResult.Error(id, null, LspErrorCode.MethodNotFound, method)
+      when (id != null)
+        WriteError(id, LspErrorCode.MethodNotFound, method)
     }
 
-    private CancelRequestHandler(p : CancelParams) : HandlerResult
+    private CancelRequestHandler(_p : CancelParams) : void
     {
-      HandlerResult.Unit()
     }
 
-    private InitializeHandler(p : InitializeParams, id : object) : HandlerResult
+    private InitializeHandler(p : InitializeParams, id : object) : void
     {
-      def result = InitializeResult() <-
+      def result =
+        InitializeResult() <-
+        {
+          Capabilities = ServerCapabilities() <-
+          {
+            TextDocumentSync = TextDocumentSyncOptions() <-
+              {
+                OpenClose = true;
+                Change = TextDocumentSyncKind.Incremental;
+                Save = SaveOptions() <- { IncludeText = false }
+              };
+            DefinitionProvider = true;
+            ReferencesProvider = true;
+            DocumentHighlightProvider = true;
+            CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
+            HoverProvider = true
+          }
+        };
+
+      when (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
       {
-        Capabilities = ServerCapabilities() <-
-        {
-          TextDocumentSync = TextDocumentSyncOptions() <-
-            {
-              OpenClose = true;
-              Change = TextDocumentSyncKind.Incremental;
-              Save = SaveOptions() <- { IncludeText = false }
-            };
-          DefinitionProvider = true;
-          ReferencesProvider = true;
-          DocumentHighlightProvider = true;
-          CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
-          HoverProvider = true
-        }
-      };
+        def options = (p.InitializationOptions :> JObject).ToObject.[InitializationOptions]();
+        LoadSolution(p.RootPath, options)
+      }
 
-      def messages =
-        if (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
-        {
-          def options = (p.InitializationOptions :> JObject).ToObject.[InitializationOptions]();
-          LoadSolution(p.RootPath, SolutionId(0), ProjectId(0), options)
-        }
-        else
-          null;
-
-      HandlerResult.Response(id, messages, result);
+      WriteResult(id, result);
     }
 
-    private InitializedHandler(_ : InitializedParams) : HandlerResult
+    private InitializedHandler(_ : InitializedParams) : void
     {
-      HandlerResult.Unit()
     }
 
-    private ShutdownHandler(_ : object, id : object) : HandlerResult
+    private ShutdownHandler(_ : object, id : object) : void
     {
-      HandlerResult.Response(id, null, null)
+      WriteResult(id, null);
     }
 
-    private ExitHandler(_ : object) : HandlerResult
+    private ExitHandler(_ : object) : void
     {
-      HandlerResult.Unit(null, [ClientMessage.Shutdown()])
+      _router.AddMessage(ClientMessage.Shutdown());
     }
 
-    private WorkspaceDidChangeConfigurationHandler(_ : DidChangeConfigurationParams) : HandlerResult
+    private WorkspaceDidChangeConfigurationHandler(_ : DidChangeConfigurationParams) : void
     {
-      HandlerResult.Unit()
     }
 
-    private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : HandlerResult
+    private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : void
     {
       def document = p.TextDocument;
-      HandlerResult.Unit(null, [ClientMessage.FileActivated(_projectId, GetFileId(document.Uri), FileVersion(document.Version))])
+      Log.Message("TextDocumentDidOpenHandler " + document.Uri, ConsoleColor.Cyan);
+      def fileId   = _solution.GetFileId(document.Uri);
+      def version  = FileVersion(document.Version);
+      foreach (project in _solution.GetProjects(fileId))
+        _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, version));
+      otherwise
+      {
+        def path = document.Uri.LocalPath;
+        def isDriveLetter(c : char) : bool { c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' }
+        def fixedPath = if (path.Length > 3 && path[0] == '/' && isDriveLetter(path[1]) && path[2] == ':') path.Substring(1) else path;
+        def project = _solution.OpenProject(fixedPath);
+        _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, version));
+      }
     }
 
-    private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : HandlerResult
+    private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : void
     {
-      HandlerResult.Unit(null, [ClientMessage.FileDeactivated(_projectId, GetFileId(p.TextDocument.Uri))])
+      def fileId = _solution.GetFileId(p.TextDocument.Uri);
+      Log.Message("TextDocumentDidCloseHandler " + p.TextDocument.Uri, ConsoleColor.Cyan);
+      _fileToCompilerMessageMap[fileId] = null;
+      foreach (project in _solution.GetProjects(fileId))
+        _router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
     }
 
     private static ToStringDidChangeTextDocumentParamsToString(msg : DidChangeTextDocumentParams) : string
@@ -274,13 +247,13 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       r.Start.Line + ":" + r.Start.Character + "#" + r.End.Line + ":" + r.End.Character + " «" + change.Text + "»"
     }
 
-    private TextDocumentDidChangeHandler(p : DidChangeTextDocumentParams) : HandlerResult
+    private TextDocumentDidChangeHandler(p : DidChangeTextDocumentParams) : void
     {
-      Log.Message($"LSP $(ToStringDidChangeTextDocumentParamsToString(p))");
+      Log.Message($"LSP $(ToStringDidChangeTextDocumentParamsToString(p))", ConsoleColor.Cyan);
 
       def document = p.TextDocument;
       def changes  = p.ContentChanges;
-      def fileId   = GetFileId(document.Uri);
+      def fileId   = _solution.GetFileId(document.Uri);
       def version  = FileVersion(document.Version ?? -1);
       def message  =
         if (changes.Length == 1)
@@ -294,63 +267,60 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
             builder.Add(Convert(changes[i]));
           ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
         }
-
-      HandlerResult.Unit(null, [message])
+      _router.AddMessage(message);
     }
 
-    private TextDocumentDidSaveHandler(_ : DidSaveTextDocumentParams) : HandlerResult
+    private TextDocumentDidSaveHandler(p : DidSaveTextDocumentParams) : void
     {
-      HandlerResult.Unit()
+      Log.Message($"LSP TextDocumentDidSaveHandler $(p.TextDocument) «$(p.Text)»", ConsoleColor.Cyan);
     }
 
-    private TextDocumentDocumentHighlightHandler(p : TextDocumentPositionParams, id : object) : HandlerResult
-    {
-      def document = p.TextDocument;
-      def fileId   = GetFileId(document.Uri);
-      def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, true, RegisterRequest(id, DocumentHighlight))])
-    }
-
-    private TextDocumentReferencesHandler(p : ReferenceParams, id : object) : HandlerResult
+    private TextDocumentDocumentHighlightHandler(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = GetFileId(document.Uri);
+      def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.FindSymbolReferences(_projectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration)))])
+      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, true, RegisterRequest(id, DocumentHighlight)));
     }
 
-    private TextDocumentHoverHandler(p : TextDocumentPositionParams, id : object) : HandlerResult
+    private TextDocumentReferencesHandler(p : ReferenceParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = GetFileId(document.Uri);
+      def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      HandlerResult.Unit(id, [ClientMessage.GetHint(_projectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position)))]);
+      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration))));
     }
 
-    private TextDocumentCompletionHandler(p : CompletionParams, id : object) : HandlerResult
+    private TextDocumentHoverHandler(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = GetFileId(document.Uri);
+      def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def messages = [ClientMessage.CompleteWord(_projectId, fileId, position)];
+      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.GetHint(project.ProjectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position))));
+    }
+
+    private TextDocumentCompletionHandler(p : CompletionParams, id : object) : void
+    {
+      def document = p.TextDocument;
+      def fileId   = _solution.GetFileId(document.Uri);
+      def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
       def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
       if (oldCompletionId != null)
-        HandlerResult.Error(oldCompletionId, messages, LspErrorCode.RequestCancelled, "")
-      else
-        HandlerResult.Unit(id, messages)
+        WriteError(oldCompletionId, LspErrorCode.RequestCancelled, "")
+      else when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.CompleteWord(project.ProjectId, fileId, position));
     }
 
-    private TextDocumentDefinition(p : TextDocumentPositionParams, id : object) : HandlerResult
+    private TextDocumentDefinition(p : TextDocumentPositionParams, id : object) : void
     {
       def document        = p.TextDocument;
-      def fileId          = GetFileId(document.Uri);
+      def fileId          = _solution.GetFileId(document.Uri);
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def messages        = [ClientMessage.FindSymbolDefinitions(_projectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _)))];
-      def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
-      if (oldCompletionId != null)
-        HandlerResult.Error(oldCompletionId, messages, LspErrorCode.RequestCancelled, "")
-      else
-        HandlerResult.Unit(id, messages)
+      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.FindSymbolDefinitions(project.ProjectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _))));
     }
 
     private WriteError(id : object, code : LspErrorCode, message : string) : void
@@ -371,23 +341,12 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         _writer.WriteNotification(method.Name, @params)
     }
 
-    private LoadSolution(path : string, solutionId : SolutionId, projectId : ProjectId, options : InitializationOptions) : Seq[ClientMessage]
+    private LoadSolution(path : string, options : InitializationOptions) : void
     {
-      yield ClientMessage.SolutionStartLoading(solutionId, path);
-      yield ClientMessage.ProjectStartLoading(projectId, path, options.Config);
-
-      foreach (reference in options.References)
-        yield ClientMessage.ReferenceLoaded(projectId, reference);
-
-      foreach (filePath in IO.Directory.EnumerateFiles(path, "*" + options.FileExtension, IO.SearchOption.AllDirectories))
-      {
-        def id = GetFileId(filePath);
-        def version = FileVersion(1);
-        yield ClientMessage.FileLoaded(projectId, filePath, id, version, false, null);
-      }
-
-      yield ClientMessage.ProjectLoaded(projectId);
-      yield ClientMessage.SolutionLoaded(solutionId);
+      _solution = LspSolution(_router, SolutionId(0), options.Config, ImmutableArray.Create(options.FileExtension)); // TODO: Add support of multiple extensions
+      _router.AddMessage(ClientMessage.SolutionStartLoading(_solution.SolutionId, path));
+      _ = _solution.OpenProject(path); // TODO: Add support of multiproject
+      _router.AddMessage(ClientMessage.SolutionLoaded(_solution.SolutionId));
     }
 
     private DocumentHighlight(symbols : ImmutableArray[SymbolReferences], id : object) : void
@@ -412,7 +371,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = _fileIdToUriTable[fileId]
+          Uri = _solution.GetUri(fileId)
         });
       }
       WriteResult(id, result);
@@ -426,7 +385,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = _fileIdToUriTable[fileId]
+          Uri = _solution.GetUri(fileId)
         });
       }
       WriteResult(id, result);
@@ -510,18 +469,6 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       }
     }
 
-    private GetFileId(path : string) : FileId
-    {
-      GetFileId(Uri(path, UriKind.Absolute))
-    }
-
-    private GetFileId(uri : Uri) : FileId
-    {
-      def id = _uriToFileIdTable.GetOrAdd(uri, fun(_){ FileId(Interlocked.Increment(ref _fileCounter)) });
-      _ = _fileIdToUriTable.GetOrAdd(id, uri);
-      id
-    }
-
     private static Convert(c : TextDocumentContentChangeEvent) : FileChange
     {
         def newText = c.Text;
@@ -574,17 +521,6 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       }
       else
         _ = IO.Directory.CreateDirectory(logDir);
-    }
-
-    [Record]
-    private variant HandlerResult
-    {
-      public Id       : object;
-      public Messages : Seq[ClientMessage];
-
-      | Unit     { public this() { base(null, null) } }
-      | Response { Body : object }
-      | Error    { Code : LspErrorCode; Message : string }
     }
 
     private class InitializationOptions

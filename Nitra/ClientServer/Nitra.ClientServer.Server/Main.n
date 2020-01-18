@@ -26,7 +26,7 @@ module Program
     Log.Init("Nitra.ClientServer.Server", !isLsp);
     Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
 #if !NOSERVERWINDOW
-    //assert2(false, "Start debugger");
+    assert2(false, "Start debugger");
 #endif
 
     when (args.Length != 1)
@@ -48,18 +48,10 @@ module Program
 
       Log.Message("Connected to pipes.");
 
-      def readerThread = Thread(fun()
-      {
-        foreach (message in adapter.Receive())
-        {
-          router.AddMessage(message);
-          when (message is ClientMessage.Shutdown)
-            break;
-        }
-      });
-      readerThread.Name = "Incomming messages reader";
+      def readerThread            = Thread(adapter.ProcessMessage);
+      readerThread.Name           = "Incomming messages reader";
       readerThread.CurrentCulture = CultureInfo.InvariantCulture;
-      readerThread.IsBackground = true;
+      readerThread.IsBackground   = true;
       readerThread.Start();
       Log.Message("Server started.");
       router.Wait();

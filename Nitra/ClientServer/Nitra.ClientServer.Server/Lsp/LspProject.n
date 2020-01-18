@@ -1,0 +1,196 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.ClientServer.Messages;
+using Nitra.ClientServer.Server.ProjectSystem;
+using Nitra.Logging;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  internal class LspProject
+  {
+    private _router  : Router;
+    public ProjectId : ProjectId;
+    public Solution  : LspSolution;
+    public RootPath  : string;
+
+    private _files            : HashSet[FileId] = HashSet();
+    private _watchers         : Dictionary[string, FileSystemWatcher] = Dictionary();
+    private _fileExtensionSet : HashSet[string];
+    private _config           : Config;
+
+    public this(rootPath : string, router  : Router, projectId : ProjectId, solution  : LspSolution, config : Config)
+    {
+      RootPath  = rootPath;
+      _router   = router;
+      ProjectId = projectId;
+      Solution  = solution;
+      _config   = config;
+      _fileExtensionSet = HashSet(solution.FileExtensions, StringComparer.OrdinalIgnoreCase);
+
+      def path = rootPath;
+
+      _router.AddMessage(ClientMessage.ProjectStartLoading(projectId, path, config));
+
+      foreach (reference in GetReferences())
+        _router.AddMessage(ClientMessage.ReferenceLoaded(projectId, reference));
+
+      foreach (filePath in GetFiles(GetWatchedPaths()))
+        RegistrFile(Solution.GetFileId(filePath), filePath);
+
+      _router.AddMessage(ClientMessage.ProjectLoaded(projectId));
+    }
+
+    private GetReferences() : array[string]
+    {
+      _config.References
+    }
+
+    private GetWatchedPaths() : Seq[string]
+    {
+      // TODO: Read paths from .vscode/tasks.json
+      // TODO: Add support wildcards
+      yield RootPath
+    }
+
+    private GetFiles(watchedPaths : Seq[string]) : Seq[string]
+    {
+      foreach (watchedPath in watchedPaths)
+      {
+        AddWatcher(watchedPath);
+        if (IO.File.Exists(watchedPath))
+          yield watchedPath;
+        else
+          foreach (fileExtension in Solution.FileExtensions)
+            foreach (file in IO.Directory.EnumerateFiles(watchedPath, "*" + fileExtension, IO.SearchOption.AllDirectories))
+              yield file;
+      }
+    }
+
+    public RegistrFile(fileId : FileId, filePath : string) : void
+    {
+      unless (_files.Add(fileId))
+        return;
+
+      _router.AddMessage(ClientMessage.FileLoaded(ProjectId, filePath, fileId, version = FileVersion(1), hasContent = false, contentOpt = null));
+    }
+
+    /// Do not call this method on close file (onli on deleting file)!
+    public UnregistrFile(fileId : FileId) : void
+    {
+      unless (_files.Remove(fileId))
+        return;
+
+      _router.AddMessage(ClientMessage.FileUnloaded(ProjectId, fileId));
+    }
+
+    public IsFileInProject(fileId : FileId) : bool { _files.Contains(fileId) }
+
+    private AddWatcher(path : string) : void
+    {
+        def isFile = File.Exists(path);
+        when (!isFile && !Directory.Exists(path))
+        {
+          Log.Error($"LSP AddWatcher: The file or directory '$path' not exists.");
+          return;
+        }
+
+        def dir = if (isFile) Path.GetDirectoryName(path) else path;
+
+        def fileExtensions = Solution.FileExtensions;
+        def filter         = if (fileExtensions.Length == 1) fileExtensions[0] else "";
+				def watcher        = FileSystemWatcher(dir, filter);
+
+        watcher.NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+        watcher.Filter = "*.tdl";
+
+        watcher.Created += OnCreated;
+        watcher.Deleted += OnDeleted;
+        watcher.Renamed += OnRenamed;
+        watcher.EnableRaisingEvents = true;
+
+        _watchers.Add(path, watcher);
+    }
+
+    private RemoveWatcher(path : string) : void
+    {
+      def watcher = _watchers[path];
+      watcher.Dispose();
+      _ = _watchers.Remove(path);
+    }
+
+    private IsSupportedFile(filePath : string) : bool { _fileExtensionSet.Contains(Path.GetExtension(filePath)) }
+
+    private OnCreated(_sender : object, e : FileSystemEventArgs) : void
+    {
+      OnCreated(e.FullPath);
+    }
+
+    private OnCreated(path : string) : void
+    {
+      unless (IsSupportedFile(path))
+        return;
+
+
+      def fileId = Solution.GetFileId(path);
+      Log.Message($"Watcher.OnCreated fileId=$fileId path='$path'", ConsoleColor.White);
+      RegistrFile(fileId, path);
+    }
+
+    private OnDeleted(_sender : object, e : FileSystemEventArgs) : void
+    {
+      OnDeleted(e.FullPath);
+    }
+
+    private OnDeleted(path : string) : void
+    {
+      unless (IsSupportedFile(path))
+        return;
+      def fileId = Solution.GetFileId(path);
+      Log.Message($"Watcher.OnDeleted fileId=$fileId path='$path'", ConsoleColor.White);
+      UnregistrFile(fileId);
+      when (_watchers.ContainsKey(path))
+        RemoveWatcher(path);
+    }
+
+    private OnRenamed(_sender : object, e : RenamedEventArgs) : void
+    {
+      def newPath            = e.FullPath;
+      def oldPath            = e.OldFullPath;
+      def newFileIsSupported = IsSupportedFile(newPath);
+      def oldFileIsSupported = IsSupportedFile(oldPath);
+
+      Log.Message($"Watcher.OnRenamed oldPath='$oldPath' newPath='$newPath'", ConsoleColor.White);
+
+      when (oldFileIsSupported && !newFileIsSupported)
+      {
+        OnDeleted(oldPath);
+        return;
+      }
+
+      when (!oldFileIsSupported && newFileIsSupported)
+      {
+        OnCreated(newPath);
+        return;
+      }
+
+      def oldFileId = Solution.GetFileId(e.OldFullPath);
+      _ = _files.Remove(oldFileId);
+      def fileId = Solution.GetFileId(newPath);
+      _ = _files.Add(fileId);
+      _router.AddMessage(ClientMessage.FileRenamed(oldFileId, fileId, newPath));
+    }
+  }
+}

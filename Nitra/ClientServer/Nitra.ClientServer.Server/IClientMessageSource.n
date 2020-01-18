@@ -13,6 +13,6 @@ namespace Nitra.ClientServer.Server
 {
   public interface IClientMessageSource
   {
-    Receive() : Seq[ClientMessage]
+    ProcessMessage() : void;
   }
 }

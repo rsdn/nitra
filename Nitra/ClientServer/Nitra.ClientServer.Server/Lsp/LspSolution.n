@@ -1,0 +1,97 @@
+﻿using Nemerle;
+using Nemerle.Assertions;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.ClientServer.Messages;
+using Nitra.ClientServer.Server.ProjectSystem;
+using Nitra.Logging;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  internal class LspSolution
+  {
+    private static mutable _projectCounter : int;
+
+    private _baseConfig        : Config;
+    private _router            : Router;
+    private _uriToFileIdTable  : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
+    private _fileIdToUriTable  : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
+    private _projectIdToFileId : ConcurrentDictionary[ProjectId, LspProject] = ConcurrentDictionary();
+
+    public FileExtensions      : ImmutableArray[string];
+    public SolutionId          : SolutionId;
+
+    private static mutable _fileCounter : int;
+
+    public this(router : Router, solutionId : SolutionId, config : Config, fileExtensions : ImmutableArray[string])
+    {
+      _router       = router;
+      SolutionId    = solutionId;
+      _baseConfig   = config;
+      FileExtensions = fileExtensions;
+    }
+
+    public OpenProject(rootPath : string) : LspProject
+    {
+      def projectId = ProjectId(unchecked (Interlocked.Increment(ref _projectCounter)));
+      def project   = LspProject(rootPath, _router, projectId, this, _baseConfig);
+
+      _projectIdToFileId[projectId] = project;
+
+      project
+    }
+
+    public GetProjects() : Seq[LspProject]
+    {
+      _projectIdToFileId.Values
+    }
+
+    public GetProjects(fileId : FileId) : Seq[LspProject]
+    {
+      foreach (project when project.IsFileInProject(fileId) in GetProjects())
+        yield project;
+    }
+
+    public TryGetFirstProjects(fileId : FileId) : ValueOption[LspProject]
+    {
+      foreach (project when project.IsFileInProject(fileId) in GetProjects())
+        return VSome(project);
+
+      VNone()
+    }
+
+    public GetFileId([NotNull] uri : Uri) : FileId
+    {
+      def id = _uriToFileIdTable.GetOrAdd(uri, fun(_){ FileId(Interlocked.Increment(ref _fileCounter)) });
+      _ = _fileIdToUriTable.GetOrAdd(id, uri);
+      id
+    }
+
+    public GetFileId([NotNull] path : string) : FileId
+    {
+      GetFileId(Uri(path, UriKind.Absolute))
+    }
+
+    public GetUri(fileId : FileId) : Uri
+    {
+      mutable result;
+      if (_fileIdToUriTable.TryGetValue(fileId, out result))
+        result
+      else
+      {
+        throw KeyNotFoundException($"$fileId fileId not found.")
+      }
+    }
+  }
+}

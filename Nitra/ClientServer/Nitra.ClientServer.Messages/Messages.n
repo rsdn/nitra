@@ -471,7 +471,7 @@ namespace Nitra.ClientServer.Messages
     /// List of dynamically loaded extensions of the lanuage
     [XmlArray(ElementName="DynamicExtensions", IsNullable=false)]
     [XmlArrayItem("Extension")]
-                   public mutable DynamicExtensions : array[DynamicExtensionInfo];
+    public mutable DynamicExtensions : array[DynamicExtensionInfo];
 
     public override ToString() : string { "Language: " + Name }
   }

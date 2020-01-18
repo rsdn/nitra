@@ -24,6 +24,8 @@ namespace Nitra.ClientServer.Server
     _responseWriter      : BinaryWriter;
     _asyncResponseWriter : BinaryWriter;
 
+    mutable _router      : Router;
+
     public this(pipeName : string)
     {
       _requestPipe         = NamedPipeServerStream(pipeName + Constants.RequestPipeSuffix,       PipeDirection.In);
@@ -36,8 +38,9 @@ namespace Nitra.ClientServer.Server
 
     public IsLsp : bool { get false; }
 
-    public Connect(_router : Router) : void
+    public Connect(router : Router) : void
     {
+      _router            = router;
       _requestPipe.      WaitForConnection();
       _responsePipe.     WaitForConnection();
       _asyncResponsePipe.WaitForConnection();
@@ -55,7 +58,7 @@ namespace Nitra.ClientServer.Server
         message.Serialize(_asyncResponseWriter);
     }
 
-    public Receive() : Seq[ClientMessage]
+    public ProcessMessage() : void
     {
       while (_requestPipe.IsConnected)
       {
@@ -73,7 +76,9 @@ namespace Nitra.ClientServer.Server
             continue;
         }
 
-        yield message;
+        _router.AddMessage(message);
+        when (message is ClientMessage.Shutdown)
+          break;
       }
     }
 

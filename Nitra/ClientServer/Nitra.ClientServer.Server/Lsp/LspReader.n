@@ -15,14 +15,14 @@ using Newtonsoft.Json;
 
 namespace Nitra.ClientServer.Server.Lsp
 {
-  class LspReader[TResult]
+  class LspReader
   {
     private static InvalidContentLength = -1;
     private static RequestChunkSize = 40;
     private static DefaulRequestBufferSize = 64;
 
     private         _input         : Stream;
-    private         _handlers      : Dictionary[string, Type * (object * object -> TResult)];
+    private         _handlers      : Dictionary[string, Type * (object * object -> void)];
     private         _serializer    : JsonSerializer;
     private         _contentStream : RequestContentStream;
     private         _textReader    : StreamReader;
@@ -39,29 +39,29 @@ namespace Nitra.ClientServer.Server.Lsp
       _buffer        = array(DefaulRequestBufferSize);
     }
 
-    public event UnknownRequestHandler : Func[string, object, TResult];
+    public event UnknownRequestHandler : Action[string, object];
 
-    public RegisterHandler[TRequest, TResponse](request : LspRequest[TRequest, TResponse], handler : Func[TRequest, object, TResult]) : void
+    public RegisterHandler[TRequest, TResponse](request : LspRequest[TRequest, TResponse], handler : Action[TRequest, object]) : void
     {
       RegisterHandler(request.Name, handler)
     }
 
-    public RegisterHandler[TRequest](method : string, handler : Func[TRequest, object, TResult]) : void
+    public RegisterHandler[TRequest](method : string, handler : Action[TRequest, object]) : void
     {
       _handlers.Add(method, (typeof(TRequest), fun(args, id) { handler(args :> TRequest, id) }))
     }
 
-    public RegisterHandler[TNotification](request : LspNotification[TNotification], handler : Func[TNotification, TResult]) : void
+    public RegisterHandler[TNotification](request : LspNotification[TNotification], handler : Action[TNotification]) : void
     {
       RegisterHandler(request.Name, handler)
     }
 
-    public RegisterHandler[TNotification](method : string, handler : Func[TNotification, TResult]) : void
+    public RegisterHandler[TNotification](method : string, handler : Action[TNotification]) : void
     {
       _handlers.Add(method, (typeof(TNotification), fun (args, _id) { handler(args :> TNotification) }))
     }
 
-    public ReadRequests() : Seq[TResult]
+    public ReadRequests() : void
     {
       while (true) unchecked
       {
@@ -93,7 +93,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
         match (ReadToken(jsonReader))
         {
-          | StartObject => yield ProcessRequestObject(jsonReader)
+          | StartObject => ProcessRequestObject(jsonReader)
           | StartArray  =>
             def processArray()
             {
@@ -101,7 +101,7 @@ namespace Nitra.ClientServer.Server.Lsp
               {
                 | EndArray    => ()
                 | StartObject =>
-                  yield ProcessRequestObject(jsonReader);
+                  ProcessRequestObject(jsonReader);
                   processArray()
 
                 | _ => throw InvalidRequestException(jsonReader)
@@ -116,7 +116,7 @@ namespace Nitra.ClientServer.Server.Lsp
       }
     }
 
-    private ProcessRequestObject(jsonReader : JsonReader) : TResult
+    private ProcessRequestObject(jsonReader : JsonReader) : void
     {
       mutable jsonrpc   : object;
       mutable id        : object;
