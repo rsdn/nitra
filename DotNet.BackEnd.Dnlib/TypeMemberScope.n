@@ -1,0 +1,144 @@
+﻿using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Extensions;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.Serialization2;
+
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Nitra.BackEnd.Dnlib
+{
+  public class TypeMemberScope : TableScope
+  {
+    _backEnd               : DnlibBackEnd;
+    mutable _isLoaded      : bool;
+
+    public this(owner : ContainerSymbol, name : string, backEnd : DnlibBackEnd)
+    {
+      base(owner, name);
+      _backEnd = backEnd;
+    }
+
+    Load() : void
+    {
+      _isLoaded = true;
+
+      def context = DependentPropertyEvalContext(null);
+      def owner   = Owner :> ContainerSymbol;
+      def typeDef = (owner.FirstDeclarationOrDefault :> IExternalTypeDeclaration).TypeDef;
+      def methods = Dictionary();
+
+      def getTypeScope(type : TypeSymbol)
+      {
+        | x is TopConstructedTypeSymbol => x.TypeInfo.Scope
+        | null => assert2(false); EmptyScope.Instance
+        | _ => type.Scope
+      }
+
+      foreach (fieldDef in typeDef.Fields)
+      {
+        def symbol = _backEnd.TryLoadField(fieldDef, owner, context);
+        when (symbol is Member.FieldSymbol as fieldSymbol)
+          fieldSymbol.Scope = getTypeScope(fieldSymbol.Type);
+      }
+
+      foreach (methodDef in typeDef.Methods)
+      {
+        def symbol = _backEnd.LoadMethod(methodDef, owner, context);
+        when (symbol is Member.MethodSymbol as methodSymbol)
+        {
+          methodSymbol.Scope = getTypeScope(methodSymbol.ReturnType);
+          methods.Add(methodDef, methodSymbol);
+        }
+      }
+
+      foreach (eventDef in typeDef.Events)
+        _ = _backEnd.LoadEvent(eventDef, owner, context);
+
+      def processAccessor(propertySymbol, accessor)
+      {
+        if (accessor != null)
+        {
+          def methodSymbol = methods[accessor];
+          when (!propertySymbol.IsFlagsEvaluated && methodSymbol.IsFlagsEvaluated)
+            propertySymbol.Flags = methodSymbol.Flags; // TODO: Blind copying is wrong! Unite getter & setter modifiers.
+          Some(methodSymbol)
+        }
+        else
+          None()
+      }
+
+      foreach (propertyDef in typeDef.Properties)
+      {
+        def symbol = _backEnd.LoadProperty(propertyDef, owner, context);
+        symbol.Getter = processAccessor(symbol, propertyDef.GetMethod);
+        symbol.Setter = processAccessor(symbol, propertyDef.SetMethod);
+      }
+    }
+
+    public override GetAllSymbols() : System.Collections.Generic.IEnumerable[Nitra.Declarations.DeclarationSymbol]
+    {
+      unless (_isLoaded)
+        Load();
+      base.GetAllSymbols()
+    }
+
+    public override Symbols : Seq[list[DeclarationSymbol]]
+    {
+      get
+      {
+        unless (_isLoaded)
+          Load();
+        base.Symbols
+      }
+    }
+
+    public override Define[TSymbol](declaration : Declaration, context : DependentPropertyEvalContext, name : Name = null) : TSymbol
+    {
+      base.Define(declaration, context, name)
+    }
+
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      unless (_isLoaded)
+        Load();
+      base.Bind(isMatch)
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      unless (_isLoaded)
+        Load();
+      base.Bind(reference)
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
+    {
+      unless (_isLoaded)
+        Load();
+      base.ToDot(nodeToIdMap, nodes, _edges)
+    }
+
+    public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+    {
+      IgnoreParams();
+      assert(false)
+    }
+
+    public static new Deserialize(_reader : BinaryReader, _metadataReader : MetadataReader) : this
+    {
+      IgnoreParams();
+      assert(false, "TypeMemberScope must be used only in backend")
+    }
+  }
+}

@@ -88,5 +88,32 @@ namespace DotNet
         | _ => false
       }
     }
+
+    public TrySubstituteTypeParameters(args : ImmutableArray[TypeSymbol], typeParameterValues : ImmutableArray[TypeSymbol],
+      result : out ImmutableArray[TypeSymbol]) : bool
+    {
+      mutable builder;
+
+      foreach (arg in args)
+      {
+        | TypeParameterSymbol(IsIndexEvaluated=true, Index=index) =>
+          when (builder == null)
+            builder = args.ToBuilder();
+          builder[index] = typeParameterValues[index];
+
+        | _ => ()
+      }
+
+      if (builder != null)
+      {
+        result = builder.MoveToImmutable();
+        true
+      }
+      else
+      {
+        result = args;
+        false
+      }
+    }
   } // module
 } // namespace

@@ -516,7 +516,7 @@ namespace Nitra
       {
         when (parsedValueType == null)
           parsedValueType = context.BindFullName(1, "Nitra", "ParsedValue");
-        def constructedType = TopConstructedTypeSymbol(context, parsedValueType, ImmutableArray.Create(candidate));
+        def constructedType = TopConstructedTypeSymbol(parsedValueType, ImmutableArray.Create(candidate));
         VSome(constructedType)
       }
       def result = candidates.Result.Map(resolve);

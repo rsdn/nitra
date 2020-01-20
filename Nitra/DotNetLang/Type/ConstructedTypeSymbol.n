@@ -60,12 +60,15 @@ namespace DotNet
 
   public partial class TopConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol
   {
-    public this(context : DependentPropertyEvalContext, typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
+    public this(typeInfo : GenericTypeSymbol, args : ImmutableArray[TypeSymbol])
     {
-      this.TypeInfo = typeInfo;
-      this.Args     = args;
-      this.FullName = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
-      this.EvalProperties(context);
+      this.TypeInfo      = typeInfo;
+      this.Args          = args;
+      this.FullName      = AstUtils.MakeFullName(typeInfo.DeclaredInOpt, typeInfo.Name, args);
+      this.Kind          = "type";
+      this.SpanClass     = Language.TypeSpanClass;
+      when (typeInfo.IsScopeEvaluated)
+        this.Scope = TopSubstScope(typeInfo, typeInfo.Scope, args);
     }
 
     public override Equals(other : object) : bool implements IEquatable[ConstructedTypeSymbol].Equals
@@ -86,6 +89,15 @@ namespace DotNet
     }
 
     public override ToString() : string { ConstructedTypeImpl.ToString(this) }
+
+    public SubstituteTypeParameters(typeParameterValues : ImmutableArray[TypeSymbol]) : TopConstructedTypeSymbol
+    {
+      mutable newArgs;
+      if (SymbolUtils.TrySubstituteTypeParameters(this.Args, typeParameterValues, out newArgs))
+        TopConstructedTypeSymbol(TypeInfo, newArgs)
+      else
+        this
+    }
   }
 
   public partial class NestedConstructedTypeSymbol : SymbolBase, ConstructedTypeSymbol

@@ -1,0 +1,1048 @@
+﻿using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Extensions;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra;
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using dnlib.DotNet;
+
+using System;
+using System.IO;
+using System.Diagnostics;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Collections.Immutable;
+using System.Linq;
+
+using System.Threading;
+using NRB = Nitra.Declarations;
+using SCG = System.Collections.Generic;
+using DN = dnlib.DotNet;
+
+namespace Nitra.BackEnd.Dnlib
+{
+  public partial class DnlibBackEnd : DotNet.IDotNetBackEnd
+  {
+    [Record, StructuralEquality]
+    class AssemblyIdentity
+    {
+      public Name           : string         { get; }
+      public Version        : Version        { get; }
+      public PublicKeyToken : PublicKeyToken { get; }
+
+      public this(assembly : IAssembly)
+      {
+        mutable publicKeyToken = PublicKeyBase.ToPublicKeyToken(assembly.PublicKeyOrToken);
+        when (publicKeyToken != null && publicKeyToken.IsNullOrEmpty)
+          publicKeyToken = null;
+
+        this(assembly.Name, assembly.Version, publicKeyToken);
+      }
+    }
+
+    private static _corlibNames : Dictionary[string, int] =
+      Dictionary(StringComparer.OrdinalIgnoreCase) <-
+      [
+        ("corefx",                 1),
+        ("netstandard",            1),
+        ("System.Runtime",         2),
+        ("System.Private.CoreLib", 3),
+        ("mscorlib",               3),
+      ];
+
+    public static NoLocation : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
+    public static NoFile     : ProjectSystem.File = SourceSnapshot.Default.File;
+    public static NoSpan     : NSpan              = NSpan(0);
+
+    public  PlatformType           : DotNet.IPlatformType                   { get; private set; }
+    public  CancellationToken      : CancellationToken                      { get; set; }
+
+    mutable _rootNamespace         : NamespaceSymbol;
+    mutable _singleDimensionArray  : SingleDimensionArraySymbol;
+    mutable _pointerSymbol         : TypeSymbol;
+    mutable _objectSymbol          : TypeSymbol;
+    mutable _context               : ModuleContext;
+    mutable _assemblyResolver      : AssemblyResolver;
+    mutable _corlibReference       : AssemblyRef;
+    mutable _corlibRuntimeVersion  : string;
+    mutable _corlibTypes           : ICorLibTypes;
+    _multiDimensionArrays          : Dictionary[uint, MultiDimensionArraySymbol]              = Dictionary();
+    _loadedModules                 : Dictionary[AssemblyIdentity, ModuleDef]                  = Dictionary();
+    _loadedTypeDefs                : Dictionary[TypeDef, TypeSymbol]                          = Dictionary();
+    _loadedTypeSpecs               : Dictionary[TypeSpec, TypeSymbol]                         = Dictionary();
+    _loadedNamespaces              : Dictionary[string, NamespaceSymbol]                      = Dictionary();
+    _constructedTypes              : Dictionary[ConstructedTypeSymbol, ConstructedTypeSymbol] = Dictionary();
+
+    public Types                : Seq[TypeSymbol]            { get { _loadedTypeDefs.Values.Concat(_loadedTypeSpecs.Values) } }
+    public Object               : TypeSymbol                 { get { _objectSymbol } }
+    public SingleDimensionArray : SingleDimensionArraySymbol { get { _singleDimensionArray } }
+
+    public Dispose() : void { }
+    
+    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
+    {
+      LoadExternalSymbols(libs, libPath, (loc, err) => compilerMessages.Error(loc, err), context);
+    }
+
+    IgnoreName(name : string) : bool
+    {
+      foreach (ch when ch == '<' || ch == '?' in name)
+        return true;
+      false
+    }
+
+    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, addError : Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
+    {
+      Debug.WriteLine("LoadExternalSymbols started");
+
+      def timer = Stopwatch.StartNew();
+      _singleDimensionArray = null;
+      _objectSymbol         = null;
+      _multiDimensionArrays.Clear();
+
+      _loadedModules.Clear();
+      _loadedTypeDefs.Clear();
+      _loadedTypeSpecs.Clear();
+      _loadedNamespaces.Clear();
+      _constructedTypes.Clear();
+
+      _corlibReference      = null;
+      _corlibRuntimeVersion = null;
+      _corlibTypes          = null;
+      _context              = ModuleDef.CreateModuleContext();
+      _assemblyResolver     = _context.AssemblyResolver :> AssemblyResolver;
+      _assemblyResolver.FindExactMatch = false;
+      _assemblyResolver.UseGAC         = true;
+      unless(string.IsNullOrEmpty(libPath))
+        _assemblyResolver.PreSearchPaths.Add(libPath);
+
+      _rootNamespace = NamespaceSymbol();
+      _rootNamespace.DeclaredIn  = null;
+      _rootNamespace.FullName    = "";
+      _rootNamespace.EvalProperties(context);
+
+      LoadReferences(libs, addError);
+
+      foreach (moduleDef in _loadedModules.Values)
+      {
+        this.CancellationToken.ThrowIfCancellationRequested();
+        LoadTypes(moduleDef, context);
+      }
+
+      Debug.WriteLine($"Read external symbols took: $(timer.Elapsed)");
+
+      this.CancellationToken.ThrowIfCancellationRequested();
+
+      InitSystemTypes(context);
+      InitBaseTypeSet(context);
+
+      Debug.WriteLine($"Total of LoadExternalSymbols took: $(timer.Elapsed)");
+
+      this.CancellationToken.ThrowIfCancellationRequested();
+
+      _rootNamespace
+    }
+
+    LoadReferences(libs : IEnumerable[LibReference], addError : Action[Location, string]) : void
+    {
+      def corlibReferences = List.[object * long]();
+      def otherReferences  = List.[object]();
+
+      foreach (lib in libs)
+      {
+        | ProjectReference(Path = path)
+        | FileLibReference(Path = path) =>
+          try
+          {
+            unless (File.Exists(path))
+            {
+              addError(NoLocation, $"Reference assembly file '$path' not found");
+              continue;
+            }
+
+            def extension = IO.Path.GetExtension(path);
+            when (string.IsNullOrEmpty(extension) || ".dll".Equals(extension, StringComparison.OrdinalIgnoreCase))
+            {
+              def fileName = IO.Path.GetFileNameWithoutExtension(path);
+              when (_corlibNames.ContainsKey(fileName))
+              {
+                def fileInfo = FileInfo(path);
+                corlibReferences.Add((path, fileInfo.Length));
+                continue;
+              }
+            }
+            otherReferences.Add(path);
+          }
+          catch
+          {
+            | e is Exception => addError(NoLocation, $"Failed to load reference assembly '$path': $(e)");
+          }
+
+        | FullNameLibReference(FullName = fullName) =>
+          try
+          {
+            def name = AssemblyNameInfo(fullName);
+            mutable order;
+            if (_corlibNames.TryGetValue(name.Name, out order))
+              corlibReferences.Add((name, order : long));
+            else
+              otherReferences.Add(name);
+          }
+          catch
+          {
+            | e is Exception => addError(NoLocation, $"Failed to load reference assembly '$fullName': $(e)");
+          }
+
+        | _ => throw NotImplementedException("Loading types from " + lib + " not supported yet.")
+      }
+
+      corlibReferences.Sort(((_, order1), (_, order2)) => order2.CompareTo(order1));
+
+      def loadReference(r : object) : ModuleDef
+      {
+        mutable moduleDef;
+        match (r)
+        {
+          | path is string =>
+            try
+              moduleDef = RegisterLoadedModule(LoadModule(path))
+            catch
+            {
+              | e is Exception => addError(NoLocation, $"Failed to load reference assembly '$path': $(e)");
+            }
+
+          | name is AssemblyNameInfo =>
+            try
+            {
+              def assemblyDef = _assemblyResolver.Resolve(name, null);
+              if (assemblyDef != null)
+                moduleDef = RegisterLoadedModule(AssemblyIdentity(assemblyDef), assemblyDef.ManifestModule);
+              else
+                addError(NoLocation, $"Failed to resolve reference assembly '$name'.");
+            }
+            catch
+            {
+              | e is Exception => addError(NoLocation, $"Failed to resolve reference assembly '$name': $(e)");
+            }
+
+          | _ => assert(false);
+        }
+        moduleDef
+      }
+
+      foreach ((r, _) in corlibReferences)
+        _ = loadReference(r);
+
+      foreach (r in otherReferences)
+      {
+        def moduleDef = loadReference(r);
+        when (_corlibTypes == null)
+        {
+          def corlibAssembly = _assemblyResolver.Resolve(moduleDef.CorLibTypes.AssemblyRef, null);
+          when (corlibAssembly != null)
+            _ = RegisterLoadedModule(AssemblyIdentity(corlibAssembly), corlibAssembly.ManifestModule);
+        }
+      }
+
+      when (_corlibTypes == null)
+        _ = loadReference(typeof(object).Assembly.Location);
+
+      assert(_corlibTypes != null, "Failed to initialize platform types");
+    }
+
+    RegisterLoadedModule(identity : AssemblyIdentity, moduleDef : ModuleDef) : ModuleDef
+    {
+      mutable currentModuleDef;
+      if (_loadedModules.TryGetValue(identity, out currentModuleDef))
+      {
+        when (currentModuleDef : object != moduleDef)
+          _ = _assemblyResolver.Remove(moduleDef);
+        currentModuleDef
+      }
+      else
+      {
+        _loadedModules.Add(identity, moduleDef);
+
+        when (_corlibReference == null && moduleDef.IsCoreLibraryModule.GetValueOrDefault())
+        {
+          def assemblyRef = AssemblyRefUser(identity.Name, identity.Version, identity.PublicKeyToken, UTF8String.Empty);
+          assemblyRef.Attributes = moduleDef.Assembly.Attributes & ~(AssemblyAttributes.PublicKey | AssemblyAttributes.PA_FullMask);
+
+          _corlibReference      = assemblyRef;
+          _corlibRuntimeVersion = moduleDef.RuntimeVersion;
+          _corlibTypes          = moduleDef.CorLibTypes;
+        }
+        moduleDef
+      }
+    }
+
+    LoadModule(assemblyPath : string) : AssemblyIdentity * ModuleDef
+    {
+      def loadOptions                  = ModuleCreationOptions(_context);
+      loadOptions.CorLibAssemblyRef    = _corlibReference;
+      loadOptions.TryToLoadPdbFromDisk = false;
+      def moduleDef                    = ModuleDefMD.Load(assemblyPath, loadOptions);
+      def identity                     = AssemblyIdentity(moduleDef.Assembly);
+      (identity, moduleDef)
+    }
+
+    LoadTypes(moduleDef : ModuleDef, context : DependentPropertyEvalContext) : void
+    {
+      def getNamespace(fullName : string)
+      {
+        if (string.IsNullOrEmpty(fullName))
+          _rootNamespace
+        else
+        {
+          mutable namespaceSymbol;
+          unless (_loadedNamespaces.TryGetValue(fullName, out namespaceSymbol))
+          {
+            def dotIndex = fullName.LastIndexOf('.');
+            def (parentSymbol, localName) =
+              if (dotIndex < 0)
+                (_rootNamespace, fullName)
+              else
+                (getNamespace(fullName.Substring(0, dotIndex)), fullName.Substring(dotIndex + 1));
+
+            def name        = NRB.Name(NoLocation, localName);
+            namespaceSymbol = ExternalDeclaration.[NamespaceSymbol](name).DefineSymbol(parentSymbol.MemberTable);
+            unless (namespaceSymbol.IsDeclaredInEvaluated)
+              namespaceSymbol.DeclaredIn = parentSymbol;
+            namespaceSymbol.EvalProperties(context);
+
+            _loadedNamespaces.Add(fullName, namespaceSymbol);
+          }
+          namespaceSymbol
+        }
+      }
+
+      def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, typeDef : TypeDef) : void
+      {
+        _loadedTypeDefs[typeDef] = typeSymbol;
+
+        when (typeSymbol is GenericTypeSymbol as genericSymbol)
+          MakeTypeParameters(context, genericSymbol, typeDef);
+
+        def flags = ModifierSet(context);
+        match ((typeDef.IsAbstract, typeDef.IsSealed))
+        {
+          | (true, true) => flags.Add(Modifiers.Static)
+          | (true, _)    => flags.Add(Modifiers.Abstract)
+          | (_, true)    => flags.Add(Modifiers.Sealed)
+          | _            => ()
+        }
+
+        match (typeDef.Visibility & TypeAttributes.VisibilityMask)
+        {
+          | TypeAttributes.Public
+          | TypeAttributes.NestedPublic     => flags.Add(Modifiers.Public)
+          | TypeAttributes.NestedFamORAssem => flags.Add(Modifiers.Protected %| Modifiers.Internal)
+          | TypeAttributes.NestedFamily     => flags.Add(Modifiers.Protected)
+          | TypeAttributes.NestedAssembly   => flags.Add(Modifiers.Internal)
+          | TypeAttributes.NestedPrivate    => flags.Add(Modifiers.Private)
+          | _                               => flags.Add(Modifiers.Internal)
+        }
+
+        typeSymbol.Flags = flags;
+
+        when ((typeSymbol : DeclarationSymbol)  is CustomAttributeHostDeclarationSymbol as attrHost)
+          attrHost.CustomAttributes = LazyAttributeList(typeDef, this);
+
+        when ((typeSymbol : DeclarationSymbol) is Nitra.Declarations.ContainerSymbol as cont)
+        {
+          def memberTable = TypeMemberScope(cont, "MemberTable", this);
+          cont.MemberTable = memberTable;
+        }
+
+        typeSymbol.EvalProperties(context);
+
+        when (typeSymbol is GenericContainerTypeSymbol as genericContainerTypeSymbol)
+        {
+          def nestedTypes = LightList();
+
+          when (typeDef.NestedTypes.Count > 0)
+          foreach (nestedTypeDef in typeDef.NestedTypes)
+          {
+            def typeName = typeDef.Name : string;
+            when (typeDef.IsNestedPublic && !IgnoreName(typeName))
+            {
+              def nestedTypeSymbol = loadNestedType(nestedTypeDef, typeName, genericContainerTypeSymbol);
+              nestedTypes.Add(nestedTypeSymbol);
+            }
+          }
+
+          genericContainerTypeSymbol.NestedTypes = nestedTypes.ToArray();
+        }
+      }
+      and loadNestedType(typeDef : TypeDef, typeName : string, declaredIn : GenericContainerTypeSymbol) : NestedTypeSymbol
+      {
+        def name = Name(NoLocation, typeName);
+        def symbol : NestedTypeSymbol =
+                 if (typeDef.IsDelegate)  ExternalNestedTypeDeclaration.[NestedDelegateSymbol] (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsInterface) ExternalNestedTypeDeclaration.[NestedInterfaceSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsEnum)      ExternalNestedTypeDeclaration.[NestedEnumSymbol]     (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsValueType) ExternalNestedTypeDeclaration.[NestedStructSymbol]   (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else                       ExternalNestedTypeDeclaration.[NestedClassSymbol]       (name, typeDef).DefineSymbol(declaredIn.MemberTable);
+
+          unless (symbol.IsDeclaredInEvaluated)
+            symbol.DeclaredIn = declaredIn;
+
+        initTypeSymbol(symbol, typeDef);
+        symbol
+      }
+      def loadType(typeDef : TypeDef, typeName : string, declaredIn : NamespaceSymbol)
+      {
+        def name = Name(NoLocation, typeName);
+        def symbol : TopTypeSymbol =
+                 if (typeDef.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsEnum)      ExternalTopTypeDeclaration.[TopEnumSymbol]     (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else if (typeDef.IsValueType) ExternalTopTypeDeclaration.[TopStructSymbol]   (name, typeDef).DefineSymbol(declaredIn.MemberTable)
+            else
+            {
+              def cls = ExternalTopTypeDeclaration.[TopClassSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable);
+              cls.HasExtensionMethod = typeDef.IsAbstract && typeDef.IsSealed && HasExtensionAttribute(typeDef);
+              cls
+            }
+
+        unless (symbol.IsDeclaredInEvaluated)
+          symbol.DeclaredIn = declaredIn;
+
+        initTypeSymbol(symbol, typeDef);
+      }
+
+      foreach (typeDef in moduleDef.Types with i)
+      {
+        when (i % 10 == 0)
+          this.CancellationToken.ThrowIfCancellationRequested();
+
+        def namespaceName = typeDef.Namespace : string;
+        def typeName      = typeDef.Name      : string;
+        when (typeDef.IsPublic && !IgnoreName(namespaceName) && !IgnoreName(typeName))
+        {
+          def namespaceSymbol = getNamespace(namespaceName);
+          loadType(typeDef, StripGenericMark(typeName), namespaceSymbol);
+        }
+      }
+    }
+
+    StripGenericMark(name : string) : string
+    {
+      def index = name.IndexOf('`');
+      if (index < 0)
+        name
+      else
+        name.Substring(0, index)
+    }
+
+    MakeTypeParameters(context : DependentPropertyEvalContext, symbol : GenericEntitySymbol, typeDef : TypeDef) : void
+    {
+      def genericParameters = typeDef.GenericParameters;
+      unless (symbol.IsTypeParametersCountEvaluated)
+        symbol.TypeParametersCount = genericParameters.Count;
+      unless (symbol.IsTypeParametersEvaluated)
+        symbol.TypeParameters = CreateGenericParameters(genericParameters, context);
+    }
+
+    public LoadCustomAttribute(customAttribute : DN.CustomAttribute, context : DependentPropertyEvalContext) : CustomAttributeSymbol
+    {
+      def symbol   = CustomAttributeSymbol();
+      def attrType = ConvertType(customAttribute.AttributeType, ImmutableArray.Empty, context);
+      symbol.Type  = attrType;
+      symbol.FullName = customAttribute.TypeFullName;
+      def filter(sym : Member.ConstructorSymbol) : bool
+      {
+        def decl = sym.GetDeclarationsOfType.[ExternalConstructorDeclaration]().FirstOrDefault();
+        when (decl == null)
+          return false;
+
+        MethodEqualityComparer.CompareDeclaringTypes.Equals(decl.Method, customAttribute.Constructor)
+      }
+      def result = attrType.Scope.Bind(filter);
+      when (result.HasResult)
+        symbol.Constructor = result.GetSymbols().First();
+
+      def convertArgument(arg : CAArgument) : CustomAttributeExpression
+      {
+        match (arg.Value)
+        {
+          | null            => CustomAttributeExpression.Null  ()
+          | v is bool       => CustomAttributeExpression.Bool  (v)
+          | v is byte       => CustomAttributeExpression.Byte  (v)
+          | v is char       => CustomAttributeExpression.Char  (v)
+          | v is double     => CustomAttributeExpression.Double(v)
+          | v is float      => CustomAttributeExpression.Float (v)
+          | v is int        => CustomAttributeExpression.Int   (v)
+          | v is long       => CustomAttributeExpression.Long  (v)
+          | v is sbyte      => CustomAttributeExpression.Sbyte (v)
+          | v is short      => CustomAttributeExpression.Short (v)
+          | v is UTF8String => CustomAttributeExpression.String(v)
+          | v is string     => CustomAttributeExpression.String(v)
+          | v is uint       => CustomAttributeExpression.Uint  (v)
+          | v is ulong      => CustomAttributeExpression.Ulong (v)
+          | v is ushort     => CustomAttributeExpression.Ushort(v)
+          | v is TypeSig    => CustomAttributeExpression.Type(ConvertType(v, ImmutableArray.Empty,context))
+          | v is IList[CAArgument] =>
+            def elemType = ConvertType(arg.Type.Next, ImmutableArray.Empty, context);
+            def elems    = v.MapToArray(convertArgument);
+            CustomAttributeExpression.Array(elemType, elems)
+
+          | _ => assert(false);
+        }
+      }
+      symbol.Arguments = customAttribute.ConstructorArguments.MapToArray(convertArgument);
+      def convertNamedArgument(a : CANamedArgument) : CustomAttributeNamedArgument
+      {
+        def expr = convertArgument(a.Argument);
+        def nameId = StringIndex.GetId(a.Name);
+        CustomAttributeNamedArgument(nameId, expr)
+      }
+      symbol.NamedArguments = customAttribute.NamedArguments.MapToArray(convertNamedArgument);
+
+      def name   = NRB.Name(NoLocation, customAttribute.AttributeType.Name);
+      symbol.AddDeclaration(ExternalCustomAttributeDeclaration(name, customAttribute));
+      symbol.EvalProperties(context);
+      symbol
+    }
+
+    internal HasAttribute(attributeHost : IHasCustomAttribute, namespaceName : string, typeName : string) : bool
+    {
+      when (attributeHost.HasCustomAttributes)
+      {
+        foreach (a in attributeHost.CustomAttributes)
+        {
+          def type = a.AttributeType;
+          when (type != null && type.TypeName == typeName && type.Namespace == namespaceName)
+            return true;
+        }
+      }
+      false
+    }
+
+    internal HasExtensionAttribute(attributeHost : IHasCustomAttribute) : bool
+    {
+      HasAttribute(attributeHost, "System.Runtime.CompilerServices", "ExtensionAttribute")
+    }
+
+    LoadDefaultValue(paramDef : ParamDef) : DefaultValue
+    {
+      unless (paramDef.HasDefault)
+        return DefaultValue.None();
+
+      unless (paramDef.HasConstant)
+        return DefaultValue.Null(); // TODO: default(T)
+
+      unchecked match (paramDef.Constant.Value)
+      {
+        | null                => DefaultValue.Null()
+        | x is UTF8String     => DefaultValue.String(x)
+        | x is string         => DefaultValue.String(x)
+        | x is System.Int16   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.Int32   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.Int64   => DefaultValue.Number(x :> ulong, false, false)
+        | x is System.UInt16  => DefaultValue.Number(x :> ulong, true, false)
+        | x is System.UInt32  => DefaultValue.Number(x :> ulong, true, false)
+        | x is System.UInt64  => DefaultValue.Number(x, true, false)
+        | x is System.Single  => DefaultValue.Single(x)
+        | x is System.Double  => DefaultValue.Double(x)
+        | x is System.Decimal => DefaultValue.Decimal(x)
+        | x is System.Boolean => DefaultValue.Bool(x)
+        | _                   => DefaultValue.Error()
+      }
+    }
+
+    FinalizeMember[TSymbol](symbol : TSymbol, memberDef : IMemberDef, context : DependentPropertyEvalContext) : TSymbol
+      where TSymbol : DeclarationSymbol
+    {
+      when ((symbol : object) is CustomAttributeHostDeclarationSymbol as attributeHost)
+        attributeHost.CustomAttributes = LazyAttributeList(memberDef, this);
+      symbol.EvalProperties(context);
+      symbol
+    }
+
+    internal LoadParameters(parameters : ParameterList, parameterizable : ParameterizableSymbol,
+      methodTypeParameters : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
+    {
+      def containingScope = parameterizable.ParameterScope;
+      def builder         = ImmutableArray.CreateBuilder();
+      def lastIndex       = parameters.Count - 1;
+      for (mutable i = parameters.MethodSigIndexBase; i < parameters.Count; ++i)
+      {
+        def parameter = parameters.Item[i];
+        def paramDef  = parameter.ParamDef;
+        def name      = NRB.Name(NoLocation, paramDef.Name);
+        def symbol    = ExternalParameterDeclaration(name, paramDef).DefineSymbol(containingScope);
+        symbol.Type   = ConvertType(parameter.Type, methodTypeParameters, context);
+
+        mutable modifier;
+        when (parameter.Type is ByRefSig)
+          modifier |= if (paramDef.IsOut) ParameterModifier.Out else ParameterModifier.Ref;
+
+        when (i == lastIndex && parameter.Type is SZArraySig && HasAttribute(paramDef, "System", "ParamArrayAttribute"))
+          modifier |= ParameterModifier.Params;
+
+        symbol.Modifier   = modifier;
+        symbol.Index      = builder.Count :> uint;
+        symbol.Default    = LoadDefaultValue(paramDef);
+        symbol.DeclaredIn = parameterizable;
+        symbol.EvalProperties(context);
+        builder.Add(symbol);
+      }
+      builder.ToImmutable()
+    }
+
+    internal TryLoadField(fieldDef : FieldDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
+    {
+      def name = NRB.Name(NoLocation, fieldDef.Name);
+      if (fieldDef.DeclaringType.IsEnum)
+      {
+        unless (fieldDef.IsLiteral)
+          return null; // TODO: handle enum backing type field 'value__'
+
+        def symbol = ExternalEnumFieldDeclaration(name, fieldDef).DefineSymbol(declaredIn.MemberTable);
+        unless (symbol.IsDeclaredInEvaluated)
+          symbol.DeclaredIn = declaredIn :> EnumSymbol;
+        FinalizeMember(symbol, fieldDef, context)
+      }
+      else
+      {
+        def flags      = ModifierSet(context);
+        def attributes = fieldDef.Attributes;
+        when (attributes %&& FieldAttributes.Private)     flags.Add(Modifiers.Private);
+        when (attributes %&& FieldAttributes.Public)      flags.Add(Modifiers.Public);
+        when (attributes %&& FieldAttributes.Assembly)    flags.Add(Modifiers.Internal);
+        when (attributes %&& FieldAttributes.Family)      flags.Add(Modifiers.Protected);
+        when (attributes %&& FieldAttributes.FamORAssem)  flags.Add(Modifiers.Protected | Modifiers.Internal);
+        when (attributes %&& FieldAttributes.FamANDAssem) flags.Add(Modifiers.Internal);
+        when (attributes %&& FieldAttributes.InitOnly)    flags.Add(Modifiers.Readonly);
+        when (attributes %&& FieldAttributes.Static)      flags.Add(Modifiers.Static);
+
+        def symbol   = ExternalFieldDeclaration(name, fieldDef).DefineSymbol(declaredIn.MemberTable);
+        symbol.Flags = flags;
+        unless (symbol.IsDeclaredInEvaluated)
+          symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
+        symbol.Type = ConvertType(fieldDef.FieldType, ImmutableArray.Empty, context);
+        FinalizeMember(symbol, fieldDef, context)
+      }
+    }
+
+    internal LoadEvent(eventDef : EventDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : Member.EventSymbol
+    {
+      def name   = NRB.Name(NoLocation, eventDef.Name);
+      def symbol = ExternalEventDeclaration(name, eventDef).DefineSymbol(declaredIn.MemberTable);
+      unless (symbol.IsDeclaredInEvaluated)
+        symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
+      symbol.Type = ConvertType(eventDef.EventType, ImmutableArray.Empty, context);
+      FinalizeMember(symbol, eventDef, context)
+    }
+
+    internal LoadProperty(propertyDef : PropertyDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : Member.PropertySymbol
+    {
+      def name   = NRB.Name(NoLocation, propertyDef.Name);
+      def symbol = ExternalPropertyDeclaration(name, propertyDef).DefineSymbol(declaredIn.MemberTable);
+      unless (symbol.IsDeclaredInEvaluated)
+        symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
+      symbol.Type = ConvertType(propertyDef.PropertySig.RetType, ImmutableArray.Empty, context);
+      FinalizeMember(symbol, propertyDef, context)
+    }
+
+    internal LoadMethod(methodDef : MethodDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
+    {
+      def name       = NRB.Name(NoLocation, methodDef.Name);
+      def flags      = ModifierSet(context);
+      def attributes = methodDef.Attributes;
+      when (attributes %&& MethodAttributes.Private)     flags.Add(Modifiers.Private);
+      when (attributes %&& MethodAttributes.Public)      flags.Add(Modifiers.Public);
+      when (attributes %&& MethodAttributes.Assembly)    flags.Add(Modifiers.Internal);
+      when (attributes %&& MethodAttributes.Family)      flags.Add(Modifiers.Protected);
+      when (attributes %&& MethodAttributes.FamORAssem)  flags.Add(Modifiers.Protected | Modifiers.Internal);
+      when (attributes %&& MethodAttributes.FamANDAssem) flags.Add(Modifiers.Internal);
+      when (attributes %&& MethodAttributes.Static)      flags.Add(Modifiers.Static);
+      when (attributes %&& MethodAttributes.Final)       flags.Add(Modifiers.Sealed);
+      when (attributes %&& MethodAttributes.Virtual)
+      {
+        if (attributes %&& MethodAttributes.Abstract)
+          flags.Add(Modifiers.Abstract);
+        else if (attributes %&& MethodAttributes.NewSlot)
+          flags.Add(Modifiers.Virtual);
+        else
+          flags.Add(Modifiers.Override);
+      }
+
+      if (methodDef.IsConstructor)
+      {
+        def symbol = ExternalConstructorDeclaration(name, methodDef).DefineSymbol(declaredIn.MemberTable);
+        symbol.Flags = flags;
+        unless (symbol.IsDeclaredInEvaluated)
+          symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
+        symbol.Parameters = LoadParameters(methodDef.Parameters, symbol, ImmutableArray.Empty, context);
+        FinalizeMember(symbol, methodDef, context)
+      }
+      else
+      {
+        def symbol = ExternalMethodDeclaration(name, methodDef).DefineSymbol(declaredIn.MemberTable);
+        symbol.Flags = flags;
+        unless (symbol.IsDeclaredInEvaluated)
+          symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
+        unless (symbol.IsTypeParametersCountEvaluated)
+          symbol.TypeParametersCount = methodDef.GenericParameters.Count;
+        mutable typeParameters = ImmutableArray.Empty;
+        unless (symbol.IsTypeParametersEvaluated)
+        {
+          typeParameters        = CreateGenericParameters(methodDef.GenericParameters, context);
+          symbol.TypeParameters = typeParameters
+        }
+        symbol.IsExtensionMethod = methodDef.IsStatic && HasExtensionAttribute(methodDef);
+        symbol.ReturnType        = ConvertType(methodDef.ReturnType, typeParameters, context);
+        symbol.Parameters        = LoadParameters(methodDef.Parameters, symbol, typeParameters, context);
+
+        def type        = FunctionTypeSymbol();
+        type.Parameters = symbol.Parameters.Select(p => p.Type).ToImmutableArray();
+        type.Return     = symbol.ReturnType;
+        type.EvalProperties(context);
+
+        symbol.FunctionType = type;
+        symbol.Type         = type;
+        FinalizeMember(symbol, methodDef, context)
+      }
+    }
+
+    GetMultiDimensionArrayType(rank : uint, context : DependentPropertyEvalContext) : MultiDimensionArraySymbol
+    {
+      mutable symbol;
+      unless (_multiDimensionArrays.TryGetValue(rank, out symbol))
+      {
+        def modifiers = ModifierSet(context);
+        modifiers.Add(Modifiers.Public);
+
+        def textName               = "#Array" + rank;
+        def name                   = Name(NoLocation, textName);
+        symbol                     = ExternalDeclaration.[MultiDimensionArraySymbol](name).DefineSymbol(_rootNamespace.MemberTable);
+        symbol.DeclaredIn          = _rootNamespace;
+        symbol.Flags               = modifiers;
+        symbol.FullName            = textName;
+        symbol.TypeParametersCount = 1;
+        symbol.TypeParameters      = ImmutableArray.Create(MakeArrayTypeParameter(context));
+        symbol.Rank                = rank;
+        symbol.EvalProperties(context);
+      }
+      symbol
+    }
+
+    internal ConvertType(typeSig : TypeSig, methodTypeParameters : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      match (typeSig)
+      {
+        | ModifierSig
+        | ByRefSig             => ConvertType(typeSig.Next, methodTypeParameters, context)
+        | t is TypeDefOrRefSig => ConvertType(t.TypeDefOrRef, methodTypeParameters, context)
+        | GenericVar(GenericParam = p)  =>
+          when (p != null)
+          when (ConvertType(p.DeclaringType, methodTypeParameters, context) : object is GenericTypeSymbol as t when t.IsTypeParametersEvaluated)
+          {
+            def typeParameters = t.TypeParameters;
+            when (p.Number < typeParameters.Length)
+              return typeParameters[p.Number];
+          }
+          _objectSymbol
+
+        | GenericMVar(GenericParam = p) =>
+          if (p != null && !methodTypeParameters.IsDefaultOrEmpty && p.Number < methodTypeParameters.Length)
+            methodTypeParameters[p.Number]
+          else
+            _objectSymbol
+
+        | PtrSig                with genericType = _pointerSymbol
+        | SZArraySig            with genericType = _singleDimensionArray
+        | ArraySig(Rank = rank) with genericType = GetMultiDimensionArrayType(rank, context) =>
+          def elementType = ConvertType(typeSig.Next, methodTypeParameters, context);
+          def symbol      = TopConstructedTypeSymbol();
+          InternConstructedType(symbol, (genericType : object) :> GenericTypeSymbol, ImmutableArray.Create(elementType), context)
+
+        | t is GenericInstSig  =>
+          def genericType = ConvertType(t.GenericType, methodTypeParameters, context) :> GenericTypeSymbol;
+          if (genericType : object != _objectSymbol)
+          {
+            def genericArguments = ImmutableArray.CreateBuilder(t.GenericArguments.Count);
+            foreach (arg in t.GenericArguments)
+              genericArguments.Add(ConvertType(arg, methodTypeParameters, context));
+
+            def name   = NRB.Name(NoLocation, t.TypeName);
+            def symbol = ExternalConstructedTypeDeclaration.[TopConstructedTypeSymbol](name, t).DefineSymbol(null);
+            InternConstructedType(symbol, genericType, genericArguments.MoveToImmutable(), context)
+          }
+          else
+            genericType
+
+        | FnPtrSig => _pointerSymbol // TODO: поддержать указатели на функции
+        | _ =>
+          assert2(false, $"Unknown type signature $typeSig");
+          _objectSymbol
+      }
+    }
+
+    internal ConvertType(typeDefOrRef : ITypeDefOrRef, methodTypeParameters : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      mutable typeSymbol;
+      match (typeDefOrRef)
+      {
+        | typeSpec is TypeSpec =>
+          unless (_loadedTypeSpecs.TryGetValue(typeSpec, out typeSymbol))
+          {
+            typeSymbol = ConvertType(typeSpec.TypeSig, methodTypeParameters, context);
+            _loadedTypeSpecs.Add(typeSpec, typeSymbol);
+          }
+          typeSymbol
+
+        | typeDef  is TypeDef
+        | typeRef  is TypeRef with typeDef = typeRef.Resolve() =>
+          if (typeDef != null && _loadedTypeDefs.TryGetValue(typeDef, out typeSymbol))
+            typeSymbol
+          else
+            _objectSymbol
+
+        | _ =>
+          assert2(false, $"Unknown type reference $typeDefOrRef");
+          _objectSymbol
+      }
+    }
+
+    InternConstructedType[T](symbol : ConstructedTypeSymbol, genericType : GenericTypeSymbol, args : ImmutableArray[TypeSymbol],
+      context : DependentPropertyEvalContext) : ConstructedTypeSymbol
+    {
+      symbol.TypeInfo     = genericType;
+      symbol.Args         = args;
+      symbol.EvalProperties(context);
+
+      mutable internedSymbol;
+      unless (_constructedTypes.TryGetValue(symbol, out internedSymbol))
+      {
+        _constructedTypes.Add(symbol, symbol);
+        internedSymbol = symbol;
+      }
+      internedSymbol
+    }
+
+    CreateGenericParameter(genericParam : GenericParam, index : int, context : DependentPropertyEvalContext) : TypeParameterSymbol
+    {
+      def tps = TypeParameterSymbol();
+      tps.UpdateName(genericParam.Name);
+      tps.Index = index;
+      tps.Variance =
+        match (genericParam.Variance %& GenericParamAttributes.VarianceMask)
+        {
+          | GenericParamAttributes.Contravariant => Variance.Contravariant
+          | GenericParamAttributes.Covariant     => Variance.Covariant
+          | _                                    => Variance.None
+        };
+      tps.EvalProperties(context);
+      tps
+    }
+
+    CreateGenericParameters(genericParameters : IList[GenericParam], context : DependentPropertyEvalContext) : ImmutableArray[TypeSymbol]
+    {
+      if (genericParameters.Count == 0)
+        ImmutableArray.Empty
+      else
+      {
+        def result = ImmutableArray.CreateBuilder(genericParameters.Count : int);
+        foreach (tp in genericParameters with index)
+          result.Add(CreateGenericParameter(tp, index, context));
+        result.MoveToImmutable()
+      }
+    }
+
+    InitSystemTypes(context : DependentPropertyEvalContext) : void
+    {
+      def modifiers            = ModifierSet(context);
+      modifiers.Add(Modifiers.Public);
+
+      def textName             = "#Array1";
+      def name                 = Name(NoLocation, textName);
+      def symbol               = ExternalDeclaration.[SingleDimensionArraySymbol](name).DefineSymbol(_rootNamespace.MemberTable);
+      symbol.DeclaredIn          = _rootNamespace;
+      symbol.Flags               = modifiers;
+      symbol.FullName            = textName;
+      symbol.TypeParametersCount = 1;
+      symbol.TypeParameters      = ImmutableArray.Create(MakeArrayTypeParameter(context));
+      //singleDimensionArray.BaseTypeSet // TODO: fill with array interfaces
+      symbol.EvalProperties(context);
+      _singleDimensionArray = symbol;
+
+      def textName             = "#Pointer";
+      def name                 = Name(NoLocation, textName);
+      def symbol               = ExternalDeclaration.[PointerSymbol](name).DefineSymbol(_rootNamespace.MemberTable);
+      symbol.DeclaredIn          = _rootNamespace;
+      symbol.Flags               = modifiers;
+      symbol.FullName            = textName;
+      symbol.TypeParametersCount = 1;
+      symbol.TypeParameters      = ImmutableArray.Create(MakeArrayTypeParameter(context));
+      symbol.EvalProperties(context);
+      _pointerSymbol = symbol;
+
+      _objectSymbol = ConvertType(_corlibTypes.Object, ImmutableArray.Empty, context);
+
+      PlatformType = DnlibPlatformType(this, _corlibTypes, context);
+    }
+
+    MakeArrayTypeParameter(context : DependentPropertyEvalContext) : TypeSymbol
+    {
+      def tps = TypeParameterSymbol();
+      tps.UpdateName("T");
+      tps.Index = 0;
+      tps.EvalProperties(context);
+      tps
+    }
+
+    InitBaseTypeSet(context : DependentPropertyEvalContext) : void
+    {
+      when (_objectSymbol == null)
+        return;
+
+      def timer = Stopwatch.StartNew();
+      mutable resolvs = 0;
+      mutable resolvedByKey = 0;
+      mutable resolvedByResolvedTypeProp = 0;
+
+      foreach (x in _loadedTypeDefs.Values)
+      {
+        when ((x.FirstDeclarationOrDefault : object) is IExternalTypeDeclaration(TypeDef = typeDef))
+        {
+          match (x)
+          {
+            | EnumSymbol as en =>
+              def fieldDef = typeDef.FindField("value__");
+              assert(fieldDef != null, $"Underlying type not resolved for enum '$fieldDef'");
+              en.UnderlyingType = ConvertType(fieldDef.FieldType, ImmutableArray.Empty, context);
+
+            | SupportsInheritanceTypeSymbol as type =>
+              def baseTypeSet = BaseTypeReferenceSet(context);
+              type.BaseTypeSet = baseTypeSet;
+
+              def baseType = typeDef.BaseType;
+              when (baseType != null)
+              {
+                def typeSymbol = ConvertType(baseType, ImmutableArray.Empty, context);
+                when (typeSymbol : object != _objectSymbol)
+                  baseTypeSet.AddParent(typeSymbol);
+              }
+
+              foreach (ifaceImpl in typeDef.Interfaces)
+              {
+                def typeSymbol = ConvertType(ifaceImpl.Interface, ImmutableArray.Empty, context);
+                when (typeSymbol : object != _objectSymbol)
+                  baseTypeSet.AddParent(typeSymbol);
+              }
+
+              type.EvalProperties(context);
+            
+            | _ => ()
+          }
+        }
+      }
+
+      context.NextPass();
+
+      foreach (x in Types)
+      {
+        x.EvalProperties(context);
+
+        when ((x : DeclarationSymbol) is ContainerSymbol as containerSymbol)
+          unless (containerSymbol.IsScopeEvaluated)
+            x.Scope = containerSymbol.MemberTable;
+      }
+
+      Debug.WriteLine($"InitBaseTypeSet took: $(timer.Elapsed) resolvs=$resolvs, resolvedByKey=$resolvedByKey, resolvedByResolvedTypeProp=$resolvedByResolvedTypeProp");
+    }
+  }
+
+  public interface IExternalTypeDeclaration
+  {
+    TypeDef : TypeDef { get; }
+  }
+
+  [Record]
+  public class ExternalTopTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol], IExternalTypeDeclaration
+    where TSymbol : DeclarationSymbol
+  {
+    public TypeDef : TypeDef { get; }
+  }
+
+  [Record]
+  public class ExternalConstructedTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol]
+    where TSymbol : DeclarationSymbol
+  {
+    public TypeSig : GenericInstSig { get; }
+  }
+
+  [Record]
+  public class ExternalNestedTypeDeclaration[TSymbol] : ExternalDeclaration[TSymbol], IExternalTypeDeclaration
+    where TSymbol : DeclarationSymbol
+  {
+    public TypeDef : TypeDef { get; }
+  }
+
+  [Record]
+  public class ExternalPropertyDeclaration : ExternalDeclaration[Member.PropertySymbol]
+  {
+    public Property : PropertyDef;
+    public override CreateSymbol() : DeclarationSymbol { Member.PropertySymbol() }
+  }
+
+  [Record]
+  public class ExternalMethodDeclaration : ExternalDeclaration[Member.MethodSymbol]
+  {
+    public Method : MethodDef;
+    public override CreateSymbol() : DeclarationSymbol { Member.MethodSymbol() }
+  }
+
+  [Record]
+  public class ExternalConstructorDeclaration : ExternalDeclaration[Member.ConstructorSymbol]
+  {
+    public Method : MethodDef;
+    public override CreateSymbol() : DeclarationSymbol { Member.ConstructorSymbol() }
+  }
+
+  [Record]
+  public class ExternalFieldDeclaration : ExternalDeclaration[Member.FieldSymbol]
+  {
+    public Field : FieldDef;
+    public override CreateSymbol() : DeclarationSymbol { Member.FieldSymbol() }
+  }
+
+  [Record]
+  public class ExternalEnumFieldDeclaration : ExternalDeclaration[EnumMemberSymbol]
+  {
+    public Field : FieldDef;
+    public override CreateSymbol() : DeclarationSymbol { EnumMemberSymbol() }
+  }
+
+  [Record]
+  public class ExternalEventDeclaration : ExternalDeclaration[Member.EventSymbol]
+  {
+    public Event : EventDef;
+    public override CreateSymbol() : DeclarationSymbol { Member.EventSymbol() }
+  }
+
+  [Record]
+  public class ExternalParameterDeclaration : ExternalDeclaration[FormalParameterSymbol]
+  {
+    public Parameter : ParamDef;
+    public override CreateSymbol() : DeclarationSymbol { FormalParameterSymbol() }
+  }
+
+  [Record]
+  public class ExternalCustomAttributeDeclaration : ExternalDeclaration[CustomAttributeSymbol]
+  {
+    public Attribute : DN.CustomAttribute;
+    public override CreateSymbol() : DeclarationSymbol { CustomAttributeSymbol() }
+  }
+}

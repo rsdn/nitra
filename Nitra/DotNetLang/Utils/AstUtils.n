@@ -330,7 +330,8 @@ namespace DotNet
           def name   = Name(alias.Name.Location);
           // TODO: Подумать не надо ли собрать все атрибуты, со всех частей вместо использования первого попавшегося alias.Attributes
           def decl   = TypeParameter(alias.Location, name, alias.Attributes, false);
-          def symbol = table.Define(decl, context);
+          def symbol = table.Define.[TypeParameterSymbol](decl, context);
+          symbol.Index = i;
           result.Add(symbol);
         }
         result.MoveToImmutable()

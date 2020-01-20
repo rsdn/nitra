@@ -160,9 +160,9 @@
       <Project>{a8aaca46-ccc8-429f-b626-4cfc77f3a21a}</Project>
       <Private>False</Private>
     </MacroProjectReference>
-    <ProjectReference Include="..\..\..\DotNet.BackEnd.CCI\DotNet.BackEnd.CCI.nproj">
-      <Name>DotNet.BackEnd.CCI</Name>
-      <Project>{9bc9b613-47f1-443c-8205-ac3cfabe7db9}</Project>
+    <ProjectReference Include="..\..\..\DotNet.BackEnd.Dnlib\DotNet.BackEnd.Dnlib.nproj">
+      <Name>DotNet.BackEnd.Dnlib</Name>
+      <Project>{d047b6c3-e044-4f1f-8c79-97f37352bd02}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\..\Nitra\DotNetLang\DotNetLang.nproj">

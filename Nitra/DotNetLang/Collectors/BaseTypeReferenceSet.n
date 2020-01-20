@@ -1,4 +1,4 @@
-using Nitra;
+﻿using Nitra;
 using Nitra.Declarations;
 using Nitra.Serialization2;
 using Nitra.Staging;
@@ -11,6 +11,7 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 
@@ -118,10 +119,18 @@ namespace DotNet
 
         foreach (type in _parentTypes)
         {
-          | SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol
-          | ConstructedTypeSymbol(IsTypeInfoEvaluated=true, TypeInfo=GenericContainerTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol) =>
-            // TODO: need subst of type parameters
-            ancestorTypes.UnionWith(parentTypeSet.AncestorTypes);
+          | SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol with typeParameterValues = ImmutableArray.Empty
+          | ConstructedTypeSymbol(IsTypeInfoEvaluated=true, IsArgsEvaluated=true, TypeInfo=GenericContainerTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=true, BaseTypeSet=parentTypeSet, MemberTable=symbolScope) as symbol, Args=typeParameterValues) =>
+            if (typeParameterValues.IsDefaultOrEmpty)
+              ancestorTypes.UnionWith(parentTypeSet.AncestorTypes);
+            else
+            {
+              foreach (ancestor in parentTypeSet.AncestorTypes)
+              {
+                | TopConstructedTypeSymbol as x => _ = ancestorTypes.Add(x.SubstituteTypeParameters(typeParameterValues));
+                | _                             => _ = ancestorTypes.Add(ancestor);
+              }
+            }
 
             parentFullScope = parentFullScope.UnionWith(parentTypeSet.ParentFullScope.HideWith(symbolScope));
 

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <CommonFilesPath Condition=" '$(CommonFilesPath)' == '' ">..\Common</CommonFilesPath>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>d047b6c3-e044-4f1f-8c79-97f37352bd02</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DotNet.BackEnd.Dnlib</RootNamespace>
+    <AssemblyName>DotNet.BackEnd.Dnlib</AssemblyName>
+    <TargetFramework>netstandard20</TargetFramework>
+    <FileAlignment>512</FileAlignment>
+    <NoStdLib>true</NoStdLib>
+    <NemerleVersion>Net-4.0</NemerleVersion>
+    <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
+    <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <Name>DotNet.BackEnd.CCI</Name>
+    <KeyOriginatorFile>$(CommonFilesPath)\Nitra.snk</KeyOriginatorFile>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\Stage1\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Release\Stage1\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+<Import Project="$(Nemerle)\Nemerle.Sdk.props" />
+  <ItemGroup>
+    <PackageReference Include="dnlib" Version="3.3.0" />
+    <Reference Include="Nemerle">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DnlibBackEnd.n" />
+    <Compile Include="LazyAttributeList.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="LazyList.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DnlibPlatformType.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.n" />
+    <Compile Include="TypeMemberScope.n">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nitra\DotNetLang\DotNetLang.nproj">
+      <Name>DotNetLang</Name>
+      <Project>{d3c87d75-e119-4d30-a8be-dc28014bb653}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Nitra\Nitra.Runtime\Nitra.Runtime.nproj">
+      <Name>Nitra.Runtime</Name>
+      <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
+      <Name>System.Collections.Immutable.Light</Name>
+      <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
+</Project>
