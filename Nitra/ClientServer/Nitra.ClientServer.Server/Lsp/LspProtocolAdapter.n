@@ -24,8 +24,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Microsoft.VisualStudio.LanguageServer.Protocol;
 
-using LSP      = Microsoft.VisualStudio.LanguageServer.Protocol;
-using Messages = Nitra.ClientServer.Messages;
+using LSP               = Microsoft.VisualStudio.LanguageServer.Protocol;
+using Messages          = Nitra.ClientServer.Messages;
+using FileSystemWatcher = Microsoft.VisualStudio.LanguageServer.Protocol.FileSystemWatcher;
 
 namespace Nitra.ClientServer.Server.Lsp
 {
@@ -36,12 +37,13 @@ namespace Nitra.ClientServer.Server.Lsp
     private _requestTable             : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
     private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, array[array[Diagnostic]]] = ConcurrentDictionary();
 
-    private mutable _router     : Router;
-    private mutable _input      : Stream;
-    private mutable _output     : Stream;
-    private mutable _reader     : LspReader;
-    private mutable _writer     : LspWriter;
-    private mutable _solution   : LspSolution;
+    private mutable _router         : Router;
+    private mutable _input          : Stream;
+    private mutable _output         : Stream;
+    private mutable _reader         : LspReader;
+    private mutable _writer         : LspWriter;
+    private mutable _solution       : LspSolution;
+    private mutable _requestCounter : int;
 
     private mutable pendingCompletionId : object;
 
@@ -62,19 +64,21 @@ namespace Nitra.ClientServer.Server.Lsp
 
       _reader.RegisterHandler("$/cancelRequest",                       CancelRequestHandler);
       _reader.RegisterHandler(Methods.Initialize,                      InitializeHandler);
-      _reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
       _reader.RegisterHandler(Methods.Shutdown,                        ShutdownHandler);
-      _reader.RegisterHandler(Methods.Exit,                            ExitHandler);
-      _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
-      _reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
-      _reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
       _reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocumentCompletionHandler);
       _reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocumentDefinition);
+      _reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
+      _reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
+      _reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
+
+      _reader.RegisterHandler(Methods.Exit,                            ExitHandler);
+      _reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
+      _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
+      _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
+      _reader.RegisterHandler(Methods.WorkspaceDidChangeWatchedFiles,  WorkspaceDidChangeWatchedFilesHandler);
     }
 
     public Dispose() : void
@@ -123,10 +127,10 @@ namespace Nitra.ClientServer.Server.Lsp
           x
         }
         else
-          _fileToCompilerMessageMap[fileId];
+          _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
 
       def diagnostics = List();
-      def uri         = _solution.GetUri(fileId);
+      def uri         = _solution.GetFileUri(fileId);
       foreach (m in messages)
       {
         def severity =
@@ -157,21 +161,25 @@ namespace Nitra.ClientServer.Server.Lsp
 
       def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
       WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
-      Log.Message($"LSP $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.Cyan);
+      Log.Message($"LSP < $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
     }
 
     private UnknownHandler(method : string, id : object) : void
     {
+      Log.Message($"LSP -> UnknownHandler method=$method id=$id", ConsoleColor.Cyan);
       when (id != null)
         WriteError(id, LspErrorCode.MethodNotFound, method)
     }
 
-    private CancelRequestHandler(_p : CancelParams) : void
+    private CancelRequestHandler(p : CancelParams) : void
     {
+      Log.Message($"LSP -> $$/cancelRequest Id=$(p.Id)", ConsoleColor.Cyan);
     }
 
     private InitializeHandler(p : InitializeParams, id : object) : void
     {
+      Log.Message($"LSP -> $(Methods.InitializeName)", ConsoleColor.Cyan);
+      //p.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration
       def result =
         InitializeResult() <-
         {
@@ -202,47 +210,85 @@ namespace Nitra.ClientServer.Server.Lsp
 
     private InitializedHandler(_ : InitializedParams) : void
     {
+      Log.Message($"LSP > $(Methods.InitializedName)", ConsoleColor.Cyan);
+      def make(pattern : string) { FileSystemWatcher() <- { GlobPattern = pattern; Kind = WatchKind.Create | WatchKind.Change | WatchKind.Delete; } }
+      def watchers = _solution.GetWatchedPatterns().Select(make).ToArray();
+      def options = DidChangeWatchedFilesRegistrationOptions() <- { Watchers = watchers; };
+      def registrationParams = RegistrationParams() <- { Registrations = array[
+          Registration() <-
+          {
+            Id              = "tdl-fileWatcher";
+            Method          = Methods.WorkspaceDidChangeWatchedFilesName;
+            RegisterOptions = options;
+          }
+        ]; };
+      WriteRequest(Methods.ClientRegisterCapability, registrationParams);
     }
 
     private ShutdownHandler(_ : object, id : object) : void
     {
+      Log.Message($"LSP -> $(Methods.ShutdownName)", ConsoleColor.Cyan);
       WriteResult(id, null);
     }
 
     private ExitHandler(_ : object) : void
     {
+      Log.Message($"LSP > $(Methods.ExitName)", ConsoleColor.Cyan);
       _router.AddMessage(ClientMessage.Shutdown());
     }
 
-    private WorkspaceDidChangeConfigurationHandler(_ : DidChangeConfigurationParams) : void
+    private WorkspaceDidChangeConfigurationHandler(_s : DidChangeConfigurationParams) : void
     {
+      Log.Message($"LSP > $(Methods.WorkspaceDidChangeConfigurationName)", ConsoleColor.Cyan);
     }
 
     private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : void
     {
       def document = p.TextDocument;
-      Log.Message("TextDocumentDidOpenHandler " + document.Uri, ConsoleColor.Cyan);
-      def fileId   = _solution.GetFileId(document.Uri);
+      def uri      = document.Uri;
+      def fileId   = _solution.GetFileId(uri);
       def version  = FileVersion(document.Version);
+      def path     = ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(uri.LocalPath);
+      Log.Message($"LSP > $(Methods.TextDocumentDidOpenName) fileId=$fileId Version=$(document.Version) Uri='$uri' Text=«$(document.Text)»", ConsoleColor.Cyan);
       foreach (project in _solution.GetProjects(fileId))
-        _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, version));
+        project.DidOpenFileForEditing(fileId, version, path, document.Text);
+      otherwise
+        TryAddToProject(fileId, version, path, document.Text);
+    }
+
+    private TryAddToProject(fileId : FileId, version : FileVersion, path : string, text : string) : void
+    {
+      def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
+      foreach (project in matchedProjects)
+        project.DidOpenFileForEditing(fileId, version, path, text);
       otherwise
       {
-        def path = document.Uri.LocalPath;
-        def isDriveLetter(c : char) : bool { c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' }
-        def fixedPath = if (path.Length > 3 && path[0] == '/' && isDriveLetter(path[1]) && path[2] == ':') path.Substring(1) else path;
-        def project = _solution.OpenProject(fixedPath);
-        _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, version));
+        def project = _solution.OpenProject(path);
+        project.DidOpenFileForEditing(fileId, version, path, text);
+      }
+    }
+
+    private TryAddToProject(fileId : FileId, path : string) : void
+    {
+      def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
+      Log.Message($<#LSP TryAddToProject fileId=$fileId matchedProjects=[..$matchedProjects] path=$path")#>, ConsoleColor.Cyan);
+
+      foreach (project in matchedProjects)
+        project.LoadFile(fileId, path);
+      otherwise
+      {
+        def project = _solution.OpenProject(path);
+        project.LoadFile(fileId, path);
       }
     }
 
     private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : void
     {
       def fileId = _solution.GetFileId(p.TextDocument.Uri);
-      Log.Message("TextDocumentDidCloseHandler " + p.TextDocument.Uri, ConsoleColor.Cyan);
-      _fileToCompilerMessageMap[fileId] = null;
+      Log.Message($"LSP > $(Methods.TextDocumentDidCloseName) $(p.TextDocument.Uri)" + p.TextDocument.Uri, ConsoleColor.Cyan);
       foreach (project in _solution.GetProjects(fileId))
-        _router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
+        project.DidClose(fileId);
+        //_router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
     }
 
     private static ToStringDidChangeTextDocumentParamsToString(msg : DidChangeTextDocumentParams) : string
@@ -255,12 +301,12 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
     private static TextDocumentContentChangeEventToString(change :  TextDocumentContentChangeEvent) : string
     {
       def r = change.Range;
-      r.Start.Line + ":" + r.Start.Character + "#" + r.End.Line + ":" + r.End.Character + " «" + change.Text + "»"
+      r.Start.Line + ":" + r.Start.Character + ", " + r.End.Line + ":" + r.End.Character + " «" + change.Text + "»"
     }
 
     private TextDocumentDidChangeHandler(p : DidChangeTextDocumentParams) : void
     {
-      Log.Message($"LSP $(ToStringDidChangeTextDocumentParamsToString(p))", ConsoleColor.Cyan);
+      Log.Message($"LSP > $(ToStringDidChangeTextDocumentParamsToString(p))", ConsoleColor.Cyan);
 
       def document = p.TextDocument;
       def changes  = p.ContentChanges;
@@ -281,9 +327,38 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       _router.AddMessage(message);
     }
 
+    private WorkspaceDidChangeWatchedFilesHandler(p : DidChangeWatchedFilesParams) : void
+    {
+      Log.Message($<#LSP > $(Methods.WorkspaceDidChangeWatchedFilesName) ..$(p.Changes; ", "; c => $"FileChangeType=$(c.FileChangeType) fileId=$( _solution.GetFileId(c.Uri)) Uri=$(c.Uri.LocalPath)")#>, ConsoleColor.Cyan);
+
+      foreach (change in p.Changes)
+      {
+        def fileId = _solution.GetFileId(change.Uri);
+        foreach (project in _solution.GetProjects(fileId))
+        {
+          match (change.FileChangeType)
+          {
+            | FileChangeType.Created => project.OnCreatedFile(fileId);
+            | FileChangeType.Deleted => project.OnDeletedFile(fileId); // TODO: Если файл открыт на редактирование, то переложить его в отдельный, временный, проект.
+            | FileChangeType.Changed => project.OnExternallyChangedFile(fileId);
+          }
+        }
+        otherwise
+        {
+          Log.Message($<#LSP File is not part of any project. FileChangeType=$(change.FileChangeType) fileId=$fileId Uri=$(change.Uri.LocalPath)")#>, ConsoleColor.Cyan);
+          match (change.FileChangeType)
+          {
+            | FileChangeType.Created => TryAddToProject(fileId, ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(change.Uri.LocalPath));
+            | FileChangeType.Deleted => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
+            | FileChangeType.Changed => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
+          }
+        }
+      }
+    }
+
     private TextDocumentDidSaveHandler(p : DidSaveTextDocumentParams) : void
     {
-      Log.Message($"LSP TextDocumentDidSaveHandler $(p.TextDocument) «$(p.Text)»", ConsoleColor.Cyan);
+      Log.Message($"LSP > $(Methods.TextDocumentDidSaveName) Uri=$(p.TextDocument.Uri) «$(p.Text)»", ConsoleColor.Cyan);
     }
 
     private TextDocumentDocumentHighlightHandler(p : TextDocumentPositionParams, id : object) : void
@@ -291,6 +366,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      Log.Message($"LSP -> $(Methods.TextDocumentDocumentHighlightName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, true, RegisterRequest(id, DocumentHighlight)));
     }
@@ -300,6 +376,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      Log.Message($"LSP -> $(Methods.TextDocumentReferencesName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration))));
     }
@@ -309,6 +386,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      Log.Message($"LSP -> $(Methods.TextDocumentHoverName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.GetHint(project.ProjectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position))));
     }
@@ -319,6 +397,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
       def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
+      Log.Message($"LSP -> $(Methods.TextDocumentCompletionName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) oldCompletionId='$oldCompletionId' Uri=$(document.Uri)", ConsoleColor.Cyan);
       if (oldCompletionId != null)
         WriteError(oldCompletionId, LspErrorCode.RequestCancelled, "")
       else when (_solution.TryGetFirstProjects(fileId) is VSome(project))
@@ -330,6 +409,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document        = p.TextDocument;
       def fileId          = _solution.GetFileId(document.Uri);
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      Log.Message($"LSP -> $(Methods.TextDocumentDefinitionName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolDefinitions(project.ProjectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _))));
     }
@@ -352,6 +432,15 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         _writer.WriteNotification(method.Name, @params)
     }
 
+    private WriteRequest[TParam, TResult](method : LspRequest[TParam, TResult], @params : TParam) : void
+    {
+      lock (_writer)
+      {
+        _requestCounter++;
+        _writer.WriteRequest(_requestCounter, method.Name, @params);
+      }
+    }
+
     private LoadSolution(path : string, options : InitializationOptions) : void
     {
       _solution = LspSolution(_router, SolutionId(0), options.Config, ImmutableArray.Create(options.FileExtension)); // TODO: Add support of multiple extensions
@@ -368,7 +457,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(DocumentHighlight() <-
         {
           Range = range;
-          Kind = DocumentHighlightKind.Text
+          Kind  = DocumentHighlightKind.Text
         });
       }
       WriteResult(id, result);
@@ -382,7 +471,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = _solution.GetUri(fileId)
+          Uri   = _solution.GetFileUri(fileId)
         });
       }
       WriteResult(id, result);
@@ -396,7 +485,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         result.Add(LSP.Location() <-
         {
           Range = range;
-          Uri = _solution.GetUri(fileId)
+          Uri   = _solution.GetFileUri(fileId)
         });
       }
       WriteResult(id, result);

@@ -134,11 +134,11 @@ namespace Nitra.Logging
         | DarkCyan    => "DarkCyan"
         | DarkRed     => "DarkRed"
         | DarkMagenta => "DarkMagenta"
-        | DarkYellow  => "olive"
+        | DarkYellow  => "Olive"
         | Gray        => "Gray"
         | DarkGray    => "DarkGray"
         | Blue        => "Blue"
-        | Green       => "limegreen"
+        | Green       => "Limegreen"
         | Cyan        => "Cyan"
         | Red         => "Red"
         | Magenta     => "Magenta"
@@ -146,34 +146,39 @@ namespace Nitra.Logging
         | White       => "White"
       }
 
-      WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
+      static TranslateColorFixedLen(color : ConsoleColor) : string
       {
-        _logFile.Write(<#<span style="color:#>);
-        _logFile.Write(TranslateColor(color));
-        _logFile.Write(<#">#>);
-        _logFile.Write(threadId);
-        _logFile.Write(time.ToString("│HH:mm:ss.ffffff│"));
-        _logFile.Write(msg);
-        _logFile.WriteLine(<#</span>#>);
-        when (_queue.Count == 0)
-          _logFile.Flush();
-
-        when (_needStdout)
-        {
-          Console.ForegroundColor = color;
-          Console.WriteLine(msg);
-          Console.ResetColor();
-        }
+        | Black       => "Black      "
+        | DarkBlue    => "DarkBlue   "
+        | DarkGreen   => "DarkGreen  "
+        | DarkCyan    => "DarkCyan   "
+        | DarkRed     => "DarkRed    "
+        | DarkMagenta => "DarkMagenta"
+        | DarkYellow  => "Olive      "
+        | Gray        => "Gray       "
+        | DarkGray    => "DarkGray   "
+        | Blue        => "Blue       "
+        | Green       => "Limegreen  "
+        | Cyan        => "Cyan       "
+        | Red         => "Error      "
+        | Magenta     => "Magenta    "
+        | Yellow      => "Warning    "
+        | White       => "White      "
       }
 
-      WriteLine(msg : string, color : ConsoleColor) : void
+      WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
       {
+        def threadIdStr = threadId.ToString("D3");
+        def timestamp = time.ToString("│HH:mm:ss.fffffff│");
+        Debug.WriteLine($"$threadIdStr$timestamp$(TranslateColorFixedLen(color))|$msg");
+
         _logFile.Write(<#<span style="color:#>);
         _logFile.Write(TranslateColor(color));
         _logFile.Write(<#">#>);
+        _logFile.Write(threadIdStr);
+        _logFile.Write(timestamp);
         _logFile.Write(msg);
         _logFile.WriteLine(<#</span>#>);
-
         when (_queue.Count == 0)
           _logFile.Flush();
 
@@ -183,6 +188,7 @@ namespace Nitra.Logging
           Console.WriteLine(msg);
           Console.ResetColor();
         }
+
       }
 
       Write(msg : string, color : ConsoleColor) : void

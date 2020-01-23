@@ -13,6 +13,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -21,24 +22,28 @@ namespace Nitra.ClientServer.Server.Lsp
 {
   internal class LspProject
   {
-    private _router  : Router;
-    public ProjectId : ProjectId;
-    public Solution  : LspSolution;
-    public RootPath  : string;
+    private _router            : Router;
+    public ProjectId           : ProjectId;
+    public Solution            : LspSolution;
+    public RootPath            : string;
+    public IsSingleFileProject : bool;
 
-    private _files            : HashSet[FileId] = HashSet();
+    /// 0 - not opened; > 0 - opened in editor
+    private _isFileOpen       : Dictionary[FileId, bool] = Dictionary();
     private _watchers         : Dictionary[string, FileSystemWatcher] = Dictionary();
     private _fileExtensionSet : HashSet[string];
     private _config           : Config;
 
     public this(rootPath : string, router  : Router, projectId : ProjectId, solution  : LspSolution, config : Config)
     {
-      RootPath  = rootPath;
+      _fileExtensionSet = HashSet(solution.FileExtensions, StringComparer.OrdinalIgnoreCase);
+      IsSingleFileProject = _fileExtensionSet.Contains(Path.GetExtension(rootPath));
+      def isDirSeparator(ch : char) : bool { ch == Path.AltDirectorySeparatorChar || ch == Path.DirectorySeparatorChar }
+      RootPath  = Path.GetFullPath(if (IsSingleFileProject || rootPath.Length > 0 && isDirSeparator(rootPath[rootPath.Length - 1])) rootPath else (rootPath + '/'));
       _router   = router;
       ProjectId = projectId;
       Solution  = solution;
       _config   = config;
-      _fileExtensionSet = HashSet(solution.FileExtensions, StringComparer.OrdinalIgnoreCase);
 
       def path = rootPath;
 
@@ -48,14 +53,24 @@ namespace Nitra.ClientServer.Server.Lsp
         _router.AddMessage(ClientMessage.ReferenceLoaded(projectId, reference));
 
       foreach (filePath in GetFiles(GetWatchedPaths()))
-        RegistrFile(Solution.GetFileId(filePath), filePath);
+        LoadFile(Solution.GetFileId(filePath), filePath);
 
       _router.AddMessage(ClientMessage.ProjectLoaded(projectId));
     }
 
+    public Name : string { get { Path.GetFileName(RootPath) } }
+
     private GetReferences() : array[string]
     {
       _config.References
+    }
+
+    public GetWatchedPatterns() : Seq[string]
+    {
+      if (File.Exists(RootPath))
+        yield RootPath;
+      else foreach (ext in _fileExtensionSet)
+        yield @"**\*" + ext;
     }
 
     private GetWatchedPaths() : Seq[string]
@@ -65,11 +80,75 @@ namespace Nitra.ClientServer.Server.Lsp
       yield RootPath
     }
 
+    public IsMatchProject([NotNull] filePath : string) : bool
+    {
+      // TODO: Add support of .vscode/tasks.json
+      if (IsSingleFileProject)
+        filePath.Equals(RootPath, StringComparison.OrdinalIgnoreCase)
+      else
+        filePath.StartsWith(RootPath, ignoreCase=true, culture=CultureInfo.InstalledUICulture)
+    }
+
+    public DidOpenFileForEditing(fileId : FileId, version : FileVersion, path : string, text : string) : void
+    {
+      mutable isOpenedForEditing;
+      def isLoaded = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+
+      when (isLoaded)
+        assert2(!isOpenedForEditing);
+
+      _isFileOpen[fileId] = true;
+
+      def projectId = ProjectId;
+
+      when (isLoaded)
+        _router.AddMessage(ClientMessage.FileUnloaded(projectId, fileId));
+      _router.AddMessage(ClientMessage.FileLoaded(projectId, path, fileId, version, hasContent=true, contentOpt=text));
+      _router.AddMessage(ClientMessage.FileActivated(projectId, fileId, version));
+    }
+
+    public DidClose(fileId : FileId) : void
+    {
+      mutable isOpenedForEditing;
+      def isLoaded = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+      unless (isLoaded)
+        return;
+
+      assert2(isOpenedForEditing);
+      _isFileOpen[fileId] = false;
+      _router.AddMessage(ClientMessage.FileDeactivated(ProjectId, fileId));
+    }
+
+    public LoadFile(fileId : FileId, filePath : string) : void
+    {
+      mutable isOpenedForEditing;
+      def isLoaded = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+
+      when (isOpenedForEditing)
+        return; // file loaded by editor (before)
+
+
+      _isFileOpen[fileId] = false;
+      when (isLoaded)
+        _router.AddMessage(ClientMessage.FileUnloaded(ProjectId, fileId));
+      _router.AddMessage(ClientMessage.FileLoaded(ProjectId, filePath, fileId, version = FileVersion(1), hasContent = false, contentOpt = null));
+    }
+
+    ///// Do not call this method on close file (onli on deleting file)!
+    //public UnregistrFile(fileId : FileId) : void
+    //{
+    //  unless (_files.Remove(fileId))
+    //    return;
+    //
+    //  _router.AddMessage(ClientMessage.FileUnloaded(ProjectId, fileId));
+    //}
+
+    public IsFileInProject(fileId : FileId) : bool { _isFileOpen.ContainsKey(fileId) }
+
     private GetFiles(watchedPaths : Seq[string]) : Seq[string]
     {
       foreach (watchedPath in watchedPaths)
       {
-        AddWatcher(watchedPath);
         if (IO.File.Exists(watchedPath))
           yield watchedPath;
         else
@@ -79,118 +158,56 @@ namespace Nitra.ClientServer.Server.Lsp
       }
     }
 
-    public RegistrFile(fileId : FileId, filePath : string) : void
+    public IsSupportedFile(filePath : string) : bool { _fileExtensionSet.Contains(Path.GetExtension(filePath), StringComparer.OrdinalIgnoreCase) }
+
+    public OnCreatedFile(fileId : FileId) : void
     {
-      unless (_files.Add(fileId))
+      mutable isOpenedForEditing;
+      def path      = Solution.GetFilePath(fileId);
+      def projectId = this.ProjectId;
+      def isLoaded  = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+      Log.Message($<#LSP LspProject.OnCreatedFile(ProjectId=$projectId fileId=$fileId, isLoaded=$isLoaded isOpenedForEditing=isOpenedForEditing path=$path RootPath=$RootPath)#>, ConsoleColor.DarkCyan);
+
+      when (isLoaded)
         return;
 
-      _router.AddMessage(ClientMessage.FileLoaded(ProjectId, filePath, fileId, version = FileVersion(1), hasContent = false, contentOpt = null));
+      _router.AddMessage(ClientMessage.FileLoaded(projectId, path, fileId, FileVersion(1), hasContent=false, contentOpt=null));
+      _isFileOpen[fileId] = false;
     }
 
-    /// Do not call this method on close file (onli on deleting file)!
-    public UnregistrFile(fileId : FileId) : void
+    public OnDeletedFile(fileId : FileId) : void
     {
-      unless (_files.Remove(fileId))
+      mutable isOpenedForEditing;
+      def path      = Solution.GetFilePath(fileId);
+      def projectId = this.ProjectId;
+      def isLoaded  = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+      Log.Message($<#LSP LspProject.OnDeletedFile(ProjectId=$projectId fileId=$fileId, isLoaded=$isLoaded isOpenedForEditing=isOpenedForEditing path=$path RootPath=$RootPath)#>, ConsoleColor.DarkCyan);
+
+      when (isOpenedForEditing)
+        _router.AddMessage(ClientMessage.FileDeactivated(ProjectId, fileId));
+
+      when (isLoaded)
+        _router.AddMessage(ClientMessage.FileUnloaded(projectId, fileId));
+
+      def removed = _isFileOpen.Remove(fileId);
+      assert2(removed);
+    }
+
+    public OnExternallyChangedFile(fileId : FileId) : void
+    {
+      mutable isOpenedForEditing;
+      def path      = Solution.GetFilePath(fileId);
+      def projectId = this.ProjectId;
+      def isLoaded  = _isFileOpen.TryGetValue(fileId, out isOpenedForEditing);
+      Log.Message($<#LSP LspProject.OnExternallyChangedFile(ProjectId=$projectId fileId=$fileId, isLoaded=$isLoaded isOpenedForEditing=isOpenedForEditing path=$path RootPath=$RootPath)#>, ConsoleColor.DarkCyan);
+      when (isOpenedForEditing)
         return;
-
-      _router.AddMessage(ClientMessage.FileUnloaded(ProjectId, fileId));
-    }
-
-    public IsFileInProject(fileId : FileId) : bool { _files.Contains(fileId) }
-
-    private AddWatcher(path : string) : void
-    {
-        def isFile = File.Exists(path);
-        when (!isFile && !Directory.Exists(path))
-        {
-          Log.Error($"LSP AddWatcher: The file or directory '$path' not exists.");
-          return;
-        }
-
-        def dir = if (isFile) Path.GetDirectoryName(path) else path;
-
-        def fileExtensions = Solution.FileExtensions;
-        def filter         = if (fileExtensions.Length == 1) fileExtensions[0] else "";
-				def watcher        = FileSystemWatcher(dir, filter);
-
-        watcher.NotifyFilter = NotifyFilters.CreationTime | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-        watcher.Filter = "*.tdl";
-
-        watcher.Created += OnCreated;
-        watcher.Deleted += OnDeleted;
-        watcher.Renamed += OnRenamed;
-        watcher.EnableRaisingEvents = true;
-
-        _watchers.Add(path, watcher);
-    }
-
-    private RemoveWatcher(path : string) : void
-    {
-      def watcher = _watchers[path];
-      watcher.Dispose();
-      _ = _watchers.Remove(path);
-    }
-
-    private IsSupportedFile(filePath : string) : bool { _fileExtensionSet.Contains(Path.GetExtension(filePath)) }
-
-    private OnCreated(_sender : object, e : FileSystemEventArgs) : void
-    {
-      OnCreated(e.FullPath);
-    }
-
-    private OnCreated(path : string) : void
-    {
-      unless (IsSupportedFile(path))
+      when (!isLoaded)
         return;
-
-
-      def fileId = Solution.GetFileId(path);
-      Log.Message($"Watcher.OnCreated fileId=$fileId path='$path'", ConsoleColor.White);
-      RegistrFile(fileId, path);
+      _router.AddMessage(ClientMessage.FileUnloaded(projectId, fileId));
+      _router.AddMessage(ClientMessage.FileLoaded(projectId, path, fileId, FileVersion(1), hasContent=false, contentOpt=null));
     }
 
-    private OnDeleted(_sender : object, e : FileSystemEventArgs) : void
-    {
-      OnDeleted(e.FullPath);
-    }
-
-    private OnDeleted(path : string) : void
-    {
-      unless (IsSupportedFile(path))
-        return;
-      def fileId = Solution.GetFileId(path);
-      Log.Message($"Watcher.OnDeleted fileId=$fileId path='$path'", ConsoleColor.White);
-      UnregistrFile(fileId);
-      when (_watchers.ContainsKey(path))
-        RemoveWatcher(path);
-    }
-
-    private OnRenamed(_sender : object, e : RenamedEventArgs) : void
-    {
-      def newPath            = e.FullPath;
-      def oldPath            = e.OldFullPath;
-      def newFileIsSupported = IsSupportedFile(newPath);
-      def oldFileIsSupported = IsSupportedFile(oldPath);
-
-      Log.Message($"Watcher.OnRenamed oldPath='$oldPath' newPath='$newPath'", ConsoleColor.White);
-
-      when (oldFileIsSupported && !newFileIsSupported)
-      {
-        OnDeleted(oldPath);
-        return;
-      }
-
-      when (!oldFileIsSupported && newFileIsSupported)
-      {
-        OnCreated(newPath);
-        return;
-      }
-
-      def oldFileId = Solution.GetFileId(e.OldFullPath);
-      _ = _files.Remove(oldFileId);
-      def fileId = Solution.GetFileId(newPath);
-      _ = _files.Add(fileId);
-      _router.AddMessage(ClientMessage.FileRenamed(oldFileId, fileId, newPath));
-    }
+    public override ToString() : string { Name }
   }
 }

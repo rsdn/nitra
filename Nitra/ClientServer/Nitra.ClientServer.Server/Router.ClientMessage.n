@@ -35,7 +35,7 @@ namespace Nitra.ClientServer.Server
 
     OnClientMessageImpl(serverMsg : ClientMessage) : void
     {
-      | ClientMessage.CheckVersion(assemblyVersionGuid)  =>
+      | ClientMessage.CheckVersion(assemblyVersionGuid)   =>
         if (Constants.AssemblyVersionGuid == assemblyVersionGuid)
           Log.Message("Client version checked.");
         else
@@ -44,7 +44,7 @@ namespace Nitra.ClientServer.Server
           Log.Message($"Incorrect version of messaging assembly: '$(asm.Assembly.Location)'.");
           Environment.Exit(42);
         }
-      | SolutionStartLoading(id, fullPath)               =>
+      | SolutionStartLoading(id, fullPath)                =>
         when (_solution != null)
         {
           Log.Error($"Try to open new solution (ID=$id Path='$(fullPath)') without closing the previous one (ID=$(_solution.Id) '$(_solution.Path)').");
@@ -54,44 +54,43 @@ namespace Nitra.ClientServer.Server
         SpanClassesManager.Clear();
         _solution = Solution(id, fullPath);
 
-      | SolutionLoaded(id)                               => assert2(_solution.Id == id); _solution.Open();
-      | SolutionUnloaded(id)                             => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
-      | ProjectStartLoading(id, fullPath, config)        => _ = Project(_solution, fullPath, id, config, _parseQueue, _semanticAnalysisQueue, this);
-      | ProjectLoaded      (id)                          => _solution[id].Open();
-      | ProjectUnloaded    (id)                          => _solution.RemoveProject(id);
-      | ProjectRename      (_oldId, _newId, _newPath)    => assert(false, "Not supported yet.")
-      | ReferenceLoaded    (projectId, fullPath)         => _solution[projectId].AddLib(fullPath);
-      | ReferenceUnloaded  (projectId, fullPath)         => _solution[projectId].RemoveLib(fullPath);
-      | ProjectReferenceLoaded(prjId, refPrjId, path)    => _solution[prjId].AddProjectReference(refPrjId, path);
-      | ProjectReferenceUnloaded                         => assert(false, "Not supported yet.")
-      | FileLoaded         (projectId, path, id, v, h, c)   => File(id, path, v, _solution[projectId], if (h) c else null).TrySendParseMessage();
-      | FileReparse        (id)                          => foreach (f in _solution.GetFiles(id)) f.TrySendParseMessage();
-      | FileInMemoryLoaded (projectId, id, name, text)   => File(id, name, _solution[projectId], text).TrySendParseMessage();
-      | FileActivated      (projectId, id, version)      => _solution.GetFile(projectId, id).Activate(version);
-      | FileDeactivated    (projectId, id)               => _solution.GetFile(projectId, id).Deactivate();
-      | FileUnloaded       (projectId, id)               => _solution.GetProject(projectId).RemoveFile(id);
-      | FileRenamed        (oldId, newId, newPath)       => foreach (f in _solution.GetFiles(oldId)) f.RenameFile(newId, newPath); // TODO: get 'newVersion' from client
-      | FileChanged        (id, version, change, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
-      | FileChangedBatch   (id, version, changes, caret) => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);
-      | PrettyPrint        (state)                       => PrettyPrintState = state;
-      | CompleteWord       (projectId, id, pos)          => _solution.GetFile(projectId, id).CompleteWord(pos);
-      | CompleteWordDismiss    (projectId, id)           => _solution.GetFile(projectId, id).CompleteWordDismiss();
-      | FindSymbolReferences (projectId, id, pos, forHighlighting, tag) => FindSymbolReferences(projectId, id, pos, forHighlighting, tag);
-      | FindSymbolDefinitions(projectId, id, pos, tag)   => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos, tag);
-      | ParseTreeReflection(state)                       => IsParseTreeReflectionEnable = state;
-      | GetObjectContent(sId, pId, fId, ver, parentId)   => GetObjectContent(sId, pId, fId, ver, parentId);
-      | GetObjectGraph  (sId, pId, fId, ver, parentId)   => _solution.GetFile(pId, fId).GetObjectGraph(sId, ver, parentId);
-      | AttachDebugger                                   => _ = Debugger.Launch();
-      | GetLibsMetadata(libs)                            => GetLibsMetadata(libs)
-      | GetLibsSyntaxModules(libs)                       => GetLibsSyntaxModules(libs)
-      | GetLibsProjectSupports(libs)                     => GetLibsProjectSupports(libs)
-      | GetFileExtensions(projectId, languageNames)      => GetFileExtensions(projectId, languageNames)
-      | SetCaretPos(projectId, fileId, pos)              => _solution.GetFile(projectId, fileId).SetCaretPos(pos);
-      | GetHint(projectId, fileId, pos, tag)             => _solution.GetFile(projectId, fileId).GetHint(pos, tag);
-      | FindDeclarations(pat, projectId, hide, kinds)    => _solution.FindDeclarations(pat, projectId, hide, kinds)
-      | GetSubHint(projectId, symbolId)                  => GetSubHint(projectId, symbolId);
-      | FileSaved                                        => ()
-      | Shutdown                                         =>
+      | SolutionLoaded(id)                                => assert2(_solution.Id == id); _solution.Open();
+      | SolutionUnloaded(id)                              => assert2(_solution.Id == id); _solution.Dispose(); _solution = null;
+      | ProjectStartLoading(id, fullPath, config)         => _ = Project(_solution, fullPath, id, config, _parseQueue, _semanticAnalysisQueue, this);
+      | ProjectLoaded      (id)                           => _solution[id].Open();
+      | ProjectUnloaded    (id)                           => _solution.RemoveProject(id);
+      | ProjectRename      (_oldId, _newId, _newPath)     => assert(false, "Not supported yet.")
+      | ReferenceLoaded    (projectId, fullPath)          => _solution[projectId].AddLib(fullPath);
+      | ReferenceUnloaded  (projectId, fullPath)          => _solution[projectId].RemoveLib(fullPath);
+      | ProjectReferenceLoaded(prjId, refPrjId, path)     => _solution[prjId].AddProjectReference(refPrjId, path);
+      | ProjectReferenceUnloaded                          => assert(false, "Not supported yet.")
+      | FileLoaded         (projectId, path, id, v, h, c) => File(id, path, v, _solution[projectId], if (h) c else null).TrySendParseMessage();
+      | FileReparse        (id)                           => foreach (f in _solution.GetFiles(id)) f.TrySendParseMessage();
+      | FileActivated      (projectId, id, version)       => _solution.GetFile(projectId, id).Activate(version);
+      | FileDeactivated    (projectId, id)                => _solution.GetFile(projectId, id).Deactivate();
+      | FileUnloaded       (projectId, id)                => _solution.GetProject(projectId).RemoveFile(id);
+      | FileRenamed        (oldId, newId, newPath)        => foreach (f in _solution.GetFiles(oldId)) f.RenameFile(newId, newPath); // TODO: get 'newVersion' from client
+      | FileChanged        (id, version, change, caret)   => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
+      | FileChangedBatch   (id, version, changes, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);
+      | PrettyPrint        (state)                        => PrettyPrintState = state;
+      | CompleteWord       (projectId, id, pos)           => _solution.GetFile(projectId, id).CompleteWord(pos);
+      | CompleteWordDismiss    (projectId, id)            => _solution.GetFile(projectId, id).CompleteWordDismiss();
+      | FindSymbolReferences (prjId, id, pos, h, tag)     => FindSymbolReferences(prjId, id, pos, h, tag);
+      | FindSymbolDefinitions(projectId, id, pos, tag)    => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos, tag);
+      | ParseTreeReflection(state)                        => IsParseTreeReflectionEnable = state;
+      | GetObjectContent(sId, pId, fId, ver, parentId)    => GetObjectContent(sId, pId, fId, ver, parentId);
+      | GetObjectGraph  (sId, pId, fId, ver, parentId)    => _solution.GetFile(pId, fId).GetObjectGraph(sId, ver, parentId);
+      | AttachDebugger                                    => _ = Debugger.Launch();
+      | GetLibsMetadata(libs)                             => GetLibsMetadata(libs)
+      | GetLibsSyntaxModules(libs)                        => GetLibsSyntaxModules(libs)
+      | GetLibsProjectSupports(libs)                      => GetLibsProjectSupports(libs)
+      | GetFileExtensions(projectId, languageNames)       => GetFileExtensions(projectId, languageNames)
+      | SetCaretPos(projectId, fileId, pos)               => _solution.GetFile(projectId, fileId).SetCaretPos(pos);
+      | GetHint(projectId, fileId, pos, tag)              => _solution.GetFile(projectId, fileId).GetHint(pos, tag);
+      | FindDeclarations(pat, projectId, hide, kinds)     => _solution.FindDeclarations(pat, projectId, hide, kinds)
+      | GetSubHint(projectId, symbolId)                   => GetSubHint(projectId, symbolId);
+      | FileSaved                                         => ()
+      | Shutdown                                          =>
         _mainQueue.CompleteAdding();
         _cts.Cancel();
         _solution?.Dispose();

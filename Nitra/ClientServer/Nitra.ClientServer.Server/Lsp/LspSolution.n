@@ -23,7 +23,7 @@ namespace Nitra.ClientServer.Server.Lsp
   {
     private static mutable _projectCounter : int;
 
-    private _baseConfig        : Config;
+    public  Config             : Config;
     private _router            : Router;
     private _uriToFileIdTable  : ConcurrentDictionary[Uri, FileId] = ConcurrentDictionary();
     private _fileIdToUriTable  : ConcurrentDictionary[FileId, Uri] = ConcurrentDictionary();
@@ -36,20 +36,34 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public this(router : Router, solutionId : SolutionId, config : Config, fileExtensions : ImmutableArray[string])
     {
-      _router       = router;
-      SolutionId    = solutionId;
-      _baseConfig   = config;
+      _router        = router;
+      SolutionId     = solutionId;
+      Config         = config;
       FileExtensions = fileExtensions;
     }
 
     public OpenProject(rootPath : string) : LspProject
     {
       def projectId = ProjectId(unchecked (Interlocked.Increment(ref _projectCounter)));
-      def project   = LspProject(rootPath, _router, projectId, this, _baseConfig);
+      def project   = LspProject(rootPath, _router, projectId, this, Config);
 
       _projectIdToFileId[projectId] = project;
 
       project
+    }
+
+    public FindMatchingProjects(fileId : FileId) : Seq[LspProject]
+    {
+      def filePath = Path.GetFullPath(GetFilePath(fileId));
+
+      foreach (project in GetProjects())
+        when (project.IsMatchProject(filePath))
+          yield project;
+    }
+
+    public GetWatchedPatterns() : Seq[string]
+    {
+      GetProjects().SelectMany(_.GetWatchedPatterns())
     }
 
     public GetProjects() : Seq[LspProject]
@@ -80,10 +94,10 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public GetFileId([NotNull] path : string) : FileId
     {
-      GetFileId(Uri(path, UriKind.Absolute))
+      GetFileId(Uri(ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(path), UriKind.Absolute))
     }
 
-    public GetUri(fileId : FileId) : Uri
+    public GetFileUri(fileId : FileId) : Uri
     {
       mutable result;
       if (_fileIdToUriTable.TryGetValue(fileId, out result))
@@ -92,6 +106,11 @@ namespace Nitra.ClientServer.Server.Lsp
       {
         throw KeyNotFoundException($"$fileId fileId not found.")
       }
+    }
+
+    public GetFilePath(fileId : FileId) : string
+    {
+      ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(GetFileUri(fileId).LocalPath)
     }
   }
 }

@@ -79,7 +79,7 @@ namespace Nitra.ClientServer.Server
     ProcessMessage(msg : ParserMessage) : void
     {
       | ParseFile(solutionId, projectId, fileId, parseSession, source) =>
-        Log.Message("ParseFile " + fileId);
+        Log.Message($"ParseFile fileId=$fileId Version=$(source.Version) File=«$(source.File.FullName)»");
         def timer = Stopwatch.StartNew();
         // TODO: add statistics
         //def stat = Statistics;
@@ -106,7 +106,7 @@ namespace Nitra.ClientServer.Server
         unless (isCompleteWord)
           ServerUtils.SendCompilerMessages(parseResult, _router, solutionId, projectId, fileId);
 
-        ServerUtils.LogMsgHandled("ParseFile " + fileId + " Length=" + parseResult.SourceSnapshot.Text.Length, timer, 200);
+        ServerUtils.LogMsgHandled($"ParseFile fileId=$fileId Version=$(source.Version) Length=" + parseResult.SourceSnapshot.Text.Length, timer, 200);
 
       | CreateAst(solutionId, projectId, fileId, parseResult, isActive) =>
         Log.Message("CreateAst " + fileId);
@@ -170,7 +170,7 @@ namespace Nitra.ClientServer.Server
       | SemanticAnalysisStart(solutionId, projectId, cancellationToken, project, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
         when (project.Data == null)
         {
-          Log.Message("Project support: RefreshReferences " + project.Name + " ");
+          Log.Message("SemanticAnalysisStart: Project support: RefreshReferences " + project.Name + " ");
           def timer = Stopwatch.StartNew();
           def messages = project.CompilerMessages :> NSP.CompilerMessageList;
           messages.Clear();
@@ -192,7 +192,7 @@ namespace Nitra.ClientServer.Server
           def cm = ServerUtils.ConvertCompilerMessages(CompilerMessageSource.ProjectLoading, messages);
           _router.SendAsyncResponse(AsyncServerMessage.ProjectLoadingMessages(FileId.Invalid, FileVersion.Invalid, solutionId, projectId, cm));
 
-          LogMsgHandled("RefreshReferences " + project.Name + " ", timer, 1000);
+          LogMsgHandled("SemanticAnalysisStart: RefreshReferences " + project.Name + " ", timer, 1000);
 
           when (data == null)
             return;

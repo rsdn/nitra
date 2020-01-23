@@ -28,6 +28,19 @@ namespace Nitra.ClientServer.Server.Lsp
       _serializer.Formatting = Formatting.None;
     }
 
+    public WriteRequest(id : object, method : string, @params : object) : void
+    {
+      try
+      {
+        def jsonWriter = StartRequestObject(id, method);
+
+        _serializer.Serialize(jsonWriter, @params);
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
     public WriteNotification(method : string, @params : object) : void
     {
       try

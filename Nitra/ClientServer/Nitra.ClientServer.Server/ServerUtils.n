@@ -25,6 +25,14 @@ namespace Nitra.ClientServer.Server
     _sync : object = object();
     _emptyArray : array[Messages.CompilerMessage] = array(0);
 
+    IsDriveLetter(c : char) : bool { c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' }
+
+    /// Trim '/' character from begin of windows fully qualified path. Use this method to fix Uri.LocalPath.
+    public TrimBeginSlashInFullyQualifiedWindowsPath(path : string) : string
+    {
+      if (path.Length > 3 && path[0] == '/' && IsDriveLetter(path[1]) && path[2] == ':') path.Substring(1) else path
+    }
+
     public ConvertCompilerMessages(source : Messages.CompilerMessageSource, compilerMessages : Seq[Nitra.ProjectSystem.CompilerMessage]) : array[Messages.CompilerMessage]
     {
       def count = compilerMessages.Count();
