@@ -77,6 +77,7 @@ namespace Nitra.BackEnd.Dnlib
     _multiDimensionArrays          : Dictionary[uint, MultiDimensionArraySymbol]              = Dictionary();
     _loadedModules                 : Dictionary[AssemblyIdentity, ModuleDef]                  = Dictionary();
     _loadedTypeDefs                : Dictionary[TypeDef, TypeSymbol]                          = Dictionary();
+    _loadedTypeNameToDefs          : Dictionary[string, TypeSymbol]                           = Dictionary();
     _loadedTypeSpecs               : Dictionary[TypeSpec, TypeSymbol]                         = Dictionary();
     _loadedNamespaces              : Dictionary[string, NamespaceSymbol]                      = Dictionary();
     _constructedTypes              : Dictionary[ConstructedTypeSymbol, ConstructedTypeSymbol] = Dictionary();
@@ -86,7 +87,7 @@ namespace Nitra.BackEnd.Dnlib
     public SingleDimensionArray : SingleDimensionArraySymbol { get { _singleDimensionArray } }
 
     public Dispose() : void { }
-    
+
     public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       LoadExternalSymbols(libs, libPath, (loc, err) => compilerMessages.Error(loc, err), context);
@@ -110,6 +111,7 @@ namespace Nitra.BackEnd.Dnlib
 
       _loadedModules.Clear();
       _loadedTypeDefs.Clear();
+      _loadedTypeNameToDefs.Clear();
       _loadedTypeSpecs.Clear();
       _loadedNamespaces.Clear();
       _constructedTypes.Clear();
@@ -244,7 +246,7 @@ namespace Nitra.BackEnd.Dnlib
       foreach (r in otherReferences)
       {
         def moduleDef = loadReference(r);
-        when (_corlibTypes == null)
+        when (_corlibTypes == null && moduleDef != null)
         {
           def corlibAssembly = _assemblyResolver.Resolve(moduleDef.CorLibTypes.AssemblyRef, null);
           when (corlibAssembly != null)
@@ -326,7 +328,8 @@ namespace Nitra.BackEnd.Dnlib
 
       def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, typeDef : TypeDef) : void
       {
-        _loadedTypeDefs[typeDef] = typeSymbol;
+        _loadedTypeNameToDefs[typeDef.FullName] = typeSymbol;
+        _loadedTypeDefs[typeDef]                = typeSymbol;
 
         when (typeSymbol is GenericTypeSymbol as genericSymbol)
           MakeTypeParameters(context, genericSymbol, typeDef);
@@ -358,6 +361,10 @@ namespace Nitra.BackEnd.Dnlib
 
         when ((typeSymbol : DeclarationSymbol) is Nitra.Declarations.ContainerSymbol as cont)
         {
+          when (typeSymbol.Name == "ProdDevicesApiTests")
+          {
+            assert(true);
+          }
           def memberTable = TypeMemberScope(cont, "MemberTable", this);
           cont.MemberTable = memberTable;
         }
@@ -657,6 +664,10 @@ namespace Nitra.BackEnd.Dnlib
     internal LoadMethod(methodDef : MethodDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
     {
       def name       = NRB.Name(NoLocation, methodDef.Name);
+      when (name.Text == "SendLicenseToDevice")
+      {
+        assert2(true);
+      }
       def flags      = ModifierSet(context);
       def attributes = methodDef.Attributes;
       when (attributes %&& MethodAttributes.Private)     flags.Add(Modifiers.Private);
@@ -802,12 +813,15 @@ namespace Nitra.BackEnd.Dnlib
           }
           typeSymbol
 
-        | typeDef  is TypeDef
-        | typeRef  is TypeRef with typeDef = typeRef.Resolve() =>
-          if (typeDef != null && _loadedTypeDefs.TryGetValue(typeDef, out typeSymbol))
+        | _ is TypeDef
+        | _ is TypeRef =>
+          if (_loadedTypeNameToDefs.TryGetValue(typeDefOrRef.FullName, out typeSymbol))
             typeSymbol
           else
+          {
+            Debug.WriteLine($"Symbol for '$(typeDefOrRef.FullName) ($(typeDefOrRef.GetType().Name))'");
             _objectSymbol
+          }
 
         | _ =>
           assert2(false, $"Unknown type reference $typeDefOrRef");
@@ -943,7 +957,7 @@ namespace Nitra.BackEnd.Dnlib
               }
 
               type.EvalProperties(context);
-            
+
             | _ => ()
           }
         }
