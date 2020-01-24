@@ -49,13 +49,7 @@ namespace Nitra
           else if (r.IsUnresolved)
             CompilerMessages.Error(reference, $"Unresolved reference '$reference'");
           else when (r.IsAmbiguous && !r.IgnoreAmbiguities)
-          {
-            def builder = StringBuilder(64)
-              .Append("<hint>'").HintMlEscape(reference).Append("' is an ambiguous reference between ")
-              .JoinAnd(r.Ambiguities, HintML.MakeHintMlPath(_, _, ".", true)).Append("</hint>");
-
-            CompilerMessages.Error(reference, builder.ToString());
-          }
+            CompilerMessages.Error(reference, $"'$reference' is an ambiguous reference between overloads.");
         }
 
         processRef(reference.Ref)

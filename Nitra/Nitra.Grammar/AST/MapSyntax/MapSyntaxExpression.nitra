@@ -17,7 +17,7 @@ namespace Nitra.Ast
     out Type         : TypeSymbol;
 
     unless (ExpectedType : object == WellKnownSymbols.AnyType || Type.IsSubtypeOf(ExpectedType))
-      Error(context, $"<hint>Expression type '$(AstUtils.ToHint(self.Type, context))' is not subtype of expected type '$(AstUtils.ToHint(self.ExpectedType, context))'.</hint>");
+      Error(context, $"Expression type '$(self.Type.Name)' is not subtype of expected type '$(self.ExpectedType.Name)'.");
 
     | Identifier
       {
@@ -91,7 +91,7 @@ namespace Nitra.Ast
           Error(context, "Type inference is not supported, please specify type with ':' operator.");
 
         unless (Expression.Type is RuleTypeSymbol)
-          Expression.Error(context, $"<hint>Expression type '$(AstUtils.ToHint(this.Expression.Type, context))' is not a parse tree type.</hint>");
+          Expression.Error(context, $"Expression type '$(this.Expression.Type.Name)' is not a parse tree type.");
 
         Expression : MapSyntaxExpression;
         Cases      : MapSyntaxMatchCase*;
@@ -157,9 +157,9 @@ namespace Nitra.Ast
 
         // TODO: move error handling to IRef
         when (MapSyntaxRef.IsUnresolved)
-          Error(context, $"<hint>Syntax mapping not found for type '$(AstUtils.ToHint(this.Expression.Type, context))'.</hint>");
+          Error(context, $"Syntax mapping not found for type '$(this.Expression.Type.Name)'.");
         when (MapSyntaxRef.IsAmbiguous)
-          Error(context, "<hint>Syntax mapping for type '$(AstUtils.ToHint(this.Expression.Type, context))' is ambiguous, try specify type of arguments explicitly.</hint>");
+          Error(context, "Syntax mapping for type '$(this.Expression.Type.Name)' is ambiguous, try specify type of arguments explicitly.");
 
         Expression : MapSyntaxExpression;
         Arguments  : MapSyntaxExpression*;
