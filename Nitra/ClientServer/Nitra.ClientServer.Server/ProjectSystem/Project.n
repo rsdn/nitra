@@ -54,8 +54,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     mutable _expectsToBuildAst                       : int;
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
-    public  IsCompleteWord                           : bool { get; set; }
-    
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], semanticAnalysisQueue : BlockingCollection[ParserMessage], router : Router)
     {
@@ -169,10 +167,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public AstDropped(file : File) : void
     {
+      Log.Message($"AstDropped(file=$file, fileId=$(file.Id))");
       when (file.IsSupported)
       {
-        _expectsToBuildAst++;
-        IsSemanticAvailable = false;
+        DecrementExpectsToBuildAst()
       }
       CancelSemanticAnalysisCancellation();
     }
@@ -189,13 +187,27 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public AstCreated(file : File, completeWordPosOpt : int, parseResultOpt : IParseResult) : void
     {
-      when (file.IsSupported)
-        _expectsToBuildAst--;
-      assert2(_expectsToBuildAst >= 0);
+      Log.Message($"AstCreated(file=$file, fileId=$(file.Id)))");
 
-      Log.Message("AstCreated(_expectsToBuildAst=" + _expectsToBuildAst + ")");
-      
+      when (file.IsSupported)
+        IncrementExpectsToBuildAst();
+
       TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
+    }
+
+    IncrementExpectsToBuildAst() : void
+    {
+      Log.Message($"_expectsToBuildAst-- old=$_expectsToBuildAst new=$(_expectsToBuildAst - 1)");
+
+        _expectsToBuildAst--;
+        assert2(_expectsToBuildAst >= 0);
+    }
+
+    DecrementExpectsToBuildAst() : void
+    {
+      Log.Message($"_expectsToBuildAst++ old=$_expectsToBuildAst new=$(_expectsToBuildAst + 1)");
+      _expectsToBuildAst++;
+      IsSemanticAvailable = false;
     }
 
     public override GetProjectSupport() : IProjectSupport
@@ -215,6 +227,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
+      Log.Message($<#TryStartSemanticAnalysis(fileOpt=$fileOpt, completeWordPosOpt=$completeWordPosOpt, parseResultOpt=$parseResultOpt)#>);
+
       unless (IsOpened)
         return;
 
@@ -223,7 +237,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         IsSemanticAvailable = true;
         return;
       }
-        
+
       when (IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
       {
         CancelSemanticAnalysisCancellation();
@@ -314,6 +328,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public SemanticAnalysisFinished(files : ImmutableArray[FileEvalPropertiesData], completeWordFileIdOpt : FileId, completeWordPosOpt : int) : void
     {
+      Log.Message($<#SemanticAnalysisFinished(completeWordFileIdOpt=$completeWordFileIdOpt completeWordPosOpt=$completeWordPosOpt files=..$(files; "; "; x => $"$(x.FileId) $(x.Title)"))#>);
       IsSemanticAvailable = true;
       _semanticResult     = files;
 
@@ -449,10 +464,6 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public RemoveFile(id : int): void
     {
-      def file = _files.GetValue(id);
-
-      when (file.IsSupported && file.Ast == null)
-        _expectsToBuildAst--;
       IsSemanticAvailable = false;
       _files.Remove(id);
       Parent._N_OnFileRemoved(id);
@@ -474,7 +485,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       when (IsDisposed)
         return;
-        
+
       try
       {
         IsSemanticAvailable = false;
@@ -499,7 +510,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       Router.AddMessage(RouterAnswerMessage.ProjectReload(Id));
     }
-    
+
     [HandleProcessCorruptedStateExceptions]
     private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
     {
@@ -587,7 +598,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _libMap[r.Path] = _libs.Count;
         AddWatcher(r.Path);
         _libs.Add(r);
-        
+
         when (IsOpened)
           RefrashReference();
       }
@@ -599,7 +610,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(separatorPos > 0);
       def fullPath = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
       def fullPath = fullPath;
-      
+
       def matchLibReference(libRef : NSP.LibReference) : bool
       {
         def fullPath = fullPath;

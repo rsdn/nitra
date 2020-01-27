@@ -1,0 +1,160 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Linq;
+
+using Newtonsoft.Json;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  class LspWriter
+  {
+    private _defaultOutputBufferCapacity = 2048;
+    private _outputBuffer : MemoryStream;
+    private _textWriter   : StreamWriter;
+    private _serializer   : JsonSerializer;
+
+    public this(output : Stream)
+    {
+      _outputBuffer = MemoryStream(_defaultOutputBufferCapacity);
+      _textWriter   = StreamWriter(output, LspDefaults.Encoding, 1024, true);
+      _serializer   = JsonSerializer.CreateDefault();
+      _serializer.Formatting = Formatting.None;
+    }
+
+    public WriteRequest(id : object, method : string, @params : object) : void
+    {
+      try
+      {
+        def jsonWriter = StartRequestObject(id, method);
+
+        _serializer.Serialize(jsonWriter, @params);
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
+    public WriteNotification(method : string, @params : object) : void
+    {
+      try
+      {
+        def jsonWriter = StartRequestObject(null, method);
+
+        _serializer.Serialize(jsonWriter, @params);
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
+    public WriteResult(id : object, result : object) : void
+    {
+      try
+      {
+        def jsonWriter = StartResponseObject(id, "result");
+
+        _serializer.Serialize(jsonWriter, result);
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
+    public WriteError(id : object, code : LspErrorCode, message : string, data : object = null) : void
+    {
+      try
+      {
+        def jsonWriter = StartResponseObject(id, "error");
+
+        jsonWriter.WriteStartObject();
+        jsonWriter.WritePropertyName("code");
+        jsonWriter.WriteValue(code :> int);
+        jsonWriter.WritePropertyName("message");
+        jsonWriter.WriteValue(message);
+        when (data != null)
+        {
+          jsonWriter.WritePropertyName("data");
+          _serializer.Serialize(jsonWriter, data);
+        }
+        jsonWriter.WriteEndObject();
+
+        EndObject(jsonWriter);
+      }
+      finally ResetOutput();
+    }
+
+    private StartRequestObject(id : object, method : string) : JsonWriter
+    {
+      def jsonWriter = JsonTextWriter(StreamWriter(_outputBuffer, LspDefaults.Encoding, 1024, true));
+      jsonWriter.CloseOutput = false;
+      jsonWriter.Formatting = Formatting.None;
+
+      jsonWriter.WriteStartObject();
+      jsonWriter.WritePropertyName("jsonrpc");
+      jsonWriter.WriteValue(LspDefaults.JsonRpcVersion);
+      when (id != null)
+      {
+        jsonWriter.WritePropertyName("id");
+        jsonWriter.WriteValue(id);
+      }
+      jsonWriter.WritePropertyName("method");
+      jsonWriter.WriteValue(method);
+
+      jsonWriter.WritePropertyName("params");
+      jsonWriter
+    }
+
+
+    private StartResponseObject(id : object, payloadName : string) : JsonWriter
+    {
+      def jsonWriter = JsonTextWriter(StreamWriter(_outputBuffer, LspDefaults.Encoding, 1024, true));
+      jsonWriter.CloseOutput = false;
+      jsonWriter.Formatting = Formatting.None;
+
+      jsonWriter.WriteStartObject();
+      jsonWriter.WritePropertyName("jsonrpc");
+      jsonWriter.WriteValue(LspDefaults.JsonRpcVersion);
+      jsonWriter.WritePropertyName("id");
+      jsonWriter.WriteValue(id);
+      jsonWriter.WritePropertyName(payloadName);
+      jsonWriter
+    }
+
+    private EndObject(jsonWriter : JsonWriter) : void
+    {
+      jsonWriter.WriteEndObject();
+      jsonWriter.WriteRaw("\r\n");
+      jsonWriter.Flush();
+      jsonWriter.Close();
+
+      def length = _outputBuffer.Length;
+
+      _textWriter.Write("Content-Length: ");
+      _textWriter.Write(length);
+      _textWriter.Write("\r\n");
+      //_textWriter.Write("Content-Type: application/vscode-jsonrpc;charset=utf-8\r\n");
+      _textWriter.Write("\r\n");
+      _textWriter.Flush();
+
+      def outputStream = _textWriter.BaseStream;
+      def buffer = _outputBuffer.GetBuffer();
+      outputStream.Write(buffer, 0, length :> int);
+      outputStream.Flush();
+    }
+
+    private ResetOutput() : void
+    {
+      _outputBuffer.Position = 0;
+      _outputBuffer.SetLength(0);
+      when (_outputBuffer.Capacity > 1048576)
+        _outputBuffer.Capacity = _defaultOutputBufferCapacity;
+    }
+  }
+}

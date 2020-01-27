@@ -1,0 +1,19 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Linq;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  [DataContract]
+  class CancelParams
+  {
+    [DataMember(Name = "id")]
+    public Id : object { get; set; }
+  }
+}

@@ -156,11 +156,11 @@ namespace Nitra.ViewModels
       IsDirty = true;
       def change =
         if (insertionLength == 0 && removalLength > 0)
-          FileChange.Delete(NSpan(offset, offset + removalLength))
+          FileChange.Delete(UISpan(offset, offset + removalLength))
         else if (insertionLength > 0 && removalLength == 0)
           FileChange.Insert(offset, inserted)
         else if (insertionLength > 0 && removalLength > 0)
-          FileChange.Replace(NSpan(offset, offset + removalLength), inserted)
+          FileChange.Replace(UISpan(offset, offset + removalLength), inserted)
         else
           assert(false);
 
@@ -220,7 +220,7 @@ namespace Nitra.ViewModels
     {
       def client = _client;
       Debug.Assert(client != null);
-      client.Send(ClientMessage.CompleteWord(this.Project.Id, this.Id, this.Version, pos));
+      client.Send(ClientMessage.CompleteWord(this.Project.Id, this.Id, VersionedPos(pos, this.Version)));
     }
 
     public override GetAllTests() : Seq[FileVm] { [this] }

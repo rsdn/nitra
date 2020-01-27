@@ -13,7 +13,7 @@ namespace Nitra.VisualStudio.Utils
   {
     public NitraTraceListener()
     {
-      Log.Init(Name = "Nitra-VS-plug-in");
+      Log.Init("Nitra-VS-plug-in", false);
     }
 
     public override bool IsThreadSafe => true;

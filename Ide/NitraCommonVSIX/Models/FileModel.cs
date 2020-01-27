@@ -273,9 +273,9 @@ namespace Nitra.VisualStudio.Models
     {
       _completionSession = session;
       var snapshot = caretPos.Snapshot;
-      var version = snapshot.Version.Convert();
       var triggerPoint = session.GetTriggerPoint(session.TextView.TextBuffer);
-      Server.Client.Send(new ClientMessage.CompleteWord(GetProjectId(), Id, version, triggerPoint.GetPoint(snapshot).Position));
+      var pos = new VersionedPos(triggerPoint.GetPoint(snapshot).Position, snapshot.Version.Convert());
+      Server.Client.Send(new ClientMessage.CompleteWord(GetProjectId(), Id, pos));
       session.Dismissed += CompletionSessionDismissed;
     }
 

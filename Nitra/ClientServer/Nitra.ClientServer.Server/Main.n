@@ -5,10 +5,10 @@ using Nemerle.Utility;
 
 using Nitra.ClientServer.Messages;
 using Nitra.ClientServer.Server;
+using Nitra.ClientServer.Server.Lsp;
 using Nitra.Logging;
 
 using System;
-using System.Console;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -21,73 +21,37 @@ module Program
 {
   Main(args : array[string]) : void
   {
-    Log.Init("Nitra.ClientServer.Server");
+    def isLsp = args.Length == 1 && array["--lsp", "-lsp", "/lsp"].Contains(args[0], StringComparer.OrdinalIgnoreCase);
+
+    Log.Init("Nitra.ClientServer.Server", !isLsp);
     Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
 #if !NOSERVERWINDOW
-    //assert2(false, "Start debugger");
+    assert2(false, "Start debugger");
 #endif
 
     when (args.Length != 1)
     {
       assert2(false, "Invalid number of parameters!");
-      Log.Message("Invalid number of parameters, expected: <request pipe name> <response pipe name>");
+      Log.Message("Invalid number of parameters, expected: <pipe name> or -lsp");
       Environment.Exit(42);
     }
 
     Nitra.NitraUtils.IdeMode = true;
 
-    def mainPipeName = args[0];
-    def requestPipeName       = mainPipeName + Constants.RequestPipeSuffix;
-    def asyncResponsePipeName = mainPipeName + Constants.AsyncResponsePipeSuffix;
-    def responsePipeName      = mainPipeName + Constants.ResponsePipeSuffix;
-
-    using (asyncResponsePipe = NamedPipeServerStream(asyncResponsePipeName, PipeDirection.Out))
-    using (responsePipe      = NamedPipeServerStream(responsePipeName,      PipeDirection.Out))
-    using (requestPipe       = NamedPipeServerStream(requestPipeName,       PipeDirection.In))
+    using (adapter = if (isLsp) LspProtocolAdapter() else NitraProtocolAdapter(args[0]))
     {
-      // Connect to the pipe or wait until the pipe is available.
-      Write("Attempting to connect to pipes...");
-      requestPipe.      WaitForConnection();
-      responsePipe.     WaitForConnection();
-      asyncResponsePipe.WaitForConnection();
+      Log.Message("Attempting to connect to pipes...");
 
-      def asyncResponseWriter = BinaryWriter(asyncResponsePipe);
-      def responseWriter      = BinaryWriter(responsePipe);
-      def router              = Router(responseWriter, asyncResponseWriter);
+      def router = Router(adapter);
 
-      Log.Message("Connected to pipe.");
-      def MainPipeReaderThreadMain()
-      {
-        def thread = Thread.CurrentThread;
-        thread.Name = "Server Pipe Reader";
-        thread.CurrentCulture = CultureInfo.InvariantCulture;
+      adapter.Connect(router);
 
-        using (reader = BinaryReader(requestPipe))
-        {
-          while (requestPipe.IsConnected)
-          {
-            try
-            {
-              def msg = Deserializer.Deserialize.[ClientMessage](reader);
+      Log.Message("Connected to pipes.");
 
-              when (msg is ClientMessage.SolutionStartLoading)
-                router.ProjectLoadCancel();
-
-              router.AddMessage(msg);
-            }
-            catch
-            {
-              | _ is EndOfStreamException when !requestPipe.IsConnected =>
-                Log.Message("The main pipe reader session has been terminated.");
-                router.AddMessage(ClientMessage.Shutdown());
-                return;
-              | e                                                       => ServerUtils.LogException(asyncResponseWriter, e);
-            }
-          }
-        }
-      }
-      def readerThread = Thread(MainPipeReaderThreadMain);
-      readerThread.IsBackground = true;
+      def readerThread            = Thread(adapter.ProcessMessage);
+      readerThread.Name           = "Incomming messages reader";
+      readerThread.CurrentCulture = CultureInfo.InvariantCulture;
+      readerThread.IsBackground   = true;
       readerThread.Start();
       Log.Message("Server started.");
       router.Wait();

@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Text;
 using Nemerle.Utility;
 
@@ -23,18 +24,20 @@ namespace Nitra.Logging
     {
       public static SaveLogsCount = 3;
 
-      _queue   : BlockingCollection[string * ConsoleColor * bool * int * DateTime] = BlockingCollection();
-      _logFile : StreamWriter;
-      _date    : string;
-      _name    : string;
+      _queue      : BlockingCollection[string * ConsoleColor * bool * int * DateTime] = BlockingCollection();
+      _logFile    : StreamWriter;
+      _date       : string;
+      _name       : string;
+      _needStdout : bool;
+      _thread     : Thread;
+      _cts        : CancellationTokenSource = CancellationTokenSource();
 
-      _thread  : Thread;
-      _cts     : CancellationTokenSource = CancellationTokenSource();
-
-      public this(name : string)
+      public this(name : string, needStdout : bool)
       {
         assert2(_logFile == null, "Only one logger instance can be created!");
         _name = name;
+        _needStdout = needStdout;
+
         def programDataPath  = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         _date                = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         def logDir           = Path.Combine(programDataPath, "RSDN", "Nitra");
@@ -48,7 +51,8 @@ namespace Nitra.Logging
           {
             try
             {
-              Console.WriteLine(file);
+              when (_needStdout)
+                Console.WriteLine(file);
               File.Delete(file);
             }
             catch { _ is IOException => () }
@@ -56,10 +60,14 @@ namespace Nitra.Logging
         }
         else
           _ = Directory.CreateDirectory(logDir);
-        _logFile             = StreamWriter(logPath);
-        _thread              = Thread(ParseWorkerMain);
-        _thread.Priority     = ThreadPriority.BelowNormal;
-        _thread.IsBackground = true;
+        _logFile = StreamWriter(logPath);
+        _thread  = Thread(ParseWorkerMain) <-
+        {
+          Name           = "Logger Worker";
+          CurrentCulture = CultureInfo.InvariantCulture;
+          Priority       = ThreadPriority.BelowNormal;
+          IsBackground   = true;
+        };
         _thread.Start();
       }
 
@@ -70,9 +78,6 @@ namespace Nitra.Logging
 
       ParseWorkerMain() : void
       {
-        def thread = Thread.CurrentThread;
-        thread.Name = "Logger Worker";
-        thread.CurrentCulture = CultureInfo.InvariantCulture;
         def header = $<#<!DOCTYPE html>
   <html>
   <head>
@@ -129,11 +134,11 @@ namespace Nitra.Logging
         | DarkCyan    => "DarkCyan"
         | DarkRed     => "DarkRed"
         | DarkMagenta => "DarkMagenta"
-        | DarkYellow  => "olive"
+        | DarkYellow  => "Olive"
         | Gray        => "Gray"
         | DarkGray    => "DarkGray"
         | Blue        => "Blue"
-        | Green       => "limegreen"
+        | Green       => "Limegreen"
         | Cyan        => "Cyan"
         | Red         => "Red"
         | Magenta     => "Magenta"
@@ -141,34 +146,49 @@ namespace Nitra.Logging
         | White       => "White"
       }
 
-      WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
+      static TranslateColorFixedLen(color : ConsoleColor) : string
       {
-        _logFile.Write(<#<span style="color:#>);
-        _logFile.Write(TranslateColor(color));
-        _logFile.Write(<#">#>);
-        _logFile.Write(threadId);
-        _logFile.Write(time.ToString("│HH:mm:ss.ffffff│"));
-        _logFile.Write(msg);
-        _logFile.WriteLine(<#</span>#>);
-        when (_queue.Count == 0)
-          _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg);
-        Console.ResetColor();
+        | Black       => "Black      "
+        | DarkBlue    => "DarkBlue   "
+        | DarkGreen   => "DarkGreen  "
+        | DarkCyan    => "DarkCyan   "
+        | DarkRed     => "DarkRed    "
+        | DarkMagenta => "DarkMagenta"
+        | DarkYellow  => "Olive      "
+        | Gray        => "Gray       "
+        | DarkGray    => "DarkGray   "
+        | Blue        => "Blue       "
+        | Green       => "Limegreen  "
+        | Cyan        => "Cyan       "
+        | Red         => "Error      "
+        | Magenta     => "Magenta    "
+        | Yellow      => "Warning    "
+        | White       => "White      "
       }
 
-      WriteLine(msg : string, color : ConsoleColor) : void
+      WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
       {
+        def threadIdStr = threadId.ToString("D3");
+        def timestamp = time.ToString("│HH:mm:ss.fffffff│");
+        Debug.WriteLine($"$threadIdStr$timestamp$(TranslateColorFixedLen(color))|$msg");
+
         _logFile.Write(<#<span style="color:#>);
         _logFile.Write(TranslateColor(color));
         _logFile.Write(<#">#>);
+        _logFile.Write(threadIdStr);
+        _logFile.Write(timestamp);
         _logFile.Write(msg);
         _logFile.WriteLine(<#</span>#>);
         when (_queue.Count == 0)
           _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg);
-        Console.ResetColor();
+
+        when (_needStdout)
+        {
+          Console.ForegroundColor = color;
+          Console.WriteLine(msg);
+          Console.ResetColor();
+        }
+
       }
 
       Write(msg : string, color : ConsoleColor) : void
@@ -178,11 +198,16 @@ namespace Nitra.Logging
         _logFile.Write(<#">#>);
         _logFile.Write(msg);
         _logFile.Write(<#</span>#>);
+
         when (_queue.Count == 0)
           _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.Write(msg);
-        Console.ResetColor();
+
+        when (_needStdout)
+        {
+          Console.ForegroundColor = color;
+          Console.Write(msg);
+          Console.ResetColor();
+        }
       }
 
       public Flush() : void

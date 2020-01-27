@@ -12,10 +12,9 @@ namespace Nitra.Logging
   public partial module Log
   {
     mutable _logger : LoggerWorker;
-
-    public Init(name : string) : void
+    public Init(name : string, needStdout : bool) : void
     {
-      _logger = LoggerWorker(name);
+      _logger = LoggerWorker(name, needStdout);
     }
 
     public Exception(e : Exception) : void

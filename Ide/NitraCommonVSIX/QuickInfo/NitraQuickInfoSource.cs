@@ -68,14 +68,14 @@ namespace Nitra.VisualStudio.QuickInfo
         applicableToSpan = null;
         return;
       }
-      
+
       _textViewModel = VsUtils.GetOrCreateTextViewModel(_wpfTextView, _fileModel);
       if (_textViewModel == null) // TODO: Add logging Debug.Assert(_textViewModel != null);
       {
         applicableToSpan = null;
         return;
       }
-      
+
       Hint.SetCallbacks(SubHintText, SpanClassToBrush);
       Hint.Click += Hint_Click;
 
@@ -160,7 +160,7 @@ namespace Nitra.VisualStudio.QuickInfo
       if (_container == null)
         return;
 
-      if (data == "<hint></hint>")
+      if (data == "<hint></hint>" || string.IsNullOrEmpty(data))
       {
         _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action)ResetHintData_inUIThread);
         return;
@@ -235,7 +235,7 @@ namespace Nitra.VisualStudio.QuickInfo
           return;
         _subhintOpen++;
         Debug.WriteLine($"_subhintOpen = {_subhintOpen}  OnMouseHover");
-        
+
         try
         {
           _container.IsMouseOverAggregated = true;

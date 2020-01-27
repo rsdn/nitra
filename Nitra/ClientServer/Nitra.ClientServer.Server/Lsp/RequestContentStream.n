@@ -1,0 +1,70 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using Nemerle.Imperative;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  class RequestContentStream : Stream
+  {
+    private         _stream       : Stream;
+    private mutable _prefix       : ArraySegment[byte];
+    private mutable _prefixLength : int;
+    private mutable _position     : int;
+    private mutable _length       : int;
+
+    public this(stream : Stream)
+    {
+      _stream = stream;
+    }
+
+    public Reset(prefix : ArraySegment[byte], length : int) : void
+    {
+      _prefix       = prefix;
+      _position     = 0;
+      _length       = length;
+      _prefixLength = Math.Min(prefix.Count, length);
+    }
+
+    public override CanRead  : bool { get { true  } }
+    public override CanWrite : bool { get { false } }
+    public override CanSeek  : bool { get { false } }
+    public override Position : long { get { _position } set { IgnoreParams(); throw NotSupportedException(); } }
+    public override Length   : long { get { _length } }
+    public override SetLength(value : long) : void                                { IgnoreParams(); throw NotSupportedException(); }
+    public override Seek(offset : long, origin : SeekOrigin) : long               { IgnoreParams(); throw NotSupportedException(); }
+    public override Flush() : void                                                { IgnoreParams(); throw NotSupportedException(); }
+    public override Write(buffer : array[byte], offset : int, count : int) : void { IgnoreParams(); throw NotSupportedException(); }
+
+    public override Read(buffer : array[byte], mutable offset : int, mutable count : int) : int
+    {
+      unchecked
+      {
+        def initialPosition = _position;
+
+        when (_position < _prefixLength)
+        {
+          def bytesToCopy = Math.Min(_prefixLength - _position, count);
+          Array.Copy(_prefix.Array, _prefix.Offset + _position, buffer, offset, bytesToCopy);
+          _position += bytesToCopy;
+          offset    += bytesToCopy;
+          count     -= bytesToCopy;
+        }
+
+        when (count > 0 && _position < _length)
+        {
+          def bytesToRead = Math.Min(_length - _position, count);
+          _position += _stream.Read(buffer, offset, bytesToRead);
+        }
+
+        _position - initialPosition
+      }
+    }
+  }
+}

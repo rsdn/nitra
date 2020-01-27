@@ -1,5 +1,6 @@
 ﻿using Nemerle;
 using Nemerle.Collections;
+using Nemerle.Extensions;
 using Nemerle.Imperative;
 using Nemerle.Text;
 using Nemerle.Utility;
@@ -18,7 +19,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 
-using IO = System.IO;
 using M  = Nitra.ClientServer.Messages;
 
 namespace Nitra.ClientServer.Server
@@ -32,25 +32,23 @@ namespace Nitra.ClientServer.Server
             _parseWorkers               : list[ParseWorker];
             _semanticAnalysisWorker     : SemanticAnalysisWorker;
     mutable _cts                        : CancellationTokenSource = CancellationTokenSource();
-            _asyncResponseWriter        : IO.BinaryWriter;
-            _responseWriter             : IO.BinaryWriter;
     public  SpanClassesManager          : SpanClassesManager;
     mutable _solution                   : Solution;
     mutable _projectLoadingCts          : CancellationTokenSource;
+    public  MessageSink                 : IServerMessageSink { get; }
     public  PrettyPrintState            : PrettyPrintState { get; private set; }
     public  IsParseTreeReflectionEnable : bool { get; private set; }
 
-    public this(responseWriter : IO.BinaryWriter, asyncResponseWriter : IO.BinaryWriter)
+    public this(messageSink : IServerMessageSink)
     {
-      _responseWriter         = responseWriter;
-      _asyncResponseWriter    = asyncResponseWriter;
-      _mainThread             = Thread(RouterThreadMain);
+      MessageSink             = messageSink;
+      _mainThread             = Thread(RouteMessages) <- { Name = "Router"; CurrentCulture = CultureInfo.InvariantCulture; };
       _mainThread.Start();
       def cores               = ServerUtils.GetCoreCount(); // Environment.ProcessorCount
       Log.Message("Cores: " + cores);
       this.SpanClassesManager = SpanClassesManager(this);
-      _parseWorkers           = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, asyncResponseWriter, SpanClassesManager));
-      _semanticAnalysisWorker = SemanticAnalysisWorker(this, _semanticAnalysisQueue, _mainQueue, asyncResponseWriter, SpanClassesManager);
+      _parseWorkers           = $[1..cores].Map(_ => ParseWorker(this, _parseQueue, _mainQueue, SpanClassesManager));
+      _semanticAnalysisWorker = SemanticAnalysisWorker(this, _semanticAnalysisQueue, _mainQueue, SpanClassesManager);
     }
 
     public SolutionId : SolutionId { get { if (_solution == null) SolutionId.Invalid else _solution.Id } }
@@ -84,38 +82,12 @@ namespace Nitra.ClientServer.Server
 
     public SendAsyncResponse(msg : AsyncServerMessage) : void
     {
-      lock (_asyncResponseWriter)
-        msg.Serialize(_asyncResponseWriter);
-    }
-
-    public FlushAsyncResponse() : void
-    {
-      _asyncResponseWriter.Flush();
+      MessageSink.Send(msg);
     }
 
     public SendResponse(msg : ServerMessage) : void
     {
-      lock (_responseWriter)
-        msg.Serialize(_responseWriter);
-    }
-
-    public SendResponseTest() : void
-    {
-      _responseWriter.Write(42);
-    }
-
-    public FlushResponse() : void
-    {
-      _responseWriter.Flush();
-    }
-
-    RouterThreadMain() : void
-    {
-      def thread = Thread.CurrentThread;
-      thread.Name = "Router";
-      thread.CurrentCulture = CultureInfo.InvariantCulture;
-
-      RouteMessages();
+      MessageSink.Send(msg);
     }
 
     [HandleProcessCorruptedStateExceptions]
@@ -137,7 +109,7 @@ namespace Nitra.ClientServer.Server
         {
           | e is OperationCanceledException      => Log.Canceled(e);
           | _ is System.AccessViolationException => Environment.Exit(-3); // The server will restart automatically.
-          | e                                    => ServerUtils.LogException(_asyncResponseWriter, e)
+          | e                                    => ServerUtils.LogException(MessageSink, e)
         }
       }
     }
@@ -159,6 +131,9 @@ namespace Nitra.ClientServer.Server
 
     public AddMessage(msg : RouterMessage): void
     {
+      when (msg is ClientMessage.SolutionStartLoading)
+        ProjectLoadCancel();
+
       unless (_mainQueue.IsCompleted)
         _mainQueue.Add(msg);
     }
@@ -240,10 +215,10 @@ namespace Nitra.ClientServer.Server
       SendResponse(ServerMessage.FileExtensions(SolutionId, fileExtensions));
     }
 
-    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos) : void
+    FindSymbolReferences(projectId : ProjectId, fileId : FileId, pos : VersionedPos, forHighlighting : bool, tag : uint) : void
     {
-      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting=false);
-      catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty)); throw }
+      try _solution.GetProject(projectId).GetFile(fileId).FindSymbolReferences(pos, forHighlighting, tag);
+      catch { _ => SendResponse(ServerMessage.FindSymbolReferences(SolutionId.Invalid, M.NSpan(), ImmutableArray.Empty, tag)); throw }
     }
 
     GetSubHint(projectId : ProjectId, symbolId : int) : void
