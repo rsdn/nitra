@@ -26,7 +26,7 @@ module Program
     Log.Init("Nitra.ClientServer.Server", !isLsp);
     Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
 #if !NOSERVERWINDOW
-    assert2(false, "Start debugger");
+    //assert2(false, "Start debugger");
 #endif
 
     when (args.Length != 1)
