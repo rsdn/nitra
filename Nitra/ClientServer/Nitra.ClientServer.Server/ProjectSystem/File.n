@@ -924,8 +924,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     TryMatchBrackets() : void
     {
       def parseResult = _parseResult;
+      when (parseResult == null)
+        return;
       def snapshot    = parseResult.SourceSnapshot;
-      when (parseResult == null || _caretPosOpt.IsIncompatible(snapshot))
+      when (_caretPosOpt.IsIncompatible(snapshot))
         return;
 
       def solutionId  = Parent.Parent.Id;
