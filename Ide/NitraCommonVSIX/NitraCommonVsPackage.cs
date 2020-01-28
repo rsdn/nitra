@@ -90,20 +90,20 @@ namespace Nitra.VisualStudio
       // any Visual Studio service because at this point the package object is created but
       // not sited yet inside Visual Studio environment. The place to do all the other
       // initialization is the Initialize method.
-      AppDomain.CurrentDomain.FirstChanceException +=
-      (object source, FirstChanceExceptionEventArgs e) =>
-      {
-        var ex = e.Exception;
-
-        switch (ex)
-        {
-          case FileLoadException _:
-          case OperationCanceledException _:
-            return;
-        }
-
-        Log.Exception(ex);
-      };
+      //AppDomain.CurrentDomain.FirstChanceException +=
+      //(object source, FirstChanceExceptionEventArgs e) =>
+      //{
+      //  var ex = e.Exception;
+      //
+      //  switch (ex)
+      //  {
+      //    case FileLoadException _:
+      //    case OperationCanceledException _:
+      //      return;
+      //  }
+      //
+      //  Log.Exception(ex);
+      //};
     }
 
     public void SetFindResult(IVsSimpleObjectList2 findResults)
@@ -119,9 +119,9 @@ namespace Nitra.VisualStudio
     /// </summary>
     protected override void Initialize()
     {
-      var listener = new NitraTraceListener();
-      Trace.Listeners.Clear();
-      Trace.Listeners.Add(listener);
+      //var listener = new NitraTraceListener();
+      //Trace.Listeners.Clear();
+      //Trace.Listeners.Add(listener);
 
       ThreadHelper.ThrowIfNotOnUIThread();
       base.Initialize();
