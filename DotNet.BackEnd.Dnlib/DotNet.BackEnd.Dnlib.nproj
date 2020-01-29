@@ -78,6 +78,11 @@
       <Project>{9db13eb2-28e3-432b-8c8f-0e39ef5bcc38}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Nitra\Nitra.Utils\Nitra.Utils.nproj">
+      <Name>Nitra.Utils</Name>
+      <Project>{8bffaf3a-b454-4544-9218-3197df381d88}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\System.Collections.Immutable.Light\System.Collections.Immutable.Light.csproj">
       <Name>System.Collections.Immutable.Light</Name>
       <Project>{46f78a78-93ff-4e51-b221-8e5fffe8806d}</Project>

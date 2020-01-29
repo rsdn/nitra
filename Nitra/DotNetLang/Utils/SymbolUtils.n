@@ -94,12 +94,12 @@ namespace DotNet
     {
       mutable builder;
 
-      foreach (arg in args)
+      foreach (arg in args with i)
       {
         | TypeParameterSymbol(IsIndexEvaluated=true, Index=index) =>
           when (builder == null)
             builder = args.ToBuilder();
-          builder[index] = typeParameterValues[index];
+          builder[i] = typeParameterValues[index];
 
         | _ => ()
       }
