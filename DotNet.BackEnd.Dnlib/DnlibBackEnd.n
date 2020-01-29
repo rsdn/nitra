@@ -1,6 +1,7 @@
 ﻿using DotNet;
 
 using Nemerle;
+using Nemerle.Assertions;
 using Nemerle.Collections;
 using Nemerle.Extensions;
 using Nemerle.Imperative;
@@ -522,7 +523,7 @@ namespace Nitra.BackEnd.Dnlib
 
     internal HasAttribute(attributeHost : IHasCustomAttribute, namespaceName : string, typeName : string) : bool
     {
-      when (attributeHost.HasCustomAttributes)
+      when (attributeHost?.HasCustomAttributes)
       {
         foreach (a in attributeHost.CustomAttributes)
         {
@@ -541,7 +542,7 @@ namespace Nitra.BackEnd.Dnlib
 
     LoadDefaultValue(paramDef : ParamDef) : DefaultValue
     {
-      unless (paramDef.HasDefault)
+      unless (paramDef?.HasDefault)
         return DefaultValue.None();
 
       unless (paramDef.HasConstant)
@@ -575,23 +576,32 @@ namespace Nitra.BackEnd.Dnlib
       symbol
     }
 
-    internal LoadParameters(parameters : ParameterList, parameterizable : ParameterizableSymbol,
+    internal LoadParameters([NotNull] parameters : ParameterList, parameterizable : ParameterizableSymbol,
       methodTypeParameters : ImmutableArray[TypeSymbol], context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
+      when (parameters.MethodSigIndexBase >= parameters.Count)
+        return ImmutableArray.Empty;
+
       def containingScope = parameterizable.ParameterScope;
       def builder         = ImmutableArray.CreateBuilder();
       def lastIndex       = parameters.Count - 1;
       for (mutable i = parameters.MethodSigIndexBase; i < parameters.Count; ++i)
       {
         def parameter = parameters.Item[i];
+        assert(parameter != null);
         def paramDef  = parameter.ParamDef;
-        def name      = NRB.Name(NoLocation, paramDef.Name);
+        when (paramDef == null)
+        {
+          log(() => $"LoadParameters: parameter=$parameter methodDef == null Type='$(parameter.Type)' MethodSigIndex=$(parameter.MethodSigIndex) Index=$(parameter.Index) MethodDef='$(parameter.Method)' DeclaringType='$(parameter.Method?.DeclaringType)'");
+        }
+        def name      = NRB.Name(NoLocation, parameter.Name ?? parameter.ToString());
         def symbol    = ExternalParameterDeclaration(name, paramDef).DefineSymbol(containingScope);
+        assert(parameter.Type != null);
         symbol.Type   = ConvertType(parameter.Type, methodTypeParameters, context);
 
         mutable modifier;
         when (parameter.Type is ByRefSig)
-          modifier |= if (paramDef.IsOut) ParameterModifier.Out else ParameterModifier.Ref;
+          modifier |= if (paramDef?.IsOut) ParameterModifier.Out else ParameterModifier.Ref;
 
         when (i == lastIndex && parameter.Type is SZArraySig && HasAttribute(paramDef, "System", "ParamArrayAttribute"))
           modifier |= ParameterModifier.Params;
@@ -694,7 +704,17 @@ namespace Nitra.BackEnd.Dnlib
         symbol.Flags = flags;
         unless (symbol.IsDeclaredInEvaluated)
           symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
-        symbol.Parameters = LoadParameters(methodDef.Parameters, symbol, ImmutableArray.Empty, context);
+        try
+          symbol.Parameters = LoadParameters(methodDef.Parameters, symbol, ImmutableArray.Empty, context);
+        catch
+        {
+          | e is NullReferenceException =>
+            symbol.Parameters = ImmutableArray.Empty;
+            assert2(false);
+            Nitra.Logging.Log.Exception(e);
+            log(() => $"LoadMethod: methodDef=$methodDef");
+            log(() => $"LoadMethod:    Parameters Count=$(methodDef.Parameters.Count) ..$(methodDef.Parameters)");
+        }
         FinalizeMember(symbol, methodDef, context)
       }
       else
@@ -724,6 +744,17 @@ namespace Nitra.BackEnd.Dnlib
         symbol.Type         = type;
         FinalizeMember(symbol, methodDef, context)
       }
+    }
+
+    log(getMsg : void -> string) : void
+    {
+      try
+      {
+        def msg = getMsg();
+        Debug.WriteLine(msg);
+        Nitra.Logging.Log.Error(msg);
+      }
+      catch ();
     }
 
     GetMultiDimensionArrayType(rank : uint, context : DependentPropertyEvalContext) : MultiDimensionArraySymbol
