@@ -37,15 +37,16 @@ namespace Nitra.ClientServer.Server.Lsp
     private _requestTable             : ConcurrentDictionary[uint, object * Delegate] = ConcurrentDictionary();
     private _fileToCompilerMessageMap : ConcurrentDictionary[FileId, array[array[Diagnostic]]] = ConcurrentDictionary();
 
-    private mutable _router         : Router;
-    private mutable _input          : Stream;
-    private mutable _output         : Stream;
-    private mutable _reader         : LspReader;
-    private mutable _writer         : LspWriter;
-    private mutable _solution       : LspSolution;
-    private mutable _requestCounter : int;
+    private mutable _router              : Router;
+    private mutable _input               : Stream;
+    private mutable _output              : Stream;
+    private mutable _reader              : LspReader;
+    private mutable _writer              : LspWriter;
+    private mutable _solution            : LspSolution;
+    private mutable _requestCounter      : int;
 
-    private mutable pendingCompletionId : object;
+    private          mutable _pendingCompletionIdLock : object = object();
+    private volatile mutable _pendingCompletionId     : object;
 
     public IsLsp : bool { get true; }
 
@@ -62,23 +63,23 @@ namespace Nitra.ClientServer.Server.Lsp
 
       _reader.UnknownRequestHandler += UnknownHandler;
 
-      _reader.RegisterHandler("$/cancelRequest",                       CancelRequestHandler);
-      _reader.RegisterHandler(Methods.Initialize,                      InitializeHandler);
-      _reader.RegisterHandler(Methods.Shutdown,                        ShutdownHandler);
-      _reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocumentCompletionHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocumentDefinition);
-      _reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocumentDocumentHighlightHandler);
-      _reader.RegisterHandler(Methods.TextDocumentHover,               TextDocumentHoverHandler);
-      _reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocumentReferencesHandler);
+      _reader.RegisterHandler("$/cancelRequest",                       CancelRequest);
+      _reader.RegisterHandler(Methods.Initialize,                      Initialize);
+      _reader.RegisterHandler(Methods.Shutdown,                        Shutdown);
+      _reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocument_Completion);
+      _reader.RegisterHandler(Methods.TextDocumentDefinition,          TextDocument_Definition);
+      _reader.RegisterHandler(Methods.TextDocumentDocumentHighlight,   TextDocument_DocumentHighlight);
+      _reader.RegisterHandler(Methods.TextDocumentHover,               TextDocument_Hover);
+      _reader.RegisterHandler(Methods.TextDocumentReferences,          TextDocument_References);
 
-      _reader.RegisterHandler(Methods.Exit,                            ExitHandler);
-      _reader.RegisterHandler(Methods.Initialized,                     InitializedHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocumentDidChangeHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocumentDidCloseHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocumentDidOpenHandler);
-      _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocumentDidSaveHandler);
-      _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, WorkspaceDidChangeConfigurationHandler);
-      _reader.RegisterHandler(Methods.WorkspaceDidChangeWatchedFiles,  WorkspaceDidChangeWatchedFilesHandler);
+      _reader.RegisterHandler(Methods.Exit,                            Exit);
+      _reader.RegisterHandler(Methods.Initialized,                     Initialized);
+      _reader.RegisterHandler(Methods.TextDocumentDidChange,           TextDocument_DidChange);
+      _reader.RegisterHandler(Methods.TextDocumentDidClose,            TextDocument_DidClose);
+      _reader.RegisterHandler(Methods.TextDocumentDidOpen,             TextDocument_DidOpen);
+      _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocument_DidSave);
+      _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, Workspace_DidChangeConfiguration);
+      _reader.RegisterHandler(Methods.WorkspaceDidChangeWatchedFiles,  Workspace_DidChangeWatchedFiles);
     }
 
     public Dispose() : void
@@ -108,7 +109,7 @@ namespace Nitra.ClientServer.Server.Lsp
       {
         | FindSymbolReferences(_span, symbols, tag) => CompleteRequest(tag, symbols)
         | Hint(text, _span, tag)                    => CompleteRequest(tag, text)
-        | CompleteWord(_span, completionList)       => CompleteWord(message.FileId, completionList, Interlocked.Exchange(ref pendingCompletionId, null))
+        | CompleteWord(_span, completionList)       => CompleteWord(message.FileId, completionList, lock (_pendingCompletionIdLock) Interlocked.Exchange(ref _pendingCompletionId, null))
         //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
         | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
         | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
@@ -166,7 +167,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
       def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
       WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
-      Log.Message($"LSP < $(Methods.TextDocumentPublishDiagnosticsName) fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
+      Log.Message($"LSP < textDocument/publishDiagnostics fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
     }
 
     private UnknownHandler(method : string, id : object) : void
@@ -176,14 +177,17 @@ namespace Nitra.ClientServer.Server.Lsp
         WriteError(id, LspErrorCode.MethodNotFound, method)
     }
 
-    private CancelRequestHandler(p : CancelParams) : void
+    private CancelRequest(p : CancelParams) : void
     {
       Log.Message($"LSP -> $$/cancelRequest Id=$(p.Id)", ConsoleColor.Cyan);
+      lock (_pendingCompletionIdLock)
+        when (object.Equals(_pendingCompletionId, p.Id))
+          _pendingCompletionId = null;
     }
 
-    private InitializeHandler(p : InitializeParams, id : object) : void
+    private Initialize(p : InitializeParams, id : object) : void
     {
-      Log.Message($"LSP -> $(Methods.InitializeName)", ConsoleColor.Cyan);
+      Log.Message($"LSP -> initialize id=$id", ConsoleColor.Cyan);
       //p.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration
       def result =
         InitializeResult() <-
@@ -213,9 +217,9 @@ namespace Nitra.ClientServer.Server.Lsp
       WriteResult(id, result);
     }
 
-    private InitializedHandler(_ : InitializedParams) : void
+    private Initialized(_ : InitializedParams) : void
     {
-      Log.Message($"LSP > $(Methods.InitializedName)", ConsoleColor.Cyan);
+      Log.Message("LSP > initialized", ConsoleColor.Cyan);
       def make(pattern : string) { FileSystemWatcher() <- { GlobPattern = pattern; Kind = WatchKind.Create | WatchKind.Change | WatchKind.Delete; } }
       def watchers = _solution.GetWatchedPatterns().Select(make).ToArray();
       def options = DidChangeWatchedFilesRegistrationOptions() <- { Watchers = watchers; };
@@ -230,31 +234,31 @@ namespace Nitra.ClientServer.Server.Lsp
       WriteRequest(Methods.ClientRegisterCapability, registrationParams);
     }
 
-    private ShutdownHandler(_ : object, id : object) : void
+    private Shutdown(_ : object, id : object) : void
     {
-      Log.Message($"LSP -> $(Methods.ShutdownName)", ConsoleColor.Cyan);
+      Log.Message($"LSP -> shutdown id=$id", ConsoleColor.Cyan);
       WriteResult(id, null);
     }
 
-    private ExitHandler(_ : object) : void
+    private Exit(id : object) : void
     {
-      Log.Message($"LSP > $(Methods.ExitName)", ConsoleColor.Cyan);
+      Log.Message($"LSP > exit id=$id", ConsoleColor.Cyan);
       _router.AddMessage(ClientMessage.Shutdown());
     }
 
-    private WorkspaceDidChangeConfigurationHandler(_s : DidChangeConfigurationParams) : void
+    private Workspace_DidChangeConfiguration(_s : DidChangeConfigurationParams) : void
     {
-      Log.Message($"LSP > $(Methods.WorkspaceDidChangeConfigurationName)", ConsoleColor.Cyan);
+      Log.Message("LSP > workspace/didChangeConfiguration", ConsoleColor.Cyan);
     }
 
-    private TextDocumentDidOpenHandler(p : DidOpenTextDocumentParams) : void
+    private TextDocument_DidOpen(p : DidOpenTextDocumentParams) : void
     {
       def document = p.TextDocument;
       def uri      = document.Uri;
       def fileId   = _solution.GetFileId(uri);
       def version  = FileVersion(document.Version);
       def path     = ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(uri.LocalPath);
-      Log.Message($"LSP > $(Methods.TextDocumentDidOpenName) fileId=$fileId Version=$(document.Version) Uri='$uri' Text=«$(document.Text)»", ConsoleColor.Cyan);
+      Log.Message($"LSP > textDocument/didOpen fileId=$fileId Version=$(document.Version) Uri='$uri' Text=«$(document.Text)»", ConsoleColor.Cyan);
       foreach (project in _solution.GetProjects(fileId))
         project.DidOpenFileForEditing(fileId, version, path, document.Text);
       otherwise
@@ -287,10 +291,10 @@ namespace Nitra.ClientServer.Server.Lsp
       }
     }
 
-    private TextDocumentDidCloseHandler(p : DidCloseTextDocumentParams) : void
+    private TextDocument_DidClose(p : DidCloseTextDocumentParams) : void
     {
       def fileId = _solution.GetFileId(p.TextDocument.Uri);
-      Log.Message($"LSP > $(Methods.TextDocumentDidCloseName) $(p.TextDocument.Uri)" + p.TextDocument.Uri, ConsoleColor.Cyan);
+      Log.Message($"LSP > textDocument/didClose $(p.TextDocument.Uri)" + p.TextDocument.Uri, ConsoleColor.Cyan);
       foreach (project in _solution.GetProjects(fileId))
         project.DidClose(fileId);
         //_router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
@@ -309,9 +313,9 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       r.Start.Line + ":" + r.Start.Character + ", " + r.End.Line + ":" + r.End.Character + " «" + change.Text + "»"
     }
 
-    private TextDocumentDidChangeHandler(p : DidChangeTextDocumentParams) : void
+    private TextDocument_DidChange(p : DidChangeTextDocumentParams) : void
     {
-      Log.Message($"LSP > $(ToStringDidChangeTextDocumentParamsToString(p))", ConsoleColor.Cyan);
+      Log.Message($"LSP > textDocument/didChange $(ToStringDidChangeTextDocumentParamsToString(p))", ConsoleColor.Cyan);
 
       def document = p.TextDocument;
       def changes  = p.ContentChanges;
@@ -332,7 +336,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       _router.AddMessage(message);
     }
 
-    private WorkspaceDidChangeWatchedFilesHandler(p : DidChangeWatchedFilesParams) : void
+    private Workspace_DidChangeWatchedFiles(p : DidChangeWatchedFilesParams) : void
     {
       Log.Message($<#LSP > $(Methods.WorkspaceDidChangeWatchedFilesName) ..$(p.Changes; ", "; c => $"FileChangeType=$(c.FileChangeType) fileId=$( _solution.GetFileId(c.Uri)) Uri=$(c.Uri.LocalPath)")#>, ConsoleColor.Cyan);
 
@@ -361,60 +365,60 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       }
     }
 
-    private TextDocumentDidSaveHandler(p : DidSaveTextDocumentParams) : void
+    private TextDocument_DidSave(p : DidSaveTextDocumentParams) : void
     {
-      Log.Message($"LSP > $(Methods.TextDocumentDidSaveName) Uri=$(p.TextDocument.Uri) «$(p.Text)»", ConsoleColor.Cyan);
+      Log.Message($"LSP > textDocument/didSave Uri=$(p.TextDocument.Uri) «$(p.Text)»", ConsoleColor.Cyan);
     }
 
-    private TextDocumentDocumentHighlightHandler(p : TextDocumentPositionParams, id : object) : void
+    private TextDocument_DocumentHighlight(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> $(Methods.TextDocumentDocumentHighlightName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      Log.Message($"LSP -> textDocument/documentHighlight id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, true, RegisterRequest(id, DocumentHighlight)));
     }
 
-    private TextDocumentReferencesHandler(p : ReferenceParams, id : object) : void
+    private TextDocument_References(p : ReferenceParams, id : object) : void
     {
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> $(Methods.TextDocumentReferencesName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      Log.Message($"LSP -> textDocument/references id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration))));
     }
 
-    private TextDocumentHoverHandler(p : TextDocumentPositionParams, id : object) : void
+    private TextDocument_Hover(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
       def fileId   = _solution.GetFileId(document.Uri);
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> $(Methods.TextDocumentHoverName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      Log.Message($"LSP -> textDocument/hover id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.GetHint(project.ProjectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position))));
     }
 
-    private TextDocumentCompletionHandler(p : CompletionParams, id : object) : void
-    {
-      def document = p.TextDocument;
-      def fileId   = _solution.GetFileId(document.Uri);
-      def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def oldCompletionId = Interlocked.Exchange(ref pendingCompletionId, id);
-      Log.Message($"LSP -> $(Methods.TextDocumentCompletionName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) oldCompletionId='$oldCompletionId' Uri=$(document.Uri)", ConsoleColor.Cyan);
-      if (oldCompletionId != null)
-        WriteError(oldCompletionId, LspErrorCode.RequestCancelled, "")
-      else when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.CompleteWord(project.ProjectId, fileId, position));
-    }
-
-    private TextDocumentDefinition(p : TextDocumentPositionParams, id : object) : void
+    private TextDocument_Completion(p : CompletionParams, id : object) : void
     {
       def document        = p.TextDocument;
       def fileId          = _solution.GetFileId(document.Uri);
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> $(Methods.TextDocumentDefinitionName) fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def oldCompletionId = lock (_pendingCompletionIdLock) Interlocked.Exchange(ref _pendingCompletionId, id);
+      Log.Message($"LSP -> textDocument/completion id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) oldCompletionId='$oldCompletionId' Uri=$(document.Uri)", ConsoleColor.Cyan);
+      when (oldCompletionId != null)
+        WriteError(oldCompletionId, LspErrorCode.RequestCancelled, "");
+      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
+        _router.AddMessage(ClientMessage.CompleteWord(project.ProjectId, fileId, position));
+    }
+
+    private TextDocument_Definition(p : TextDocumentPositionParams, id : object) : void
+    {
+      def document        = p.TextDocument;
+      def fileId          = _solution.GetFileId(document.Uri);
+      def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
+      Log.Message($"LSP -> textDocument/definition id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
         _router.AddMessage(ClientMessage.FindSymbolDefinitions(project.ProjectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _))));
     }
