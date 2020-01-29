@@ -52,6 +52,9 @@ namespace Nitra.ClientServer.Server.Lsp
 
     public Connect([NotNull] router : Router) : void
     {
+      def nitraDebugLspServer = Environment.GetEnvironmentVariable("NitraDebugLspServer");
+      when (nitraDebugLspServer == "true")
+        assert2(false, "Press 'Retry' to attach debugger. This assertion is displayed because the environment variable NitraDebugLspServer is set to 'true'.");
       _router = router;
       InitChangeLog();
 
