@@ -73,7 +73,7 @@ namespace Nitra.ClientServer.Server
       | FileChanged        (id, version, change, caret)   => foreach (f in _solution.GetFiles(id)) f.Change(version, change, caret);
       | FileChangedBatch   (id, version, changes, caret)  => foreach (f in _solution.GetFiles(id)) f.Change(version, changes, caret);
       | PrettyPrint        (state)                        => PrettyPrintState = state;
-      | CompleteWord       (projectId, id, pos)           => _solution.GetFile(projectId, id).CompleteWord(pos);
+      | CompleteWord       (id, projectId, fileId, pos)   => _solution.GetFile(projectId, fileId).CompleteWord(pos, id);
       | CompleteWordDismiss    (projectId, id)            => _solution.GetFile(projectId, id).CompleteWordDismiss();
       | FindSymbolReferences (prjId, id, pos, h, tag)     => FindSymbolReferences(prjId, id, pos, h, tag);
       | FindSymbolDefinitions(projectId, id, pos, tag)    => _solution.GetFile(projectId, id).FindSymbolDefinitions(pos, tag);

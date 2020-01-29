@@ -56,12 +56,12 @@ namespace Nitra.ClientServer.Client
       | FileChanged              => _recordedMessages.Add(msg);
       | FileChangedBatch         => _recordedMessages.Add(msg);
       | Shutdown                 => Clear();
-      | FileDeactivated as fd with id = fd.id
-      | FileActivated   as fa with id = fa.id =>
+      | FileDeactivated as fd with fileId = fd.fileId
+      | FileActivated   as fa with fileId = fa.fileId =>
         def predicate(msg : ClientMessage) : bool
         {
-          | FileActivated   as m when m.id == id => true
-          | FileDeactivated as m when m.id == id => true
+          | FileActivated   as m when m.fileId == fileId => true
+          | FileDeactivated as m when m.fileId == fileId => true
           | _                                    => false
         }
         _ = _recordedMessages.RemoveAll(predicate);
@@ -80,11 +80,11 @@ namespace Nitra.ClientServer.Client
         def fs = fs;
         def flIndex = _recordedMessages.FindLastIndex(x => x is ClientMessage.FileLoaded);
         def fl = _recordedMessages[flIndex] :> ClientMessage.FileLoaded;
-        _recordedMessages[flIndex] = ClientMessage.FileLoaded(fl.projectId, fl.fullPath, fl.id, fs.version, false, null);
+        _recordedMessages[flIndex] = ClientMessage.FileLoaded(fl.projectId, fl.fullPath, fl.fileId, fs.version, false, null);
         def predicate(msg : ClientMessage) : bool
         {
-          | FileChanged       as m when m.id == fs.id => true
-          | FileChangedBatch  as m when m.id == fs.id => true
+          | FileChanged       as m when m.fileId == fs.fileId => true
+          | FileChangedBatch  as m when m.fileId == fs.fileId => true
           | _                                         => false
         }
         _ = _recordedMessages.RemoveAll(predicate);
@@ -124,7 +124,7 @@ namespace Nitra.ClientServer.Client
 
     private ReplaceVersion(version : FileVersion, msg : ClientMessage.FileActivated) : ClientMessage.FileActivated
     {
-      ClientMessage.FileActivated(msg.projectId, msg.id, version);
+      ClientMessage.FileActivated(msg.projectId, msg.fileId, version);
     }
 
     private Clear() : void

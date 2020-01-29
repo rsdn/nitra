@@ -21,7 +21,7 @@ namespace Nitra.ClientServer.Server
     /// Response from workers. Called in Messages from client. Called in Router thread.
     OnRouterAnswerMessage(serverMsg : RouterAnswerMessage) : void
     {
-      | FileParsed(projectId, fileId, parseResult) =>
+      | FileParsed(completeId, projectId, fileId, parseResult) =>
         when (parseResult.ParseSession.CancellationToken.IsCancellationRequested)
           return;
 
@@ -32,15 +32,15 @@ namespace Nitra.ClientServer.Server
         when (file.IsActive)
           file.CreateVisualInfo(parseResult);
 
-        _parseQueue.Add(file.CreateAstMessage(parseResult));
+        _parseQueue.Add(file.CreateAstMessage(completeId, parseResult));
 
-      | AstCreated(projectId, fileId, cancellationToken, ast, parseTree, completionPos, parseResultOpt) =>
+      | AstCreated(completeId, projectId, fileId, cancellationToken, ast, parseTree, completionPos, parseResultOpt) =>
         when (cancellationToken.IsCancellationRequested)
           return;
 
         def file = _solution.GetFile(projectId, fileId);
         // TODO: send CollectOutlining and CollectTokebHighlighting mesages
-        file.AstCreated(ast, parseTree, completionPos, parseResultOpt);
+        file.AstCreated(completeId, ast, parseTree, completionPos, parseResultOpt);
         // TODO: send EvalProperties if ast != null
       | SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt) =>
         when (cancellationToken.IsCancellationRequested)

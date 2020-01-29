@@ -78,8 +78,8 @@ namespace Nitra.ClientServer.Server
 
     ProcessMessage(msg : ParserMessage) : void
     {
-      | ParseFile(solutionId, projectId, fileId, parseSession, source) =>
-        Log.Message($"ParseFile fileId=$fileId Version=$(source.Version) File=«$(source.File.FullName)»");
+      | ParseFile(completeId, solutionId, projectId, fileId, parseSession, source) =>
+        Log.Message($"ParseFile fileId=$fileId Version=$(source.Version) completeId=$completeId File=«$(source.File.FullName)»");
         def timer = Stopwatch.StartNew();
         // TODO: add statistics
         //def stat = Statistics;
@@ -101,14 +101,14 @@ namespace Nitra.ClientServer.Server
           assert(true);
         }
 
-        _mainQueue.Add(RouterAnswerMessage.FileParsed(projectId, fileId, parseResult));
+        _mainQueue.Add(RouterAnswerMessage.FileParsed(completeId, projectId, fileId, parseResult));
 
         unless (isCompleteWord)
           ServerUtils.SendCompilerMessages(parseResult, _router, solutionId, projectId, fileId);
 
         ServerUtils.LogMsgHandled($"ParseFile fileId=$fileId Version=$(source.Version) Length=" + parseResult.SourceSnapshot.Text.Length, timer, 200);
 
-      | CreateAst(solutionId, projectId, fileId, parseResult, isActive) =>
+      | CreateAst(completeId, solutionId, projectId, fileId, parseResult, isActive) =>
         Log.Message("CreateAst " + fileId);
         def timer = Stopwatch.StartNew();
         when (parseResult.ParseSession.CancellationToken.IsCancellationRequested)
@@ -118,7 +118,7 @@ namespace Nitra.ClientServer.Server
         def mappingMessages = CompilerMessageList();
         def ast = AstContext.GetAstUntyped(parseTree, mappingMessages);
         def completionPos = parseResult.CompletionPos;
-        _mainQueue.Add(RouterAnswerMessage.AstCreated(projectId, fileId, parseResult.ParseSession.CancellationToken, ast, parseTree, completionPos, parseResult));
+        _mainQueue.Add(RouterAnswerMessage.AstCreated(completeId, projectId, fileId, parseResult.ParseSession.CancellationToken, ast, parseTree, completionPos, parseResult));
 
         def version = FileVersion(parseResult.SourceSnapshot.Version);
         def cm      = ConvertCompilerMessages(CompilerMessageSource.Mapping, mappingMessages);
@@ -167,7 +167,7 @@ namespace Nitra.ClientServer.Server
         _router.SendAsyncResponse(AsyncServerMessage.ReflectionStructCreated(fileId, version, solutionId, convertedRoot));
         ServerUtils.LogMsgHandled("ParseTreeReflection " + fileId, timer, 100);
 
-      | SemanticAnalysisStart(solutionId, projectId, cancellationToken, project, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
+      | SemanticAnalysisStart(completeId, solutionId, projectId, cancellationToken, project, projectSupport, files, data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt) =>
         when (project.Data == null)
         {
           Log.Message("SemanticAnalysisStart: Project support: RefreshReferences " + project.Name + " ");
@@ -222,7 +222,7 @@ namespace Nitra.ClientServer.Server
           // word complete
           foreach (file when file.FileId == completeWordFileIdOpt in files)
           {
-            CompleteWord(solutionId, completeWordPosOpt, file, parseResultOpt);
+            CompleteWord(completeId, solutionId, completeWordPosOpt, file, parseResultOpt);
             break;
           }
         }
@@ -326,7 +326,7 @@ namespace Nitra.ClientServer.Server
         ServerUtils.LogMsgHandled("CreateMatchBrackets fileId=" + fileId, timer, 50);
     }
 
-    public CompleteWord(solutionId : SolutionId, pos : int, fileData : FileEvalPropertiesData, parseResult : IParseResult) : void
+    public CompleteWord(completeId : int, solutionId : SolutionId, pos : int, fileData : FileEvalPropertiesData, parseResult : IParseResult) : void
     {
       def astRoot = fileData.Ast;
       def source  = astRoot.Location.Source;
@@ -491,7 +491,7 @@ namespace Nitra.ClientServer.Server
       Log.Message($"    Symbols='$(symbolsSet.Count)'");
 
       def ver = FileVersion(fileData.FileVersion);
-      def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
+      def msg = AsyncServerMessage.CompleteWord(FileId(fileData.FileId), ver, solutionId, completeId, ServerUtils.ConvertNSpan(replacementSpan), builder.MoveToImmutable());
       _router.SendAsyncResponse(msg);
     }
 

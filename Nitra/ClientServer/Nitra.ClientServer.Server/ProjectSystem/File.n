@@ -239,7 +239,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     // overrides
 
-    GetReParseMessage(completePos : UIPosition = null) : ParserMessage.ParseFile
+    GetReParseMessage(completePos : UIPosition, completeId : int) : ParserMessage.ParseFile
     {
       _parseMessages.Clear();
       _astMessages.Clear();
@@ -271,19 +271,19 @@ namespace Nitra.ClientServer.Server.ProjectSystem
                                         completionStartPos = if (completePos == null) -1 else completePos.ToPosition(source));
       CancellationTokenSource = cancellationTokenSource;
 
-      ParserMessage.ParseFile(Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
+      ParserMessage.ParseFile(completeId, Parent.Parent.Id, Parent.Id, this.FileId, parseSession, source)
     }
 
-    public CreateAstMessage(parseResult : IParseResult) : ParserMessage.CreateAst
+    public CreateAstMessage(completeId : int, parseResult : IParseResult) : ParserMessage.CreateAst
     {
       _parseResult = parseResult;
       TryMatchBrackets();
 
       _parseTree   = parseResult.CreateParseTree();
-      ParserMessage.CreateAst(Parent.Parent.Id, Parent.Id, this.FileId, parseResult, IsActive)
+      ParserMessage.CreateAst(completeId, Parent.Parent.Id, Parent.Id, this.FileId, parseResult, IsActive)
     }
 
-    public AstCreated(ast : IAst, parseTree : ParseTree, completionPos : int, parseResultOpt : IParseResult) : void
+    public AstCreated(completeId : int, ast : IAst, parseTree : ParseTree, completionPos : int, parseResultOpt : IParseResult) : void
     {
       _parseTree = parseTree;
       _ast = ast;
@@ -299,12 +299,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
             _caretPosOpt.ToPosition(snapshot)
           else
             completionPos;
-        Parent.AstCreated(this, currentCompleteWordPos, parseResultOpt);
+        Parent.AstCreated(completeId, this, currentCompleteWordPos, parseResultOpt);
       }
       else
         // TODO: make _astMessages local for working threads
         //_astMessages = NSP.CompilerMessageList();
-        Parent.AstCreated(this, -1, null);
+        Parent.AstCreated(-1, this, -1, null);
     }
 
     CanCompleteWord() : bool
@@ -398,12 +398,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       IsActive = false;
     }
 
-    public CompleteWord(pos : VersionedPos) : void
+    public CompleteWord(pos : VersionedPos, id : int) : void
     {
       Log.Message($"CompleteWord started file in position: $pos");
       unless (Parent.Router.MessageSink.IsLsp)
         _isCompleteWord = true;
-      TrySendParseMessage(pos.Pos);
+      TrySendParseMessage(pos.Pos, id);
     }
 
     public CompleteWordDismiss() : void
@@ -896,10 +896,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       newFile.TrySendParseMessage();
     }
 
-    public TrySendParseMessage(completePos : UIPosition = null) : void
+    public TrySendParseMessage(completePos : UIPosition = null, completeId : int = -1) : void
     {
       when (this.IsSupported)
-        _parseQueue.Add(this.GetReParseMessage(completePos));
+        _parseQueue.Add(this.GetReParseMessage(completePos, completeId));
     }
 
     public SetCaretPos(pos : VersionedPos) : void

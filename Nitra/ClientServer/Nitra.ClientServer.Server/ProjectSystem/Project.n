@@ -185,14 +185,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       ServerUtils.CancelCancellation(ref _findDeclarationsCancellationTokenSource);
     }
 
-    public AstCreated(file : File, completeWordPosOpt : int, parseResultOpt : IParseResult) : void
+    public AstCreated(completeId : int, file : File, completeWordPosOpt : int, parseResultOpt : IParseResult) : void
     {
       Log.Message($"AstCreated(file=$file, fileId=$(file.Id)))");
 
       when (file.IsSupported)
         IncrementExpectsToBuildAst();
 
-      TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
+      TryStartSemanticAnalysis(completeId, file, completeWordPosOpt, parseResultOpt);
     }
 
     IncrementExpectsToBuildAst() : void
@@ -225,7 +225,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       }
     }
 
-    TryStartSemanticAnalysis(fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
+    TryStartSemanticAnalysis(completeId : int = -1, fileOpt : File = null, completeWordPosOpt : int = -1, parseResultOpt : IParseResult = null) : void
     {
       Log.Message($<#TryStartSemanticAnalysis(fileOpt=$fileOpt, completeWordPosOpt=$completeWordPosOpt, parseResultOpt=$parseResultOpt)#>);
 
@@ -260,9 +260,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               {
                 | e is OperationCanceledException => Log.Canceled(e); null
                 | e =>
-                Log.Exception(e);
-                Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
-                null
+                  Log.Exception(e);
+                  Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
+                  null
               };
 
             this.Data = data;
@@ -285,7 +285,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
           _symbolsCache.Clear();
 
           def completeWordFileIdOpt = if (completeWordPosOpt < 0) FileId.Invalid else FileId(fileOpt.Id);
-          SemanticAnalysisQueue.Add(ParserMessage.SemanticAnalysisStart(Parent.Id, Id, cancellationToken, this, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
+          SemanticAnalysisQueue.Add(ParserMessage.SemanticAnalysisStart(completeId, Parent.Id, Id, cancellationToken, this, projectSupport, files, this.Data, completeWordFileIdOpt, completeWordPosOpt, parseResultOpt));
         }
         else
           Log.Message("Project support not available!");

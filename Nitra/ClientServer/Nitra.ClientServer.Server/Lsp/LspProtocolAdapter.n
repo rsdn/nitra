@@ -110,9 +110,9 @@ namespace Nitra.ClientServer.Server.Lsp
 
       match (message)
       {
-        | FindSymbolReferences(_span, symbols, tag) => CompleteRequest(tag, symbols)
-        | Hint(text, _span, tag)                    => CompleteRequest(tag, text)
-        | CompleteWord(_span, completionList)       => CompleteWord(message.FileId, completionList, lock (_pendingCompletionIdLock) Interlocked.Exchange(ref _pendingCompletionId, null))
+        | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols)
+        | Hint(text, _span, tag)                        => CompleteRequest(tag, text)
+        | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id)
         //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
         | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
         | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
@@ -408,12 +408,9 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def document        = p.TextDocument;
       def fileId          = _solution.GetFileId(document.Uri);
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      def oldCompletionId = lock (_pendingCompletionIdLock) Interlocked.Exchange(ref _pendingCompletionId, id);
-      Log.Message($"LSP -> textDocument/completion id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) oldCompletionId='$oldCompletionId' Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (oldCompletionId != null)
-        WriteError(oldCompletionId, LspErrorCode.RequestCancelled, "");
+      Log.Message($"LSP -> textDocument/completion id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) Uri=$(document.Uri)", ConsoleColor.Cyan);
       when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.CompleteWord(project.ProjectId, fileId, position));
+        _router.AddMessage(ClientMessage.CompleteWord((id :> long) :> int, project.ProjectId, fileId, position));
     }
 
     private TextDocument_Definition(p : TextDocumentPositionParams, id : object) : void

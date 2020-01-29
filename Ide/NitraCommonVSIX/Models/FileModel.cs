@@ -275,7 +275,7 @@ namespace Nitra.VisualStudio.Models
       var snapshot = caretPos.Snapshot;
       var triggerPoint = session.GetTriggerPoint(session.TextView.TextBuffer);
       var pos = new VersionedPos(triggerPoint.GetPoint(snapshot).Position, snapshot.Version.Convert());
-      Server.Client.Send(new ClientMessage.CompleteWord(GetProjectId(), Id, pos));
+      Server.Client.Send(new ClientMessage.CompleteWord(42, GetProjectId(), Id, pos)); // TODO: implement completion id
       session.Dismissed += CompletionSessionDismissed;
     }
 

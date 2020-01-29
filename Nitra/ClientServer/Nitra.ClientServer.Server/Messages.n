@@ -24,13 +24,14 @@ namespace Nitra.ClientServer.Server
   [Record]
   internal variant ParserMessage : Message
   {
-    | ParseFile                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseSession : ParseSession; source : SourceSnapshot; } // CancellationToken in ParseSession
-    | CreateAst                  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; isActive : bool; }
+    | ParseFile                  { completeId : int; solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseSession : ParseSession; source : SourceSnapshot; } // CancellationToken in ParseSession
+    | CreateAst                  { completeId : int; solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; isActive : bool; }
     | CreateOutlining            { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; }
     | CreateKeywordsHighlighting { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; parseResult  : IParseResult; }
     | CreateSymbolsHighlighting  { solutionId : SolutionId; projectId : ProjectId; fileId : FileId; fileVersion : FileVersion; ast : IAst; completeWordPosOpt : int; }
     | SemanticAnalysisStart
       {
+        completeId            : int;
         solutionId            : SolutionId;
         projectId             : ProjectId;
         cancellationToken     : CancellationToken;
@@ -53,8 +54,8 @@ namespace Nitra.ClientServer.Server
   {
     public override MsgId : short { get { -1s } }
 
-    | FileParsed               { projectId : ProjectId; fileId : FileId; parseResult : IParseResult; } // CancellationToken in ParseResult.ParseSession
-    | AstCreated               { projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; completionPos : int; parseResult : IParseResult; }
+    | FileParsed               { completeId : int; projectId : ProjectId; fileId : FileId; parseResult : IParseResult; } // CancellationToken in ParseResult.ParseSession
+    | AstCreated               { completeId : int; projectId : ProjectId; fileId : FileId; cancellationToken : CancellationToken;  ast : IAst; parseTree : ParseTree; completionPos : int; parseResult : IParseResult; }
     | SemanticAnalysisFinished
       {
         projectId             : ProjectId;

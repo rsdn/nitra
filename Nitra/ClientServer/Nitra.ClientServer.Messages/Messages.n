@@ -35,29 +35,29 @@ namespace Nitra.ClientServer.Messages
   public variant ClientMessage : RouterMessage
   {
     | CheckVersion             { assemblyVersionGuid : string; }
-    | SolutionStartLoading     { id : SolutionId; fullPath : string; }
-    | SolutionLoaded           { id : SolutionId; }
-    | SolutionUnloaded         { id : SolutionId; }
-    | ProjectStartLoading      { id : ProjectId; fullPath : string; config : Config; }
-    | ProjectLoaded            { id : ProjectId; }
-    | ProjectUnloaded          { id : ProjectId; }
+    | SolutionStartLoading     { solutionId : SolutionId; fullPath : string; }
+    | SolutionLoaded           { solutionId : SolutionId; }
+    | SolutionUnloaded         { solutionId : SolutionId; }
+    | ProjectStartLoading      { projectId : ProjectId; fullPath : string; config : Config; }
+    | ProjectLoaded            { projectId : ProjectId; }
+    | ProjectUnloaded          { projectId : ProjectId; }
     | ProjectRename            { oldId : ProjectId; newId : ProjectId; newPath : string; }
     | ProjectReferenceLoaded   { projectId : ProjectId; referencedProjectId : ProjectId; path : string; }
     | ProjectReferenceUnloaded { projectId : ProjectId; referencedProjectId : ProjectId; path : string; }
     | ReferenceLoaded          { projectId : ProjectId; name : string; }
     | ReferenceUnloaded        { projectId : ProjectId; name : string; }
-    | FileSaved                { id : FileId; version : FileVersion; }
-    | FileLoaded               { projectId : ProjectId; fullPath : string; id : FileId; version : FileVersion; hasContent : bool; contentOpt : string; }
-    | FileReparse              { id : FileId; }
-    | FileUnloaded             { projectId : ProjectId; id : FileId; }
+    | FileSaved                { fileId : FileId; version : FileVersion; }
+    | FileLoaded               { projectId : ProjectId; fullPath : string; fileId : FileId; version : FileVersion; hasContent : bool; contentOpt : string; }
+    | FileReparse              { fileId : FileId; }
+    | FileUnloaded             { projectId : ProjectId; fileId : FileId; }
     | FileRenamed              { oldId : FileId; newId : FileId; newPath : string; }
-    | FileActivated            { projectId : ProjectId; id : FileId; version : FileVersion; }
-    | FileDeactivated          { projectId : ProjectId; id : FileId; }
-    | FileChanged              { id : FileId; version : FileVersion; change : FileChange;                  caretPos : VersionedPos; }
-    | FileChangedBatch         { id : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : VersionedPos; }
+    | FileActivated            { projectId : ProjectId; fileId : FileId; version : FileVersion; }
+    | FileDeactivated          { projectId : ProjectId; fileId : FileId; }
+    | FileChanged              { fileId : FileId; version : FileVersion; change : FileChange;                  caretPos : VersionedPos; }
+    | FileChangedBatch         { fileId : FileId; version : FileVersion; changes : ImmutableArray[FileChange]; caretPos : VersionedPos; }
     | PrettyPrint              { state : PrettyPrintState; }
-    | CompleteWord             { projectId : ProjectId; id : FileId; pos : VersionedPos; }
-    | CompleteWordDismiss      { projectId : ProjectId; id : FileId }
+    | CompleteWord             { id : int; projectId : ProjectId; fileId : FileId; pos : VersionedPos; }
+    | CompleteWordDismiss      { projectId : ProjectId; fileId : FileId }
     | FindSymbolReferences     { projectId : ProjectId; fileId : FileId; pos : VersionedPos; forHighlighting : bool; tag : uint; }
     | FindSymbolDefinitions    { projectId : ProjectId; fileId : FileId; pos : VersionedPos; tag : uint; }
     | ParseTreeReflection      { enable : bool; }
@@ -118,7 +118,7 @@ namespace Nitra.ClientServer.Messages
     | Hint                        { text : string; referenceSpan : NSpan; tag : uint; }
     | Exception                   { exception : string; }
     | FoundDeclarations           { projectId : ProjectId; declarations : ImmutableArray[DeclarationInfo]; }
-    | CompleteWord                { replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
+    | CompleteWord                { id : int; replacementSpan : NSpan; completionList : ImmutableArray[CompletionElem]; }
 
     public override ToString() : string { ToStringImpl() }
   }
