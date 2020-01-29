@@ -519,12 +519,12 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         def processNode(node : XNode) : void
         {
           | XText as t                             => _ = builder.Append(t.Value);
-          | XContainer as c                        => _ = processContainer(c);
           | XElement as e when e.Name == "keyword" => _ = builder.Append("**"); _ = builder.Append(e.Value); _ = builder.Append("**");
           | XElement as e when e.Name == "symbol"  => _ = builder.Append("*"); _ = builder.Append(e.Value); _ = builder.Append("*");
           | XElement as e when e.Name == "ref"     => _ = builder.Append(e.Attribute("hint").Value);
           | XElement as e when e.Name == "br"      => _ = builder.AppendLine();
           | XElement as e when e.Name == "bl"      => _ = builder.AppendLine();
+          | XContainer as c                        => _ = processContainer(c);
           | XElement as e                          => _ = builder.Append(e.Value);
           | _ => ()
         }
