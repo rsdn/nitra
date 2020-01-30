@@ -162,35 +162,35 @@ namespace Nitra.VisualStudio
 
     private void _solutionEvents_Renamed(string OldName)
     {
-      Debug.WriteLine($"tr: _solutionEvents_Renamed(OldName='{OldName}')");
+      Log.Message($"tr: _solutionEvents_Renamed(OldName='{OldName}')");
     }
 
     private void _solutionEvents_ProjectRenamed(Project Project, string OldName)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      Debug.WriteLine($"tr: _solutionEvents_ProjectRenamed(Project='{Project.FullName}', OldName='{OldName}')");
+      Log.Message($"tr: _solutionEvents_ProjectRenamed(Project='{Project.FullName}', OldName='{OldName}')");
     }
 
     private void _solutionEvents_ProjectRemoved(Project Project)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      Debug.WriteLine($"tr: _solutionEvents_ProjectRemoved(Project='{Project.FullName}')");
+      Log.Message($"tr: _solutionEvents_ProjectRemoved(Project='{Project.FullName}')");
     }
 
     private void _solutionEvents_ProjectAdded(Project Project)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
-      Debug.WriteLine($"tr: _solutionEvents_ProjectAdded(Project='{Project.FullName}')");
+      Log.Message($"tr: _solutionEvents_ProjectAdded(Project='{Project.FullName}')");
     }
 
     private void _solutionEvents_BeforeClosing()
     {
-      Debug.WriteLine($"tr: _solutionEvents_BeforeClosing()");
+      Log.Message($"tr: _solutionEvents_BeforeClosing()");
     }
 
     private void _solutionEvents_Opened()
     {
-      Debug.WriteLine($"tr: _solutionEvents_Opened()");
+      Log.Message($"tr: _solutionEvents_Opened()");
     }
 
     private void _runningDocTableEventse_DocumentSaved(object sender, string path)
@@ -229,7 +229,7 @@ namespace Nitra.VisualStudio
         if (server.IsSupportedExtension(ext))
           server.FileRenamed(oldFileId, newFileId, newFilePath);
 
-      Debug.WriteLine($"tr: FileAdded(FileName='{newFilePath}' id={newFileId} projectPath='{projectPath}')");
+      Log.Message($"tr: FileAdded(FileName='{newFilePath}' id={newFileId} projectPath='{projectPath}')");
     }
 
     private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
@@ -246,7 +246,7 @@ namespace Nitra.VisualStudio
         if (server.IsSupportedExtension(ext))
           server.FileUnloaded(projectId, id);
 
-      Debug.WriteLine($"tr: FileAdded(FileName='{filePath}' id={id} projectPath='{projectPath}')");
+      Log.Message($"tr: FileAdded(FileName='{filePath}' id={id} projectPath='{projectPath}')");
     }
 
     protected override void Dispose(bool disposing)
@@ -278,34 +278,34 @@ namespace Nitra.VisualStudio
     {
       var hierarchy = e.Hierarchy;
       var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
-      Debug.WriteLine($"tr: QueryUnloadProject(FullName='{project.FullName}')");
+      Log.Message($"tr: QueryUnloadProject(FullName='{project.FullName}')");
     }
 
     void SolutionEvents_OnQueryCloseSolution(object sender, CancelEventArgs e)
     {
-      Debug.WriteLine($"tr: QueryCloseSolution(Cancel='{e.Cancel}')");
+      Log.Message($"tr: QueryCloseSolution(Cancel='{e.Cancel}')");
     }
 
     void QueryCloseProject(object sender, QueryCloseProjectEventArgs e)
     {
       var hierarchy = e.Hierarchy;
       var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
-      Debug.WriteLine($"tr: QueryCloseProject(IsRemoving='{e.IsRemoving}', Cancel='{e.Cancel}', FullName='{project?.FullName}')");
+      Log.Message($"tr: QueryCloseProject(IsRemoving='{e.IsRemoving}', Cancel='{e.Cancel}', FullName='{project?.FullName}')");
     }
 
     void QueryChangeProjectParent(object sender, QueryChangeProjectParentEventArgs e)
     {
-      Debug.WriteLine($"tr: QueryChangeProjectParent(Hierarchy='{e.Hierarchy}', NewParentHierarchy='{e.NewParentHierarchy}', Cancel='{e.Cancel}')");
+      Log.Message($"tr: QueryChangeProjectParent(Hierarchy='{e.Hierarchy}', NewParentHierarchy='{e.NewParentHierarchy}', Cancel='{e.Cancel}')");
     }
 
     void QueryBackgroundLoadProjectBatch(object sender, QueryLoadProjectBatchEventArgs e)
     {
-      Debug.WriteLine($"tr: QueryBackgroundLoadProjectBatch(ShouldDelayLoadToNextIdle='{e.ShouldDelayLoadToNextIdle}')");
+      Log.Message($"tr: QueryBackgroundLoadProjectBatch(ShouldDelayLoadToNextIdle='{e.ShouldDelayLoadToNextIdle}')");
     }
 
     void BeforeUnloadProject(object sender, LoadProjectEventArgs e)
     {
-      Debug.WriteLine($"tr: BeforeUnloadProject(RealHierarchy='{e.RealHierarchy}', StubHierarchy='{e.StubHierarchy}')");
+      Log.Message($"tr: BeforeUnloadProject(RealHierarchy='{e.RealHierarchy}', StubHierarchy='{e.StubHierarchy}')");
     }
 
     void BeforeOpenSolution(object sender, BeforeOpenSolutionEventArgs e)
@@ -325,7 +325,7 @@ namespace Nitra.VisualStudio
       foreach (var server in _servers)
         server.SolutionStartLoading(id, solutionPath);
 
-      Debug.WriteLine($"tr: BeforeOpenSolution(SolutionFilename='{solutionPath}' id={id})");
+      Log.Message($"tr: BeforeOpenSolution(SolutionFilename='{solutionPath}' id={id})");
     }
 
     private void InitServers()
@@ -335,7 +335,7 @@ namespace Nitra.VisualStudio
 
       if (NitraCommonPackage.Configs.Count == 0)
       {
-        Debug.WriteLine($"Error: Configs is empty!)");
+        Log.Message($"Error: Configs is empty!)");
       }
 
       var stringManager = _stringManager;
@@ -356,22 +356,22 @@ namespace Nitra.VisualStudio
         // This is a separate project which  saw opened without the Solution. We need init the fake solution.
         InitSolution("<no solution>");
       }
-      Debug.WriteLine($"tr: BeforeOpenProject(Filename='{e.Filename}', Project='{e.Project}'  ProjectType='{e.ProjectType}')");
+      Log.Message($"tr: BeforeOpenProject(Filename='{e.Filename}', Project='{e.Project}'  ProjectType='{e.ProjectType}')");
     }
 
     void BeforeOpeningChildren(object sender, HierarchyEventArgs e)
     {
-      Debug.WriteLine($"tr: BeforeOpeningChildren(Hierarchy='{e.Hierarchy}')");
+      Log.Message($"tr: BeforeOpeningChildren(Hierarchy='{e.Hierarchy}')");
     }
 
     void BeforeLoadProjectBatch(object sender, LoadProjectBatchEventArgs e)
     {
-      Debug.WriteLine($"tr: BeforeLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}')");
+      Log.Message($"tr: BeforeLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}')");
     }
 
     void BeforeClosingChildren(object sender, HierarchyEventArgs e)
     {
-      Debug.WriteLine($"tr: BeforeClosingChildren(Hierarchy='{e.Hierarchy}')");
+      Log.Message($"tr: BeforeClosingChildren(Hierarchy='{e.Hierarchy}')");
     }
 
     void BeforeCloseSolution(object sender, EventArgs e)
@@ -381,21 +381,21 @@ namespace Nitra.VisualStudio
 
       _servers.Clear();
 
-      Debug.WriteLine($"tr: BeforeCloseSolution()");
+      Log.Message($"tr: BeforeCloseSolution()");
     }
 
     void BeforeBackgroundSolutionLoadBegins(object sender, EventArgs e)
     {
       _backgroundLoading = SolutionLoadingSate.AsynchronousLoading;
 
-      Debug.WriteLine($"tr: BeforeBackgroundSolutionLoadBegins()");
+      Log.Message($"tr: BeforeBackgroundSolutionLoadBegins()");
     }
 
     void AfterRenameProject(object sender, HierarchyEventArgs e)
     {
       var hierarchy = e.Hierarchy;
       var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
-      Debug.WriteLine($"tr: AfterRenameProject(Hierarchy='{hierarchy}', FullName='{project.FullName}')");
+      Log.Message($"tr: AfterRenameProject(Hierarchy='{hierarchy}', FullName='{project.FullName}')");
     }
 
     void AfterOpenSolution(object sender, OpenSolutionEventArgs e)
@@ -409,7 +409,7 @@ namespace Nitra.VisualStudio
       Debug.Assert(_backgroundLoading != SolutionLoadingSate.AsynchronousLoading);
 
       var path = _stringManager.GetPath(_currentSolutionId);
-      Debug.WriteLine($"tr: AfterOpenSolution(IsNewSolution='{e.IsNewSolution}', Id='{_currentSolutionId}' Path='{path}')");
+      Log.Message($"tr: AfterOpenSolution(IsNewSolution='{e.IsNewSolution}', Id='{_currentSolutionId}' Path='{path}')");
 
       foreach (var server in _servers)
         if (isTemporarySolution)
@@ -454,59 +454,80 @@ namespace Nitra.VisualStudio
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
-      Debug.WriteLine($"tr: ScanReferences(started) Project='{project.Name}'");
+      Log.Message($"tr: ScanReferences(started) Project='{project.Name}'");
 
-      if (project.Object is VSProject vsproject)
+      try
       {
-        var projectId = GetProjectId(project);
-        var references = new HashSet<string>();
-        _referenceMap.Add(projectId, references);
-
-        foreach (Reference reference in vsproject.References)
+        if (project.Object is VSProject vsproject)
         {
-          var path = reference.Path;
+          var projectId = GetProjectId(project);
+          var references = new HashSet<string>();
+          _referenceMap.Add(projectId, references);
+          var exceptionCount = 0;
 
-          if (!string.IsNullOrEmpty(path))
-            references.Add(path);
-
-          if (reference.SourceProject == null)
+          foreach (Reference reference in vsproject.References)
           {
-            if (string.IsNullOrEmpty(path))
+            try
             {
-              Debug.WriteLine($"tr:    Error: reference.Path=null reference.Name={reference.Name}");
-              continue;
-            }
+              var path = reference.Path;
 
-            foreach (var server in _servers)
-              server.ReferenceAdded(projectId, path);
-            Debug.WriteLine($"tr:    Reference: Name={reference.Name} Path={path}");
-          }
-          else
-          {
-            if (string.IsNullOrEmpty(path))
+              if (!string.IsNullOrEmpty(path))
+                references.Add(path);
+
+              if (reference.SourceProject == null)
+              {
+                if (string.IsNullOrEmpty(path))
+                {
+                  Log.Message($"tr:    Error: reference.Path=null reference.Name={reference.Name}");
+                  continue;
+                }
+
+                foreach (var server in _servers)
+                  server.ReferenceAdded(projectId, path);
+                Log.Message($"tr:    Reference: Name={reference.Name} Path={path}");
+              }
+              else
+              {
+                if (string.IsNullOrEmpty(path))
+                {
+                  // This situation occurs when a referenced project is missing
+                  continue;
+                }
+
+                var referencedProjectId = GetProjectId(reference.SourceProject);
+                foreach (var server in _servers)
+                  server.ProjectReferenceAdded(projectId, referencedProjectId, path);
+                Log.Message($"tr:    Project reference: ProjectId={referencedProjectId} Project={reference.SourceProject.Name} ProjectPath={reference.SourceProject.FullName} DllPath={reference.Path}");
+              }
+            }
+            catch (Exception ex)
             {
-              // This situation occurs when a referenced project is missing
-              continue;
+              exceptionCount++;
+              Log.Exception(ex);
+              if (exceptionCount == 5)
+              {
+                Log.Message($@"Project upload was interrupted due to exceeding the exception threshold ({exceptionCount}).", ConsoleColor.Yellow);
+                break;
+              }
             }
-
-            var referencedProjectId = GetProjectId(reference.SourceProject);
-            foreach (var server in _servers)
-              server.ProjectReferenceAdded(projectId, referencedProjectId, path);
-            Debug.WriteLine($"tr:    Project reference: ProjectId={referencedProjectId} Project={reference.SourceProject.Name} ProjectPath={reference.SourceProject.FullName} DllPath={reference.Path}");
           }
         }
+        else
+          Log.Message("tr:    Error: project.Object=null");
       }
-      else
-        Debug.WriteLine("tr:    Error: project.Object=null");
+      catch (Exception ex)
+      {
+        Log.Exception(ex);
+      }
 
-      Debug.WriteLine("tr: ScanReferences(finished)");
+      Log.Message("tr: ScanReferences(finished)");
     }
 
     void ScanFiles(Project project)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
-      Debug.WriteLine($"tr: ScanFiles(started) Project='{project.Name}'");
+      Log.Message($"tr: ScanFiles(started) Project='{project.Name}'");
 
       if (project.Object is VSProject vsproject)
       {
@@ -517,22 +538,22 @@ namespace Nitra.VisualStudio
         ScanFiles(project, projectItems);
       }
       else
-        Debug.WriteLine("tr:    Error: project.Object=null");
+        Log.Message("tr:    Error: project.Object=null");
 
-      Debug.WriteLine("tr: ScanFiles(finished)");
+      Log.Message("tr: ScanFiles(finished)");
     }
 
     private void ScanFiles(Project project, ProjectItems projectItems)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
 
-      Debug.WriteLine($"tr:    ScanFiles(ProjectItem: Project={project.Name})");
+      Log.Message($"tr:    ScanFiles(ProjectItem: Project={project.Name})");
 
       foreach (ProjectItem item in projectItems)
       {
         //var filePath = (string)item.Properties.Item("FullPath").Value;
         var filePath = item.FileNames[1];
-        Debug.WriteLine($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind}");
+        Log.Message($"tr:    ProjectItem: Name={item.Name} Project={project.Name} filePath={filePath} Kind={item.Kind}");
 
         try
         {
@@ -548,7 +569,7 @@ namespace Nitra.VisualStudio
           ScanFiles(project, item.ProjectItems);
 
       }
-      Debug.WriteLine($"tr:    ScanFiles finished!");
+      Log.Message($"tr:    ScanFiles finished!");
     }
 
     ProjectId GetProjectId(Project project)
@@ -560,7 +581,7 @@ namespace Nitra.VisualStudio
     void AfterBackgroundSolutionLoadComplete(object sender, EventArgs e)
     {
       var path = _stringManager.GetPath(_currentSolutionId);
-      Debug.WriteLine($"tr: AfterBackgroundSolutionLoadComplete(Id={_currentSolutionId} Path='{path}')");
+      Log.Message($"tr: AfterBackgroundSolutionLoadComplete(Id={_currentSolutionId} Path='{path}')");
 
       foreach (var server in _servers)
         server.SolutionLoaded(_currentSolutionId);
@@ -612,7 +633,7 @@ namespace Nitra.VisualStudio
       foreach (var server in _servers)
         server.ProjectStartLoading(projectId, projectPath);
 
-      Debug.WriteLine($"tr: AfterOpenProject(IsAdded='{e.IsAdded}', FullName='{projectPath}' id={projectId} Name={project.Name} State={_backgroundLoading})");
+      Log.Message($"tr: AfterOpenProject(IsAdded='{e.IsAdded}', FullName='{projectPath}' id={projectId} Name={project.Name} State={_backgroundLoading})");
 
       foreach (var server in _servers)
         server.AddedMscorlibReference(projectId);
@@ -648,7 +669,7 @@ namespace Nitra.VisualStudio
       _projects.Remove(project);
       _referenceMap.Remove(id);
 
-      Debug.WriteLine($"tr: BeforeCloseProject(IsRemoved='{e.IsRemoved}', FullName='{project.FullName}' id={id})");
+      Log.Message($"tr: BeforeCloseProject(IsRemoved='{e.IsRemoved}', FullName='{project.FullName}' id={id})");
 
       foreach (var server in _servers)
         server.BeforeCloseProject(id);
@@ -663,7 +684,7 @@ namespace Nitra.VisualStudio
       var projectPath = project.FullName;
       var projectId   = new ProjectId(_stringManager.GetId(projectPath));
 
-      Debug.WriteLine($"tr: AddFile(Name={projectItem.Name}, Id={id}, FileName='{path}', Project={project.Name}, ProjectId={projectId})");
+      Log.Message($"tr: AddFile(Name={projectItem.Name}, Id={id}, FileName='{path}', Project={project.Name}, ProjectId={projectId})");
 
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
@@ -674,27 +695,27 @@ namespace Nitra.VisualStudio
 
     void AfterOpeningChildren(object sender, HierarchyEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterOpeningChildren(Hierarchy='{e.Hierarchy}')");
+      Log.Message($"tr: AfterOpeningChildren(Hierarchy='{e.Hierarchy}')");
     }
 
     void SolutionEvents_OnAfterMergeSolution(object sender, EventArgs e)
     {
-      Debug.WriteLine($"tr: AfterMergeSolution()");
+      Log.Message($"tr: AfterMergeSolution()");
     }
 
     void AfterLoadProjectBatch(object sender, LoadProjectBatchEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}')");
+      Log.Message($"tr: AfterLoadProjectBatch(IsBackgroundIdleBatch='{e.IsBackgroundIdleBatch}')");
     }
 
     void AfterLoadProject(object sender, LoadProjectEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterLoadProject(RealHierarchy='{e.RealHierarchy}', StubHierarchy='{e.StubHierarchy}')");
+      Log.Message($"tr: AfterLoadProject(RealHierarchy='{e.RealHierarchy}', StubHierarchy='{e.StubHierarchy}')");
     }
 
     void AfterClosingChildren(object sender, HierarchyEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterClosingChildren(Hierarchy='{e.Hierarchy}')");
+      Log.Message($"tr: AfterClosingChildren(Hierarchy='{e.Hierarchy}')");
     }
 
     void AfterCloseSolution(object sender, EventArgs e)
@@ -705,18 +726,18 @@ namespace Nitra.VisualStudio
       Debug.Assert(_currentSolutionId != InvalidSolutionId);
       _backgroundLoading = SolutionLoadingSate.NotLoaded;
       var path = _stringManager.GetPath(_currentSolutionId);
-      Debug.WriteLine($"tr: AfterCloseSolution(Id={_currentSolutionId} Path='{path}')");
+      Log.Message($"tr: AfterCloseSolution(Id={_currentSolutionId} Path='{path}')");
       _currentSolutionId = InvalidSolutionId;
     }
 
     void AfterChangeProjectParent(object sender, HierarchyEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}')");
+      Log.Message($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}')");
     }
 
     void AfterAsynchOpenProject(object sender, OpenProjectEventArgs e)
     {
-      Debug.WriteLine($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}', IsAdded='{e.IsAdded}' _currentSolutionId={_currentSolutionId})");
+      Log.Message($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}', IsAdded='{e.IsAdded}' _currentSolutionId={_currentSolutionId})");
     }
 
     void DocumentWindowOnScreenChanged(object sender, DocumentWindowOnScreenChangedEventArgs e)
@@ -734,14 +755,14 @@ namespace Nitra.VisualStudio
 
       if (e.OnScreen)
       {
-        Debug.WriteLine("OnScreen '" + fullPath + "'");
+        Log.Message("OnScreen '" + fullPath + "'");
         foreach (var server in _servers)
           if (server.IsSupportedExtension(ext))
             server.ViewActivated(wpfTextView, id, hierarchy, fullPath);
       }
       else
       {
-        Debug.WriteLine("OffScreen '" + fullPath + "'");
+        Log.Message("OffScreen '" + fullPath + "'");
         foreach (var server in _servers)
           if (server.IsSupportedExtension(ext))
             server.ViewDeactivated(wpfTextView, id);
