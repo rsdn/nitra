@@ -27,6 +27,7 @@ using System.Threading;
 using NRB = Nitra.Declarations;
 using SCG = System.Collections.Generic;
 using DN = dnlib.DotNet;
+using PE = dnlib.PE;
 
 namespace Nitra.BackEnd.Dnlib
 {
@@ -289,10 +290,11 @@ namespace Nitra.BackEnd.Dnlib
 
     LoadModule(assemblyPath : string) : AssemblyIdentity * ModuleDef
     {
+      def peImage                      = PE.PEImage(File.ReadAllBytes(assemblyPath), assemblyPath);
       def loadOptions                  = ModuleCreationOptions(_context);
       loadOptions.CorLibAssemblyRef    = _corlibReference;
       loadOptions.TryToLoadPdbFromDisk = false;
-      def moduleDef                    = ModuleDefMD.Load(assemblyPath, loadOptions);
+      def moduleDef                    = ModuleDefMD.Load(peImage, loadOptions);
       def identity                     = AssemblyIdentity(moduleDef.Assembly);
       (identity, moduleDef)
     }
