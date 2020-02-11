@@ -133,7 +133,7 @@ namespace DotNet
             Debug.WriteLine("SupportsInheritanceTypeSymbol(IsBaseTypeSetEvaluated=true, IsMemberTableEvaluated=false)");
             assert2(false);
 
-          | _ => assert2(false);
+          | _ => (); //assert2(false);
         }
 
         foreach (type in ancestorTypes)
