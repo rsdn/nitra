@@ -30,10 +30,8 @@ using FileSystemWatcher = Microsoft.VisualStudio.LanguageServer.Protocol.FileSys
 
 namespace Nitra.ClientServer.Server.Lsp
 {
-	public class NotificationType {
-		public data: object  { get; set; }
-	}
-
+	
+	
 	internal class LspProtocolAdapter : IProtocolAdapter
 	{
 		private static mutable _tagCounter  : int;
@@ -114,16 +112,16 @@ namespace Nitra.ClientServer.Server.Lsp
 
 			match (message)
 			{
-				| FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols)
-				| Hint(text, _span, tag)                        => CompleteRequest(tag, text)
-				| CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id)
+				| FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols);
+				| Hint(text, _span, tag)                        => CompleteRequest(tag, text);
+				| CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id);
 		//| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
 				| ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
 				| MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
 				| SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
-				| KeywordsHighlightingCreated as khc => WriteNotification(LspNotification.[AsyncServerMessage.KeywordsHighlightingCreated]("notification/keywordHighlight"), khc)
-				| SymbolsHighlightingCreated as ssc => WriteNotification(LspNotification.[AsyncServerMessage.SymbolsHighlightingCreated]("notification/symbolHighlight"), ssc)
-				| LanguageLoaded as ll => WriteNotification(LspNotification.[AsyncServerMessage.LanguageLoaded]("notification/languageLoaded"), ll)
+				| KeywordsHighlightingCreated as khc => WriteNotification(LspNotification.[HighlightingNotification]("$/keywordHighlight"), Convert(khc));
+				| SymbolsHighlightingCreated as shc => WriteNotification(LspNotification.[(Uri*ImmutableArray[Nitra.ClientServer.Messages.SpanInfo])]("$/symbolHighlight"), (_solution.GetFileUri(shc.FileId),shc.spanInfos));
+				| LanguageLoaded => WriteNotification(LspNotification.[SpanClassInfoNotification]("$/languageLoaded"), message);
 				| _ => ()
 			}
 		}
@@ -177,7 +175,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
 			def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
 			WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
-			
+
 			Log.Message($"LSP < textDocument/publishDiagnostics fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
 		}
 
@@ -556,15 +554,6 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 		});
 			}
 			WriteResult(id, result);
-		}
-
-		private Convert(range : Messages.Range) : LSP.Range
-		{
-   Range() <-
-	{
-   Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
-   End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
-	}
 		}
 
 		private ConvertRanges(symbols : ImmutableArray[SymbolLocation]) : Seq[LSP.Range * FileId]
