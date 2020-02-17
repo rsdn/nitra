@@ -119,9 +119,9 @@ namespace Nitra.ClientServer.Server.Lsp
 				| ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
 				| MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
 				| SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
-				| KeywordsHighlightingCreated as khc => WriteNotification(LspNotification.[HighlightingNotification]("$/keywordHighlight"), Convert(khc));
-				| SymbolsHighlightingCreated as shc => WriteNotification(LspNotification.[(Uri*ImmutableArray[Nitra.ClientServer.Messages.SpanInfo])]("$/symbolHighlight"), (_solution.GetFileUri(shc.FileId),shc.spanInfos));
-				| LanguageLoaded => WriteNotification(LspNotification.[SpanClassInfoNotification]("$/languageLoaded"), message);
+				| KeywordsHighlightingCreated as khc => WriteNotification(LspNotification("$/keywordHighlight"), new (uri = _solution.GetFileUri(khc.FileId), spanInfos = khc.spanInfos));
+				| SymbolsHighlightingCreated as ssc => WriteNotification(LspNotification("$/symbolHighlight"), new (uri = _solution.GetFileUri(ssc.FileId), spanInfos = ssc.spanInfos));
+				| LanguageLoaded as ll => WriteNotification(LspNotification("$/languageLoaded"), new (SpanClassInfo = ll.spanClassInfos));
 				| _ => ()
 			}
 		}
