@@ -120,7 +120,7 @@ namespace Nitra.ClientServer.Server.Lsp
 				| MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
 				| SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
 				| KeywordsHighlightingCreated as khc => WriteNotification(LspNotification("$/keywordHighlight"), new (uri = _solution.GetFileUri(khc.FileId), spanInfos = khc.spanInfos));
-				| SymbolsHighlightingCreated as ssc => WriteNotification(LspNotification("$/symbolHighlight"), new (uri = _solution.GetFileUri(ssc.FileId), spanInfos = ssc.spanInfos));
+				| SymbolsHighlightingCreated as shc => WriteNotification(LspNotification("$/symbolHighlight"), new (uri = _solution.GetFileUri(shc.FileId), spanInfos = shc.spanInfos));
 				| LanguageLoaded as ll => WriteNotification(LspNotification("$/languageLoaded"), new (SpanClassInfo = ll.spanClassInfos));
 				| _ => ()
 			}
@@ -556,6 +556,15 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 			WriteResult(id, result);
 		}
 
+		private Convert(range : Messages.Range) : LSP.Range
+		{
+      Range() <-
+	    {
+        Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
+        End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
+	    }
+		}
+		
 		private ConvertRanges(symbols : ImmutableArray[SymbolLocation]) : Seq[LSP.Range * FileId]
 		{
 			foreach (s in symbols)
