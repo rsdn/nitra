@@ -30,8 +30,6 @@ using FileSystemWatcher = Microsoft.VisualStudio.LanguageServer.Protocol.FileSys
 
 namespace Nitra.ClientServer.Server.Lsp
 {
-
-
   internal class LspProtocolAdapter : IProtocolAdapter
   {
     private static mutable _tagCounter  : int;
@@ -175,7 +173,6 @@ namespace Nitra.ClientServer.Server.Lsp
 
       def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
       WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
-
       Log.Message($"LSP < textDocument/publishDiagnostics fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
     }
 
