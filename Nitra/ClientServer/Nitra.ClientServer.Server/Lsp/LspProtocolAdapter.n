@@ -134,36 +134,36 @@ namespace Nitra.ClientServer.Server.Lsp
         return;
 
       def diagnosticsPass =
-                             if (pass == 0)
-                             {
-                               def x = array[array(0), array(0), array(0)];
-                               _fileToCompilerMessageMap[fileId] = x;
-                               x
-                             }
-                             else
-                               _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
+      if (pass == 0)
+      {
+        def x = array[array(0), array(0), array(0)];
+        _fileToCompilerMessageMap[fileId] = x;
+        x
+      }
+      else
+        _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
 
       def diagnostics = List();
       def uri         = _solution.GetFileUri(fileId);
       foreach (m in messages)
       {
         def severity =
-                        match (m.Type)
-                        {
-                          | FatalError => DiagnosticSeverity.Error
-                          | Error      => DiagnosticSeverity.Error
-                          | Warning    => DiagnosticSeverity.Warning
-                          | Hint       => DiagnosticSeverity.Hint
-                        };
+          match (m.Type)
+          {
+            | FatalError => DiagnosticSeverity.Error
+            | Error      => DiagnosticSeverity.Error
+            | Warning    => DiagnosticSeverity.Warning
+            | Hint       => DiagnosticSeverity.Hint
+          };
         def loc = m.Location;
         diagnostics.Add(Diagnostic() <-
-    {
-                        Range = Convert(loc.Range);
-                        Severity = severity;
-                        Code = if (m.Number < 0) null else m.Number.ToString();
-                        Message = m.Text;
-    // Source = ???
-    });
+        {
+          Range = Convert(loc.Range);
+          Severity = severity;
+          Code = if (m.Number < 0) null else m.Number.ToString();
+          Message = m.Text;
+        // Source = ???
+        });
       }
 
       diagnosticsPass[pass] = diagnostics.ToArray();
@@ -199,23 +199,23 @@ namespace Nitra.ClientServer.Server.Lsp
       Log.Message($"LSP -> initialize id=$id", ConsoleColor.Cyan);
   //p.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration
       def result =
-  InitializeResult() <-
-    {
-  Capabilities = ServerCapabilities() <-
-    {
-                 TextDocumentSync = TextDocumentSyncOptions() <-
-      {
-                                    OpenClose = true;
-                                    Change = TextDocumentSyncKind.Incremental;
-                                    Save = SaveOptions() <- { IncludeText = false }
-      };
-                 DefinitionProvider = true;
-                 ReferencesProvider = true;
-                 DocumentHighlightProvider = true;
-                 CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
-                 HoverProvider = true
-    }
-    };
+      InitializeResult() <-
+        {
+        Capabilities = ServerCapabilities() <-
+          {
+            TextDocumentSync = TextDocumentSyncOptions() <-
+            {
+              OpenClose = true;
+              Change = TextDocumentSyncKind.Incremental;
+              Save = SaveOptions() <- { IncludeText = false }
+            };
+            DefinitionProvider = true;
+            ReferencesProvider = true;
+            DocumentHighlightProvider = true;
+            CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
+            HoverProvider = true
+          }
+        };
 
       when (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
       {
@@ -331,17 +331,17 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def fileId   = _solution.GetFileId(document.Uri);
       def version  = FileVersion(document.Version ?? -1);
       def message  =
-                      if (changes.Length == 1)
-                      {
-                        ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
-                      }
-                      else
-                      {
-                        def builder = ImmutableArray.CreateBuilder(changes.Length);
-                        for (mutable i = changes.Length - 1; i >= 0; i--)
-                          builder.Add(Convert(changes[i]));
-                        ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
-                      }
+        if (changes.Length == 1)
+        {
+          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
+        }
+        else
+        {
+          def builder = ImmutableArray.CreateBuilder(changes.Length);
+          for (mutable i = changes.Length - 1; i >= 0; i--)
+            builder.Add(Convert(changes[i]));
+          ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
+        }
       _router.AddMessage(message);
     }
 
@@ -470,10 +470,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       foreach ((range, _) in ConvertRanges(symbols, true))
       {
         result.Add(DocumentHighlight() <-
-    {
-                   Range = range;
-                   Kind  = DocumentHighlightKind.Text
-    });
+        {
+          Range = range;
+          Kind  = DocumentHighlightKind.Text
+        });
       }
       WriteResult(id, result);
     }
@@ -484,10 +484,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       foreach ((range, fileId) in ConvertRanges(symbols, includeDeclaration))
       {
         result.Add(LSP.Location() <-
-    {
-                   Range = range;
-                   Uri   = _solution.GetFileUri(fileId)
-    });
+        {
+          Range = range;
+          Uri   = _solution.GetFileUri(fileId)
+        });
       }
       WriteResult(id, result);
     }
@@ -498,10 +498,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       foreach ((range, fileId) in ConvertRanges(symbols))
       {
         result.Add(LSP.Location() <-
-    {
-                   Range = range;
-                   Uri   = _solution.GetFileUri(fileId)
-    });
+        {
+          Range = range;
+          Uri   = _solution.GetFileUri(fileId)
+        });
       }
       WriteResult(id, result);
     }
@@ -511,10 +511,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def value = HintMlToMarkdown(text);
 
       WriteResult(id, Hover() <-
-  {
-                      Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
-                      Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
-  });
+      {
+        Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
+        Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
+      });
     }
 
     private static HintMlToMarkdown(text : string) : string
@@ -549,20 +549,20 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       foreach (x in completionList)
       {
         result.Add(LSP.CompletionItem() <-
-    {
-                   Label = x.Text
-    });
+        {
+          Label = x.Text
+        });
       }
       WriteResult(id, result);
     }
 
     private Convert(range : Messages.Range) : LSP.Range
     {
-   Range() <-
-    {
-   Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
-   End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
-    }
+      Range() <-
+      {
+        Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
+        End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
+      }
     }
 
     private ConvertRanges(symbols : ImmutableArray[SymbolLocation]) : Seq[LSP.Range * FileId]
