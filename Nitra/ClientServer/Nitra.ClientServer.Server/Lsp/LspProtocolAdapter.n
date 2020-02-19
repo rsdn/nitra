@@ -68,7 +68,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
       _reader.UnknownRequestHandler += UnknownHandler;
 
-      _reader.RegisterHandler("$/cancelhRequest",                       CancelRequest);
+      _reader.RegisterHandler("$/cancelRequest",                       CancelRequest);
       _reader.RegisterHandler(Methods.Initialize,                      Initialize);
       _reader.RegisterHandler(Methods.Shutdown,                        Shutdown);
       _reader.RegisterHandler(Methods.TextDocumentCompletion,          TextDocument_Completion);
@@ -134,14 +134,14 @@ namespace Nitra.ClientServer.Server.Lsp
         return;
 
       def diagnosticsPass =
-      if (pass == 0)
-      {
-        def x = array[array(0), array(0), array(0)];
-        _fileToCompilerMessageMap[fileId] = x;
-        x
-      }
-      else
-        _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
+        if (pass == 0)
+        {
+          def x = array[array(0), array(0), array(0)];
+          _fileToCompilerMessageMap[fileId] = x;
+          x
+        }
+        else
+          _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
 
       def diagnostics = List();
       def uri         = _solution.GetFileUri(fileId);
@@ -233,13 +233,13 @@ namespace Nitra.ClientServer.Server.Lsp
       def watchers = _solution.GetWatchedPatterns().Select(make).ToArray();
       def options = DidChangeWatchedFilesRegistrationOptions() <- { Watchers = watchers; };
       def registrationParams = RegistrationParams() <- { Registrations = array[
-    Registration() <-
-    {
-      Id              = "tdl-fileWatcher";
-      Method          = Methods.WorkspaceDidChangeWatchedFilesName;
-      RegisterOptions = options;
-    }
-    ]; };
+      Registration() <-
+      {
+        Id              = "tdl-fileWatcher";
+        Method          = Methods.WorkspaceDidChangeWatchedFilesName;
+        RegisterOptions = options;
+      }
+      ]; };
       WriteRequest(Methods.ClientRegisterCapability, registrationParams);
     }
 
@@ -306,12 +306,12 @@ namespace Nitra.ClientServer.Server.Lsp
       Log.Message($"LSP > textDocument/didClose $(p.TextDocument.Uri)" + p.TextDocument.Uri, ConsoleColor.Cyan);
       foreach (project in _solution.GetProjects(fileId))
         project.DidClose(fileId);
-    //_router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
+      //_router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
     }
 
     private static ToStringDidChangeTextDocumentParamsToString(msg : DidChangeTextDocumentParams) : string
     {
-  $<#DidChangeTextDocumentParams(
+$<#DidChangeTextDocumentParams(
 Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 ..$(msg.ContentChanges; "\r\n"; TextDocumentContentChangeEventToString)#>
     }
@@ -585,8 +585,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         }
 
         foreach (r in s.References)
-          foreach (g in r.Ranges)
-            yield (Convert(g), r.File.FileId);
+        foreach (g in r.Ranges)
+          yield (Convert(g), r.File.FileId);
       }
     }
 
@@ -597,9 +597,9 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       if (c.RangeLength == 0 && !isEmpty)
         FileChange.Insert(Convert(c.Range.Start), newText)
       else if (c.RangeLength > 0 && isEmpty)
-             FileChange.Delete(Convert(c.Range))
-           else
-             FileChange.Replace(Convert(c.Range), newText)
+        FileChange.Delete(Convert(c.Range))
+      else
+        FileChange.Replace(Convert(c.Range), newText)
     }
 
     private static Convert(p : Position) : UIPosition
