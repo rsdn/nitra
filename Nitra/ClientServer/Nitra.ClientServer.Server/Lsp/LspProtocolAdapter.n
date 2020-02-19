@@ -206,13 +206,13 @@ namespace Nitra.ClientServer.Server.Lsp
                 Change = TextDocumentSyncKind.Incremental;
                 Save = SaveOptions() <- { IncludeText = false }
               };
-              DefinitionProvider = true;
-              ReferencesProvider = true;
-              DocumentHighlightProvider = true;
-              CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
-              HoverProvider = true
-            }
-          };
+            DefinitionProvider = true;
+            ReferencesProvider = true;
+            DocumentHighlightProvider = true;
+            CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
+            HoverProvider = true
+          }
+        };
 
       when (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
       {
