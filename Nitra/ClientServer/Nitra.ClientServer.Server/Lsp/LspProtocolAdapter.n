@@ -115,7 +115,7 @@ namespace Nitra.ClientServer.Server.Lsp
         | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols);
         | Hint(text, _span, tag)                        => CompleteRequest(tag, text);
         | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id);
-    //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
+        //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
         | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
         | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
         | SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
@@ -134,34 +134,34 @@ namespace Nitra.ClientServer.Server.Lsp
         return;
 
       def diagnosticsPass =
-                             if (pass == 0)
-                             {
-                               def x = array[array(0), array(0), array(0)];
-                               _fileToCompilerMessageMap[fileId] = x;
-                               x
-                             }
-                             else
-                               _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
+        if (pass == 0)
+        {
+          def x = array[array(0), array(0), array(0)];
+          _fileToCompilerMessageMap[fileId] = x;
+          x
+        }
+        else
+          _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
 
       def diagnostics = List();
       def uri         = _solution.GetFileUri(fileId);
       foreach (m in messages)
       {
         def severity =
-                        match (m.Type)
-                        {
-                          | FatalError => DiagnosticSeverity.Error
-                          | Error      => DiagnosticSeverity.Error
-                          | Warning    => DiagnosticSeverity.Warning
-                          | Hint       => DiagnosticSeverity.Hint
-                        };
+          match (m.Type)
+          {
+            | FatalError => DiagnosticSeverity.Error
+            | Error      => DiagnosticSeverity.Error
+            | Warning    => DiagnosticSeverity.Warning
+            | Hint       => DiagnosticSeverity.Hint
+          };
         def loc = m.Location;
         diagnostics.Add(Diagnostic() <-
         {
-                        Range = Convert(loc.Range);
-                        Severity = severity;
-                        Code = if (m.Number < 0) null else m.Number.ToString();
-                        Message = m.Text;
+          Range = Convert(loc.Range);
+          Severity = severity;
+          Code = if (m.Number < 0) null else m.Number.ToString();
+          Message = m.Text;
           // Source = ???
         });
       }
@@ -206,21 +206,21 @@ namespace Nitra.ClientServer.Server.Lsp
       Log.Message($"LSP -> initialize id=$id", ConsoleColor.Cyan);
       //p.Capabilities.Workspace.DidChangeWatchedFiles.DynamicRegistration
       def result =
- InitializeResult() <-
+        InitializeResult() <-
+        {
+          Capabilities = ServerCapabilities() <-
           {
- Capabilities = ServerCapabilities() <-
+            TextDocumentSync = TextDocumentSyncOptions() <-
             {
-                TextDocumentSync = TextDocumentSyncOptions() <-
-              {
-                                   OpenClose = true;
-                                   Change = TextDocumentSyncKind.Incremental;
-                                   Save = SaveOptions() <- { IncludeText = false }
-              };
-                DefinitionProvider = true;
-                ReferencesProvider = true;
-                DocumentHighlightProvider = true;
-                CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
-                HoverProvider = true
+              OpenClose = true;
+              Change = TextDocumentSyncKind.Incremental;
+              Save = SaveOptions() <- { IncludeText = false }
+            };
+            DefinitionProvider = true;
+            ReferencesProvider = true;
+            DocumentHighlightProvider = true;
+            CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
+            HoverProvider = true
           }
         };
 
@@ -338,17 +338,17 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       def fileId   = _solution.GetFileId(document.Uri);
       def version  = FileVersion(document.Version ?? -1);
       def message  =
-                      if (changes.Length == 1)
-                      {
-                        ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
-                      }
-                      else
-                      {
-                        def builder = ImmutableArray.CreateBuilder(changes.Length);
-                        for (mutable i = changes.Length - 1; i >= 0; i--)
-                          builder.Add(Convert(changes[i]));
-                        ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
-                      }
+        if (changes.Length == 1)
+        {
+          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
+        }
+        else
+        {
+          def builder = ImmutableArray.CreateBuilder(changes.Length);
+          for (mutable i = changes.Length - 1; i >= 0; i--)
+            builder.Add(Convert(changes[i]));
+          ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
+        }
       _router.AddMessage(message);
     }
 
@@ -478,8 +478,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(DocumentHighlight() <-
         {
-                   Range = range;
-                   Kind  = DocumentHighlightKind.Text
+          Range = range;
+          Kind  = DocumentHighlightKind.Text
         });
       }
       WriteResult(id, result);
@@ -492,8 +492,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.Location() <-
         {
-                   Range = range;
-                   Uri   = _solution.GetFileUri(fileId)
+          Range = range;
+          Uri   = _solution.GetFileUri(fileId)
         });
       }
       WriteResult(id, result);
@@ -506,8 +506,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.Location() <-
         {
-                   Range = range;
-                   Uri   = _solution.GetFileUri(fileId)
+          Range = range;
+          Uri   = _solution.GetFileUri(fileId)
         });
       }
       WriteResult(id, result);
@@ -519,8 +519,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
       WriteResult(id, Hover() <-
       {
-                      Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
-                      Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
+        Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
+        Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
       });
     }
 
@@ -557,7 +557,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.CompletionItem() <-
         {
-                   Label = x.Text
+          
         });
       }
       WriteResult(id, result);
@@ -565,10 +565,10 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private Convert(range : Messages.Range) : LSP.Range
     {
- Range() <-
+      Range() <-
       {
- Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
- End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
+        Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
+        End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
       }
     }
 
@@ -592,21 +592,21 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         }
 
         foreach (r in s.References)
-          foreach (g in r.Ranges)
-            yield (Convert(g), r.File.FileId);
+        foreach (g in r.Ranges)
+          yield (Convert(g), r.File.FileId);
       }
     }
 
     private static Convert(c : TextDocumentContentChangeEvent) : FileChange
     {
-        def newText = c.Text;
-        def isEmpty = string.IsNullOrEmpty(newText);
-        if (c.RangeLength == 0 && !isEmpty)
-          FileChange.Insert(Convert(c.Range.Start), newText)
-        else if (c.RangeLength > 0 && isEmpty)
-               FileChange.Delete(Convert(c.Range))
-             else
-               FileChange.Replace(Convert(c.Range), newText)
+      def newText = c.Text;
+      def isEmpty = string.IsNullOrEmpty(newText);
+      if (c.RangeLength == 0 && !isEmpty)
+        FileChange.Insert(Convert(c.Range.Start), newText)
+      else if (c.RangeLength > 0 && isEmpty)
+        FileChange.Delete(Convert(c.Range))
+      else
+        FileChange.Replace(Convert(c.Range), newText)
     }
 
     private static Convert(p : Position) : UIPosition
@@ -645,7 +645,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         def di = IO.DirectoryInfo(logDir);
         foreach (file in di.GetFiles())
-          file.Delete();
+            file.Delete();
       }
       else
         _ = IO.Directory.CreateDirectory(logDir);
