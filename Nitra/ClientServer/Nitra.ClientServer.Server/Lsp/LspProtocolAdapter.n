@@ -66,6 +66,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
       _reader.UnknownRequestHandler += UnknownHandler;
 
+      _reader.RegisterHandler("$/fileActivatedNotification",           FileActivated);
       _reader.RegisterHandler("$/cancelRequest",                       CancelRequest);
       _reader.RegisterHandler(Methods.Initialize,                      Initialize);
       _reader.RegisterHandler(Methods.Shutdown,                        Shutdown);
@@ -83,6 +84,7 @@ namespace Nitra.ClientServer.Server.Lsp
       _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocument_DidSave);
       _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, Workspace_DidChangeConfiguration);
       _reader.RegisterHandler(Methods.WorkspaceDidChangeWatchedFiles,  Workspace_DidChangeWatchedFiles);
+
     }
 
     public Dispose() : void
@@ -110,13 +112,16 @@ namespace Nitra.ClientServer.Server.Lsp
 
       match (message)
       {
-        | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols)
-        | Hint(text, _span, tag)                        => CompleteRequest(tag, text)
-        | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id)
+        | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols);
+        | Hint(text, _span, tag)                        => CompleteRequest(tag, text);
+        | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id);
         //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
         | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
         | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
         | SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
+        | KeywordsHighlightingCreated as khc => WriteNotification(LspNotification("$/keywordHighlight"), new (uri = _solution.GetFileUri(khc.FileId), spanInfos = khc.spanInfos));
+        | SymbolsHighlightingCreated as shc => WriteNotification(LspNotification("$/symbolHighlight"), new (uri = _solution.GetFileUri(shc.FileId), spanInfos = shc.spanInfos));
+        | LanguageLoaded as ll => WriteNotification(LspNotification("$/languageLoaded"), new (SpanClassInfo = ll.spanClassInfos));
         | _ => ()
       }
     }
@@ -178,6 +183,14 @@ namespace Nitra.ClientServer.Server.Lsp
       Log.Message($"LSP -> UnknownHandler method=$method id=$id", ConsoleColor.Cyan);
       when (id != null)
         WriteError(id, LspErrorCode.MethodNotFound, method)
+    }
+
+    private FileActivated(doc: TextDocumentItem): void
+    {
+      Log.Message($"LSP -> $$/fileActivatedNotification file=$(doc.Uri)", ConsoleColor.Cyan);
+      def fileId = _solution.GetFileId(doc.Uri);
+      foreach (project in _solution.GetProjects(fileId))
+        _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, FileVersion(doc.Version)));
     }
 
     private CancelRequest(p : CancelParams) : void
