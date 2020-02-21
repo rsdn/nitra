@@ -211,11 +211,11 @@ namespace Nitra.ClientServer.Server.Lsp
           Capabilities = ServerCapabilities() <-
           {
             TextDocumentSync = TextDocumentSyncOptions() <-
-            {
-              OpenClose = true;
-              Change = TextDocumentSyncKind.Incremental;
-              Save = SaveOptions() <- { IncludeText = false }
-            };
+              {
+                OpenClose = true;
+                Change = TextDocumentSyncKind.Incremental;
+                Save = SaveOptions() <- { IncludeText = false }
+              };
             DefinitionProvider = true;
             ReferencesProvider = true;
             DocumentHighlightProvider = true;
@@ -557,7 +557,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.CompletionItem() <-
         {
-          
+          Label = x.Text
         });
       }
       WriteResult(id, result);
@@ -599,14 +599,14 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
     private static Convert(c : TextDocumentContentChangeEvent) : FileChange
     {
-      def newText = c.Text;
-      def isEmpty = string.IsNullOrEmpty(newText);
-      if (c.RangeLength == 0 && !isEmpty)
-        FileChange.Insert(Convert(c.Range.Start), newText)
-      else if (c.RangeLength > 0 && isEmpty)
-        FileChange.Delete(Convert(c.Range))
-      else
-        FileChange.Replace(Convert(c.Range), newText)
+        def newText = c.Text;
+        def isEmpty = string.IsNullOrEmpty(newText);
+        if (c.RangeLength == 0 && !isEmpty)
+          FileChange.Insert(Convert(c.Range.Start), newText)
+        else if (c.RangeLength > 0 && isEmpty)
+          FileChange.Delete(Convert(c.Range))
+        else
+          FileChange.Replace(Convert(c.Range), newText)
     }
 
     private static Convert(p : Position) : UIPosition
