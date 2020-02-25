@@ -51,6 +51,11 @@ namespace DotNet
       }
     }
 
+    public override Contains(reference : string) : bool
+    {
+      _typeInfo.Scope.Contains(reference)
+    }
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def result = _typeInfo.Scope.Bind.[TSymbol](reference);
