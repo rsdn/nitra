@@ -182,6 +182,20 @@ namespace Nitra.Declarations
       updateTable(_caseInsensitiveTable);
     }
 
+    public override Contains(reference : string) : bool
+    {
+      def id = StringIndex.GetId(reference);
+
+      mutable lookupResult;
+      when (_caseSensitiveTable.TryGetValue(StringIndex.GetCaseSensitivePart(id), out lookupResult))
+        return !lookupResult.IsEmpty;
+
+      when (_caseInsensitiveTable.TryGetValue(StringIndex.GetCaseInsensitivePart(id), out lookupResult))
+        return !lookupResult.IsEmpty;
+
+        false
+      }
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def res = LightList();
@@ -200,7 +214,7 @@ namespace Nitra.Declarations
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def res = LightList();
-      
+
       mutable lookupResult;
       when (_caseSensitiveTable.TryGetValue(StringIndex.GetCaseSensitivePart(reference.Id), out lookupResult))
         foreach (x is TSymbol in lookupResult)
@@ -319,7 +333,7 @@ $<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
     {
       when (ambiguousSymbols.IsEmpty())
         return;
-      
+
       try
       {
         if (context == null)

@@ -22,7 +22,9 @@ namespace Nitra.Declarations
     public override AllSymbols : Seq[DeclarationSymbol] { get { [] } }
 
     public override GetAllSymbols() : Seq[DeclarationSymbol] { [] }
-    
+
+    public override Contains(reference : string) : bool { IgnoreParams(); false }
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       IgnoreParams();

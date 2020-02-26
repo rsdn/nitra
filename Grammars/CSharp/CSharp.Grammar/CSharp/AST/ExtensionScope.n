@@ -22,7 +22,7 @@ namespace DotNet
   {
     _scope : Scope;
     _ast   : QualifiedReference;
-    
+
     public this(scope : Scope, ast : QualifiedReference)
     {
       _scope = scope;
@@ -32,6 +32,11 @@ namespace DotNet
     public override GetAllSymbols() : Seq[DeclarationSymbol]
     {
       _scope.GetAllSymbols()
+    }
+
+    public override Contains(reference : string) : bool
+    {
+      _scope.Contains(reference)
     }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
