@@ -1,0 +1,112 @@
+﻿using Nitra.Internal;
+using Nitra.Serialization2;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+namespace Nitra.Declarations
+{
+  public class MemoizingScope : TableScopeBase
+  {
+    private mutable _count       : int;
+    private mutable _maxSymbolId : int;
+
+    private this()
+    {
+    }
+
+    public this(scope : Scope)
+    {
+      this(scope.GetAllSymbols())
+    }
+
+    public this(symbols : Seq[DeclarationSymbol])
+    {
+      foreach (symbol in symbols)
+        Add(symbol);
+    }
+
+    public override GetHashCode() : int
+    {
+      unchecked((_count << 16) ^ _maxSymbolId)
+    }
+
+    public override Equals(other : object) : bool
+    {
+      | other is MemoizingScope =>
+        this : object == other
+        || (_count == other._count
+          && _maxSymbolId == other._maxSymbolId
+          && TablesEqual(_caseSensitiveTable,   other._caseSensitiveTable)
+          && TablesEqual(_caseInsensitiveTable, other._caseInsensitiveTable))
+
+      | _ => false
+    }
+
+    private Add(symbol : DeclarationSymbol) : void
+    {
+      def declaration = symbol.FirstDeclarationOrDefault;
+      def (table, id) =
+        if (declaration != null && declaration.IgnoreCase)
+          (_caseInsensitiveTable, StringIndex.GetCaseInsensitivePart(symbol.NameId))
+        else
+          (_caseSensitiveTable, StringIndex.GetCaseSensitivePart(symbol.NameId));
+
+      mutable symbols;
+      if (table.TryGetValue(id, out symbols))
+      {
+        unless (symbols.Contains(symbol))
+        {
+          table[id] = symbol :: symbols;
+          _maxSymbolId = Math.Max(_maxSymbolId, symbol.Id);
+          ++_count;
+        }
+      }
+      else
+      {
+        table.Add(id, [symbol]);
+        _maxSymbolId = Math.Max(_maxSymbolId, symbol.Id);
+        ++_count;
+      }
+    }
+
+    protected override WriteDotHeader(builder : StringBuilder) : void
+    {
+      _ = builder.Append("MemoizingScope");
+    }
+
+    public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
+    {
+      when (metadataWriter.BeginWriteObject(this, writer))
+      {
+        foreach (symbol in GetAllSymbols())
+          metadataWriter.WriteObject(symbol, writer);
+        metadataWriter.WriteObject(null, writer);
+      }
+    }
+
+    public static Deserialize(reader : BinaryReader, metadataReader : MetadataReader) : this
+    {
+      def result = MemoizingScope();
+      def loop()
+      {
+        def symbol = metadataReader.ReadObject.[DeclarationSymbol](reader);
+        when (symbol != null)
+        {
+          result.Add(symbol);
+          loop()
+        }
+      }
+      loop();
+      result
+    }
+  }
+}

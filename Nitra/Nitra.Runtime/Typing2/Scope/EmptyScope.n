@@ -64,6 +64,11 @@ namespace Nitra.Declarations
       this
     }
 
+    public override Memoize() : Scope
+    {
+      this
+    }
+
     public override Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void
     {
       IgnoreParams();

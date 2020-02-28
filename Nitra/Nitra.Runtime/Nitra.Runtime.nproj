@@ -372,6 +372,9 @@
     <Compile Include="Typing2\Binding\StringIndex.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Typing2\Scope\MemoizingScope.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Typing2\Scope\EmptyScope.n">
       <SubType>Code</SubType>
     </Compile>
@@ -388,6 +391,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Typing2\Scope\TableScope.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Typing2\Scope\TableScopeBase.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Typing2\Scope\UnionScope.n">

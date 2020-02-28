@@ -1,0 +1,174 @@
+﻿using Nitra.Internal;
+using Nitra.Serialization2;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace Nitra.Declarations
+{
+  public abstract class TableScopeBase : Scope
+  {
+    protected _caseSensitiveTable   : Hashtable[int, list[DeclarationSymbol]] = Hashtable();
+    protected _caseInsensitiveTable : Hashtable[int, list[DeclarationSymbol]] = Hashtable();
+
+    public IsEmpty : bool { get { (_caseSensitiveTable.Count + _caseInsensitiveTable.Count) == 0 } }
+
+    public virtual Symbols : Seq[list[DeclarationSymbol]]
+    {
+      get
+      {
+        match (_caseSensitiveTable.Count, _caseInsensitiveTable.Count)
+        {
+          | (0, 0) => Enumerable.Empty()
+          | (_, 0) => _caseSensitiveTable.Values
+          | (0, _) => _caseInsensitiveTable.Values
+          | _      => _caseSensitiveTable.Values.Concat(_caseInsensitiveTable.Values)
+        }
+      }
+    }
+
+    public override Memoize() : Scope
+    {
+      this
+    }
+
+    public override GetAllSymbols() : Seq[DeclarationSymbol]
+    {
+      foreach (lst in _caseSensitiveTable.Values)
+        foreach (s in lst)
+          yield s;
+
+      foreach (lst in _caseInsensitiveTable.Values)
+        foreach (s in lst)
+          yield s;
+    }
+
+    public override Contains(reference : string) : bool
+    {
+      def id = StringIndex.GetId(reference);
+
+      mutable lookupResult;
+      when (_caseSensitiveTable.TryGetValue(StringIndex.GetCaseSensitivePart(id), out lookupResult))
+        return !lookupResult.IsEmpty;
+
+      when (_caseInsensitiveTable.TryGetValue(StringIndex.GetCaseInsensitivePart(id), out lookupResult))
+        return !lookupResult.IsEmpty;
+
+        false
+    }
+
+    public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
+    {
+      def res = LightList();
+
+      foreach (symbols in _caseSensitiveTable.Values)
+      foreach (symbol is TSymbol when isMatch(symbol) in symbols)
+        res.Add(symbol);
+
+      foreach (symbols in _caseInsensitiveTable.Values)
+      foreach (symbol is TSymbol when isMatch(symbol) in symbols)
+        res.Add(symbol);
+
+      res.ToBindResult()
+    }
+
+    public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
+    {
+      def res = LightList();
+
+      mutable lookupResult;
+      when (_caseSensitiveTable.TryGetValue(StringIndex.GetCaseSensitivePart(reference.Id), out lookupResult))
+        foreach (x is TSymbol in lookupResult)
+          res.Add(x);
+
+      when (_caseInsensitiveTable.TryGetValue(StringIndex.GetCaseInsensitivePart(reference.Id), out lookupResult))
+        foreach (x is TSymbol in lookupResult)
+          res.Add(x);
+
+      res.ToBindResult()
+    }
+
+    public override ToString() : string
+    {
+      $<#$(GetType().Name)($(GetAllSymbols().Count()))]#>
+    }
+
+    public override ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], _edges : List[string]) : void
+    {
+      def id = nodeToIdMap.GetObjectId(this);
+      def symbols = AllSymbols.ToArray();
+
+      // make DOT HTML table for symbols
+
+      def maxCols = 6;
+      def last = symbols.Length - 1;
+      mutable cols = Math.Min(maxCols, symbols.Length);
+      mutable rows = symbols.Length / cols;
+      when (symbols.Length % cols != 0)
+        rows++;
+
+      def builder = StringBuilder(
+$<#<table border='0' cellspacing='0' cellpadding='3' bgcolor='lightskyblue'>
+<tr>
+  <td colspan="$cols" align="center" bgcolor="WhiteSmoke" border='1'>#>);
+      WriteDotHeader(builder);
+      _ = builder.Append(<#
+  </td>
+</tr>#>);
+      for (mutable row = 0; row < rows; row++)
+      {
+        _ = builder.Append("  <tr>\r\n");
+        for (mutable col = 0; col < cols; col++)
+        {
+          def i = row * cols + col;
+          if (i > last)
+            _ = builder.Append("    <td border='1'></td>\r\n");
+          else
+          {
+            def symbol  = symbols[i];
+            def content = if (symbol.IsKindEvaluated) "<FONT COLOR='blue'>" + symbol.Kind + "</FONT><BR/>" + AstUtils.XmlEscape(symbol.InitialName) else AstUtils.XmlEscape(symbol.InitialName);
+            _ = builder.Append($"    <td border='1'>$content</td>\r\n");
+          }
+        }
+        _ = builder.Append("  </tr>\r\n");
+      }
+
+      _ = builder.Append(<#
+</table>#>);
+
+      nodes.Add($<#Obj_$id [shape=none label=<$builder>]#>);
+    }
+
+    protected abstract WriteDotHeader(builder : StringBuilder) : void;
+
+    protected static TablesEqual(a : Hashtable[int, list[DeclarationSymbol]], b : Hashtable[int, list[DeclarationSymbol]]) : bool
+    {
+      def listsEqual(a : list[DeclarationSymbol], b : list[DeclarationSymbol]) : bool
+      {
+        | ([], []) => true
+        | (h1 :: t1, h2 :: t2) => (h1.Equals(h2) || (t2.Contains(h1) && t1.Contains(h2))) && listsEqual(t1, t2)
+        | (_, _) => false
+      }
+
+      when (a.Count != b.Count)
+        return false;
+
+      foreach (pair in a)
+      {
+        mutable otherValue;
+        unless (b.TryGetValue(pair.Key, out otherValue) && listsEqual(pair.Value, otherValue))
+          return false;
+      }
+
+      true
+    }
+  }
+}
