@@ -66,6 +66,11 @@ namespace Nitra.Declarations
       FilteringScope(this, predicate)
     }
 
+    public virtual Memoize() : Scope
+    {
+      MemoizingScope(this)
+    }
+
     public abstract Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void;
 
     public static IsNullOrEmpty(scope : Scope) : bool
