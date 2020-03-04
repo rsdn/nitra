@@ -66,8 +66,7 @@ namespace Nitra
       def env = context.GetNemerleEnvironment();
       def simpleParse(parseTree : Nitra.ParseTree) : PExpr
       {
-        def text = parseTree.Location.GetText();
-        MainParser.ParseExpr(env, text, parseTree.NLocation())
+        MainParser.ParseExpr(env, parseTree.NLocation())
       }
       simpleParse(parseTree)
     }
