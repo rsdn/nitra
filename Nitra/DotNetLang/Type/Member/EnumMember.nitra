@@ -9,7 +9,7 @@ using SCG = System.Collections.Generic;
 
 namespace DotNet
 {
-  declaration EnumMember : BindableAst
+  declaration EnumMember : BindableAst, TypedDeclaration
   {
     symbol
     {
@@ -23,6 +23,7 @@ namespace DotNet
     in DeclaredIn : EnumSymbol;
 
     Symbol.DeclaredIn    = DeclaredIn;
+    Symbol.Type          = DeclaredIn;
     ContainingTable      = DeclaredIn.MemberTable;
     Attributes.NameScope = Scope;
 

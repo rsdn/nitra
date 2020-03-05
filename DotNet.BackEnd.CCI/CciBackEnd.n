@@ -470,6 +470,8 @@ namespace Nitra.BackEnd.Cci
               //field.Flags = flags;
               unless (field.IsDeclaredInEvaluated)
                 field.DeclaredIn = declaredIn :> EnumSymbol;
+              unless (field.IsTypeEvaluated)
+                field.Type = declaredIn :> EnumSymbol;
               field
             }
             else
