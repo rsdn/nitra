@@ -33,7 +33,7 @@ namespace Nitra.VisualStudio
     public    NitraClient                              Client            { get; private set; }
     public    Hint                                     Hint              { get; } = new Hint() { WrapWidth = 900.1 };
     public    ImmutableHashSet<string>                 Extensions        { get; }
-                                                       
+
     public    bool                                     IsLoaded          { get; private set; }
     public    bool                                     IsSolutionCreated { get; private set; }
     public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
@@ -194,11 +194,13 @@ namespace Nitra.VisualStudio
       var fileModel = FindFileModel(oldFileId);
       if (fileModel != null)
       {
+        var oldName = fileModel.FullPath;
         _filIdToFileModelMap.Remove(fileModel.Id);
         fileModel.Rename(newFileId, newFilePath);
         _filIdToFileModelMap.Add(fileModel.Id, fileModel);
+        Logging.Log.Message($"oldFilePath old: Id={oldFileId} Name='{oldName}' new: Id={newFileId} Name='{newFilePath}'");
+        Client.Send(new ClientMessage.FileRenamed(oldFileId, newFileId, newFilePath));
       }
-      Client.Send(new ClientMessage.FileRenamed(oldFileId, newFileId, newFilePath));
     }
 
     internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version, string contentOpt)

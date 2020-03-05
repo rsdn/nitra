@@ -226,11 +226,12 @@ namespace Nitra.VisualStudio
       var newFileId = new FileId(_stringManager.GetId(newFilePath));
       var oldFileId = new FileId(_stringManager.GetId(oldFilePath));
 
+      Log.Message($"tr: ItemRenamed(newFileId={newFileId} oldFileId={oldFileId} newFilePath='{newFilePath}' oldFilePath='{oldFilePath}' projectId={projectId} projectPath='{projectPath}')");
+
       foreach (var server in _servers)
         if (server.IsSupportedExtension(ext))
           server.FileRenamed(oldFileId, newFileId, newFilePath);
 
-      Log.Message($"tr: FileAdded(FileName='{newFilePath}' id={newFileId} projectPath='{projectPath}')");
     }
 
     private void PrjItemsEvents_ItemRemoved(ProjectItem projectItem)
