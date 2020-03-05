@@ -624,11 +624,13 @@ namespace Nitra.BackEnd.Dnlib
       if (fieldDef.DeclaringType.IsEnum)
       {
         unless (fieldDef.IsLiteral)
-          return null; // TODO: handle enum backing type field 'value__'
+          return null;
 
         def symbol = ExternalEnumFieldDeclaration(name, fieldDef).DefineSymbol(declaredIn.MemberTable);
         unless (symbol.IsDeclaredInEvaluated)
           symbol.DeclaredIn = declaredIn :> EnumSymbol;
+        unless (symbol.IsTypeEvaluated)
+          symbol.Type = declaredIn :> EnumSymbol;
         FinalizeMember(symbol, fieldDef, context)
       }
       else
