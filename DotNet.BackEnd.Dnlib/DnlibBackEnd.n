@@ -1,4 +1,6 @@
-﻿using DotNet;
+﻿using dnlib.DotNet;
+
+using DotNet;
 
 using Nemerle;
 using Nemerle.Assertions;
@@ -13,26 +15,35 @@ using Nitra.Declarations;
 using Nitra.Internal;
 using Nitra.ProjectSystem;
 
-using dnlib.DotNet;
-
 using System;
-using System.IO;
-using System.Diagnostics;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-
 using System.Threading;
+
+using DN  = dnlib.DotNet;
 using NRB = Nitra.Declarations;
+using PE  = dnlib.PE;
 using SCG = System.Collections.Generic;
-using DN = dnlib.DotNet;
-using PE = dnlib.PE;
+using SR  = System.Reflection;
 
 namespace Nitra.BackEnd.Dnlib
 {
   public partial class DnlibBackEnd : DotNet.IDotNetBackEnd
   {
+    static this()
+    {
+      // HACK: Switching dnlib from memory mapped files to using byte array.
+      def type = typeof(ModuleDefMD).Assembly.GetType("dnlib.IO.MemoryMappedDataReaderFactory");
+      def canTryWindows = type.GetField("canTryWindows", SR.BindingFlags.Static | SR.BindingFlags.NonPublic);
+      canTryWindows.SetValue(null, false);
+      def canTryUnix = type.GetField("canTryUnix", SR.BindingFlags.Static | SR.BindingFlags.NonPublic);
+      canTryUnix.SetValue(null, false);
+    }
+  
     [Record, StructuralEquality]
     class AssemblyIdentity
     {
