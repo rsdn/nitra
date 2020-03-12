@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="BugReporterDir" Type="System.String" Scope="User">
-      <Value Profile="(Default)">\\tis-dfs.avp.ru\Autotests\KIS\Temp\VladD2\TDL\Exceptions</Value>
+      <Value Profile="(Default)">%TEMP%</Value>
     </Setting>
   </Settings>
 </SettingsFile>
