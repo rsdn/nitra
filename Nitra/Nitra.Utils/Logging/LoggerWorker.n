@@ -19,27 +19,27 @@ namespace Nitra.Logging
 {
   public partial module Log
   {
-    class LoggerWorker : IDisposable
+    public LogFilePath : string { get; private set; }
+
+    private class LoggerWorker : IDisposable
     {
       public static SaveLogsCount = 3;
 
-      _queue   : BlockingCollection[string * ConsoleColor * bool * int * DateTime] = BlockingCollection();
-      _logFile : StreamWriter;
-      _date    : string;
-      _name    : string;
-
-      _thread  : Thread;
-      _cts     : CancellationTokenSource = CancellationTokenSource();
+      _queue       : BlockingCollection[string * ConsoleColor * int * DateTime];
+      _logFile     : StreamWriter;
+      _date        : string;
+      _thread      : Thread;
+      _cts         : CancellationTokenSource = CancellationTokenSource();
+      _bugReporter : BugReporter;
 
       public this(name : string)
       {
         assert2(_logFile == null, "Only one logger instance can be created!");
-        _name = name;
         def programDataPath  = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         _date                = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
         def logDir           = Path.Combine(programDataPath, "RSDN", "Nitra");
         def procId           = Process.GetCurrentProcess().Id;
-        def logPath          = Path.Combine(logDir, $"$name-$_date-PID-$procId.html");
+        def fileName         = $"$name-$_date-PID-$procId";
         if (Directory.Exists(logDir))
         {
           def files         = Directory.GetFiles(logDir, name + "-*.html");
@@ -56,16 +56,20 @@ namespace Nitra.Logging
         }
         else
           _ = Directory.CreateDirectory(logDir);
+        def logPath          = Path.Combine(logDir, fileName + ".html");
+        LogFilePath          = logPath;
         _logFile             = StreamWriter(logPath);
+        _queue               = BlockingCollection();
+        _bugReporter         = BugReporter(fileName, _cts.Token);
         _thread              = Thread(ParseWorkerMain);
         _thread.Priority     = ThreadPriority.BelowNormal;
         _thread.IsBackground = true;
         _thread.Start();
       }
 
-      public Log(msg : string, color : ConsoleColor, lineBreak : bool) : void
+      public Log(msg : string, color : ConsoleColor) : void
       {
-        _queue.Add((msg, color, lineBreak, Thread.CurrentThread.ManagedThreadId, DateTime.Now));
+        _queue?.Add((msg, color, Thread.CurrentThread.ManagedThreadId, DateTime.Now));
       }
 
       ParseWorkerMain() : void
@@ -93,15 +97,13 @@ namespace Nitra.Logging
         try
         {
           _logFile.WriteLine(header);
-          foreach((msg, color, lineBreak, threadId, time) in _queue.GetConsumingEnumerable(_cts.Token))
+          foreach((msg, color, threadId, time) in _queue.GetConsumingEnumerable(_cts.Token))
           {
             try
               if (msg == null && color :> int == -1)
                 _logFile.Flush();
-              else if (lineBreak)
-                this.WriteLine(threadId, time, msg, color);
               else
-                this.Write(msg, color);
+                this.WriteLine(threadId, time, msg, color);
             catch
             {
               | e is OperationCanceledException => Log.Canceled(e);
@@ -146,7 +148,7 @@ namespace Nitra.Logging
         _logFile.Write(<#<span style="color:#>);
         _logFile.Write(TranslateColor(color));
         _logFile.Write(<#">#>);
-        _logFile.Write(threadId);
+        _logFile.Write(threadId.ToString("D4"));
         _logFile.Write(time.ToString("│HH:mm:ss.ffffff│"));
         _logFile.Write(msg);
         _logFile.WriteLine(<#</span>#>);
@@ -155,39 +157,13 @@ namespace Nitra.Logging
         Console.ForegroundColor = color;
         Console.WriteLine(msg);
         Console.ResetColor();
-      }
-
-      WriteLine(msg : string, color : ConsoleColor) : void
-      {
-        _logFile.Write(<#<span style="color:#>);
-        _logFile.Write(TranslateColor(color));
-        _logFile.Write(<#">#>);
-        _logFile.Write(msg);
-        _logFile.WriteLine(<#</span>#>);
-        when (_queue.Count == 0)
-          _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.WriteLine(msg);
-        Console.ResetColor();
-      }
-
-      Write(msg : string, color : ConsoleColor) : void
-      {
-        _logFile.Write(<#<span style="color:#>);
-        _logFile.Write(TranslateColor(color));
-        _logFile.Write(<#">#>);
-        _logFile.Write(msg);
-        _logFile.Write(<#</span>#>);
-        when (_queue.Count == 0)
-          _logFile.Flush();
-        Console.ForegroundColor = color;
-        Console.Write(msg);
-        Console.ResetColor();
+        when (color == ConsoleColor.Red)
+          _bugReporter?.LogException(threadId, time, msg);
       }
 
       public Flush() : void
       {
-        _queue.Add((null, -1 :> ConsoleColor, true, 0, DateTime()));
+        _queue.Add((null, -1 :> ConsoleColor, 0, DateTime()));
       }
 
       public Dispose() : void
@@ -198,7 +174,8 @@ namespace Nitra.Logging
           _cts.Dispose();
         }
         catch ();
-        _thread.Join();
+        _bugReporter?.Dispose();
+        _thread?.Join();
       }
     } // class LoggerWorker
   } // module Log

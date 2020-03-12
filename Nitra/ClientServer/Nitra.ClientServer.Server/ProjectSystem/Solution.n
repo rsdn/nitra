@@ -22,6 +22,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
   internal class Solution : NSP.Solution, IDisposable
   {
             _projects        : Hashtable[int, Project] = Hashtable();
+            _failedProjects  : HashSet[int] = HashSet();
+            _failedFiles     : HashSet[int] = HashSet();
             _files           : Hashtable[int, list[File]]    = Hashtable();
     public  Path             : string     { get; }
     public  Id               : SolutionId { get; }
@@ -38,6 +40,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public IsOpened       : bool    { get; private set; }
     public Item[projectId : int] : Project { get { GetProject(projectId) } }
 
+    /// Return true in first time.
+    internal SetProjectFailedState(id : int) : bool
+    {
+      _failedProjects.Add(id);
+    }
+
+    /// Return true in first time.
+    internal SetFileFailedState(id : int) : bool
+    {
+      _failedFiles.Add(id);
+    }
+
     public GetProject(id : int) : Project
     {
       assert2(!IsDisposed);
@@ -45,7 +59,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (_projects.TryGetValue(id, out value))
         value
       else
-        throw ArgumentException($"Can't find a project with id=$id.", "id")
+      {
+        if (_failedProjects.Add(id))
+          throw ArgumentException($"Can't find a project with id=$id.", "id")
+        else
+          throw FailedStateException();
+      }
     }
 
     public GetFiles(id : int) : list[File]
@@ -55,7 +74,12 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (_files.TryGetValue(id, out file))
         file
       else
-        throw ArgumentException($"Can't find file with id=$id.", "id")
+      {
+        if (_failedFiles.Add(id))
+          throw ArgumentException($"Can't find file with id=$id.", "id");
+        else
+          throw FailedStateException();
+      }
     }
 
     public GetFile(projectId : ProjectId, id : int) : File

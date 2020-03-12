@@ -19,7 +19,7 @@ namespace Nitra.VisualStudio.Utils
 
     public override void Write(string message)
     {
-      Log.Write(message, ConsoleColor.Gray);
+      Log.WriteLine(message, ConsoleColor.Gray);
     }
 
     public override void WriteLine(string message)
@@ -44,10 +44,10 @@ namespace Nitra.VisualStudio.Utils
         Log.WriteLine("Assert failed!", ConsoleColor.Red);
       else
       {
-        Log.Write("Assert failed: ", ConsoleColor.Red);
+        Log.WriteLine("Assert failed: ", ConsoleColor.Red);
         Log.WriteLine(message, ConsoleColor.Gray);
       }
-      Log.Write(stackTrace.ToString(), ConsoleColor.DarkRed);
+      Log.WriteLine(stackTrace.ToString(), ConsoleColor.DarkRed);
     }
 
     private static ConsoleColor DeduceColor(string message)

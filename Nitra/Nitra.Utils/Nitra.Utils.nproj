@@ -55,6 +55,12 @@
     </MacroReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logging\BugReporter.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Logging\FailedStateException.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Logging\Log.n">
       <SubType>Code</SubType>
     </Compile>
@@ -67,14 +73,22 @@
     <Folder Include="Logging\" />
     <Folder Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="app.config">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Properties\Settings.settings">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
   <!--
-		To modify your build process, add your task inside one of the targets below and uncomment it. 
-		Other similar extension points exist, see Microsoft.Common.targets.
+    To modify your build process, add your task inside one of the targets below and uncomment it. 
+    Other similar extension points exist, see Microsoft.Common.targets.
 
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+    <Target Name="BeforeBuild">
+    </Target>
+    <Target Name="AfterBuild">
+    </Target>
+    -->
 </Project>

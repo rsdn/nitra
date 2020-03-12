@@ -23,9 +23,11 @@ module Program
   {
     Log.Init("Nitra.ClientServer.Server");
     Log.Message("Process ID: " + Process.GetCurrentProcess().Id);
-#if !NOSERVERWINDOW
-    //assert2(false, "Start debugger");
-#endif
+
+    when ("true".Equals(Environment.GetEnvironmentVariable("NitraServerDebug"), StringComparison.OrdinalIgnoreCase))
+    {
+      assert2(false, "Start debugger");
+    }
 
     when (args.Length != 1)
     {
