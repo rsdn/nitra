@@ -645,6 +645,29 @@ namespace Nitra.VisualStudio
         foreach (var server in _servers)
           server.ProjectLoaded(GetProjectId(project));
       }
+      else if (_backgroundLoading == SolutionLoadingSate.Loaded) // reloading or adding new project
+      {
+        try
+        {
+          ScanReferences(project);
+        }
+        catch (Exception ex)
+        {
+          Log.Exception(ex);
+        }
+
+        try
+        {
+          ScanFiles(project);
+        }
+        catch (Exception ex)
+        {
+          Log.Exception(ex);
+        }
+
+        foreach (var server in _servers)
+          server.ProjectLoaded(GetProjectId(project));
+      }
     }
 
     void SolutionEvents_OnBeforeCloseProject(object sender, CloseProjectEventArgs e)
