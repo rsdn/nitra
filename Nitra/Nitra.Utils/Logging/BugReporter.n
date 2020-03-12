@@ -31,7 +31,7 @@ namespace Nitra.Logging
       public this(name : string, cancellationToken : CancellationToken)
       {
         _cancellationToken = cancellationToken;
-        def logDir = Path.Combine(Settings.Default.BugReporterDir, Environment.UserName, Environment.MachineName);
+        def logDir = Path.Combine(Environment.ExpandEnvironmentVariables(Settings.Default.BugReporterDir), Environment.UserName, Environment.MachineName);
 
         try
         {
