@@ -20,7 +20,8 @@ namespace Nitra.Logging
 
     public Exception(e : Exception) : void
     {
-      Message("Exception: " + e, ConsoleColor.Red);
+      | FailedStateException => ()
+      | _ => Message("Exception: " + e, ConsoleColor.Red);
     }
 
     public Canceled(e : OperationCanceledException) : void
@@ -46,12 +47,7 @@ namespace Nitra.Logging
 
     public WriteLine(msg : string, color : ConsoleColor) : void
     {
-      _logger.Log(msg, color, lineBreak=true);
-    }
-
-    public Write(msg : string, color : ConsoleColor) : void
-    {
-      _logger.Log(msg, color, lineBreak=false);
+      _logger.Log(msg, color);
     }
 
     public Flush() : void

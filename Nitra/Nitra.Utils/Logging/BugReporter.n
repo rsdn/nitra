@@ -1,0 +1,114 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using Nitra.Logging;
+
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+
+namespace Nitra.Logging
+{
+  public partial module Log
+  {
+    private class BugReporter : IDisposable
+    {
+      public static SaveLogsCount = 5;
+
+      _queue             : BlockingCollection[string * int * DateTime] = BlockingCollection();
+      _thread            : Thread;
+      _logFile           : StreamWriter;
+      _cancellationToken : CancellationToken;
+
+      public this(name : string, cancellationToken : CancellationToken)
+      {
+        _cancellationToken = cancellationToken;
+        def logDir = Path.Combine(Settings.Default.BugReporterDir, Environment.UserName, Environment.MachineName);
+
+        try
+        {
+          _ = Directory.CreateDirectory(logDir);
+          def files         = Directory.GetFiles(logDir, name + "-*.txt");
+          def filesToDelete = files.OrderBy(f => f).Take(Math.Max(files.Length - SaveLogsCount, 0));
+          foreach (file in filesToDelete)
+          {
+            try
+            {
+              Debug.WriteLine("Delete: " + file);
+              File.Delete(file);
+            }
+            catch { _ => () }
+          }
+          def logPath          = Path.Combine(logDir, name + ".txt");
+          _logFile             = StreamWriter(logPath);
+          _queue               = BlockingCollection();
+          _thread              = Thread(BugReporterWorkerMain);
+          _thread.Priority     = ThreadPriority.Lowest;
+          _thread.IsBackground = true;
+          _thread.Start();
+        }
+        catch
+        {
+          | e => Debug.WriteLine(e);
+        }
+      }
+
+      public LogException(threadId : int, time : DateTime, msg : string) : void
+      {
+        _queue?.Add((msg, threadId, time));
+      }
+
+      BugReporterWorkerMain() : void
+      {
+        def thread            = Thread.CurrentThread;
+        thread.Name           = "BugReporter";
+        thread.CurrentCulture = CultureInfo.InvariantCulture;
+
+        try
+        {
+          foreach((msg, threadId, time) in _queue.GetConsumingEnumerable(_cancellationToken))
+          {
+            try
+              if (msg == null)
+                _logFile.Flush();
+              else
+                this.WriteLine(threadId, time, msg);
+            catch
+            {
+              | e => Debug.WriteLine(e);
+            }
+          }
+        }
+        catch
+        {
+          | _ is OperationCanceledException => Debug.WriteLine("BugReporter Shootdown");
+          | e => Debug.WriteLine(e);
+        }
+        finally
+        {
+          _logFile.Close();
+        }
+      }
+
+      WriteLine(threadId : int, time : DateTime, msg : string) : void
+      {
+        _logFile.Write(threadId.ToString("D4"));
+        _logFile.Write(time.ToString("│yy-MM-dd HH:mm:ss.ffffff│"));
+        _logFile.WriteLine(msg);
+      }
+
+      public Dispose() : void
+      {
+        _thread?.Join();
+      }
+    }
+  }
+}

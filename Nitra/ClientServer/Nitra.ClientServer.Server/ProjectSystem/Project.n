@@ -55,7 +55,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public  SemanticActions                          : ConcurrentQueue[Action[CancellationToken, SolutionId, ImmutableArray[IAst * bool]]] = ConcurrentQueue();
     mutable _semanticResult                          : ImmutableArray[FileEvalPropertiesData];
     public  IsCompleteWord                           : bool { get; set; }
-    
+
 
     internal this(parent : Solution, fullPath : string, id : ProjectId, config : Config, parseQueue : BlockingCollection[ParserMessage], semanticAnalysisQueue : BlockingCollection[ParserMessage], router : Router)
     {
@@ -84,8 +84,15 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         catch
         { | e is InvalidCastException =>
           def serverItf = typeof(IProjectSupport);
+          mutable objectItfAsmVar;
+          mutable serverItfAsmVar;
+          def info = ServerUtils.MakeIntarfaceMismatchInfo(obj, serverItf, out objectItfAsmVar, out serverItfAsmVar);
+          parent.SetProjectFailedState(id);
+          def text = $"The $(ps.Caption) VS Extension depend on $objectItfAsmVar of NitraCommonVSIX extension but installed $serverItfAsmVar. Try to reinstall both extensions. See the details in the log file: '$(Log.LogFilePath)'.";
+          def msg = CompilerMessage(CompilerMessageType.FatalError, Location(), text, 0, CompilerMessageSource.ProjectLoading, []);
+          router.SendAsyncResponse(AsyncServerMessage.ProjectLoadingMessages(FileId.Invalid, FileVersion.Invalid, parent.Id, id, array[msg]));
           throw InvalidCastException($<#Unable to cast object of type '$(ps.TypeFullName)' to '$(serverItf.FullName)'.
-  $(ServerUtils.MakeIntarfaceMismatchInfo(obj, serverItf))#>, e);
+  $info#>, e);
         }
       }
 
@@ -194,7 +201,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(_expectsToBuildAst >= 0);
 
       Log.Message("AstCreated(_expectsToBuildAst=" + _expectsToBuildAst + ")");
-      
+
       TryStartSemanticAnalysis(file, completeWordPosOpt, parseResultOpt);
     }
 
@@ -223,7 +230,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         IsSemanticAvailable = true;
         return;
       }
-        
+
       when (IsAllAstCreated && SemanticAvailableForAllDependsOnProjects)
       {
         CancelSemanticAnalysisCancellation();
@@ -246,8 +253,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
               {
                 | e is OperationCanceledException => Log.Canceled(e); null
                 | e =>
-                Log.Exception(e);
-                Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
+                  Log.Exception(e);
+                  Router.SendAsyncResponse(AsyncServerMessage.RefreshReferencesFailed(FileId.Invalid, FileVersion.Invalid, Parent.Id, e.ToString()));
                 null
               };
 
@@ -428,7 +435,13 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       if (_files.TryGetValue(id, out value))
         value
       else
-        throw ArgumentException($"Can't find file with id=$id.", "id")
+      {
+        if (Parent.SetFileFailedState(id))
+          throw ArgumentException($"Can't find file with id=$id.", "id")
+        else
+          throw FailedStateException();
+      }
+
     }
 
     public TryGetFile(id : int) : File
@@ -474,7 +487,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       when (IsDisposed)
         return;
-        
+
       try
       {
         IsSemanticAvailable = false;
@@ -499,7 +512,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       Router.AddMessage(RouterAnswerMessage.ProjectReload(Id));
     }
-    
+
     [HandleProcessCorruptedStateExceptions]
     private OnReferenceChanged(_sender : object, _e : FileSystemEventArgs) : void
     {
@@ -587,7 +600,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         _libMap[r.Path] = _libs.Count;
         AddWatcher(r.Path);
         _libs.Add(r);
-        
+
         when (IsOpened)
           RefrashReference();
       }
@@ -599,7 +612,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(separatorPos > 0);
       def fullPath = name.Substring(separatorPos + 1, name.Length - separatorPos - 1);
       def fullPath = fullPath;
-      
+
       def matchLibReference(libRef : NSP.LibReference) : bool
       {
         def fullPath = fullPath;

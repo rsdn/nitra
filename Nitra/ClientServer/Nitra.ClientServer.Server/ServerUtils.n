@@ -103,13 +103,13 @@ namespace Nitra.ClientServer.Server
 
       Log.Message(msg3, color);
     }
-    
+
     public LogException(asyncResponseWriter : IO.BinaryWriter, e : Exception) : void
     {
       Log.Exception(e);
 
       def msg = AsyncServerMessage.Exception(FileId.Invalid, FileVersion.Invalid, SolutionId.Invalid, e.ToString());
-      
+
       try
         lock (asyncResponseWriter)
           msg.Serialize(asyncResponseWriter);
@@ -159,18 +159,18 @@ namespace Nitra.ClientServer.Server
       }
     }
 
-    public MakeIntarfaceMismatchInfo(obj : object, serverItf : Type) : string
+    public MakeIntarfaceMismatchInfo(obj : object, serverItf : Type, objectItfAsmVar : out Version, serverItfAsmVar : out Version) : string
     {
       def itfFullName       = serverItf.FullName;
       def serverItfAsmPath  = serverItf.Assembly.Location;
-      def serverItfAsmVar   = serverItf.Assembly.GetName().Version;
       def serverItfFullName = serverItf.FullName;
       def objectType        = obj.GetType();
       def objectFullName    = objectType.FullName;
       def objectAsmPath     = objectType.Assembly.Location;
       def objectItf         = obj.GetType().GetInterface(serverItfFullName);
       def objectItfAsmPath  = objectItf.Assembly.Location;
-      def objectItfAsmVar   = objectItf.Assembly.GetName().Version;
+      objectItfAsmVar       = objectItf.Assembly.GetName().Version;
+      serverItfAsmVar       = serverItf.Assembly.GetName().Version;
       $<#The object $objectFullName from: "$objectAsmPath".
     Information about $itfFullName:
       Implemented in the object:
