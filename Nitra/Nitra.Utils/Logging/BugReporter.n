@@ -28,7 +28,7 @@ namespace Nitra.Logging
       _logFile           : StreamWriter;
       _cancellationToken : CancellationToken;
 
-      public this(name : string, cancellationToken : CancellationToken)
+      public this(name : string, prefix : string, cancellationToken : CancellationToken)
       {
         _cancellationToken = cancellationToken;
         def logDir = Path.Combine(Environment.ExpandEnvironmentVariables(Settings.Default.BugReporterDir), Environment.UserName, Environment.MachineName);
@@ -36,7 +36,7 @@ namespace Nitra.Logging
         try
         {
           _ = Directory.CreateDirectory(logDir);
-          def files         = Directory.GetFiles(logDir, name + "-*.txt");
+          def files         = Directory.GetFiles(logDir, prefix + "-*.txt");
           def filesToDelete = files.OrderBy(f => f).Take(Math.Max(files.Length - SaveLogsCount, 0));
           foreach (file in filesToDelete)
           {
