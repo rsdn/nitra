@@ -242,7 +242,15 @@ namespace Nitra.ClientServer.Server
 
         _mainQueue.Add(RouterAnswerMessage.SemanticAnalysisFinished(projectId, cancellationToken, files, completeWordFileIdOpt, completeWordPosOpt));
 
-        unless (isCompleteWord)
+        def hasParseErrors(files : ImmutableArray[FileEvalPropertiesData]) : bool
+        {
+          foreach (file when file.HasParseErrors in files)
+            return true;
+
+          false
+        }
+
+        when (!isCompleteWord && hasParseErrors(files))
         {
           def empty = array(0);
           for (mutable i = 0; i < files.Length; i++)

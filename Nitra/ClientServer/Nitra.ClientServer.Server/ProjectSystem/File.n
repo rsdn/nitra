@@ -334,7 +334,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       {
         CreateVisualInfo(parseResult);
         SendCompilerMessages(parseResult);
-        SendSemanticAnalysisMessages();
+        unless (HasParseError(parseResult))
+          SendSemanticAnalysisMessages();
       }
 
       TryPrettyPrint();
@@ -342,6 +343,16 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
       when (Parent.IsSemanticAvailable)
         Parent.ParseQueue.Add(ParserMessage.CreateSymbolsHighlighting(Parent.Parent.Id, Parent.Id, this.FileId, this.FileVersion, Ast, -1));
+    }
+
+    static HasParseError(parseResult : IParseResult) : bool
+    {
+      GetParseErrorCount(parseResult) > 0
+    }
+
+    static GetParseErrorCount(parseResult : IParseResult) : int
+    {
+      (parseResult.CompilerMessages :> Nitra.ProjectSystem.CompilerMessageList).Count(m => m.Type == CompilerMessageType.Error || m.Type == CompilerMessageType.FatalError)
     }
 
     SendSemanticAnalysisMessages() : void

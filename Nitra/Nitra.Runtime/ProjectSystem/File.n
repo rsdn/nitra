@@ -111,7 +111,7 @@ namespace Nitra.ProjectSystem
 
     public virtual GetEvalPropertiesData() : FileEvalPropertiesData
     {
-      FileEvalPropertiesData(this.FullName, this.Name, this.Id, this.Version, this.Ast, this.Statistics?.Typing, this.IsActive)
+      FileEvalPropertiesData(this.FullName, this.Name, this.Id, this.Version, this.Ast, this.Statistics?.Typing, this.IsActive, HasParseError)
     }
 
     public static GetEvalPropertiesData(files : Seq[File]) : ImmutableArray[FileEvalPropertiesData]
@@ -120,6 +120,16 @@ namespace Nitra.ProjectSystem
       foreach (file in files)
         buffer.Add(file.GetEvalPropertiesData());
       buffer.ToImmutable();
+    }
+
+    public HasParseError : bool
+    {
+      get { GetParseErrorCount(ParseResult) > 0 }
+    }
+
+    static GetParseErrorCount(parseResult : IParseResult) : int
+    {
+      (parseResult.CompilerMessages :> Nitra.ProjectSystem.CompilerMessageList).Count(m => m.Type == CompilerMessageType.Error || m.Type == CompilerMessageType.FatalError)
     }
   }
 
