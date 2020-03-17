@@ -96,14 +96,18 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       assert2(!IsDisposed);
       mutable files;
       if (_files.TryGetValue(file.Id, out files))
+      {
         files ::= file;
+        _files[file.Id] = files;
+      }
       else
         _files.Add(file.Id, [file]);
     }
 
     internal _N_OnFileRemoved(id : int) : void
     {
-      assert2(!IsDisposed);
+      when(IsDisposed)
+        return;
       def files = _files[id];
       def filteredFiles = files.Filter(f => f.Id != id);
       if (filteredFiles is [])
@@ -153,14 +157,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (IsDisposed)
         return;
 
+      IsDisposed = true;
+
       foreach (v in _projects.Values)
         v.Dispose();
 
       IsOpened = false;
       _files.Clear();
       _projects.Clear();
-
-      IsDisposed = true;
     }
   }
 }

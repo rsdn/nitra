@@ -60,7 +60,7 @@ namespace Nitra.Logging
         LogFilePath          = logPath;
         _logFile             = StreamWriter(logPath);
         _queue               = BlockingCollection();
-        _bugReporter         = BugReporter(fileName, _cts.Token);
+        _bugReporter         = BugReporter(fileName, name, _cts.Token);
         _thread              = Thread(ParseWorkerMain);
         _thread.Priority     = ThreadPriority.BelowNormal;
         _thread.IsBackground = true;
