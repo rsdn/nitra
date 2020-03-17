@@ -106,7 +106,8 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     internal _N_OnFileRemoved(id : int) : void
     {
-      assert2(!IsDisposed);
+      when(IsDisposed)
+        return;
       def files = _files[id];
       def filteredFiles = files.Filter(f => f.Id != id);
       if (filteredFiles is [])
@@ -156,14 +157,14 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (IsDisposed)
         return;
 
+      IsDisposed = true;
+
       foreach (v in _projects.Values)
         v.Dispose();
 
       IsOpened = false;
       _files.Clear();
       _projects.Clear();
-
-      IsDisposed = true;
     }
   }
 }
