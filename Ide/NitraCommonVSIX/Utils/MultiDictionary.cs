@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nitra.VisualStudio.Utils
 {
@@ -42,6 +38,8 @@ namespace Nitra.VisualStudio.Utils
     public void Clear() => _dic.Clear();
 
     public bool ContainsKey(TKey key) => _dic.ContainsKey(key);
+
+    public bool RemoveValue(TKey key, TValue value) => _dic[key].Remove(value);
 
     public bool Remove(TKey key) => _dic.Remove(key);
 

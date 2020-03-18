@@ -201,9 +201,6 @@ namespace Nitra.VisualStudio.Models
           item.Key.Properties.RemoveProperty(Constants.TextViewModelKey);
         }
       }
-
-      foreach (var projectId in GetProjectIds())
-        Server.Client.Send(new ClientMessage.FileUnloaded(projectId, Id));
     }
 
     void Response(AsyncServerMessage msg)
