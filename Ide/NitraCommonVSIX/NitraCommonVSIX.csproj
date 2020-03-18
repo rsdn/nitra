@@ -120,6 +120,7 @@
     <Compile Include="TextBuffer\TextBufferProperties.cs" />
     <Compile Include="Utils\Constants.cs" />
     <Compile Include="Utils\ErrorHelper.cs" />
+    <Compile Include="Utils\MultiDictionary.cs" />
     <Compile Include="Utils\NitraTraceListener.cs" />
     <Compile Include="Utils\SpanInfosType.cs" />
     <Compile Include="Utils\VsProjectTypes.cs" />
