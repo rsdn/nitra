@@ -250,7 +250,7 @@ namespace Nitra.ClientServer.Server
           false
         }
 
-        when (!isCompleteWord && hasParseErrors(files))
+        when (!isCompleteWord && !hasParseErrors(files))
         {
           def empty = array(0);
           for (mutable i = 0; i < files.Length; i++)
