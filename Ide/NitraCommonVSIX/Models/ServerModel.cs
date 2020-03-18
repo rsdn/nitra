@@ -22,6 +22,7 @@ using Microsoft.VisualStudio.Language.NavigateTo.Interfaces;
 using Nitra.VisualStudio.NavigateTo;
 using System.IO;
 using Microsoft.VisualStudio.Shell;
+using Nitra.VisualStudio.Utils;
 
 namespace Nitra.VisualStudio
 {
@@ -38,6 +39,7 @@ namespace Nitra.VisualStudio
     public    bool                                     IsSolutionCreated { get; private set; }
     public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
 
+    readonly  MultiDictionary<FileId, ProjectId>        _fileToProjectMap   = new MultiDictionary<FileId, ProjectId>();
     readonly  HashSet<FileModel>                       _fileModels          = new HashSet<FileModel>();
     readonly  Dictionary<FileId, FileModel>            _filIdToFileModelMap = new Dictionary<FileId, FileModel>();
     readonly  Dictionary<ProjectId, ErrorListProvider> _errorListProviders  = new Dictionary<ProjectId, ErrorListProvider>();
@@ -64,6 +66,8 @@ namespace Nitra.VisualStudio
         builder.UnionWith(lang.Extensions);
       Extensions = builder.ToImmutable();
     }
+
+    public IReadOnlyList<ProjectId> GetProjectIds(FileId fileId) => _fileToProjectMap[fileId];
 
     public SpanClassInfo? GetSpanClassOpt(int id)
     {
@@ -203,16 +207,18 @@ namespace Nitra.VisualStudio
       }
     }
 
-    internal void FileAdded(ProjectId projectId, string path, FileId id, FileVersion version, string contentOpt)
+    internal void FileAdded(ProjectId projectId, string path, FileId fileId, FileVersion version, string contentOpt)
     {
       Debug.Assert(IsSolutionCreated);
-      Client.Send(new ClientMessage.FileLoaded(projectId, path, id, version, contentOpt != null, contentOpt));
+      _fileToProjectMap.Add(fileId, projectId);
+      Client.Send(new ClientMessage.FileLoaded(projectId, path, fileId, version, contentOpt != null, contentOpt));
     }
 
     internal void FileUnloaded(ProjectId projectId, FileId id)
     {
-      RemoveFileModel(id);
-      //Client.Send(new ClientMessage.FileUnloaded(projectId, id));
+      TryRemoveFileModel(id);
+      _fileToProjectMap.RemoveValue(id, projectId);
+      Client.Send(new ClientMessage.FileUnloaded(projectId, id));
     }
 
     private FileModel FindFileModel(FileId id)
@@ -224,7 +230,7 @@ namespace Nitra.VisualStudio
       return null;
     }
 
-    private void RemoveFileModel(FileId id)
+    private void TryRemoveFileModel(FileId id)
     {
       var fileModel = FindFileModel(id);
       if (fileModel != null)
