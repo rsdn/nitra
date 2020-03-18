@@ -289,7 +289,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     {
       def buffer = ImmutableArray.CreateBuilder();
       foreach (file in files)
-        buffer.Add(FileEvalPropertiesData(file.FullName, file.Name, file.Id, file.Version, file.Ast, file.Statistics?.Typing, file.IsActive, file.HasParseError));
+        buffer.Add(FileEvalPropertiesData(file.FullName, file.Name, file.Id, file.Version, file.Ast, file.Statistics?.Typing, hasParseErrors=file.HasParseError, isActive=file.IsActive));
       buffer.ToImmutable();
     }
 
