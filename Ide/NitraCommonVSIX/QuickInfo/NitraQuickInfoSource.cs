@@ -68,14 +68,14 @@ namespace Nitra.VisualStudio.QuickInfo
         applicableToSpan = null;
         return;
       }
-      
+
       _textViewModel = VsUtils.GetOrCreateTextViewModel(_wpfTextView, _fileModel);
       if (_textViewModel == null) // TODO: Add logging Debug.Assert(_textViewModel != null);
       {
         applicableToSpan = null;
         return;
       }
-      
+
       Hint.SetCallbacks(SubHintText, SpanClassToBrush);
       Hint.Click += Hint_Click;
 
@@ -235,7 +235,7 @@ namespace Nitra.VisualStudio.QuickInfo
           return;
         _subhintOpen++;
         Debug.WriteLine($"_subhintOpen = {_subhintOpen}  OnMouseHover");
-        
+
         try
         {
           _container.IsMouseOverAggregated = true;
@@ -361,14 +361,13 @@ namespace Nitra.VisualStudio.QuickInfo
       var symbolId = int.Parse(symbolIdText);
       var fileModel = _fileModel;
       var client = fileModel.Server.Client;
-      client.Send(new ClientMessage.GetSubHint(GetCurrntProjectId(), symbolId));
+      foreach (var projectId in fileModel.GetProjectIds())
+      {
+        client.Send(new ClientMessage.GetSubHint(projectId, symbolId));
+        break;
+      }
       var msg = client.Receive<ServerMessage.SubHint>();
       return msg.text;
-    }
-
-    ProjectId GetCurrntProjectId()
-    {
-      return _fileModel.GetProjectId();
     }
 
     void OnHintRefClic(string handler)

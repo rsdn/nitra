@@ -80,7 +80,8 @@ namespace Nitra.VisualStudio.Models
       var server = this.Server;
 
       if (server.IsLoaded)
-        server.Client.Send(new ClientMessage.SetCaretPos(GetProjectId(), Id, position));
+        foreach (var projectId in GetProjectIds())
+          server.Client.Send(new ClientMessage.SetCaretPos(projectId, Id, position));
     }
 
     public TextViewModel GetOrAdd(IWpfTextView wpfTextView)
@@ -108,7 +109,11 @@ namespace Nitra.VisualStudio.Models
       var server = this.Server;
 
       if (server.IsLoaded)
-        server.Client.Send(new ClientMessage.FileActivated(GetProjectId(), Id, GetVersion()));
+      {
+        var fileVersion = GetVersion();
+        foreach (var projectId in GetProjectIds())
+          server.Client.Send(new ClientMessage.FileActivated(projectId, Id, fileVersion));
+      }
     }
 
     public FileVersion GetVersion()
@@ -141,7 +146,8 @@ namespace Nitra.VisualStudio.Models
       var server = this.Server;
 
       if (!_fileIsRemoved && server.IsLoaded)
-        server.Client.Send(new ClientMessage.FileDeactivated(GetProjectId(), Id));
+        foreach (var projectId in GetProjectIds())
+          server.Client.Send(new ClientMessage.FileDeactivated(projectId, Id));
     }
 
     internal void ViewActivated(TextViewModel textViewModel)
@@ -180,12 +186,7 @@ namespace Nitra.VisualStudio.Models
       }
     }
 
-    public ProjectId GetProjectId()
-    {
-      ThreadHelper.ThrowIfNotOnUIThread();
-      var project = this.Hierarchy.GetProject();
-      return new ProjectId(this.Server.Client.StringManager.GetId(project.FullName));
-    }
+    public IReadOnlyList<ProjectId> GetProjectIds() => Server.GetProjectIds(Id);
 
     internal void Remove()
     {
@@ -201,7 +202,8 @@ namespace Nitra.VisualStudio.Models
         }
       }
 
-      Server.Client.Send(new ClientMessage.FileUnloaded(GetProjectId(), Id));
+      foreach (var projectId in GetProjectIds())
+        Server.Client.Send(new ClientMessage.FileUnloaded(projectId, Id));
     }
 
     void Response(AsyncServerMessage msg)
@@ -275,7 +277,11 @@ namespace Nitra.VisualStudio.Models
       var snapshot = caretPos.Snapshot;
       var version = snapshot.Version.Convert();
       var triggerPoint = session.GetTriggerPoint(session.TextView.TextBuffer);
-      Server.Client.Send(new ClientMessage.CompleteWord(GetProjectId(), Id, version, triggerPoint.GetPoint(snapshot).Position));
+      foreach (var projectId in GetProjectIds())
+      {
+        Server.Client.Send(new ClientMessage.CompleteWord(projectId, Id, version, triggerPoint.GetPoint(snapshot).Position));
+        break;
+      }
       session.Dismissed += CompletionSessionDismissed;
     }
 
@@ -286,7 +292,11 @@ namespace Nitra.VisualStudio.Models
       _completionSession.Dismissed -= CompletionSessionDismissed;
       _completionSession.Properties[Constants.NitraCompleteWord] = null;
       _completionSession = null;
-      Server.Client.Send(new ClientMessage.CompleteWordDismiss(GetProjectId(), Id));
+      foreach (var projectId in GetProjectIds())
+      {
+        Server.Client.Send(new ClientMessage.CompleteWordDismiss(projectId, Id));
+        break;
+      }
     }
 
     internal Brush SpanClassToBrush(string spanClass, IWpfTextView _wpfTextView)
