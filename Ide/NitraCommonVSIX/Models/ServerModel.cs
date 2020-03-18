@@ -216,8 +216,9 @@ namespace Nitra.VisualStudio
 
     internal void FileUnloaded(ProjectId projectId, FileId id)
     {
-      RemoveFileModel(id);
-      //Client.Send(new ClientMessage.FileUnloaded(projectId, id));
+      TryRemoveFileModel(id);
+      _fileToProjectMap.RemoveValue(id, projectId);
+      Client.Send(new ClientMessage.FileUnloaded(projectId, id));
     }
 
     private FileModel FindFileModel(FileId id)
@@ -229,7 +230,7 @@ namespace Nitra.VisualStudio
       return null;
     }
 
-    private void RemoveFileModel(FileId id)
+    private void TryRemoveFileModel(FileId id)
     {
       var fileModel = FindFileModel(id);
       if (fileModel != null)
