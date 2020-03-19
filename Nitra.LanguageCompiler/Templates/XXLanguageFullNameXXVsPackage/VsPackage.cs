@@ -17,6 +17,9 @@ namespace XXNamespaceXX
   using System.IO;
   using System.Reflection;
   using System.Runtime.InteropServices;
+  using System.Threading;
+
+  using Task = System.Threading.Tasks.Task;
 
   /// <summary>
   /// This class implements the package exposed by this assembly.
@@ -26,14 +29,14 @@ namespace XXNamespaceXX
   /// or localized resources for the strings that appear in the New Project and Open Project dialogs.
   /// Creating project extensions or project types does not actually require a VSPackage.
   /// </remarks>
-  [PackageRegistration(UseManagedResourcesOnly = true)]
+  [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [Description("Nitra Package for XXLanguageFullNameXX language.")]
-  [ProvideAutoLoad(UIContextGuids80.NoSolution)]
+  [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
   [Guid(XXLanguageXXGuids.PackageGuid)]
   // This attribute is used to register the information needed to show this package in the Help/About dialog of Visual Studio.
   [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
   [ProvideBindingPath(SubPath= "Languages")]
-  public sealed class VsPackage : Package
+  public sealed class VsPackage : AsyncPackage
   {
     public static VsPackage Instance;
 
@@ -46,9 +49,15 @@ namespace XXNamespaceXX
       Instance = this;
     }
 
-    protected override void Initialize()
+    /// <summary>
+    /// Initialization of the package; this method is called right after the package is sited, so this is the place
+    /// where you can put all the initialization code that rely on services provided by VisualStudio.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to monitor for initialization cancellation, which can occur when VS is shutting down.</param>
+    /// <param name="progress">A provider for progress updates.</param>
+    /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
+    protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
-      base.Initialize();
       var assembly         = "XXProjectSupportAssemblyXX";
 
       if (string.IsNullOrEmpty(assembly))
@@ -64,6 +73,7 @@ namespace XXNamespaceXX
 
       var config = new Config(projectSupport, languages);
       NitraCommonPackage.AddProjectType(config);
+      await Task.Delay(0);
     }
 
     protected override void Dispose(bool disposing)

@@ -32,17 +32,11 @@ namespace Nitra.VisualStudio.Models
              KeyBindingCommandFilter       _keyBindingCommandFilter;
              IWpfTextView                  _wpfTextView;
              InteractiveHighlightingTagger _braceMatchingTaggerOpt;
-             SnapshotPoint?                _lastMouseHoverPointOpt;
-             FileVersion                   _previosMouseHoverFileVersion = FileVersion.Invalid;
-             SnapshotSpan?                 _previosActiveSpanOpt;
-             NitraQuickInfoSource          _quickInfoOpt;
 
     public TextViewModel(IWpfTextView wpfTextView, FileModel file)
     {
       _wpfTextView = wpfTextView;
       FileModel    = file;
-
-      _wpfTextView.MouseHover += _wpfTextView_MouseHover;
 
       _keyBindingCommandFilter = new KeyBindingCommandFilter(wpfTextView, file.Server.ServiceProvider, this);
     }
@@ -179,77 +173,6 @@ namespace Nitra.VisualStudio.Models
       ShowInFindResultWindow(fileModel, msg.referenceSpan, msg.definitions.Select(d => d.Location).ToArray());
     }
 
-    void _wpfTextView_MouseHover(object sender, MouseHoverEventArgs e)
-    {
-      CheckDisposed();
-      var pointOpt = e.TextPosition.GetPoint(_wpfTextView.TextBuffer, PositionAffinity.Predecessor);
-
-      _lastMouseHoverPointOpt = pointOpt;
-
-      if (!pointOpt.HasValue)
-        return;
-
-      var point    = pointOpt.Value;
-      var snapshot = point.Snapshot;
-      var server   = this.FileModel.Server;
-      var pos      = point.Position;
-      var fileVer  = snapshot.Version.Convert();
-
-      _previosMouseHoverFileVersion = fileVer;
-
-      if (_wpfTextView.TextBuffer.Properties.TryGetProperty(Constants.NitraQuickInfoSourceKey, out _quickInfoOpt))
-      {
-        var extent = _quickInfoOpt.GetTextExtent(point);
-
-        if (_previosActiveSpanOpt == extent.Span)
-          return;
-
-        _previosActiveSpanOpt = extent.Span;
-
-        var fileModel = this.FileModel;
-        fileModel.OnMouseHover(this);
-
-        foreach (var projectId in fileModel.GetProjectIds())
-        {
-          server.Client.Send(new ClientMessage.GetHint(projectId, fileModel.Id, point.ToVersionedPos()));
-          break;
-        }
-      }
-    }
-
-    internal void ShowHint(AsyncServerMessage.Hint msg)
-    {
-      CheckDisposed();
-
-      if (!_lastMouseHoverPointOpt.HasValue)
-        return;
-
-      var lastPoint = _lastMouseHoverPointOpt.Value;
-      var snapshot  = _wpfTextView.TextBuffer.CurrentSnapshot;
-
-      if (snapshot.Version.Convert() != msg.Version || lastPoint.Snapshot != snapshot)
-        return;
-
-      Debug.WriteLine("Hint data avalable!");
-
-      if (_quickInfoOpt != null)
-      {
-        _quickInfoOpt.SetHintData(msg.text);
-        _quickInfoOpt.Dismissed += OnDismissed;
-      }
-    }
-
-    private void OnDismissed()
-    {
-      this.FileModel.OnMouseHover(null);
-      _lastMouseHoverPointOpt = null;
-      _previosMouseHoverFileVersion = FileVersion.Invalid;
-      _previosActiveSpanOpt = null;
-      if (_quickInfoOpt != null)
-        _quickInfoOpt.Dismissed -= OnDismissed;
-      _quickInfoOpt = null;
-    }
-
     static void GoToLocation(FileModel fileModel, Location loc)
     {
       if (loc.File.FileId < 0)
@@ -317,16 +240,12 @@ namespace Nitra.VisualStudio.Models
 
       IsDisposed = true;
 
-      _wpfTextView.MouseHover -= _wpfTextView_MouseHover;
       _keyBindingCommandFilter.Dispose();
       _wpfTextView.Properties.RemoveProperty(Constants.TextViewModelKey);
 
       _wpfTextView                  = null;
       _keyBindingCommandFilter      = null;
       _braceMatchingTaggerOpt       = null;
-      _lastMouseHoverPointOpt       = null;
-      _previosMouseHoverFileVersion = FileVersion.Invalid;
-      _quickInfoOpt                 = null;
     }
   }
 }

@@ -752,6 +752,11 @@ namespace Nitra.ClientServer.Server.ProjectSystem
       when (IsDisposed)
         return;
 
+      foreach (watcher in _watchers)
+        watcher.Dispose();
+
+      _watchers.Clear();
+
       foreach (v in _files.Values)
       {
         Parent._N_OnFileRemoved(v.Id);
