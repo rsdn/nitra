@@ -76,7 +76,8 @@ namespace NitraCommonIde
 
     public static void AddProjectType(Config config)
     {
-      Configs.Add(config);
+      lock (Configs)
+        Configs.Add(config);
     }
   }
 }

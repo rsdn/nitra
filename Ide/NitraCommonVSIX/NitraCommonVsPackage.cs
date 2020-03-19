@@ -28,9 +28,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using VSLangProj;
 
 using SolutionEvents = Microsoft.VisualStudio.Shell.Events.SolutionEvents;
+using Task = System.Threading.Tasks.Task;
 
 namespace Nitra.VisualStudio
 {
@@ -51,13 +53,13 @@ namespace Nitra.VisualStudio
   /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
   /// </para>
   /// </remarks>
-  [ProvideAutoLoad(UIContextGuids80.NoSolution)]
+  [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
   [Description("Nitra Package.")]
-  [PackageRegistration(UseManagedResourcesOnly = true)]
+  [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
   [Guid(NitraCommonVsPackage.PackageGuidString)]
   [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-  public sealed class NitraCommonVsPackage : Package
+  public sealed class NitraCommonVsPackage : AsyncPackage
   {
     /// <summary>VSPackage GUID string.</summary>
     public const string PackageGuidString = "66c3f4cd-1547-458b-a321-83f0c448b4d3";
@@ -118,34 +120,38 @@ namespace Nitra.VisualStudio
     /// Initialization of the package; this method is called right after the package is sited, so this is the place
     /// where you can put all the initialization code that rely on services provided by VisualStudio.
     /// </summary>
-    protected override void Initialize()
+    /// <param name="cancellationToken">A cancellation token to monitor for initialization cancellation, which can occur when VS is shutting down.</param>
+    /// <param name="progress">A provider for progress updates.</param>
+    /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
+    protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
     {
+      // When initialized asynchronously, the current thread may be a background thread at this point.
+      // Do any initialization that requires the UI thread after switching to the UI thread.
+
+      Debug.Assert(Instance == null);
+      Instance = this;
+      var dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
+      Assumes.Present(dte);
+
       //var listener = new NitraTraceListener();
       //Trace.Listeners.Clear();
       //Trace.Listeners.Add(listener);
 
-      ThreadHelper.ThrowIfNotOnUIThread();
-      base.Initialize();
-      Debug.Assert(Instance == null);
-      Instance = this;
-
-      DTE2 dte = (DTE2)GetService(typeof(DTE));
-      Assumes.Present(dte);
-      //Debug.Assert(false);
-      // We must cache ProjectItemsEvents in a field to prevent free it by GC. Don't in-line the _prjItemsEvents!
       var events = (Events2)dte.Events;
       var x = events.SolutionItemsEvents;
-      _solutionEvents = events.SolutionEvents;
-      _solutionEvents.Opened += _solutionEvents_Opened;
-      _solutionEvents.BeforeClosing += _solutionEvents_BeforeClosing;
-      _solutionEvents.ProjectAdded += _solutionEvents_ProjectAdded;
-      _solutionEvents.ProjectRemoved += _solutionEvents_ProjectRemoved;
-      _solutionEvents.ProjectRenamed += _solutionEvents_ProjectRenamed;
-      _solutionEvents.Renamed += _solutionEvents_Renamed;
+      var solutionEvents = events.SolutionEvents;
+      solutionEvents.Opened         += _solutionEvents_Opened;
+      solutionEvents.BeforeClosing  += _solutionEvents_BeforeClosing;
+      solutionEvents.ProjectAdded   += _solutionEvents_ProjectAdded;
+      solutionEvents.ProjectRemoved += _solutionEvents_ProjectRemoved;
+      solutionEvents.ProjectRenamed += _solutionEvents_ProjectRenamed;
+      solutionEvents.Renamed        += _solutionEvents_Renamed;
+      _solutionEvents = solutionEvents;
+      // We must cache ProjectItemsEvents in a field to prevent free it by GC. Don't in-line the _prjItemsEvents!
       _prjItemsEvents = events.ProjectItemsEvents;
-      _prjItemsEvents.ItemAdded += PrjItemsEvents_ItemAdded;
-      _prjItemsEvents.ItemRemoved += PrjItemsEvents_ItemRemoved;
-      _prjItemsEvents.ItemRenamed += PrjItemsEvents_ItemRenamed;
+      _prjItemsEvents.ItemAdded      += PrjItemsEvents_ItemAdded;
+      _prjItemsEvents.ItemRemoved    += PrjItemsEvents_ItemRemoved;
+      _prjItemsEvents.ItemRenamed    += PrjItemsEvents_ItemRenamed;
 
       _runningDocTableEventse = new RunningDocTableEvents();
       _runningDocTableEventse.DocumentSaved += _runningDocTableEventse_DocumentSaved;
@@ -153,8 +159,9 @@ namespace Nitra.VisualStudio
 
       if (_objectManagerCookie == 0)
       {
+        await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
         _library = new Library();
-        var objManager = this.GetService(typeof(SVsObjectManager)) as IVsObjectManager2;
+        var objManager = await this.GetServiceAsync(typeof(SVsObjectManager)) as IVsObjectManager2;
 
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
@@ -341,17 +348,20 @@ namespace Nitra.VisualStudio
       if (_servers.Count > 0)
         return; // already initialized
 
-      if (NitraCommonPackage.Configs.Count == 0)
+      lock (NitraCommonPackage.Configs)
       {
-        Log.Message($"Error: Configs is empty!)");
-      }
+        if (NitraCommonPackage.Configs.Count == 0)
+        {
+          Log.Message($"Error: Configs is empty!)");
+        }
 
-      var stringManager = _stringManager;
+        var stringManager = _stringManager;
 
-      foreach (var config in NitraCommonPackage.Configs)
-      {
-        var server = new ServerModel(stringManager, config, this);
-        _servers.Add(server);
+        foreach (var config in NitraCommonPackage.Configs)
+        {
+          var server = new ServerModel(stringManager, config, this);
+          _servers.Add(server);
+        }
       }
 
       return;
@@ -683,8 +693,14 @@ namespace Nitra.VisualStudio
       var hierarchy = e.Hierarchy;
 
       var project = hierarchy.GetProp<Project>(VSConstants.VSITEMID_ROOT, __VSHPROPID.VSHPROPID_ExtObject);
-      var path    = project.FullName;
-      var id      = new ProjectId(_stringManager.GetId(path));
+      if (project == null)
+      {
+        Log.Message($"tr: OnBeforeCloseProject(IsRemoved='{e.IsRemoved}', project=null)");
+        return;
+      }
+
+      var path = project.FullName;
+      var id   = new ProjectId(_stringManager.GetId(path));
       Log.Message($"tr: BeforeCloseProject(IsRemoved='{e.IsRemoved}', FullName='{project.FullName}' id={id})");
 
       if (_listenersMap.ContainsKey(hierarchy))
@@ -694,10 +710,6 @@ namespace Nitra.VisualStudio
         listener.Dispose();
         _listenersMap.Remove(hierarchy);
       }
-
-
-      if (project == null)
-        return;
 
       _projects.Remove(project);
       _referenceMap.Remove(id);
