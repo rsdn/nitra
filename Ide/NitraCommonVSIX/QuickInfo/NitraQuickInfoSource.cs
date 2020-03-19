@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -22,7 +24,7 @@ using D = System.Drawing;
 
 namespace Nitra.VisualStudio.QuickInfo
 {
-  class NitraQuickInfoSource : IQuickInfoSource
+  class NitraQuickInfoSource : IAsyncQuickInfoSource
   {
     public static readonly Hint Hint = new Hint { WrapWidth = 900.1 };
     public static NitraQuickInfoSource Current;
@@ -34,13 +36,12 @@ namespace Nitra.VisualStudio.QuickInfo
     IWpfTextView _wpfTextView;
     PopupContainer _container;
     readonly DispatcherTimer _timer = new DispatcherTimer{ Interval=TimeSpan.FromMilliseconds(100), IsEnabled=false };
-    IQuickInfoSession _session;
     D.Rectangle _activeAreaRect;
     D.Rectangle _hintRect;
     Window _subHuntWindow;
     FileModel _fileModel;
-    TextViewModel _textViewModel;
     int _subhintOpen;
+    IAsyncQuickInfoSession _session;
 
     public NitraQuickInfoSource(ITextBuffer textBuffer, ITextStructureNavigatorSelectorService navigatorService)
     {
@@ -48,8 +49,11 @@ namespace Nitra.VisualStudio.QuickInfo
       _navigatorService = navigatorService;
     }
 
-    public void AugmentQuickInfoSession(IQuickInfoSession session, IList<object> quickInfoContent, out ITrackingSpan applicableToSpan)
+    // This is called on a background thread.
+    public async Task<QuickInfoItem> GetQuickInfoItemAsync(IAsyncQuickInfoSession session, CancellationToken cancellationToken)
     {
+      Debug.WriteLine("GetQuickInfoItemAsync");
+
       Current = this;
       _timer.Stop();
       _activeAreaRect = default(D.Rectangle);
@@ -59,22 +63,26 @@ namespace Nitra.VisualStudio.QuickInfo
       _subHuntWindow = null;
       _container = null;
 
-      Debug.WriteLine("AugmentQuickInfoSession");
-
       _wpfTextView = (IWpfTextView)session.TextView;
-      _fileModel = VsUtils.TryGetFileModel(_textBuffer);
+      var fileModel = _fileModel = VsUtils.TryGetFileModel(_textBuffer);
       if (_fileModel == null) // TODO: Add logging Debug.Assert(_fileModel != null);
+        return null;
+
+      var snapshot = _textBuffer.CurrentSnapshot;
+      var triggerPoint = session.GetTriggerPoint(snapshot);
+
+      if (!triggerPoint.HasValue)
+        return null;
+
+      var server = fileModel.Server;
+
+      foreach (var projectId in fileModel.GetProjectIds())
       {
-        applicableToSpan = null;
-        return;
+        server.Client.Send(new ClientMessage.GetHint(projectId, fileModel.Id, triggerPoint.Value.ToVersionedPos()));
+        break;
       }
 
-      _textViewModel = VsUtils.GetOrCreateTextViewModel(_wpfTextView, _fileModel);
-      if (_textViewModel == null) // TODO: Add logging Debug.Assert(_textViewModel != null);
-      {
-        applicableToSpan = null;
-        return;
-      }
+      var hint = await fileModel.GetHintAsync(cancellationToken).ConfigureAwait(false);
 
       Hint.SetCallbacks(SubHintText, SpanClassToBrush);
       Hint.Click += Hint_Click;
@@ -82,47 +90,43 @@ namespace Nitra.VisualStudio.QuickInfo
       Hint.BackgroundResourceReference = EnvironmentColors.ToolTipBrushKey;
       Hint.ForegroundResourceReference = EnvironmentColors.ToolTipTextBrushKey;
 
-      var snapshot = _textBuffer.CurrentSnapshot;
-      var triggerPoint = session.GetTriggerPoint(snapshot);
 
-      if (triggerPoint.HasValue)
+      _wpfTextView = (IWpfTextView)session.TextView;
+      var text = hint.text;
+      if (text.All(c => char.IsWhiteSpace(c)))
       {
-        _wpfTextView = (IWpfTextView)session.TextView;
-        var extent       = GetTextExtent(triggerPoint.Value);
-        var text         = extent.Span.GetText();
-        if (text.All(c => char.IsWhiteSpace(c)))
-        {
-          applicableToSpan = null;
-          return;
-        }
-        var trackingSpan = snapshot.CreateTrackingSpan(extent.Span, SpanTrackingMode.EdgeInclusive);
-        applicableToSpan = trackingSpan;
-        var rectOpt      = GetViewSpanRect(trackingSpan);
-        if (!rectOpt.HasValue)
-          return;
-
-        _wpfTextView.VisualElement.MouseWheel += MouseWheel;
-        _activeAreaRect = rectOpt.Value.ToRectangle();
-        _session = session;
-        session.Dismissed += OnDismissed;
-
-        var container = new PopupContainer();
-
-        Subscribe(container);
-
-        container.LayoutUpdated += Container_LayoutUpdated;
-        container.PopupOpened   += PopupOpened;
-        _container = container;
-
-        _container.Children.Add(new System.Windows.Controls.TextBlock() { Text="loading.." });
-
-        quickInfoContent.Add(container);
-
-        _timer.Tick += _timer_Tick;
-        //Externals.FillRect(_activeAreaRect);
-        return;
+        return null;
       }
-      applicableToSpan = null;
+      var span = new Span(hint.referenceSpan.StartPos, hint.referenceSpan.Length);
+      var trackingSpan = snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
+      await NitraCommonVsPackage.Instance.JoinableTaskFactory.SwitchToMainThreadAsync();
+      var rectOpt = GetViewSpanRect(trackingSpan);
+      if (!rectOpt.HasValue)
+        return null;
+
+      _wpfTextView.VisualElement.MouseWheel += MouseWheel;
+      _activeAreaRect = rectOpt.Value.ToRectangle();
+      session.StateChanged += Session_StateChanged;
+      _session = session;
+
+      var container = new PopupContainer();
+
+      Subscribe(container);
+
+      container.LayoutUpdated += Container_LayoutUpdated;
+      container.PopupOpened += PopupOpened;
+      _container = container;
+
+      _container.Children.Add(Hint.ParseToFrameworkElement(text));
+
+      _timer.Tick += _timer_Tick;
+      return new QuickInfoItem(trackingSpan, container);
+    }
+
+    private void Session_StateChanged(object sender, QuickInfoSessionStateChangedEventArgs e)
+    {
+      if (e.NewState == QuickInfoSessionState.Dismissed)
+        OnDismissed();
     }
 
     void Hint_Click(Hint hint, string handler)
@@ -152,60 +156,6 @@ namespace Nitra.VisualStudio.QuickInfo
 
       if (hc.Handler != null)
         OnHintRefClic(hc.Handler);
-    }
-
-    public void SetHintData(string data)
-    {
-      Debug.WriteLine("SetHintData(" + data + ")");
-      if (_container == null)
-        return;
-
-      if (data == "<hint></hint>")
-      {
-        _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action)ResetHintData_inUIThread);
-        return;
-      }
-
-      try
-      {
-        var content = Hint.ParseToFrameworkElement(data);
-        _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action<FrameworkElement>)SetHintData_inUIThread, content);
-      }
-      catch (Exception ex)
-      {
-        MessageBox.Show("Exception: " + ex);
-      }
-    }
-
-    void ResetHintData_inUIThread()
-    {
-      Debug.WriteLine("ResetHintData_inUIThread");
-
-      _container.Children.Clear();
-      _container.Height = 0;
-      _container.Width = 0;
-      _container.MinHeight = 0;
-      _container.MinWidth = 0;
-      _container.UpdateLayout();
-    }
-
-    void SetHintData_inUIThread(FrameworkElement data)
-    {
-      if (_container == null)
-        return;
-
-      Debug.WriteLine("SetHintData_inUIThread");
-
-      _container.Children.Clear();
-      _container.Children.Add(data);
-      _container.UpdateLayout();
-    }
-
-    public TextExtent GetTextExtent(SnapshotPoint triggerPoint)
-    {
-      var navigator = _navigatorService.GetTextStructureNavigator(_textBuffer);
-      var extent = navigator.GetExtentOfWord(triggerPoint);
-      return extent;
     }
 
     void Container_LayoutUpdated(object sender, EventArgs e)
@@ -250,7 +200,7 @@ namespace Nitra.VisualStudio.QuickInfo
       }
     }
 
-    private void SubHuntWindow_Closed(object sender, EventArgs e)
+    void SubHuntWindow_Closed(object sender, EventArgs e)
     {
       var subHuntWindow = (Window)sender;
       subHuntWindow.Closed -= SubHuntWindow_Closed;
@@ -264,10 +214,9 @@ namespace Nitra.VisualStudio.QuickInfo
       _timer.Start();
     }
 
-    private void MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    void MouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
     {
-      if (_session != null)
-        _session.Dismiss();
+      Dismiss();
     }
 
     WinApi.RECT? GetHintRect()
@@ -312,12 +261,16 @@ namespace Nitra.VisualStudio.QuickInfo
       }
     }
 
-    internal void Dismiss()
+    void Dismiss()
     {
-      _session?.Dismiss();
+      _session?.DismissAsync().ConfigureAwait(false);
     }
 
-    void _timer_Tick(object sender, EventArgs e) { _wpfTextView.VisualElement.Dispatcher.BeginInvoke((Action)_timer_Tick_inUIThread); }
+    void _timer_Tick(object sender, EventArgs e)
+    {
+      //await NitraCommonVsPackage.Instance.JoinableTaskFactory.SwitchToMainThreadAsync();
+      _timer_Tick_inUIThread();
+    }
 
     void _timer_Tick_inUIThread()
     {
@@ -329,19 +282,19 @@ namespace Nitra.VisualStudio.QuickInfo
 
       _timer.Stop();
       Debug.WriteLine("Dismiss current session by _timer_Tick");
-      _session.Dismiss();
+      _session.DismissAsync().ConfigureAwait(false);
     }
 
-    private void OnDismissed(object sender, EventArgs e)
+    void OnDismissed()
     {
       Dismissed?.Invoke();
 
       if (_subHuntWindow != null)
         _subHuntWindow.Close();
 
-      _container.LayoutUpdated           -= Container_LayoutUpdated;
-      _container.PopupOpened             -= PopupOpened;
-      _session.Dismissed                 -= OnDismissed;
+      _container.LayoutUpdated              -= Container_LayoutUpdated;
+      _container.PopupOpened                -= PopupOpened;
+      _session.StateChanged                 -= Session_StateChanged;
       _wpfTextView.VisualElement.MouseWheel -= MouseWheel;
 
       _timer.Stop();
@@ -398,7 +351,7 @@ namespace Nitra.VisualStudio.QuickInfo
               if (path.StartsWith("file://", StringComparison.InvariantCultureIgnoreCase))
                 return;
               VsUtils.NavigateTo(_fileModel.Server.ServiceProvider, path, pos);
-              _session?.Dismiss();
+              Dismiss();
             }
           }
           break;
@@ -421,7 +374,7 @@ namespace Nitra.VisualStudio.QuickInfo
               {
                 Debug.WriteLine(ex.ToString());
               }
-              _session?.Dismiss();
+              Dismiss();
             }
           }
           break;
@@ -430,7 +383,7 @@ namespace Nitra.VisualStudio.QuickInfo
       }
     }
 
-    public Rect? GetViewSpanRect(ITrackingSpan viewSpan)
+    Rect? GetViewSpanRect(ITrackingSpan viewSpan)
     {
       var wpfTextView = _wpfTextView;
       if (wpfTextView == null || wpfTextView.TextViewLines == null || wpfTextView.IsClosed)

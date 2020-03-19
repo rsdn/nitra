@@ -1,10 +1,4 @@
-﻿//------------------------------------------------------------------------------
-// <copyright file="VSPackage.cs" company="Company">
-//     Copyright (c) Company.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-using EnvDTE;
+﻿using EnvDTE;
 using EnvDTE80;
 
 using Microsoft;
@@ -89,6 +83,8 @@ namespace Nitra.VisualStudio
     public NitraCommonVsPackage()
     {
       Log.Init("Nitra-VS-plug-in");
+      Debug.Assert(Instance == null);
+      Instance = this;
       // Inside this method you can place any initialization code that does not require
       // any Visual Studio service because at this point the package object is created but
       // not sited yet inside Visual Studio environment. The place to do all the other
@@ -109,11 +105,6 @@ namespace Nitra.VisualStudio
       //};
     }
 
-    public void SetFindResult(IVsSimpleObjectList2 findResults)
-    {
-      _library.OnFindAllReferencesDone(findResults);
-    }
-
     #region Package Members
 
     /// <summary>
@@ -128,8 +119,6 @@ namespace Nitra.VisualStudio
       // When initialized asynchronously, the current thread may be a background thread at this point.
       // Do any initialization that requires the UI thread after switching to the UI thread.
 
-      Debug.Assert(Instance == null);
-      Instance = this;
       var dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
       Assumes.Present(dte);
 
@@ -166,6 +155,11 @@ namespace Nitra.VisualStudio
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
       }
+    }
+
+    public void SetFindResult(IVsSimpleObjectList2 findResults)
+    {
+      _library.OnFindAllReferencesDone(findResults);
     }
 
     private void _solutionEvents_Renamed(string OldName)

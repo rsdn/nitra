@@ -46,6 +46,8 @@ namespace Nitra.VisualStudio.Models
     ICompletionSession                               _completionSession;
     VersionedPos                                     _caretPosition;
     bool                                             _disposed;
+    System.Threading.Tasks.TaskCompletionSource<Hint> _hintCompletion;
+    System.Threading.CancellationTokenRegistration _hintCancellationTokenRegistration;
 
     public FileModel(FileId id, ITextBuffer textBuffer, ServerModel server, Dispatcher dispatcher, IVsHierarchy hierarchy, string fullPath)
     {
@@ -129,8 +131,6 @@ namespace Nitra.VisualStudio.Models
 
         if (textViewModel == _activeTextViewModelOpt)
           _activeTextViewModelOpt = null;
-        if (textViewModel == _mouseHoverTextViewModelOpt)
-          _mouseHoverTextViewModelOpt = null;
         textViewModel.Dispose();
         _textViewModelsMap.Remove(wpfTextView);
 
@@ -153,11 +153,6 @@ namespace Nitra.VisualStudio.Models
     internal void ViewActivated(TextViewModel textViewModel)
     {
       _activeTextViewModelOpt = textViewModel;
-    }
-
-    internal void OnMouseHover(TextViewModel textViewModel)
-    {
-      _mouseHoverTextViewModelOpt = textViewModel;
     }
 
     void TextBuffer_Changed(object sender, TextContentChangedEventArgs e)
@@ -244,7 +239,11 @@ namespace Nitra.VisualStudio.Models
           UpdateCompilerMessages(2, semanticAnalysisMessages.messages, semanticAnalysisMessages.Version);
           break;
         case Hint hint:
-          _mouseHoverTextViewModelOpt?.ShowHint(hint);
+          if (_hintCompletion == null)
+            break;
+          _hintCompletion.SetResult(hint);
+          _hintCancellationTokenRegistration.Dispose();
+          _hintCompletion = null;
           break;
         case CompleteWord completeWord:
           if (_completionSession != null)
@@ -257,6 +256,18 @@ namespace Nitra.VisualStudio.Models
           }
           break;
       }
+    }
+
+    internal System.Threading.Tasks.Task<Hint> GetHintAsync(System.Threading.CancellationToken cancellationToken)
+    {
+      Debug.Assert(_hintCompletion == null);
+      var hintCompletion = _hintCompletion = new System.Threading.Tasks.TaskCompletionSource<Hint>();
+      _hintCancellationTokenRegistration = cancellationToken.Register(() =>
+      {
+        hintCompletion.TrySetCanceled(cancellationToken);
+        _hintCompletion = null;
+      });
+      return hintCompletion.Task;
     }
 
     internal void Rename(FileId newFileId, string newFilePath)
