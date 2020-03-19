@@ -99,7 +99,11 @@ namespace Nitra.BackEnd.Dnlib
     public Object               : TypeSymbol                 { get { _objectSymbol } }
     public SingleDimensionArray : SingleDimensionArraySymbol { get { _singleDimensionArray } }
 
-    public Dispose() : void { }
+    public Dispose() : void
+    {
+      foreach (m in _loadedModules.Values)
+        m.Dispose();
+    }
 
     public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
     {
