@@ -535,9 +535,10 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def r = NSP.ProjectReference(projectId, path);
         _libs.Add(r);
         AddWatcher(path);
-        def dependOn = Parent.GetProject(projectId);
-        DependsOnProjects ::= dependOn;
-        dependOn.DependantProjects ::= this;
+        // It leads to memory leaks!
+        //def dependOn = Parent.GetProject(projectId);
+        //DependsOnProjects ::= dependOn;
+        //dependOn.DependantProjects ::= this;
       }
     }
 
