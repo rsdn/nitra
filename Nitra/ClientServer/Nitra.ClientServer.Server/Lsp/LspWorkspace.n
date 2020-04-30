@@ -1,0 +1,216 @@
+﻿using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Text;
+using Nemerle.Utility;
+using Nemerle.Extensions;
+using Nemerle.Imperative;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.IO;
+
+using Nitra.ClientServer.Client;
+using Nitra.ClientServer.Messages;
+
+using Nitra.Logging;
+
+namespace Nitra.ClientServer.Server.Lsp
+{
+  internal class LspSuite
+  {
+    public mutable Path                  : string;
+    public mutable SolutionMap           : Hashtable[SolutionId, LspSolution];
+    public mutable ProjectMap            : Hashtable[ProjectId, LspProject];
+    public mutable FileToSolutionMap     : Hashtable[FileId, LspSolution];
+    public mutable ConfigPath            : string;
+  }
+
+  internal class LspSolution
+  {
+    public mutable Path      : string;
+    public mutable FileToProjectMap      : Hashtable[FileId, LspProject];
+  }
+
+  internal class LspProject
+  {
+    public mutable Path            : string;
+    public mutable Config          : Config;
+    public mutable Files           : Hashtable[string, LspProjectFile];
+  }
+
+  internal class LspProjectFile
+  {
+    public mutable Path         : string;
+    public mutable ProjectPath  : string;
+  }
+    
+
+  /// <summary>
+  /// Description of LspWorkspace.
+  /// </summary>
+  internal class LspWorkspace
+  {
+    public StringManager : StringManager = StringManager();
+
+    private Suite : LspSuite;
+
+    public mutable ActiveSolutionId  : SolutionId;
+
+    public this(rootFolder: string)
+    {
+      def solutionFile = Directory.EnumerateFiles(rootFolder)
+                            .Where(x => x.EndsWith(".nsln"))
+                            .FirstOrDefault();
+
+      def suiteFolders = File.ReadAllLines(solutionFile);
+
+      Suite = suiteFolders.Select(x => string.Join("\\", [rootFolder, x])).Select(LoadSuite).FirstOrDefault(); // TODO: support for multiple suites ???
+
+    }
+
+    private LoadSuite(path: string) : LspSuite
+    {
+      def solPaths = Directory.EnumerateDirectories(path).Select(x => Uri(x).ToString());
+
+      def configPath = string.Join("\\", [path, "config.xml"]);
+      
+      def solMap = Hashtable(solPaths.Select(x => LoadSolution(x, configPath)).ToDictionary(x => SolutionId(StringManager.GetId(x.Path)), x => x));
+
+      def fileToSolMap = Hashtable(solPaths.SelectMany(x => Directory.EnumerateFiles(Uri(x).LocalPath, "*.tdl", SearchOption.AllDirectories)
+                                               .Select(a => Uri(a).ToString())
+                                               .Select(a => {
+                                                  def fId = FileId(StringManager.GetId(a));
+                                                  def s = solMap[SolutionId(StringManager.GetId(x))];
+                                                  new (file = fId, sol = s);
+                                                }))
+                            .ToDictionary(x => x.file, x => x.sol));
+      LspSuite() <-
+      {
+        Path = path;
+        SolutionMap = solMap;
+        FileToSolutionMap = fileToSolMap;
+        ConfigPath = configPath
+      };
+    }
+
+    public GetFid(path: string) : FileId
+    {
+      FileId(StringManager.GetId(path))
+    }
+    
+    public GetP(fId: FileId) : option[LspProject]
+    {
+      match(Suite.FileToSolutionMap.Get(fId))
+      {
+        | Some(sol) => sol.FileToProjectMap.Get(fId)
+        | _ => None()
+      }
+    }
+
+    public GetPid(fId: FileId) : ValueOption[ProjectId]
+    {
+      match(GetP(fId))
+      {
+        | Some(p) => VSome(ProjectId(StringManager.GetId(p.Path)))
+        | _ => VNone()
+      }
+    }
+
+    public GetP(path: string) : LspProject
+    {
+      Suite.SolutionMap.Select(x => x.Value).SelectMany(x => x.FileToProjectMap.Select(a => a.Value))
+            .Where(x => path.StartsWith(x.Path)).FirstOrDefault();
+    }
+
+    public GetS(sId: SolutionId): option[LspSolution]
+    {
+      Suite.SolutionMap.Get(sId);  
+    }
+    
+    public GetS(fId: FileId) : option[LspSolution]
+    {
+      Suite.FileToSolutionMap.Get(fId);
+    }
+
+    public GetSid(fId: FileId): option[SolutionId]
+    {
+      match(GetS(fId))
+      {
+        | Some(s) => Some(SolutionId(StringManager.GetId(s.Path)))
+        | _ => None()
+      }
+    }
+
+    public GetS(path: string) : LspSolution
+    {
+      Suite.SolutionMap.Select(x => x.Value).Where(x => path.StartsWith(x.Path)).FirstOrDefault();
+    }
+
+    public LoadSolution(path: string, configPath: string) : LspSolution
+    {
+      def projectFolders = Directory.EnumerateDirectories(Uri(path).LocalPath);
+
+      def fileToProjMap = Hashtable(projectFolders.SelectMany(x => Directory.EnumerateFiles(x, "*.tdl", SearchOption.AllDirectories)
+                                          .Select(a => new (file = StringManager.GetId(a), proj = StringManager.GetId(x))))
+                      .ToDictionary(x => FileId(x.file), x => LoadProject(StringManager.GetPath(x.proj), configPath)));                  
+
+      LspSolution() <- { Path = path; FileToProjectMap = fileToProjMap };
+    }
+
+    public LoadProject(path: string, configPath: string) : LspProject
+    {
+      def config = SerializationHelper.Deserialize(configPath);
+      def files = LoadProjectFiles(path);
+      
+      LspProject() <- { Path = Uri(path).ToString(); Config = config; Files = Hashtable(files.ToDictionary(x => x.Path)) };
+    }
+
+    public LoadProjectFiles(path: string) : List[LspProjectFile]
+    {
+      Directory.EnumerateFiles((Uri(path).LocalPath), "*.tdl", SearchOption.AllDirectories)
+        .Select(x => LspProjectFile() <- { Path = Uri(x).ToString(); ProjectPath = Uri(path).ToString() })
+        .ToList();
+    }
+
+    public AddFile(pth: string) : bool
+    {
+      def path = Uri(pth).ToString();
+      
+      def fId = FileId(StringManager.GetId(path));
+
+      when(Suite.FileToSolutionMap.ContainsKey(fId))
+        return false;
+
+      def sol = GetS(path);
+      Suite.FileToSolutionMap[fId] = sol;
+      def proj = GetP(path);
+
+      when(proj == null)
+        return false;
+      
+      //def pId = ProjectId(StringManager.GetId(proj.Path.ToString()));
+
+      proj.Files[path] = LspProjectFile() <- { Path = path; ProjectPath = proj.Path };
+      sol.FileToProjectMap[fId] = proj;
+
+      true;
+    }
+
+    public RemoveFile(path: string) : bool
+    {                               
+      def fId = FileId(StringManager.GetId(path));
+      match(GetP(fId), GetS(fId))
+      {
+        | (Some(proj), Some(sol)) when !File.Exists(path)  =>
+          {
+            _ = proj.Files.Remove(path);
+            _ = sol.FileToProjectMap.Remove(fId);
+            _ = Suite.FileToSolutionMap.Remove(fId);
+            true;
+          }
+        | _ => false;
+      }
+    }
+  }
+}

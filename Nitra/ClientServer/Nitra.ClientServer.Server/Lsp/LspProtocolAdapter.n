@@ -42,8 +42,9 @@ namespace Nitra.ClientServer.Server.Lsp
     private mutable _output              : Stream;
     private mutable _reader              : LspReader;
     private mutable _writer              : LspWriter;
-    private mutable _solution            : LspSolution;
+    //private mutable _solution            : LspSolution;
     private mutable _requestCounter      : int;
+    private mutable _workspace           : LspWorkspace;
 
     private          mutable _pendingCompletionIdLock : object = object();
     private volatile mutable _pendingCompletionId     : object;
@@ -66,6 +67,7 @@ namespace Nitra.ClientServer.Server.Lsp
 
       _reader.UnknownRequestHandler += UnknownHandler;
 
+      _reader.RegisterHandler("$/fileActivatedNotification",           FileActivated);
       _reader.RegisterHandler("$/cancelRequest",                       CancelRequest);
       _reader.RegisterHandler(Methods.Initialize,                      Initialize);
       _reader.RegisterHandler(Methods.Shutdown,                        Shutdown);
@@ -83,6 +85,7 @@ namespace Nitra.ClientServer.Server.Lsp
       _reader.RegisterHandler(Methods.TextDocumentDidSave,             TextDocument_DidSave);
       _reader.RegisterHandler(Methods.WorkspaceDidChangeConfiguration, Workspace_DidChangeConfiguration);
       _reader.RegisterHandler(Methods.WorkspaceDidChangeWatchedFiles,  Workspace_DidChangeWatchedFiles);
+
     }
 
     public Dispose() : void
@@ -110,13 +113,16 @@ namespace Nitra.ClientServer.Server.Lsp
 
       match (message)
       {
-        | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols)
-        | Hint(text, _span, tag)                        => CompleteRequest(tag, text)
-        | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id)
+        | FindSymbolReferences(_span, symbols, tag)     => CompleteRequest(tag, symbols);
+        | Hint(text, _span, tag)                        => CompleteRequest(tag, text);
+        | CompleteWord(id, _span, completionList)       => CompleteWord(message.FileId, completionList, id);
         //| ProjectLoadingMessages  (projectId, messages) => SendCompilerMessagesToClient(projectId, message.FileId, messages);
         | ParsingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=0);
         | MappingMessages         (projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=1);
         | SemanticAnalysisMessages(projectId, messages) => lock (_locker) SendCompilerMessagesToClient(projectId, message.FileId, messages, pass=2);
+        | KeywordsHighlightingCreated as khc => WriteNotification(LspNotification("$/keywordHighlight"), new (uri = Uri(_workspace.StringManager.GetPath(khc.FileId)), spanInfos = khc.spanInfos));
+        | SymbolsHighlightingCreated as shc => WriteNotification(LspNotification("$/symbolHighlight"), new (uri = Uri(_workspace.StringManager.GetPath(shc.FileId)), spanInfos = shc.spanInfos));
+        | LanguageLoaded as ll => WriteNotification(LspNotification("$/languageLoaded"), new (SpanClassInfo = ll.spanClassInfos));
         | _ => ()
       }
     }
@@ -129,34 +135,34 @@ namespace Nitra.ClientServer.Server.Lsp
         return;
 
       def diagnosticsPass =
-        if (pass == 0)
-        {
-          def x = array[array(0), array(0), array(0)];
-          _fileToCompilerMessageMap[fileId] = x;
-          x
-        }
-        else
-          _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
+                             if (pass == 0)
+                             {
+                               def x = array[array(0), array(0), array(0)];
+                               _fileToCompilerMessageMap[fileId] = x;
+                               x
+                             }
+                             else
+                               _fileToCompilerMessageMap.GetOrAdd(fileId, (_) => array[array(0), array(0), array(0)]);
 
       def diagnostics = List();
-      def uri         = _solution.GetFileUri(fileId);
+      def uri         = _workspace.StringManager.GetPath(fileId);
       foreach (m in messages)
       {
         def severity =
-          match (m.Type)
-          {
-            | FatalError => DiagnosticSeverity.Error
-            | Error      => DiagnosticSeverity.Error
-            | Warning    => DiagnosticSeverity.Warning
-            | Hint       => DiagnosticSeverity.Hint
-          };
+                        match (m.Type)
+                        {
+                          | FatalError => DiagnosticSeverity.Error
+                          | Error      => DiagnosticSeverity.Error
+                          | Warning    => DiagnosticSeverity.Warning
+                          | Hint       => DiagnosticSeverity.Hint
+                        };
         def loc = m.Location;
         diagnostics.Add(Diagnostic() <-
         {
-          Range = Convert(loc.Range);
-          Severity = severity;
-          Code = if (m.Number < 0) null else m.Number.ToString();
-          Message = m.Text;
+                        Range = Convert(loc.Range);
+                        Severity = severity;
+                        Code = if (m.Number < 0) null else m.Number.ToString();
+                        Message = m.Text;
           // Source = ???
         });
       }
@@ -168,7 +174,7 @@ namespace Nitra.ClientServer.Server.Lsp
       diagnostics.AddRange(diagnosticsPass[1]);
       diagnostics.AddRange(diagnosticsPass[2]);
 
-      def @params = PublishDiagnosticParams() <- { Uri = uri; Diagnostics = diagnostics.ToArray(); };
+      def @params = PublishDiagnosticParams() <- { Uri = Uri(uri); Diagnostics = diagnostics.ToArray(); };
       WriteNotification(Methods.TextDocumentPublishDiagnostics, @params);
       Log.Message($"LSP < textDocument/publishDiagnostics fileId=$fileId pass=$pass messages.Length=$(messages.Length) diagnostics", ConsoleColor.DarkCyan);
     }
@@ -178,6 +184,84 @@ namespace Nitra.ClientServer.Server.Lsp
       Log.Message($"LSP -> UnknownHandler method=$method id=$id", ConsoleColor.Cyan);
       when (id != null)
         WriteError(id, LspErrorCode.MethodNotFound, method)
+    }
+
+    private FileActivated(doc: TextDocumentItem): void
+    {
+      when(!doc.Uri.ToString().EndsWith(".tdl"))
+        return;
+
+      def fId = _workspace.GetFid(doc.Uri.ToString());
+      def sidOpt = _workspace.GetSid(fId);
+
+      when(sidOpt.IsNone)
+        return;
+
+      def sId = sidOpt.GetValueOrDefault();
+      
+      def prevActive = _workspace.ActiveSolutionId;
+      _ = prevActive;
+
+      when(sId != _workspace.ActiveSolutionId && sId != 0)
+      {
+        when(_workspace.ActiveSolutionId != SolutionId(0))
+          _router.AddMessage(ClientMessage.SolutionUnloaded(_workspace.ActiveSolutionId));
+
+        def solOpt = _workspace.GetS(sId);
+        when(solOpt.IsNone)
+          return;
+
+        def sol = solOpt.GetValueOrDefault();
+
+        def sId = SolutionId(_workspace.StringManager.GetId(sol.Path));
+        def msg = ClientMessage.SolutionStartLoading(sId, Uri(sol.Path).LocalPath);
+        _router.AddMessage(msg);
+
+        sol.FileToProjectMap
+          .Select(x => x.Value)
+          .Iter(p =>
+          {
+                def pId = ProjectId(_workspace.StringManager.GetId(p.Path));
+                def msg = ClientMessage.ProjectStartLoading(pId, Uri(p.Path).LocalPath, p.Config);
+                _router.AddMessage(msg);
+
+                p.Config.References
+                  .Iter(r =>
+                  {
+                        def msg = ClientMessage.ReferenceLoaded(pId, r);
+                        _router.AddMessage(msg);
+                  });
+
+                p.Files.Select(x => x.Value)
+                  .Iter(f =>
+                  {
+                        def fId = FileId(_workspace.StringManager.GetId(f.Path));
+                        def msg = ClientMessage.FileLoaded(pId, Uri(f.Path).LocalPath, fId, version = FileVersion(1), hasContent = false, contentOpt = null);
+                        _router.AddMessage(msg);
+                  });
+
+                def msg = ClientMessage.ProjectLoaded(pId);
+                _router.AddMessage(msg);
+
+        });
+
+        def msg = ClientMessage.SolutionLoaded(sId);
+        _router.AddMessage(msg);
+
+        _workspace.ActiveSolutionId = sId;
+      }
+
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+      {
+        def msg = ClientMessage.FileActivated(pidOpt.GetValueOrDefault(), fId, FileVersion(doc.Version)); 
+        _router.AddMessage(msg);
+      }
+
+      Log.Message($"LSP -> $$/fileActivatedNotification file=$(doc.Uri)", ConsoleColor.Cyan);
+      //def fileId = _solution.GetFileId(doc.Uri);
+      //foreach (project in _solution.GetProjects(fileId))
+      //  _router.AddMessage(ClientMessage.FileActivated(project.ProjectId, fileId, FileVersion(doc.Version)));
     }
 
     private CancelRequest(p : CancelParams) : void
@@ -195,26 +279,27 @@ namespace Nitra.ClientServer.Server.Lsp
       def result =
         InitializeResult() <-
         {
-          Capabilities = ServerCapabilities() <-
+        Capabilities = ServerCapabilities() <-
           {
-            TextDocumentSync = TextDocumentSyncOptions() <-
+                       TextDocumentSync = TextDocumentSyncOptions() <-
               {
-                OpenClose = true;
-                Change = TextDocumentSyncKind.Incremental;
-                Save = SaveOptions() <- { IncludeText = false }
+                                          OpenClose = true;
+                                          Change = TextDocumentSyncKind.Incremental;
+                                          Save = SaveOptions() <- { IncludeText = false }
               };
-            DefinitionProvider = true;
-            ReferencesProvider = true;
-            DocumentHighlightProvider = true;
-            CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
-            HoverProvider = true
+                       DefinitionProvider = true;
+                       ReferencesProvider = true;
+                       DocumentHighlightProvider = true;
+                       CompletionProvider = CompletionOptions() <- { ResolveProvider = false };
+                       HoverProvider = true
           }
         };
 
       when (!string.IsNullOrEmpty(p.RootPath) && IO.Directory.Exists(p.RootPath))
       {
-        def options = (p.InitializationOptions :> JObject).ToObject.[InitializationOptions]();
-        LoadSolution(p.RootPath, options)
+        //def options = (p.InitializationOptions :> JObject).ToObject.[InitializationOptions]();
+
+        _workspace = LspWorkspace(p.RootPath);
       }
 
       WriteResult(id, result);
@@ -224,7 +309,7 @@ namespace Nitra.ClientServer.Server.Lsp
     {
       Log.Message("LSP > initialized", ConsoleColor.Cyan);
       def make(pattern : string) { FileSystemWatcher() <- { GlobPattern = pattern; Kind = WatchKind.Create | WatchKind.Change | WatchKind.Delete; } }
-      def watchers = _solution.GetWatchedPatterns().Select(make).ToArray();
+      def watchers = [".tdl"].Select(make).ToArray();
       def options = DidChangeWatchedFilesRegistrationOptions() <- { Watchers = watchers; };
       def registrationParams = RegistrationParams() <- { Registrations = array[
           Registration() <-
@@ -256,51 +341,65 @@ namespace Nitra.ClientServer.Server.Lsp
 
     private TextDocument_DidOpen(p : DidOpenTextDocumentParams) : void
     {
-      def document = p.TextDocument;
-      def uri      = document.Uri;
-      def fileId   = _solution.GetFileId(uri);
-      def version  = FileVersion(document.Version);
-      def path     = ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(uri.LocalPath);
-      Log.Message($"LSP > textDocument/didOpen fileId=$fileId Version=$(document.Version) Uri='$uri' Text=«$(document.Text)»", ConsoleColor.Cyan);
-      foreach (project in _solution.GetProjects(fileId))
-        project.DidOpenFileForEditing(fileId, version, path, document.Text);
-      otherwise
-        TryAddToProject(fileId, version, path, document.Text);
+      //when(_workspace.AddFile(p.TextDocument.Uri.ToString()))
+      //{
+      //  def fId = FileId(_workspace.StringManager.GetId(p.TextDocument.Uri.ToString()));
+      //  def pId = _workspace.GetPid(fId);
+      //  _router.AddMessage(ClientMessage.FileLoaded(pId
+      //                                              , p.TextDocument.Uri.LocalPath
+      //                                              , fId
+      //                                              , FileVersion(p.TextDocument.Version)
+      //                                              , hasContent = false, contentOpt = null));
+      //}
+
+      //FileActivated(p.TextDocument);
+
+      //def document = p.TextDocument;
+      //def uri      = document.Uri;
+      //def fileId   = FileId(_workspace.StringManager.GetId(uri.AbsolutePath));
+      //def version  = FileVersion(document.Version);
+      //def path     = ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(uri.LocalPath);
+      //Log.Message($"LSP > textDocument/didOpen fileId=$fileId Version=$(document.Version) Uri='$uri' Text=«$(document.Text)»", ConsoleColor.Cyan);
+      //foreach (project in _.GetProjects(fileId))
+      //  project.DidOpenFileForEditing(fileId, version, path, document.Text);
+      //otherwise
+      //  TryAddToProject(fileId, version, path, document.Text);
     }
 
-    private TryAddToProject(fileId : FileId, version : FileVersion, path : string, text : string) : void
-    {
-      def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
-      foreach (project in matchedProjects)
-        project.DidOpenFileForEditing(fileId, version, path, text);
-      otherwise
-      {
-        def project = _solution.OpenProject(path);
-        project.DidOpenFileForEditing(fileId, version, path, text);
-      }
-    }
+    //private TryAddToProject(fileId : FileId, version : FileVersion, path : string, text : string) : void
+    //{
+    //  def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
+    //  foreach (project in matchedProjects)
+    //    project.DidOpenFileForEditing(fileId, version, path, text);
+    //  otherwise
+    //  {
+    //    def project = _solution.OpenProject(path);
+    //    project.DidOpenFileForEditing(fileId, version, path, text);
+    //  }
+    //}
 
-    private TryAddToProject(fileId : FileId, path : string) : void
-    {
-      def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
-      Log.Message($<#LSP TryAddToProject fileId=$fileId matchedProjects=[..$matchedProjects] path=$path")#>, ConsoleColor.Cyan);
+    //private TryAddToProject(fileId : FileId, path : string) : void
+    //{
+    //  def matchedProjects = _solution.FindMatchingProjects(fileId).ToList();
+    //  Log.Message($<#LSP TryAddToProject fileId=$fileId matchedProjects=[..$matchedProjects] path=$path")#>, ConsoleColor.Cyan);
 
-      foreach (project in matchedProjects)
-        project.LoadFile(fileId, path);
-      otherwise
-      {
-        def project = _solution.OpenProject(path);
-        project.LoadFile(fileId, path);
-      }
-    }
+    //  foreach (project in matchedProjects)
+    //    project.LoadFile(fileId, path);
+    //  otherwise
+    //  {
+    //    def project = _solution.OpenProject(path);
+    //    project.LoadFile(fileId, path);
+    //  }
+    //}
 
     private TextDocument_DidClose(p : DidCloseTextDocumentParams) : void
     {
-      def fileId = _solution.GetFileId(p.TextDocument.Uri);
+      def fId = FileId(_workspace.StringManager.GetId(p.TextDocument.Uri.ToString()));
       Log.Message($"LSP > textDocument/didClose $(p.TextDocument.Uri)" + p.TextDocument.Uri, ConsoleColor.Cyan);
-      foreach (project in _solution.GetProjects(fileId))
-        project.DidClose(fileId);
-        //_router.AddMessage(ClientMessage.FileDeactivated(project.ProjectId, fileId));
+      //def pId = _workspace.ActiveSolution.FileToProjectMap[fId];
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+        _router.AddMessage(ClientMessage.FileDeactivated(pidOpt.GetValueOrDefault(), fId));
     }
 
     private static ToStringDidChangeTextDocumentParamsToString(msg : DidChangeTextDocumentParams) : string
@@ -322,51 +421,72 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
       def document = p.TextDocument;
       def changes  = p.ContentChanges;
-      def fileId   = _solution.GetFileId(document.Uri);
+      def fileId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def version  = FileVersion(document.Version ?? -1);
       def message  =
-        if (changes.Length == 1)
-        {
-          ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
-        }
-        else
-        {
-          def builder = ImmutableArray.CreateBuilder(changes.Length);
-          for (mutable i = changes.Length - 1; i >= 0; i--)
-            builder.Add(Convert(changes[i]));
-          ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
-        }
+                      if (changes.Length == 1)
+                      {
+                        ClientMessage.FileChanged(fileId, version, Convert(changes[0]), VersionedPos(Convert(changes[0].Range.End), version))
+                      }
+                      else
+                      {
+                        def builder = ImmutableArray.CreateBuilder(changes.Length);
+                        for (mutable i = changes.Length - 1; i >= 0; i--)
+                          builder.Add(Convert(changes[i]));
+                        ClientMessage.FileChangedBatch(fileId, version, builder.MoveToImmutable(), VersionedPos.Invalid);
+                      }
       _router.AddMessage(message);
     }
 
     private Workspace_DidChangeWatchedFiles(p : DidChangeWatchedFilesParams) : void
     {
-      Log.Message($<#LSP > $(Methods.WorkspaceDidChangeWatchedFilesName) ..$(p.Changes; ", "; c => $"FileChangeType=$(c.FileChangeType) fileId=$( _solution.GetFileId(c.Uri)) Uri=$(c.Uri.LocalPath)")#>, ConsoleColor.Cyan);
+      Log.Message($<#LSP > $(Methods.WorkspaceDidChangeWatchedFilesName) ..$(p.Changes; ", ";c => $"FileChangeType=$(c.FileChangeType) fileId=$( _workspace.StringManager.GetId(c.Uri.ToString())) Uri=$(c.Uri.ToString())")#>, ConsoleColor.Cyan);
 
       foreach (change in p.Changes)
       {
-        def fileId = _solution.GetFileId(change.Uri);
-        foreach (project in _solution.GetProjects(fileId))
+        def filePath = change.Uri.ToString();
+        def fId = _workspace.GetFid(filePath);
+
+        def msg = match (change.FileChangeType)
         {
-          match (change.FileChangeType)
-          {
-            | FileChangeType.Created => project.OnCreatedFile(fileId);
-            | FileChangeType.Deleted => project.OnDeletedFile(fileId); // TODO: Если файл открыт на редактирование, то переложить его в отдельный, временный, проект.
-            | FileChangeType.Changed => project.OnExternallyChangedFile(fileId);
-          }
+          | (FileChangeType.Created) when _workspace.AddFile(filePath) =>
+            {
+              def pidOpt = _workspace.GetPid(fId);
+              if(pidOpt.IsSome)
+                Some(ClientMessage.FileLoaded(pidOpt.GetValueOrDefault(), filePath, fId, FileVersion(1), false, null));
+              else None()
+            }
+            // TODO: Если файл открыт на редактирование, то переложить его в отдельный, временный, проект.
+          | (FileChangeType.Deleted) when _workspace.RemoveFile(filePath) =>
+            {
+              def pidOpt = _workspace.GetPid(fId);
+              if(pidOpt.IsSome)
+                Some(ClientMessage.FileUnloaded(pidOpt.GetValueOrDefault(), fId));
+              else
+                None();
+            }
+          //| (_, FileChangeType.Changed) => None();
+          | _ => None();
         }
-        otherwise
+        //otherwise
+        //{
+        //  Log.Message($<#LSP File is not part of any project. FileChangeType=$(change.FileChangeType) fileId=$fileId Uri=$(change.Uri.LocalPath)")#>, ConsoleColor.Cyan);
+        //  match (change.FileChangeType)
+        //  {
+        //    | FileChangeType.Created => TryAddToProject(fileId, ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(change.Uri.LocalPath));
+        //    | FileChangeType.Deleted => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
+        //    | FileChangeType.Changed => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
+        //  }
+        //}
+        match(msg)
         {
-          Log.Message($<#LSP File is not part of any project. FileChangeType=$(change.FileChangeType) fileId=$fileId Uri=$(change.Uri.LocalPath)")#>, ConsoleColor.Cyan);
-          match (change.FileChangeType)
-          {
-            | FileChangeType.Created => TryAddToProject(fileId, ServerUtils.TrimBeginSlashInFullyQualifiedWindowsPath(change.Uri.LocalPath));
-            | FileChangeType.Deleted => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
-            | FileChangeType.Changed => Log.Error($"File not in any project! fileId=$fileId FileChangeType=$(change.FileChangeType) Uri=$(change.Uri.LocalPath)");
-          }
+          | Some(m) => _router.AddMessage(m);
+          | None => ();
         }
       }
     }
+
+
 
     private TextDocument_DidSave(p : DidSaveTextDocumentParams) : void
     {
@@ -376,51 +496,56 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
     private TextDocument_DocumentHighlight(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = _solution.GetFileId(document.Uri);
+      def fId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> textDocument/documentHighlight id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, true, RegisterRequest(id, DocumentHighlight)));
+      Log.Message($"LSP -> textDocument/documentHighlight id=$id fileId=$fId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+      _router.AddMessage(ClientMessage.FindSymbolReferences(pidOpt.GetValueOrDefault(), fId, position, true, RegisterRequest(id, DocumentHighlight)));
     }
 
     private TextDocument_References(p : ReferenceParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = _solution.GetFileId(document.Uri);
+      def fId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> textDocument/references id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.FindSymbolReferences(project.ProjectId, fileId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration))));
+      Log.Message($"LSP -> textDocument/references id=$id fileId=$fId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+      _router.AddMessage(ClientMessage.FindSymbolReferences(pidOpt.GetValueOrDefault(), fId, position, false, RegisterRequest(id, FindReferences(_, _, p.Context.IncludeDeclaration))));
     }
 
     private TextDocument_Hover(p : TextDocumentPositionParams, id : object) : void
     {
       def document = p.TextDocument;
-      def fileId   = _solution.GetFileId(document.Uri);
+      def fId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def position = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> textDocument/hover id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.GetHint(project.ProjectId, fileId, position, RegisterRequest(id, ShowHint(_, _, p.Position))));
+      Log.Message($"LSP -> textDocument/hover id=$id fileId=$fId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+      _router.AddMessage(ClientMessage.GetHint(pidOpt.GetValueOrDefault(), fId, position, RegisterRequest(id, ShowHint(_, _, p.Position))));
     }
 
     private TextDocument_Completion(p : CompletionParams, id : object) : void
     {
       def document        = p.TextDocument;
-      def fileId          = _solution.GetFileId(document.Uri);
+      def fId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> textDocument/completion id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.CompleteWord((id :> long) :> int, project.ProjectId, fileId, position));
+      Log.Message($"LSP -> textDocument/completion id=$id fileId=$fId Line=$(p.Position.Line) Character=$(p.Position.Character) TriggerKind=$(p.Context.TriggerKind) TriggerCharacter=$(p.Context.TriggerCharacter) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+        _router.AddMessage(ClientMessage.CompleteWord((id :> long) :> int, pidOpt.GetValueOrDefault(), fId, position));
     }
 
     private TextDocument_Definition(p : TextDocumentPositionParams, id : object) : void
     {
       def document        = p.TextDocument;
-      def fileId          = _solution.GetFileId(document.Uri);
+      def fId   = FileId(_workspace.StringManager.GetId(document.Uri.ToString()));
       def position        = VersionedPos(Convert(p.Position), FileVersion.Invalid);
-      Log.Message($"LSP -> textDocument/definition id=$id fileId=$fileId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
-      when (_solution.TryGetFirstProjects(fileId) is VSome(project))
-        _router.AddMessage(ClientMessage.FindSymbolDefinitions(project.ProjectId, fileId, position, RegisterRequest(id, FindDefinitions(_, _))));
+      Log.Message($"LSP -> textDocument/definition id=$id fileId=$fId Line=$(p.Position.Line) Character=$(p.Position.Character) Uri=$(document.Uri)", ConsoleColor.Cyan);
+      def pidOpt = _workspace.GetPid(fId);
+      when(pidOpt.IsSome)
+      _router.AddMessage(ClientMessage.FindSymbolDefinitions(pidOpt.GetValueOrDefault(), fId, position, RegisterRequest(id, FindDefinitions(_, _))));
     }
 
     private WriteError(id : object, code : LspErrorCode, message : string) : void
@@ -450,13 +575,13 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       }
     }
 
-    private LoadSolution(path : string, options : InitializationOptions) : void
-    {
-      _solution = LspSolution(_router, SolutionId(0), options.Config, ImmutableArray.Create(options.FileExtension)); // TODO: Add support of multiple extensions
-      _router.AddMessage(ClientMessage.SolutionStartLoading(_solution.SolutionId, path));
-      _ = _solution.OpenProject(path); // TODO: Add support of multiproject
-      _router.AddMessage(ClientMessage.SolutionLoaded(_solution.SolutionId));
-    }
+    //private LoadSolution(path : string, options : InitializationOptions) : void
+    //{
+    //  _solution = LspSolution(_router, SolutionId(0), options.Config, ImmutableArray.Create(options.FileExtension)); // TODO: Add support of multiple extensions
+    //  _router.AddMessage(ClientMessage.SolutionStartLoading(_solution.SolutionId, path));
+    //  _ = _solution.OpenProject(path); // TODO: Add support of multiproject
+    //  _router.AddMessage(ClientMessage.SolutionLoaded(_solution.SolutionId));
+    //}
 
     private DocumentHighlight(symbols : ImmutableArray[SymbolReferences], id : object) : void
     {
@@ -465,8 +590,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(DocumentHighlight() <-
         {
-          Range = range;
-          Kind  = DocumentHighlightKind.Text
+                   Range = range;
+                   Kind  = DocumentHighlightKind.Text
         });
       }
       WriteResult(id, result);
@@ -479,8 +604,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.Location() <-
         {
-          Range = range;
-          Uri   = _solution.GetFileUri(fileId)
+                   Range = range;
+                   Uri   = Uri(_workspace.StringManager.GetPath(fileId));
         });
       }
       WriteResult(id, result);
@@ -493,8 +618,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.Location() <-
         {
-          Range = range;
-          Uri   = _solution.GetFileUri(fileId)
+                   Range = range;
+                   Uri   = Uri(_workspace.StringManager.GetPath(fileId));
         });
       }
       WriteResult(id, result);
@@ -506,8 +631,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
 
       WriteResult(id, Hover() <-
       {
-        Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
-        Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
+                      Contents = new (kind = "markdown", value = value); // TODO: transform XML to Markdown
+                      Range    = LSP.Range() <- { Start = position; End = LSP.Position(position.Line, position.Character + 1) }
       });
     }
 
@@ -544,7 +669,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         result.Add(LSP.CompletionItem() <-
         {
-          Label = x.Text
+                   Label = x.Text
         });
       }
       WriteResult(id, result);
@@ -554,8 +679,8 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
     {
       Range() <-
       {
-        Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
-        End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
+      Start = Position() <- { Line = range.StartLine - 1; Character = range.StartColumn - 1 };
+      End   = Position() <- { Line = range.EndLine   - 1; Character = range.EndColumn   - 1 }
       }
     }
 
@@ -579,21 +704,21 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
         }
 
         foreach (r in s.References)
-        foreach (g in r.Ranges)
-          yield (Convert(g), r.File.FileId);
+          foreach (g in r.Ranges)
+            yield (Convert(g), r.File.FileId);
       }
     }
 
     private static Convert(c : TextDocumentContentChangeEvent) : FileChange
     {
-        def newText = c.Text;
-        def isEmpty = string.IsNullOrEmpty(newText);
-        if (c.RangeLength == 0 && !isEmpty)
-          FileChange.Insert(Convert(c.Range.Start), newText)
-        else if (c.RangeLength > 0 && isEmpty)
-          FileChange.Delete(Convert(c.Range))
-        else
-          FileChange.Replace(Convert(c.Range), newText)
+      def newText = c.Text;
+      def isEmpty = string.IsNullOrEmpty(newText);
+      if (c.RangeLength == 0 && !isEmpty)
+        FileChange.Insert(Convert(c.Range.Start), newText)
+      else if (c.RangeLength > 0 && isEmpty)
+             FileChange.Delete(Convert(c.Range))
+           else
+             FileChange.Replace(Convert(c.Range), newText)
     }
 
     private static Convert(p : Position) : UIPosition
@@ -632,7 +757,7 @@ Version: $(msg.TextDocument.Version)  Uri: '$(msg.TextDocument.Uri)'
       {
         def di = IO.DirectoryInfo(logDir);
         foreach (file in di.GetFiles())
-            file.Delete();
+          file.Delete();
       }
       else
         _ = IO.Directory.CreateDirectory(logDir);

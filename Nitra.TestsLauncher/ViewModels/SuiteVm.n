@@ -12,7 +12,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Xml.Linq;
-using Nitra.Visualizer.Serialization;
 using System.Reflection;
 using File = System.IO.File;
 using Messages = Nitra.ClientServer.Messages;
@@ -52,7 +51,7 @@ namespace Nitra.ViewModels
       try
       {
         def config     = if (File.Exists(_configPath))
-                           SerializationHelper.Deserialize(_configPath);
+                           Messages.SerializationHelper.Deserialize(_configPath);
                          else
                            Messages.Config.InitNew();
         Config         = config;
@@ -127,7 +126,7 @@ namespace Nitra.ViewModels
 
     public Save() : void
     {
-      File.WriteAllText(_configPath, SerializationHelper.Serialize(Config));
+      File.WriteAllText(_configPath, Messages.SerializationHelper.Serialize(Config));
     }
 
     public GetConfigWithFullPaths() : Messages.Config

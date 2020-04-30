@@ -61,6 +61,9 @@
   <ItemGroup>
     <Compile Include="Messages.n" />
     <Compile Include="Properties\AssemblyInfo.n" />
+    <Compile Include="SerializationHelper.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Utils\StringPatternMatching.n">
       <SubType>Code</SubType>
     </Compile>
