@@ -129,6 +129,11 @@ namespace Nitra.ClientServer.Server
       }
     }
 
+    public Send(msg: ClientMessage): void
+    {
+      AddMessage(msg);
+    }
+
     public AddMessage(msg : RouterMessage): void
     {
       when (msg is ClientMessage.SolutionStartLoading)

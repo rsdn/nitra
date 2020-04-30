@@ -15,7 +15,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Nitra.Visualizer.Serialization;
 using Messages = Nitra.ClientServer.Messages;
 
 namespace Nitra.Visualizer
@@ -93,7 +92,7 @@ namespace Nitra.Visualizer
 
     public MakeXml(config : Messages.Config) : string
     {
-      SerializationHelper.Serialize(config)
+      Messages.SerializationHelper.Serialize(config)
     }
 
     public Escape(str: string): string

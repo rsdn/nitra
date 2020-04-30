@@ -25,16 +25,19 @@ namespace Nitra.ClientServer.Client
 
     public GetId(path : string) : int
     {
-      if (string.IsNullOrEmpty(path))
+      def unesc = Uri.UnescapeDataString(path);
+      def uri = Uri(unesc).ToString();
+      
+      if (string.IsNullOrEmpty(uri))
         0
       else
       {
         mutable id;
-        unless (_pathToId.TryGetValue(path, out id))
+        unless (_pathToId.TryGetValue(uri, out id))
         {
           id = _idToPaths.Count;
-          _pathToId.Add(path, id);
-          _idToPaths.Add(path);
+          _pathToId.Add(uri, id);
+          _idToPaths.Add(uri);
         }
         id
       }
