@@ -121,6 +121,12 @@
     <Compile Include="CSharp\Extensible.n">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CSharp\ProjectSupport\CSharpProjectEvalPropertiesHost.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CSharp\ProjectSupport\ProjectSupport.n">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Preprocessor\PreParser.n">
       <SubType>Code</SubType>
     </Compile>
@@ -151,6 +157,7 @@
     <Folder Include="CSharp\CS5" />
     <Folder Include="CSharp\CS6" />
     <Folder Include="CSharp\CS7" />
+    <Folder Include="CSharp\ProjectSupport" />
     <Folder Include="Preprocessor\" />
     <Folder Include="Properties\" />
   </ItemGroup>

@@ -21,7 +21,7 @@ namespace CSharpJson
 
   ast JsonExpr : Expr
   {
-    Type = PlatformTypes.Object;
+    Type = context.GetObjectType();
   }
 
   map syntax CSharpJson.Extention.Expression.Json -> DotNet.Expr
