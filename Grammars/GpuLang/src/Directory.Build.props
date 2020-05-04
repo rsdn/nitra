@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)key.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_NitraOutputPath>nitra\bin\Debug\Stage1</_NitraOutputPath>
+    <_NitraGrammarsOutputPath>nitra\Grammars\bin\Debug</_NitraGrammarsOutputPath>
+    <_NitraLanguageCompilerOutputPath>nitra\Nitra.LanguageCompiler\bin\Debug</_NitraLanguageCompilerOutputPath>
+    <_NitraCommonIdeOutputPath>nitra\Ide\NitraCommonIde\bin\Debug</_NitraCommonIdeOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_NitraUserFile>Nitra.user</_NitraUserFile>
+    <_NitraUserBasePath>$(MSBuildThisFileDirectory)</_NitraUserBasePath>
+    <NitraUserPath>$([System.IO.Path]::Combine('$(_NitraUserBasePath)', '$(_NitraUserFile)'))</NitraUserPath>
+  </PropertyGroup>
+
+  <Import Condition=" Exists('$(NitraUserPath)') " Project="$(NitraUserPath)" />
+
+  <PropertyGroup>
+    <NitraAndNemerleSourcesPath Condition=" '$(NitraAndNemerleSourcesPath)' == '' ">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\..\..\'))</NitraAndNemerleSourcesPath>
+    <NitraPath                  Condition=" '$(NitraPath)'                  == '' ">$([System.IO.Path]::Combine('$(NitraAndNemerleSourcesPath)', '$(_NitraOutputPath)'))</NitraPath>
+    <NitraGrammarsPath          Condition=" '$(NitraGrammarsPath)'          == '' ">$([System.IO.Path]::Combine('$(NitraAndNemerleSourcesPath)', '$(_NitraGrammarsOutputPath)'))</NitraGrammarsPath>
+    <NitraLanguageCompilerPath  Condition=" '$(NitraLanguageCompilerPath)'  == '' ">$([System.IO.Path]::Combine('$(NitraAndNemerleSourcesPath)', '$(_NitraLanguageCompilerOutputPath)'))</NitraLanguageCompilerPath>
+    <NitraCommonIdePath         Condition=" '$(NitraCommonIdePath)'         == '' ">$([System.IO.Path]::Combine('$(NitraAndNemerleSourcesPath)', '$(_NitraCommonIdeOutputPath)'))</NitraCommonIdePath>
+    <NugetExePath               Condition=" '$(NugetExePath)'               == '' ">$([System.IO.Path]::Combine('$(NitraAndNemerleSourcesPath)', 'nitra\ExternalTools\Nuget.exe'))</NugetExePath>
+  </PropertyGroup>
+</Project>

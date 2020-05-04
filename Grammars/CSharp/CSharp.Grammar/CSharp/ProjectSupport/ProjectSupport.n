@@ -20,13 +20,13 @@ using System.Linq;
 using System.Threading;
 using ND = Nitra.Declarations;
 
-[assembly: ProjectSupport("Nitra C#", typeof(CSharp.CompilationUnit))]
+[assembly: ProjectSupport("Nitra C#", typeof(CSharp.ProjectSupport))]
 
 namespace CSharp
 {
-  public sealed class ProjectSupport : IProjectSupport
+  public class ProjectSupport : IProjectSupport
   {
-    public Reset(project : Project) : void
+    public virtual Reset(project : Project) : void
     {
       when (project?.Data == null)
         return;
@@ -37,7 +37,7 @@ namespace CSharp
       project.Data = null;
     }
     
-    public RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
+    public virtual RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
     {
       DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParametersOpt;
       TypeUnifier.InitInstance();
@@ -107,7 +107,7 @@ namespace CSharp
       DotNetProjectData(backEnd, context, rootNamespace)
     }
 
-    public RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
+    public virtual RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
     {
       def projectData = data :> DotNetProjectData;
       def backEnd               = projectData.BackEnd;
@@ -135,12 +135,12 @@ namespace CSharp
       evalHost.Finish();
     }
 
-    public Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+    public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
     {
     	IgnoreParams();
     }
 
-    public GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
+    public virtual GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
     {
       def rootNamespace = DecomposeData(data).RootNamespace;
       // TODO: cache symbols an use it cache to find symbol by id
@@ -183,7 +183,7 @@ namespace CSharp
       ValueOption.None()
     }
 
-    public DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
+    public virtual DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
     {
       match (symbol)
       {
@@ -193,7 +193,7 @@ namespace CSharp
       }
     }
 
-    public VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
+    public virtual VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
     {
       def (_, _, rootNamespace) = DecomposeData(data);
       _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
