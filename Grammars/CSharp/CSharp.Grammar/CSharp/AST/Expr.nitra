@@ -642,6 +642,6 @@ namespace DotNet
   }
   abstract ast Arithmetic : NumericBinary
   {
-    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
+    Type = await this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
   }
 }

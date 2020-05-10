@@ -1,3 +1,5 @@
+using ILGPU;
+
 static class A
 {
     static void MandelbrotKernel(

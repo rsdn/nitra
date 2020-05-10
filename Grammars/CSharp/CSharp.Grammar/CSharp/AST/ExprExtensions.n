@@ -13,6 +13,7 @@ using System.Linq;
 
 using Nitra;
 using Nitra.Declarations;
+
 using DotNet;
 
 namespace DotNet
@@ -23,25 +24,78 @@ namespace DotNet
     public static NoFile : ProjectSystem.File = SourceSnapshot.Default.File;
     public static NoSpan : NSpan              = NSpan(0);
 
-    public GetArithmeticType(this host : Expr, e1Type : TypeSymbol, e2Type : TypeSymbol, context : DependentPropertyEvalContext) : TypeSymbol
+    public TryExpandType(type : TypeSymbol) : ValueOption[TypeSymbol]
     {
-      // TODO: Переделать на типах.
-      match (host, if (e1Type.IsFullNameEvaluated) e1Type.FullName  else "", if (e2Type.IsFullNameEvaluated) e2Type.FullName  else "")
+      | TypeAliasSymbol as alias when !alias.IsReplacementEvaluated || !alias.Replacement.IsSymbolEvaluated => VNone()
+      | TypeAliasSymbol as alias => VSome(alias.Replacement.Symbol :> TypeSymbol)
+      | _ => VSome(type)
+    }
+    
+    public GetArithmeticType(this host : Expr, e1Type : TypeSymbol, e2Type : TypeSymbol, context : DependentPropertyEvalContext) : ValueOption[TypeSymbol]
+    {
+      def t1Opt = TryExpandType(e1Type);
+      when (t1Opt.IsNone)
+        return VNone();
+        
+      def t2Opt = TryExpandType(e2Type);
+      when (t2Opt.IsNone)
+        return VNone();
+        
+      def t1       = t1Opt.Value;
+      def t2       = t2Opt.Value;
+      def t1Id     = t1.Id;
+      def t2Id     = t2.Id;
+      def pt       = context.GetPlatformType();
+      def stringId = pt.String.Id;
+      def charId   = pt.Char.Id;
+      def doubleId = pt.Double.Id;
+      def floatId  = pt.Single.Id;
+      def int64Id  = pt.Int64.Id;
+
+      match (host)
       {
-        | (Expr.Sum, "System.String", _) => e1Type
-        | (Expr.Sum, _, "System.String") => e2Type
-        | (Expr.Sum, "System.Char", "System.Char") => context.GetStringType()
-        | (Expr.Sum, _, "System.Char") when e1Type.IsNumeric(context) => e1Type
-        | (Expr.Sum, "System.Char", _) when e2Type.IsNumeric(context) => e2Type
-        | (_, "System.Double", _) => context.GetDoubleType()
-        | (_, _, "System.Double") => context.GetDoubleType()
-        | (_, "System.Float", _) => e1Type
-        | (_, _, "System.Float") => e2Type
-        | (_, "System.Int64", _) => e1Type
-        | (_, _, "System.Int64") => e2Type
-        | (_, _, _) when e1Type.IsNumeric(context) && e2Type.IsNumeric(context) => e1Type
-        | _ => e1Type
+        | Expr.Sum when t1Id == stringId                               => t1Opt
+        | Expr.Sum when t2Id == stringId                               => t2Opt
+        | Expr.Sum when t1Id == charId && t2Id == charId               => VSome(pt.String)
+        | Expr.Sum when t2Id == charId && t1.IsNumeric(context)        => t1Opt
+        | Expr.Sum when t1Id == charId && t2.IsNumeric(context)        => t2Opt
+        | _        when t1Id == doubleId || t2Id == doubleId           => VSome(pt.Double)
+        | _        when t1Id == floatId                                => t1Opt
+        | _        when t2Id == floatId                                => t2Opt
+        | _        when t1Id == int64Id                                => t1Opt
+        | _        when t2Id == int64Id                                => t2Opt
+        | _        when t1.IsNumeric(context) && t2.IsNumeric(context) => t1Opt
+        | _ =>
+          // TODO: Save information about used op_Implicit.
+          when (HasImplicit(host.Location, t1, t2, context))
+            return t2Opt;
+          when (HasImplicit(host.Location, t2, t1, context))
+            return t1Opt;
+          t1Opt
       }
+    }
+
+    HasImplicit(loc : Location, t1 : TypeSymbol, t2 : TypeSymbol, context : DependentPropertyEvalContext) : bool
+    {
+      when (t2.IsNumeric(context))
+      {
+        def ok(m : Member.MethodSymbol, numType : TypeSymbol) : bool
+        {
+          when (m.Parameters.Length != 1)
+            return false;
+          m.Parameters[0].Type.Id == numType.Id
+        }
+        def scope = t1.Scope;
+        def res = scope.Bind(Reference(loc, "op_Implicit"));
+        when (res.HasResult)
+        {
+          def res2 = res.Filter(ok(_, t2));
+          when (res2 is BindResult[_].Single)
+            return true;
+        }
+      }
+
+      false
     }
 
     public IsBinaryOpCompatible(this expr : BinaryExpr, left : TypeSymbol, right : TypeSymbol, context : DependentPropertyEvalContext) : bool
