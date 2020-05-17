@@ -14,6 +14,12 @@ namespace CSharp
     | EmbeddedStatement -> EmbeddedStatement
   }
 
+  map syntax Core.IndentedEmbeddedStatement -> DotNet.Statement
+  {
+    | Block     -> BlockStatement { Stmt.Statements -> Statements; }
+    | Statement -> EmbeddedStatement
+  }
+
   map syntax Core.EmbeddedStatement -> DotNet.Statement
   {
     | Empty -> EmptyStatement { }
@@ -93,16 +99,26 @@ namespace CSharp
 
   map syntax Statements.EmbeddedStatement.If -> DotNet.Statement
   {
-    DotNet.EmptyStatement { } // TODO: Implement...
+    DotNet.IfStatement
+    {
+      BooleanExpression         -> Condition;
+      IndentedEmbeddedStatement -> Statement;
+    }
   }
   map syntax Statements.EmbeddedStatement.Switch -> DotNet.Statement
   {
     DotNet.EmptyStatement { } // TODO: Implement...
   }
+
   map syntax Statements.EmbeddedStatement.While -> DotNet.Statement
   {
-    DotNet.EmptyStatement { } // TODO: Implement...
+    DotNet.WhileStatement
+    {
+      BooleanExpression         -> Condition;
+      IndentedEmbeddedStatement -> Statement;
+    }
   }
+
   map syntax Statements.EmbeddedStatement.Do -> DotNet.Statement
   {
     DotNet.EmptyStatement { } // TODO: Implement...

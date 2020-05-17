@@ -141,57 +141,57 @@ namespace CSharp
 
   map syntax Expressions.Expression.Assignment -> DotNet.Expr
   {
-    Assignment { }
+    Assignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.MulAssignment -> DotNet.Expr
   {
-    MulAssignment { }
+    MulAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.DivAssignment -> DotNet.Expr
   {
-    DivAssignment { }
+    DivAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.RemainderAssignment -> DotNet.Expr
   {
-    RemainderAssignment { }
+    RemainderAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.AddAssignment -> DotNet.Expr
   {
-    AddAssignment { }
+    AddAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.SubAssignment -> DotNet.Expr
   {
-    SubAssignment { }
+    SubAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.ShiftLeftAssignment -> DotNet.Expr
   {
-    ShiftLeftAssignment { }
+    ShiftLeftAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.ShiftRightAssignment -> DotNet.Expr
   {
-    ShiftRightAssignment { }
+    ShiftRightAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.AndAssignment -> DotNet.Expr
   {
-    AndAssignment { }
+    AndAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.XorAssignment -> DotNet.Expr
   {
-    XorAssignment { }
+    XorAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.OrAssignment -> DotNet.Expr
   {
-    OrAssignment { }
+    OrAssignment { Expression1 -> Expr1; Expression2 -> Expr2; }
   }
 
   map syntax Expressions.Expression.Conditional -> DotNet.Expr
