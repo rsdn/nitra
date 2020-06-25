@@ -1,0 +1,45 @@
+﻿using DotNet;
+using DotNet.AstUtils;
+
+using Nitra;
+using Nitra.Declarations;
+using Nitra.ProjectSystem;
+using Nitra.Runtime.GraphUtils;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+
+namespace Gpul
+{
+  module Utils
+  {
+    public NoLocation         : Location           = Location(SourceSnapshot.Default.File, NSpan(0));
+    public NoFile             : ProjectSystem.File = SourceSnapshot.Default.File;
+    public NoSpan             : NSpan              = NSpan(0);
+
+    static this()
+    {
+      _ = ILGPU.Index(0);
+    }
+
+    public ToDictionary[TKey, TValue](this seq : Seq[TKey * TValue]) : Dictionary[TKey, TValue]
+    {
+      def dictionary = Dictionary();
+      foreach ((k, v) in seq)
+        dictionary.Add(k, v);
+      dictionary
+    }
+  } // module
+} // namespace

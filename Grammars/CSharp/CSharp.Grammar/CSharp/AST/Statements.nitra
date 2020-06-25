@@ -24,6 +24,7 @@ namespace DotNet
     Statements.LocalVarsScopeIn = LocalVarsScopeIn;
     Statements.ParameterScope   = ParameterScope;
     Statements.ScopeIn          = ScopeIn;
+    ScopeOut                    = Statements.ScopeIn;
 
     Statements : Statement*;
   }
@@ -42,7 +43,8 @@ namespace DotNet
   {
     symbol
     {
-      Kind  = "variable";
+      Kind      = "variable";
+      SpanClass = DotNetLang.VariableSpanClass;
     }
     in Scope : Scope;
     in TypeRef : Ref[TypeSymbol];
@@ -53,9 +55,9 @@ namespace DotNet
     // The type of a local variable can be shared between two declarations.
     // Use ResolveOrCopy() method to avoid multiple type resolutions.
     TypeRef = Type.Ref.ResolveOrCopy();
-    Expression.ExpectedType = TypeRef.Symbol;
     Symbol.Scope = TypeRef.Scope;
     Symbol.Type  = TypeRef.Symbol;
+    Expression.ExpectedType = Symbol.Type;
 
     Type : QualifiedReference;
     Expression : Expr;
@@ -73,5 +75,31 @@ namespace DotNet
     Expr.ExpectedType = Expr.Type; // В C# допускается игнорировать возвращаемые значения. После типизации такие случаи можно превратить в ворнинги.
 
     Expr : Expr;
+  }
+
+  ast WhileStatement : Statement
+  {
+    Condition.ScopeIn        = ScopeIn;
+    Condition.ExpectedType   = context.GetBooleanType();
+
+    Statement.ScopeIn        = Condition.ScopeOut;
+    Statement.ParameterScope = ParameterScope;
+    ScopeOut                 = Statement.ScopeIn;
+
+    Condition : Expr;
+    Statement : Statement;
+  }
+
+  ast IfStatement : Statement
+  {
+    Condition.ScopeIn        = ScopeIn;
+    Condition.ExpectedType   = context.GetBooleanType();
+
+    Statement.ScopeIn        = Condition.ScopeOut;
+    Statement.ParameterScope = ParameterScope;
+    ScopeOut                 = Statement.ScopeIn;
+
+    Condition : Expr;
+    Statement : Statement;
   }
 }

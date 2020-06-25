@@ -1,0 +1,13 @@
+﻿language GpuLang : NitraCSharp
+{
+  extension = .gpul;
+
+  company     = Nitra Team.;
+  description = GPUL plug-in for Visual Studio.;
+  authors     = Vlad Chistyakov;
+  copyright   = NitraTeam;
+
+  syntax module CSharp.Main start rule CompilationUnit;
+  syntax module CSharp.Linq;
+  syntax module Gpul.Grammar;
+}

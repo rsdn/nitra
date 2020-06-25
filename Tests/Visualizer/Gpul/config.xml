@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-16"?>
+<Config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ProjectSupport Caption="GpuLang" TypeFullName="Gpul.ProjectSupport" Path="..\..\..\Grammars\Bin\Debug\GpuLang.dll" />
+  <Languages>
+    <Language Name="GpuLang" Path="..\..\..\Grammars\Bin\Debug\GpuLang.dll">
+      <DynamicExtensions />
+    </Language>
+  </Languages>
+  <References>
+    <Reference>FullName:mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+    <Reference>FullName:System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+    <Reference>FullName:System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</Reference>
+    <Reference>File:c:\RSDN\nitra\Grammars\GpuLang\packages\ILGPU.0.8.0-beta2\lib\net47\Debug\ILGPU.dll</Reference>
+  </References>
+</Config>

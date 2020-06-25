@@ -453,7 +453,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
 
     public AddFile(file : File): void
     {
-      _files.Add(file.Id, file);
+      _files.AddEx(file.Id, file, "_files");
       Parent._N_OnFileAdded(file);
       AstDropped(file);
     }

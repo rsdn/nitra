@@ -150,89 +150,69 @@ namespace DotNet
       {
         Type = context.GetInt32Type(); // FIXME
       }
-    | Assignment
+    | Assignment : BaseAssignment
       {
-        Type = context.CreateFreeTypeVar();
       }
-    | MulAssignment
+    | MulAssignment : BaseAssignment
+      {
+      }
+    | DivAssignment : BaseAssignment
+      {
+      }
+    | RemainderAssignment : BaseAssignment
+      {
+      }
+    | AddAssignment : BaseAssignment
+      {
+      }
+    | SubAssignment : BaseAssignment
       {
         Type = context.GetObjectType(); // FIXME
       }
-    | DivAssignment
+    | ShiftLeftAssignment : BaseAssignment
       {
-        Type = context.GetObjectType(); // FIXME
       }
-    | RemainderAssignment
+    | ShiftRightAssignment : BaseAssignment
       {
-        Type = context.GetObjectType(); // FIXME
       }
-    | AddAssignment
+    | AndAssignment : BaseAssignment
       {
-        Type = context.GetObjectType(); // FIXME
       }
-    | SubAssignment
+    | XorAssignment : BaseAssignment
       {
-        Type = context.GetObjectType(); // FIXME
       }
-    | ShiftLeftAssignment
+    | OrAssignment : BaseAssignment
       {
-        Type = context.GetObjectType(); // FIXME
-      }
-    | ShiftRightAssignment
-      {
-        Type = context.GetObjectType(); // FIXME
-      }
-    | AndAssignment
-      {
-        Type = context.GetObjectType(); // FIXME
-      }
-    | XorAssignment
-      {
-        Type = context.GetObjectType(); // FIXME
-      }
-    | OrAssignment
-      {
-        Type = context.GetObjectType(); // FIXME
       }
     | ConditionalOr : OrAndExpr
       {
-        Operation = BinaryOp.Or();
       }
     | ConditionalAnd : OrAndExpr
       {
-        Operation = BinaryOp.And();
       }
     | LogicalOr : OrAndExpr
       {
-        Operation = BinaryOp.Or(); // FIXME
       }
     | LogicalXor : OrAndExpr
       {
-        Operation = BinaryOp.And(); // FIXME
       }
     | LogicalAnd : OrAndExpr
       {
-        Operation = BinaryOp.And(); // FIXME
       }
     | Equal         : EqualExpr
       {
-        Operation = BinaryOp.Equal();
       }
     | NotEqual      : EqualExpr
       {
-        Operation = BinaryOp.NotEqual();
       }
     | LessThanOrEqual : Comparison
       {
-        Operation = BinaryOp.LessEqual();
       }
     | Less          : Comparison
       {
-        Operation = BinaryOp.Less();
       }
     | GreaterThanOrEqual  : Comparison
       {
-        Operation = BinaryOp.GreaterEqual();
       }
     | Is
       {
@@ -266,11 +246,9 @@ namespace DotNet
       }
     | ShiftLeft       : Arithmetic
       {
-        Operation = BinaryOp.Greater();
       }
     | ShiftRight       : Arithmetic
       {
-        Operation = BinaryOp.Greater();
       }
     | PointerIndirection
       {
@@ -283,51 +261,39 @@ namespace DotNet
       }
     | Greater : Comparison
       {
-        Operation = BinaryOp.Greater();
       }
     | Sum : Arithmetic
       {
-        Operation = BinaryOp.Sum();
       }
     | Sub : Arithmetic
       {
-        Operation = BinaryOp.Sub();
       }
     | Modulus : Arithmetic
       {
-        Operation = BinaryOp.Mod();
       }
     | Multiply : Arithmetic
       {
-        Operation = BinaryOp.Mul();
       }
     | Divide : Arithmetic
       {
-        Operation = BinaryOp.Div();
       }
     | Identity : NumericUnary
       {
-        Operation = UnaryOp.Identity();
       }
     | Negation : NumericUnary
       {
-        Operation = UnaryOp.Negation();
       }
     | LogicalNegation : BoolUnary
       {
-        Operation = UnaryOp.LogicalNegation();
       }
     | BitwiseNegation : NumericUnary
       {
-        Operation = UnaryOp.BitwiseNegation();
       }
     | PreIncrement : NumericUnary
       {
-        Operation = UnaryOp.PreIncrement();
       }
     | PreDecrement : NumericUnary
       {
-        Operation = UnaryOp.PreDecrement();
       }
     | SimpleName
       {
@@ -406,11 +372,9 @@ namespace DotNet
       }
     | PostIncrement : NumericUnary
       {
-        Operation = UnaryOp.PostIncrement();
       }
     | PostDecrement : NumericUnary
       {
-        Operation = UnaryOp.PostDecrement();
       }
     | Lambda
       {
@@ -591,8 +555,6 @@ namespace DotNet
   }
   abstract ast Unary : Expr
   {
-    out Operation : UnaryOp;
-
     Expr1.ScopeIn              = ScopeIn;
     Expr1.BuildInvocationScope = BuildInvocationScope;
     Expr1.Used                 = true;
@@ -612,11 +574,10 @@ namespace DotNet
   }
   abstract ast BinaryExpr : Expr
   {
-    out Operation : BinaryOp;
-
     Expr1.ScopeIn              = ScopeIn;
     Expr1.BuildInvocationScope = BuildInvocationScope;
-    Expr2.ScopeIn              = ScopeIn;
+    Expr2.ScopeIn              = Expr1.ScopeOut;
+    ScopeOut                   = Expr2.ScopeOut;
     Expr2.BuildInvocationScope = BuildInvocationScope;
     Expr1.Used                 = true;
     Expr2.Used                 = true;
@@ -642,6 +603,11 @@ namespace DotNet
   }
   abstract ast Arithmetic : NumericBinary
   {
-    Type = this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
+    Type = await this.GetArithmeticType(Expr1.Type, Expr2.Type, context);
+  }
+
+  abstract ast BaseAssignment : BinaryExpr
+  {
+    Type = Expr1.Type;
   }
 }

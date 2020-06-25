@@ -1,0 +1,207 @@
+﻿using Nitra;
+using Nitra.BackEnd.Cci;
+using Nitra.Declarations;
+using Nitra.Internal;
+using Nitra.ProjectSystem;
+
+using DotNet;
+
+using Nemerle;
+using Nemerle.Collections;
+using Nemerle.Imperative;
+using Nemerle.Text;
+using Nemerle.Utility;
+
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+
+using System.Threading;
+using ND = Nitra.Declarations;
+
+[assembly: ProjectSupport("Nitra C#", typeof(CSharp.ProjectSupport))]
+
+namespace CSharp
+{
+  public class ProjectSupport : IProjectSupport
+  {
+    public virtual Reset(project : Project) : void
+    {
+      when (project?.Data == null)
+        return;
+      def backEnd = DecomposeData(project.Data)?.BackEnd;
+      when (backEnd == null)
+        return;
+      backEnd.Dispose();
+      project.Data = null;
+    }
+    
+    public virtual RefreshReferences(cancellationToken : CancellationToken, project : Project) : object
+    {
+      DotNet.AstUtils.MakeDefault = DotNet.Coverters.MakeDefaultParametersOpt;
+      TypeUnifier.InitInstance();
+
+      def bindNs(scope : Scope, name : string) : Ref[NamespaceSymbol]
+      {
+        //assert2(false);
+        def res = Reference(Location.Default, name).Bind.[NamespaceSymbol](scope);
+        assert2(!res.IsUnresolved);
+        assert2(!res.IsAmbiguous);
+        assert2(res.Symbols.Length == 1);
+        res
+      }
+      def bindType(scope : Scope, name : string) : Ref[TopGenericTypeSymbol]
+      {
+        //assert2(false);
+        def res = Reference(Location.Default, name).Bind.[TopGenericTypeSymbol](scope);
+        assert2(!res.IsUnresolved);
+        assert2(!res.IsAmbiguous);
+        assert2(res.Symbols.Length == 1);
+        res
+      }
+      def defineAlias(context : DependentPropertyEvalContext, systemNs : NamespaceSymbol, declaredIn : NamespaceSymbol, name : string, aliasName : string) : void
+      {
+        def symbolRef  = bindType(systemNs.Scope, name);
+        unless (symbolRef.IsSymbolEvaluated)
+          return;
+
+        def symbol     = symbolRef.Symbol;
+        def decl       = symbol.FirstDeclarationOrDefault :> IExternalTopTypeDeclaration;
+        def aliasDecl  = ExternalTopTypeDeclaration.[TypeAliasSymbol](ND.Name(Location.Default, aliasName), decl.Type);
+        def alias      = aliasDecl.DefineSymbol(declaredIn.MemberTable);
+        alias.Replacement = symbolRef;
+        alias.TypeParametersCount = 0;
+        alias.TypeParameters      = ImmutableArray.Empty;
+        alias.DeclaredIn          = declaredIn;
+        alias.EvalProperties(context);
+      }
+
+      def backEnd = CciBackEnd();
+      backEnd.CancellationToken = cancellationToken;
+      def context = DependentPropertyEvalContext(project);
+      def rootNamespace = backEnd.LoadExternalSymbols(project.Libs, project.ProjectDir, project.CompilerMessages, context);
+      def systemNsRef = bindNs(rootNamespace.Scope, "System");
+      when (systemNsRef.IsSymbolEvaluated)
+      {
+        def systemNs = systemNsRef.Symbol;
+
+        defineAlias(context, systemNs, rootNamespace, "Object",  "object");
+        defineAlias(context, systemNs, rootNamespace, "Void",    "void");
+        defineAlias(context, systemNs, rootNamespace, "String",  "string");
+        defineAlias(context, systemNs, rootNamespace, "Boolean", "bool");
+        defineAlias(context, systemNs, rootNamespace, "Byte",    "byte");
+        defineAlias(context, systemNs, rootNamespace, "SByte",   "sbyte");
+        defineAlias(context, systemNs, rootNamespace, "Int16",   "short");
+        defineAlias(context, systemNs, rootNamespace, "UInt16",  "ushort");
+        defineAlias(context, systemNs, rootNamespace, "Int32",   "int");
+        defineAlias(context, systemNs, rootNamespace, "UInt32",  "uint");
+        defineAlias(context, systemNs, rootNamespace, "Int64",   "long");
+        defineAlias(context, systemNs, rootNamespace, "UInt64",  "ulong");
+        defineAlias(context, systemNs, rootNamespace, "Single",  "float");
+        defineAlias(context, systemNs, rootNamespace, "Double",  "double");
+        defineAlias(context, systemNs, rootNamespace, "Decimal", "decimal");
+        defineAlias(context, systemNs, rootNamespace, "Char",    "char");
+      }
+
+      DotNetProjectData(backEnd, context, rootNamespace)
+    }
+
+    public virtual RefreshProject(cancellationToken : CancellationToken, files : ImmutableArray[FileEvalPropertiesData], data : object) : void
+    {
+      def projectData = data :> DotNetProjectData;
+      def backEnd               = projectData.BackEnd;
+      def context               = projectData.Context;
+      def rootNamespace         = projectData.RootNamespace;
+      context.CancellationToken = cancellationToken;
+      backEnd.CancellationToken = cancellationToken;
+
+      def removeParsedSymbols(tableScope : TableScope)
+      {
+        tableScope.Undefine(_.IsParsed);
+        foreach (symbols in tableScope.Symbols)
+        foreach (symbol is NamespaceSymbol in symbols)
+          removeParsedSymbols(symbol.MemberTable);
+      }
+      removeParsedSymbols(rootNamespace.MemberTable);
+
+      when (cancellationToken.IsCancellationRequested)
+        return;
+
+      def evalHost = CSharpProjectEvalPropertiesHost(files, rootNamespace);
+      evalHost.EvalProperties(context, "SymbolHierarchy", 0);
+      evalHost.EvalProperties(context, "Scopes", 1);
+      evalHost.EvalProperties(context, "Type bodies binding", 2);
+      evalHost.Finish();
+    }
+
+    public virtual Postprocessing(cancellationToken : CancellationToken, project : Project, asts : ImmutableArray[IAst * bool], data : object) : void
+    {
+    	IgnoreParams();
+    }
+
+    public virtual GetSymbolById(data : object, symbolId : int) : ValueOption[DeclarationSymbol]
+    {
+      def rootNamespace = DecomposeData(data).RootNamespace;
+      // TODO: cache symbols an use it cache to find symbol by id
+      def findSymbol(symbols : Seq[DeclarationSymbol]) : ValueOption[DeclarationSymbol]
+      {
+        foreach (symbol in symbols)
+        {
+          when (symbol.Id == symbolId)
+            return ValueOption.Some(symbol);
+
+          match (symbol)
+          {
+            | t is GenericContainerTypeSymbol =>
+              def result = findSymbol(t.NestedTypes);
+              when (result.IsSome)
+                return result;
+
+            | NamespaceSymbol as ns =>
+              foreach (symbols in ns.MemberTable.Symbols)
+              {
+                def result = findSymbol(symbols);
+                when (result.IsSome)
+                  return result;
+              }
+
+            | _ => ()
+          }
+        }
+
+        ValueOption.None()
+      }
+
+      foreach (symbols in rootNamespace.MemberTable.Symbols)
+      {
+        def result = findSymbol(symbols);
+        when (result.IsSome)
+          return result;
+      }
+
+      ValueOption.None()
+    }
+
+    public virtual DeconstructType(symbol : DeclarationSymbol, type : out TypeSymbol, typeArgs : out ImmutableArray[TypeSymbol]) : bool
+    {
+      match (symbol)
+      {
+        | s is TopConstructedTypeSymbol    => type = s.TypeInfo; typeArgs = s.Args; true
+        | s is NestedConstructedTypeSymbol => type = s.TypeInfo; typeArgs = s.Args; true
+        | _ => type = null; typeArgs = ImmutableArray.Empty; false
+      }
+    }
+
+    public virtual VisitGlobalSymbols(data : object, callback : Predicate[DeclarationSymbol]) : void
+    {
+      def (_, _, rootNamespace) = DecomposeData(data);
+      _ = rootNamespace.VisitChildrenAndSelf(SymbolUtils.GetNestedSymbol, callback);
+    }
+
+    public DecomposeData(data : object) : DotNetProjectData
+    {
+      data :> DotNetProjectData
+    }
+  }
+}

@@ -1,0 +1,19 @@
+﻿namespace Gpul
+{
+  syntax module Grammar
+  {
+    using DotNet;
+    using Nitra.Core;
+    using CSharp.Core;
+    using CSharp.CsIdentifiers;
+    using CSharp.Expressions;
+    using CSharp.Literals;
+    using CSharp.TokenNames;
+    using CSharp.TopDeclarations;
+    using CSharp.Types;
+    using CSharp.CS7;
+    using CSharp.Attributes;
+
+    keyword regex ['A'..'Z', 'a'..'z', '_'..'_', '-'..'-']+ ['0'..'9']* rule S;
+  }
+}

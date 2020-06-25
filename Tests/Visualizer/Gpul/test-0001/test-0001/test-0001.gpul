@@ -1,0 +1,35 @@
+using ILGPU;
+
+static class A
+{
+    static void MandelbrotKernel(
+        Index index,
+        int width, int height, int max_iterations,
+        ArrayView<int> output)
+    {
+        float h_a = -2.0f;
+        float h_b = 1.0f;
+        float v_a = -1.0f;
+        float v_b = 1.0f;
+
+        if (index >= output.Length)
+            return;
+
+        int img_x = index % width;
+        int img_y = index / width;
+
+        float x0 = h_a + img_x * (h_b - h_a) / width;
+        float y0 = v_a + img_y * (v_b - v_a) / height;
+        float x = 0.0f;
+        float y = 0.0f;
+        int iteration = 0;
+        while ((x * x + y * y < 2 * 2) && (iteration < max_iterations))
+        {
+            float xtemp = x * x - y * y + x0;
+            y = 2 * x * y + y0;
+            x = xtemp;
+            iteration += 1;
+        }
+        output[index] = iteration;
+    }
+}
