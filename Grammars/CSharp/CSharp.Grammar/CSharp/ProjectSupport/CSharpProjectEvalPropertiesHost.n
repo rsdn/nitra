@@ -1,5 +1,5 @@
 ﻿using Nitra;
-using Nitra.BackEnd.Cci;
+using Nitra.BackEnd.Dnlib;
 using Nitra.Declarations;
 using Nitra.Internal;
 using Nitra.ProjectSystem;

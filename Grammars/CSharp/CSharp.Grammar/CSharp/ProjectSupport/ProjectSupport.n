@@ -1,5 +1,5 @@
 ﻿using Nitra;
-using Nitra.BackEnd.Cci;
+using Nitra.BackEnd.Dnlib;
 using Nitra.Declarations;
 using Nitra.Internal;
 using Nitra.ProjectSystem;
@@ -67,8 +67,8 @@ namespace CSharp
           return;
 
         def symbol     = symbolRef.Symbol;
-        def decl       = symbol.FirstDeclarationOrDefault :> IExternalTopTypeDeclaration;
-        def aliasDecl  = ExternalTopTypeDeclaration.[TypeAliasSymbol](ND.Name(Location.Default, aliasName), decl.Type);
+        def decl       = symbol.FirstDeclarationOrDefault :> IExternalTypeDeclaration;
+        def aliasDecl  = ExternalTopTypeDeclaration.[TypeAliasSymbol](ND.Name(Location.Default, aliasName), decl.TypeDef);
         def alias      = aliasDecl.DefineSymbol(declaredIn.MemberTable);
         alias.Replacement = symbolRef;
         alias.TypeParametersCount = 0;
@@ -77,7 +77,7 @@ namespace CSharp
         alias.EvalProperties(context);
       }
 
-      def backEnd = CciBackEnd();
+      def backEnd = DnlibBackEnd();
       backEnd.CancellationToken = cancellationToken;
       def context = DependentPropertyEvalContext(project);
       def rootNamespace = backEnd.LoadExternalSymbols(project.Libs, project.ProjectDir, project.CompilerMessages, context);
