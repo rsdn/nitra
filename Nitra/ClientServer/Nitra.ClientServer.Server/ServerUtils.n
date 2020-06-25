@@ -194,5 +194,16 @@ namespace Nitra.ClientServer.Server
         throw KeyNotFoundException($"The given key was not present in the dictionary. Key='$key'; K='$(args[0].Name); V=$(args[1].Name)'.")
       }
     }
+
+    public AddEx[K, V](this dictionary : IDictionary[K, V], key : K, value : V, dictionaryName : string) : void
+    {
+      try dictionary.Add(key, value);
+      catch
+      {
+        | e is KeyNotFoundException =>
+          throw KeyNotFoundException(
+            $"The '$key' key was not present in the '$dictionaryName' dictionary. New value: '$value'. Old value: '$(dictionary[key])'.", e)
+      }
+    }
   } // module
 } // namespace
