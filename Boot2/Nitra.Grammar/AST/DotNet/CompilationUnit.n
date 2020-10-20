@@ -659,7 +659,7 @@ namespace DotNet
     public override Length      : int            { get { 0 } }
     public override FullName    : string         { get; }
     public override Language    : Nitra.Language { get { Nitra.Language.Instance } }
-    public override GetSource() : SourceSnapshot { when(_source == null) _source = SingleLineSourceSnapshot("", this); _source }
+    public override GetSource() : Nitra.SourceSnapshot { when(_source == null) _source = SingleLineSourceSnapshot("", this); _source }
     public override IsFake      : bool           { get { true } }
   }
 }
