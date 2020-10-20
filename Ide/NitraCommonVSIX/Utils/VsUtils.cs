@@ -8,16 +8,19 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Nitra.ClientServer.Messages;
 using Nitra.VisualStudio.Models;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Xml.Linq;
+
 using D = System.Drawing;
+using IObjectWithSite = Microsoft.VisualStudio.OLE.Interop.IObjectWithSite;
+using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace Nitra.VisualStudio
 {
@@ -138,6 +141,70 @@ namespace Nitra.VisualStudio
       return view.Properties.TryGetProperty<IVsTextView>(typeof(IVsTextView), out var vsTextView) ? vsTextView : null;
     }
 
+    public static IVsCodeWindow TryGetIVsCodeWindow(this IVsTextView textView)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      IVsWindowFrame frame = TryGetIVsWindowFrame(textView);
+
+      Guid riid = typeof(IVsCodeWindow).GUID;
+      if (ErrorHandler.Failed(frame.QueryViewInterface(ref riid, out IntPtr ppvObject)) || ppvObject == IntPtr.Zero)
+        return null;
+
+      IVsCodeWindow codeWindow = null;
+      try
+      {
+        codeWindow = Marshal.GetObjectForIUnknown(ppvObject) as IVsCodeWindow;
+        return codeWindow;
+      }
+      finally
+      {
+        Marshal.Release(ppvObject);
+      }
+    }
+
+    public static IVsWindowFrame TryGetIVsWindowFrame(this IVsTextView textView)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+      Debug.Assert(textView != null);
+
+      var objectWithSite = textView as IObjectWithSite;
+      if (objectWithSite == null)
+        return null;
+
+      Guid riid = typeof(IOleServiceProvider).GUID;
+      objectWithSite.GetSite(ref riid, out IntPtr ppvSite);
+      if (ppvSite == IntPtr.Zero)
+        return null;
+
+      IOleServiceProvider oleServiceProvider = null;
+      try
+      {
+        oleServiceProvider = Marshal.GetObjectForIUnknown(ppvSite) as IOleServiceProvider;
+      }
+      finally
+      {
+        Marshal.Release(ppvSite);
+      }
+
+      if (oleServiceProvider == null)
+        return null;
+
+      Guid guidService = typeof(SVsWindowFrame).GUID;
+      riid = typeof(IVsWindowFrame).GUID;
+      if (ErrorHandler.Failed(oleServiceProvider.QueryService(ref guidService, ref riid, out IntPtr ppvObject)) || ppvObject == IntPtr.Zero)
+        return null;
+
+      try
+      {
+        return Marshal.GetObjectForIUnknown(ppvObject) as IVsWindowFrame;
+      }
+      finally
+      {
+        Marshal.Release(ppvObject);
+      }
+    }
+
     public static string GetFilePath(this IVsTextView textViewAdapter)
     {
       return GetFilePath(GetBuffer(textViewAdapter));
@@ -196,8 +263,7 @@ namespace Nitra.VisualStudio
     {
       var textBuffer = wpfTextView.TextBuffer;
       var props      = textBuffer.Properties;
-      FileModel fileModel;
-      if (!props.TryGetProperty<FileModel>(Constants.FileModelKey, out fileModel))
+      if (!props.TryGetProperty(Constants.FileModelKey, out FileModel fileModel))
         props.AddProperty(Constants.FileModelKey,
           fileModel = new FileModel(id, textBuffer, server, wpfTextView.VisualElement.Dispatcher, hierarchy, fullPath));
       return fileModel;

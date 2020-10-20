@@ -6,10 +6,11 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Events;
 using Microsoft.VisualStudio.Shell.Interop;
-
+using Microsoft.VisualStudio.Text.Editor;
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
 using Nitra.Logging;
+using Nitra.VisualStudio.Models;
 using Nitra.VisualStudio.Utils;
 using NitraCommonIde;
 
@@ -47,7 +48,11 @@ namespace Nitra.VisualStudio
   /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
   /// </para>
   /// </remarks>
-  [ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.NoSolution_string,                  PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string,              PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasMultipleProjects_string, PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionHasSingleProject_string,    PackageAutoLoadFlags.BackgroundLoad)]
+  [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionOpening_string,             PackageAutoLoadFlags.BackgroundLoad)]
   [Description("Nitra Package.")]
   [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
   [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
@@ -58,22 +63,22 @@ namespace Nitra.VisualStudio
     /// <summary>VSPackage GUID string.</summary>
     public const string PackageGuidString = "66c3f4cd-1547-458b-a321-83f0c448b4d3";
     public static SolutionId InvalidSolutionId = new SolutionId(-1);
-
-
     public static NitraCommonVsPackage Instance;
 
-    readonly Dictionary<ProjectId, HashSet<string>> _referenceMap = new Dictionary<ProjectId, HashSet<string>>();
+    static Queue<Action> _deferredActions = new Queue<Action>();
+
+    readonly Dictionary<ProjectId, HashSet<string>>      _referenceMap = new Dictionary<ProjectId, HashSet<string>>();
     readonly Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
-    readonly List<Project> _projects = new List<Project>();
-    readonly List<ServerModel> _servers = new List<ServerModel>();
-    readonly StringManager _stringManager = new StringManager();
-    RunningDocTableEvents _runningDocTableEventse;
-    ProjectItemsEvents _prjItemsEvents;
-    EnvDTE.SolutionEvents _solutionEvents;
-    uint _objectManagerCookie;
-    Library _library;
-    SolutionLoadingSate _backgroundLoading;
-    SolutionId _currentSolutionId = InvalidSolutionId;
+    readonly List<Project>                               _projects = new List<Project>();
+    readonly List<ServerModel>                           _servers = new List<ServerModel>();
+    readonly StringManager                               _stringManager = new StringManager();
+    RunningDocTableEvents                                _runningDocTableEventse;
+    ProjectItemsEvents                                   _prjItemsEvents;
+    EnvDTE.SolutionEvents                                _solutionEvents;
+    uint                                                 _objectManagerCookie;
+    Library                                              _library;
+    SolutionLoadingSate                                  _backgroundLoading;
+    SolutionId                                           _currentSolutionId = InvalidSolutionId;
 
     internal List<ServerModel> Servers { get => _servers; }
 
@@ -85,24 +90,12 @@ namespace Nitra.VisualStudio
       Log.Init("Nitra-VS-plug-in");
       Debug.Assert(Instance == null);
       Instance = this;
-      // Inside this method you can place any initialization code that does not require
-      // any Visual Studio service because at this point the package object is created but
-      // not sited yet inside Visual Studio environment. The place to do all the other
-      // initialization is the Initialize method.
-      //AppDomain.CurrentDomain.FirstChanceException +=
-      //(object source, FirstChanceExceptionEventArgs e) =>
-      //{
-      //  var ex = e.Exception;
-      //
-      //  switch (ex)
-      //  {
-      //    case FileLoadException _:
-      //    case OperationCanceledException _:
-      //      return;
-      //  }
-      //
-      //  Log.Exception(ex);
-      //};
+    }
+
+    public static void DeferUntilPackageInitialization(Action action)
+    {
+      Debug.Assert(_deferredActions != null);
+      _deferredActions.Enqueue(action);
     }
 
     #region Package Members
@@ -119,12 +112,10 @@ namespace Nitra.VisualStudio
       // When initialized asynchronously, the current thread may be a background thread at this point.
       // Do any initialization that requires the UI thread after switching to the UI thread.
 
-      var dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
+#pragma warning disable VSSDK006 // Check services exist
+      DTE2 dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
+#pragma warning restore VSSDK006 // Check services exist
       Assumes.Present(dte);
-
-      //var listener = new NitraTraceListener();
-      //Trace.Listeners.Clear();
-      //Trace.Listeners.Add(listener);
 
       var events = (Events2)dte.Events;
       var x = events.SolutionItemsEvents;
@@ -148,12 +139,87 @@ namespace Nitra.VisualStudio
 
       if (_objectManagerCookie == 0)
       {
-        await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+        await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
         _library = new Library();
         var objManager = await this.GetServiceAsync(typeof(SVsObjectManager)) as IVsObjectManager2;
 
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
+      }
+
+      Log.Message("tr: InitializeAsync() begin");
+
+      await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+      Solution solution = dte.Solution;
+      string fullName = solution.FullName;
+
+      var id = new SolutionId(_stringManager.GetId(fullName));
+      _currentSolutionId = id;
+
+      Log.Message($"tr: InitializeAsync() got dte Solution.FullName='{fullName}' Solution.IsOpen={solution.IsOpen} Projects.Count={solution.Projects.Count} _currentSolutionId={_currentSolutionId}");
+
+      if (solution.IsOpen)
+      {
+        InitSolution(fullName);
+        LoadProjects(solution.Projects);
+        OpenSolution();
+      }
+
+      Log.Message($"tr: InitializeAsync() end iterate projects");
+    }
+
+    void LoadProjects(Projects projects)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      foreach (Project project in projects)
+        LoadProject(project);
+    }
+
+    void LoadProject(Project project)
+    {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
+      if (project.Object is VSProject vsproject)
+      {
+        var projectPath = project.FullName;
+        var projectId   = GetProjectId(project);
+
+        foreach (var server in _servers)
+          server.ProjectStartLoading(projectId, projectPath);
+
+        _projects.Add(project);
+
+        foreach (var server in _servers)
+          server.ProjectLoaded(projectId);
+
+        Log.Message($"tr:    added Name='{project.Name}' project.Kind={project.Kind} ProjectItems.Count={project.ProjectItems.Count} FullName='{project.FullName}'");
+        return;
+      }
+
+      switch (project.Kind)
+      {
+        case VsProjectTypes.VsProjectItemKindSolutionItem:
+          Debug.Assert(false, "Unexpected project kind: VsProjectItemKindSolutionItem");
+          break;
+        case VsProjectTypes.VsProjectItemKindPhysicalFolder:
+        case VsProjectTypes.VsProjectItemKindSolutionFolder:
+          foreach (ProjectItem item in project.ProjectItems)
+            if (item.Object is Project subProject)
+              LoadProject(subProject);
+            else
+              Log.Error($"tr:    unknown sub item.Kind={item.Kind} Name={item.Name} ProjectItems.Count={project.ProjectItems.Count}");
+          return; // not supported project kinds
+        case VsProjectTypes.UnloadedProjectTypeGuid:
+          Log.Error($"tr:    project.Kind is UnloadedProjectTypeGuid Name={project.Name} ProjectItems.Count={project.ProjectItems.Count}");
+          return; // not supported project kinds
+        case VsProjectTypes.VsProjectKindMisc:
+          LoadProject(project);
+          break;
+        default:
+          Log.Error($"tr:    unknown project.Kind={project.Kind} Name={project.Name} ProjectItems.Count={project.ProjectItems.Count}");
+          return; // not supported project kinds
       }
     }
 
@@ -413,6 +479,14 @@ namespace Nitra.VisualStudio
 
     void AfterOpenSolution(object sender, OpenSolutionEventArgs e)
     {
+      var path = _stringManager.GetPath(_currentSolutionId);
+      Log.Message($"tr: AfterOpenSolution(IsNewSolution='{e.IsNewSolution}', Id='{_currentSolutionId}' Path='{path}')");
+
+      OpenSolution();
+    }
+
+    void OpenSolution()
+    {
       var isTemporarySolution = _currentSolutionId == InvalidSolutionId;
       if (isTemporarySolution)
         _currentSolutionId = new SolutionId(0); // This is temporary solution for <MiscFiles>
@@ -420,9 +494,6 @@ namespace Nitra.VisualStudio
       InitServers(); // need in case of open separate files (with no project)
 
       Debug.Assert(_backgroundLoading != SolutionLoadingSate.AsynchronousLoading);
-
-      var path = _stringManager.GetPath(_currentSolutionId);
-      Log.Message($"tr: AfterOpenSolution(IsNewSolution='{e.IsNewSolution}', Id='{_currentSolutionId}' Path='{path}')");
 
       foreach (var server in _servers)
         if (isTemporarySolution)
@@ -434,6 +505,9 @@ namespace Nitra.VisualStudio
       // scan only currently loaded projects
       foreach (var project in _projects)
       {
+        foreach (var server in _servers)
+          server.AddedMscorlibReference(GetProjectId(project));
+
         try
         {
           ScanReferences(project);
@@ -461,6 +535,15 @@ namespace Nitra.VisualStudio
           server.ProjectLoaded(GetProjectId(project));
 
       _backgroundLoading = SolutionLoadingSate.Loaded;
+
+      var deferredActions = _deferredActions;
+      if (deferredActions != null)
+      {
+        foreach (var action in deferredActions)
+          action();
+
+        _deferredActions = null;
+      }
     }
 
     void ScanReferences(Project project)
@@ -526,7 +609,7 @@ namespace Nitra.VisualStudio
           }
         }
         else
-          Log.Message("tr:    Error: project.Object=null");
+          Log.Error("tr:    Error: project.Object=null");
       }
       catch (Exception ex)
       {
@@ -551,7 +634,7 @@ namespace Nitra.VisualStudio
         ScanFiles(project, projectItems);
       }
       else
-        Log.Message("tr:    Error: project.Object=null");
+        Log.Error($"tr:    Error: project.Object is not VSProject Kind={project.Kind} Name={project.Name} ProjectItems.Count={project.ProjectItems.Count}");
 
       Log.Message("tr: ScanFiles(finished)");
     }
@@ -634,7 +717,7 @@ namespace Nitra.VisualStudio
         return; // not supported project kind
 
       var projectPath = project.FullName;
-      var projectId = new ProjectId(_stringManager.GetId(projectPath));
+      var projectId = GetProjectId(project);
 
       if (!isMiscFiles)
         Debug.Assert(!string.IsNullOrEmpty(projectPath));
@@ -654,7 +737,7 @@ namespace Nitra.VisualStudio
       if (!isDelayLoading)
       {
         foreach (var server in _servers)
-          server.ProjectLoaded(GetProjectId(project));
+          server.ProjectLoaded(projectId);
       }
       else if (_backgroundLoading == SolutionLoadingSate.Loaded) // reloading or adding new project
       {
@@ -776,6 +859,28 @@ namespace Nitra.VisualStudio
     void AfterAsynchOpenProject(object sender, OpenProjectEventArgs e)
     {
       Log.Message($"tr: AfterChangeProjectParent(Hierarchy='{e.Hierarchy}', IsAdded='{e.IsAdded}' _currentSolutionId={_currentSolutionId})");
+    }
+
+    internal TextViewModel TryCreateTextViewModel(IWpfTextView wpfTextView, ServerModel server)
+    {
+      var vsTextView  = wpfTextView.ToVsTextView();
+      var windowFrame = vsTextView.TryGetIVsWindowFrame();
+      var fullPath    = wpfTextView.TextBuffer.GetFilePath();
+      var ext         = Path.GetExtension(fullPath);
+
+      if (ext == null || !server.IsSupportedExtension(ext))
+        return null;
+
+      var hierarchy = windowFrame.GetHierarchyFromVsWindowFrame();
+      var id        = new FileId(_stringManager.GetId(fullPath));
+
+      Debug.Assert(server.IsSolutionCreated);
+
+      var textBuffer = wpfTextView.TextBuffer;
+      server.TryAddServerProperty(textBuffer);
+      FileModel fileModel = VsUtils.GetOrCreateFileModel(wpfTextView, id, server, hierarchy, fullPath);
+      TextViewModel textViewModel = VsUtils.GetOrCreateTextViewModel(wpfTextView, fileModel);
+      return textViewModel;
     }
 
     void DocumentWindowOnScreenChanged(object sender, DocumentWindowOnScreenChangedEventArgs e)
