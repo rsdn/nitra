@@ -653,7 +653,7 @@ namespace DotNet
       FullName = fullName;
     }
 
-    private mutable _source   : SourceSnapshot;
+    private mutable _source   : Nitra.SourceSnapshot;
 
     public override Project     : Project        { get; }
     public override Length      : int            { get { 0 } }
