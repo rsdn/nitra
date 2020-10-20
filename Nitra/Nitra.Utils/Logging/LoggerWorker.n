@@ -42,7 +42,7 @@ namespace Nitra.Logging
         def fileName         = $"$name-$_date-PID-$procId";
         if (Directory.Exists(logDir))
         {
-          def files         = Directory.GetFiles(logDir, name + "-*.html");
+          def files         = Directory.GetFiles(logDir, name + "-*.log");
           def filesToDelete = files.OrderBy(f => f).Take(Math.Max(files.Length - SaveLogsCount, 0));
           foreach (file in filesToDelete)
           {
@@ -56,7 +56,7 @@ namespace Nitra.Logging
         }
         else
           _ = Directory.CreateDirectory(logDir);
-        def logPath          = Path.Combine(logDir, fileName + ".html");
+        def logPath          = Path.Combine(logDir, fileName + ".log");
         LogFilePath          = logPath;
         _logFile             = StreamWriter(logPath);
         _queue               = BlockingCollection();
@@ -77,26 +77,9 @@ namespace Nitra.Logging
         def thread = Thread.CurrentThread;
         thread.Name = "Logger Worker";
         thread.CurrentCulture = CultureInfo.InvariantCulture;
-        def header = $<#<!DOCTYPE html>
-  <html>
-  <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-      <title>Nitra $_date</title>
-  <style>
-  body {
-    background-color: black;
-    text-align: left;
-    font-family: Consolas, Monaco, monospace;
-    white-space: pre;
-  }
-  </style>
-  </head>
-
-  <body>#>;
 
         try
         {
-          _logFile.WriteLine(header);
           foreach((msg, color, threadId, time) in _queue.GetConsumingEnumerable(_cts.Token))
           {
             try
@@ -125,33 +108,31 @@ namespace Nitra.Logging
 
       static TranslateColor(color : ConsoleColor) : string
       {
-        | Black       => "Black"
-        | DarkBlue    => "DarkBlue"
-        | DarkGreen   => "DarkGreen"
-        | DarkCyan    => "DarkCyan"
-        | DarkRed     => "DarkRed"
-        | DarkMagenta => "DarkMagenta"
-        | DarkYellow  => "olive"
-        | Gray        => "Gray"
-        | DarkGray    => "DarkGray"
-        | Blue        => "Blue"
-        | Green       => "limegreen"
-        | Cyan        => "Cyan"
-        | Red         => "Red"
-        | Magenta     => "Magenta"
-        | Yellow      => "Yellow"
-        | White       => "White"
+        | Black       => "BK"
+        | DarkBlue    => "DB"
+        | DarkGreen   => "DG"
+        | DarkCyan    => "DC"
+        | DarkRed     => "DR"
+        | DarkMagenta => "DM"
+        | DarkYellow  => "DY"
+        | Gray        => "G "
+        | DarkGray    => "GG"
+        | Blue        => "BL"
+        | Green       => "GN"
+        | Cyan        => "C "
+        | Red         => "ER"
+        | Magenta     => "M "
+        | Yellow      => "Y "
+        | White       => "W "
       }
 
       WriteLine(threadId : int, time : DateTime, msg : string, color : ConsoleColor) : void
       {
-        _logFile.Write(<#<span style="color:#>);
         _logFile.Write(TranslateColor(color));
-        _logFile.Write(<#">#>);
+        _logFile.Write('|');
         _logFile.Write(threadId.ToString("D4"));
         _logFile.Write(time.ToString("│HH:mm:ss.ffffff│"));
-        _logFile.Write(msg);
-        _logFile.WriteLine(<#</span>#>);
+        _logFile.WriteLine(msg);
         when (_queue.Count == 0)
           _logFile.Flush();
         Console.ForegroundColor = color;

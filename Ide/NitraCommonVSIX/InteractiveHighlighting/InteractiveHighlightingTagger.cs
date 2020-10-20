@@ -26,6 +26,10 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Diagnostics;
 
+using Path = System.IO.Path;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
 namespace Nitra.VisualStudio.BraceMatching
 {
   public class InteractiveHighlightingTagger : ITagger<TextMarkerTag>
@@ -39,6 +43,8 @@ namespace Nitra.VisualStudio.BraceMatching
 
     public InteractiveHighlightingTagger(IWpfTextView wpfTextView, ITextBuffer textBuffer)
     {
+      ThreadHelper.ThrowIfNotOnUIThread();
+
       _wpfTextView = wpfTextView;
       _textBuffer  = textBuffer;
       _caretPosOpt = null;
@@ -47,6 +53,12 @@ namespace Nitra.VisualStudio.BraceMatching
       _wpfTextView.LayoutChanged                 += ViewLayoutChanged;
       _wpfTextView.Closed                        += _textView_Closed;
       ((UIElement)_wpfTextView).IsVisibleChanged += Elem_IsVisibleChanged;
+
+      if (NitraCommonVsPackage.Instance == null)
+      {
+        NitraCommonVsPackage.DeferUntilPackageInitialization(() => UpdateAtCaretPosition(_wpfTextView.Caret.Position));
+        return;
+      }
 
       UpdateAtCaretPosition(_wpfTextView.Caret.Position);
     }
@@ -95,6 +107,20 @@ namespace Nitra.VisualStudio.BraceMatching
 
       if (_textBuffer.Properties.TryGetProperty<FileModel>(Constants.FileModelKey, out var fileModel))
         return VsUtils.GetOrCreateTextViewModel(_wpfTextView, fileModel);
+
+      var package = NitraCommonVsPackage.Instance;
+
+      if (package == null)
+        return null;
+
+      var servers = package.Servers;
+
+      foreach (var server in servers)
+      {
+        textViewModel = package.TryCreateTextViewModel(_wpfTextView, server);
+        if (textViewModel != null)
+          return textViewModel;
+      }
 
       return null;
     }

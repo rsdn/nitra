@@ -102,7 +102,6 @@ namespace Nitra.VisualStudio.CodeCompletion
       var snapshot = caretPos.Snapshot;
 
 
-      var client = fileModel.Server.Client;
       if (session == null)
         _session = session = _provider.CompletionBroker.CreateCompletionSession(_wpfTextView, snapshot.CreateTrackingPoint(caretPos, PointTrackingMode.Positive), true);
       var triggerPoint = session.GetTriggerPoint(textBuffer);

@@ -23,6 +23,7 @@ using Nitra.VisualStudio.NavigateTo;
 using System.IO;
 using Microsoft.VisualStudio.Shell;
 using Nitra.VisualStudio.Utils;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Nitra.VisualStudio
 {
@@ -48,9 +49,9 @@ namespace Nitra.VisualStudio
 
     public ServerModel(StringManager stringManager, Ide.Config config, IServiceProvider serviceProvider)
     {
-      Contract.Requires(stringManager != null);
-      Contract.Requires(config != null);
-      Contract.Requires(serviceProvider != null);
+      Debug.Assert(stringManager != null);
+      Debug.Assert(config != null);
+      Debug.Assert(serviceProvider != null);
 
       ServiceProvider = serviceProvider;
 
@@ -92,12 +93,7 @@ namespace Nitra.VisualStudio
       return msgConfig;
     }
 
-    FileModel GetFileModelOpt(FileId fileId)
-    {
-      if (_filIdToFileModelMap.TryGetValue(fileId, out var fileModel))
-        return fileModel;
-      return null;
-    }
+    FileModel GetFileModelOpt(FileId fileId) => _filIdToFileModelMap.TryGetValue(fileId, out var fileModel) ? fileModel : null;
 
     internal void Add(FileModel fileModel)
     {
@@ -254,7 +250,7 @@ namespace Nitra.VisualStudio
       fileModel.ViewActivated(textViewModel);
     }
 
-    void TryAddServerProperty(ITextBuffer textBuffer)
+    internal void TryAddServerProperty(ITextBuffer textBuffer)
     {
       if (!textBuffer.Properties.ContainsProperty(Constants.ServerKey))
         textBuffer.Properties.AddProperty(Constants.ServerKey, this);
