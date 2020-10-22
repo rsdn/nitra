@@ -112,6 +112,15 @@ namespace Nitra.VisualStudio
       // When initialized asynchronously, the current thread may be a background thread at this point.
       // Do any initialization that requires the UI thread after switching to the UI thread.
 
+      for (int i = 0; i < 1000 && !InitServers(); i++)
+        await Task.Delay(100);
+
+      if (!InitServers())
+      {
+        Log.Message($"Error: Configs is empty!)");
+        return;
+      }
+
 #pragma warning disable VSSDK006 // Check services exist
       DTE2 dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
 #pragma warning restore VSSDK006 // Check services exist
@@ -141,7 +150,7 @@ namespace Nitra.VisualStudio
       {
         await JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
         _library = new Library();
-        var objManager = await this.GetServiceAsync(typeof(SVsObjectManager)) as IVsObjectManager2;
+        var objManager = await GetServiceAsync(typeof(SVsObjectManager)) as IVsObjectManager2;
 
         if (null != objManager)
           ErrorHandler.ThrowOnFailure(objManager.RegisterSimpleLibrary(_library, out _objectManagerCookie));
@@ -392,8 +401,6 @@ namespace Nitra.VisualStudio
     {
       _backgroundLoading = SolutionLoadingSate.SynchronousLoading;
 
-      InitServers();
-
       var id = new SolutionId(_stringManager.GetId(solutionPath));
       _currentSolutionId = id;
 
@@ -403,28 +410,23 @@ namespace Nitra.VisualStudio
         server.SolutionStartLoading(id, solutionPath);
     }
 
-    private void InitServers()
+    private bool InitServers()
     {
       if (_servers.Count > 0)
-        return; // already initialized
+        return true; // already initialized
 
       lock (NitraCommonPackage.Configs)
       {
         if (NitraCommonPackage.Configs.Count == 0)
-        {
-          Log.Message($"Error: Configs is empty!)");
-        }
+          return false;
 
         var stringManager = _stringManager;
 
         foreach (var config in NitraCommonPackage.Configs)
-        {
-          var server = new ServerModel(stringManager, config, this);
-          _servers.Add(server);
-        }
+          _servers.Add(new ServerModel(stringManager, config, this));
       }
 
-      return;
+      return true;
     }
 
     void BeforeOpenProject(object sender, BeforeOpenProjectEventArgs e)
@@ -490,8 +492,6 @@ namespace Nitra.VisualStudio
       var isTemporarySolution = _currentSolutionId == InvalidSolutionId;
       if (isTemporarySolution)
         _currentSolutionId = new SolutionId(0); // This is temporary solution for <MiscFiles>
-
-      InitServers(); // need in case of open separate files (with no project)
 
       Debug.Assert(_backgroundLoading != SolutionLoadingSate.AsynchronousLoading);
 
