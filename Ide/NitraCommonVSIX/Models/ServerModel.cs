@@ -37,7 +37,6 @@ namespace Nitra.VisualStudio
     public    ImmutableHashSet<string>                 Extensions        { get; }
 
     public    bool                                     IsLoaded          { get; private set; }
-    public    bool                                     IsSolutionCreated { get; private set; }
     public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
 
     readonly  MultiDictionary<FileId, ProjectId>        _fileToProjectMap   = new MultiDictionary<FileId, ProjectId>();
@@ -109,14 +108,11 @@ namespace Nitra.VisualStudio
 
     internal void SolutionStartLoading(SolutionId id, string solutionPath)
     {
-      Debug.Assert(!IsSolutionCreated);
       Client.Send(new ClientMessage.SolutionStartLoading(id, solutionPath));
-      IsSolutionCreated = true;
     }
 
     internal void SolutionLoaded(SolutionId solutionId)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.SolutionLoaded(solutionId));
 
       //foreach (var fileModel in _fileModels)
@@ -127,39 +123,33 @@ namespace Nitra.VisualStudio
 
     internal void ProjectStartLoading(ProjectId id, string projectPath)
     {
-      Debug.Assert(IsSolutionCreated);
       var config = ConvertConfig(_config);
       Client.Send(new ClientMessage.ProjectStartLoading(id, projectPath, config));
     }
 
     internal void ProjectLoaded(ProjectId id)
     {
-      Debug.Assert(IsSolutionCreated);
       IsLoaded = true;
       Client.Send(new ClientMessage.ProjectLoaded(id));
     }
 
     internal void ReferenceAdded(ProjectId projectId, string referencePath)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ReferenceLoaded(projectId, "File:" + referencePath));
     }
 
     internal void ReferenceDeleted(ProjectId projectId, string referencePath)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ReferenceUnloaded(projectId, "File:" + referencePath));
     }
 
     internal void ProjectReferenceAdded(ProjectId projectId, ProjectId referencedProjectId, string referencePath)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ProjectReferenceLoaded(projectId, referencedProjectId, referencePath));
     }
 
     internal void FileSaved(string path)
     {
-      Debug.Assert(IsSolutionCreated);
       var fullPath = Path.GetFullPath(path);
       foreach (var fileModel in _fileModels)
       {
@@ -173,13 +163,11 @@ namespace Nitra.VisualStudio
 
     internal void AddedMscorlibReference(ProjectId projectId)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ReferenceLoaded(projectId, "FullName:mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"));
     }
 
     internal void BeforeCloseProject(ProjectId id)
     {
-      Debug.Assert(IsSolutionCreated);
       Client.Send(new ClientMessage.ProjectUnloaded(id));
       if (_errorListProviders.TryGetValue(id, out var errorListProvider))
       {
@@ -190,7 +178,6 @@ namespace Nitra.VisualStudio
 
     internal void FileRenamed(FileId oldFileId, FileId newFileId, string newFilePath)
     {
-      Debug.Assert(IsSolutionCreated);
       var fileModel = FindFileModel(oldFileId);
       if (fileModel != null)
       {
@@ -205,7 +192,6 @@ namespace Nitra.VisualStudio
 
     internal void FileAdded(ProjectId projectId, string path, FileId fileId, FileVersion version, string contentOpt)
     {
-      Debug.Assert(IsSolutionCreated);
       _fileToProjectMap.Add(fileId, projectId);
       Client.Send(new ClientMessage.FileLoaded(projectId, path, fileId, version, contentOpt != null, contentOpt));
     }
@@ -239,7 +225,6 @@ namespace Nitra.VisualStudio
 
     internal void ViewActivated(IWpfTextView wpfTextView, FileId id, IVsHierarchy hierarchy, string fullPath)
     {
-      Debug.Assert(IsSolutionCreated);
       var textBuffer = wpfTextView.TextBuffer;
 
       TryAddServerProperty(textBuffer);
@@ -428,7 +413,6 @@ namespace Nitra.VisualStudio
         fileModel.Dispose();
 
       Client?.Dispose();
-      IsSolutionCreated = false;
     }
   }
 }

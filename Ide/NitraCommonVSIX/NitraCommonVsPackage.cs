@@ -871,12 +871,10 @@ namespace Nitra.VisualStudio
       if (ext == null || !server.IsSupportedExtension(ext))
         return null;
 
-      var hierarchy = windowFrame.GetHierarchyFromVsWindowFrame();
-      var id        = new FileId(_stringManager.GetId(fullPath));
-
-      Debug.Assert(server.IsSolutionCreated);
-
+      var hierarchy  = windowFrame.GetHierarchyFromVsWindowFrame();
+      var id         = new FileId(_stringManager.GetId(fullPath));
       var textBuffer = wpfTextView.TextBuffer;
+
       server.TryAddServerProperty(textBuffer);
       FileModel fileModel = VsUtils.GetOrCreateFileModel(wpfTextView, id, server, hierarchy, fullPath);
       TextViewModel textViewModel = VsUtils.GetOrCreateTextViewModel(wpfTextView, fileModel);
