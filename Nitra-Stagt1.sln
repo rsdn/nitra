@@ -95,8 +95,6 @@ Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Nitra.Utils", "Nitra\Nitra.
 EndProject
 Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "DotNet.BackEnd.Dnlib", "DotNet.BackEnd.Dnlib\DotNet.BackEnd.Dnlib.nproj", "{D047B6C3-E044-4F1F-8C79-97F37352BD02}"
 EndProject
-Project("{EDCC3B85-0BAD-11DB-BC1A-00112FDE8B61}") = "Json.Grammar", "Grammars\Json\Json.Grammar\Json.Grammar.nproj", "{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -389,18 +387,6 @@ Global
 		{D047B6C3-E044-4F1F-8C79-97F37352BD02}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D047B6C3-E044-4F1F-8C79-97F37352BD02}.Release|x86.ActiveCfg = Release|Any CPU
 		{D047B6C3-E044-4F1F-8C79-97F37352BD02}.Release|x86.Build.0 = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Debug|x86.Build.0 = Debug|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|Any CPU.Build.0 = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|x86.ActiveCfg = Release|Any CPU
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -437,7 +423,6 @@ Global
 		{46F78A78-93FF-4E51-B221-8E5FFFE8806D} = {622651DB-031F-4575-B69F-BB5F8C6819D6}
 		{8BFFAF3A-B454-4544-9218-3197DF381D88} = {244BECF5-D87D-434D-839D-771F4D0EDAA1}
 		{D047B6C3-E044-4F1F-8C79-97F37352BD02} = {244BECF5-D87D-434D-839D-771F4D0EDAA1}
-		{657A9BEF-1E0B-4B7A-A1DD-B127570DF136} = {7D5AFEDC-E05B-40CE-B222-107C48EC4187}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AAE3BE84-D911-45BB-BDEE-88ED44B9379D}
