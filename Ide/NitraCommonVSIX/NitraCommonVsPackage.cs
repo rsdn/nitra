@@ -350,6 +350,10 @@ namespace Nitra.VisualStudio
     protected override void Dispose(bool disposing)
     {
       ThreadHelper.ThrowIfNotOnUIThread();
+
+      if (_runningDocTableEventse == null)
+          return;
+
       try
       {
         foreach (var server in _servers)
