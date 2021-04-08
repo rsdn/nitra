@@ -467,6 +467,7 @@ namespace Nitra.BackEnd.Cci
             if (member.ContainingTypeDefinition.IsEnum)
             {
               def field = ExternalEnumFieldDeclaration(name, m).DefineSymbol(declaredIn.MemberTable);
+              field.Value = m.CompileTimeValue.Value;
               //field.Flags = flags;
               unless (field.IsDeclaredInEvaluated)
                 field.DeclaredIn = declaredIn :> EnumSymbol;
