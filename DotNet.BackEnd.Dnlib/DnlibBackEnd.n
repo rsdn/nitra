@@ -646,6 +646,7 @@ namespace Nitra.BackEnd.Dnlib
           symbol.DeclaredIn = declaredIn :> EnumSymbol;
         unless (symbol.IsTypeEvaluated)
           symbol.Type = declaredIn :> EnumSymbol;
+        symbol.Value = fieldDef.Constant.Value;
         FinalizeMember(symbol, fieldDef, context)
       }
       else
