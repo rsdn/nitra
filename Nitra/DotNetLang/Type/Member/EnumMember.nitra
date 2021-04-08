@@ -17,6 +17,7 @@ namespace DotNet
       SpanClass = DotNetLang.ConstantSpanClass;
       FullName  = DeclaredIn.FullName + "." + Name;
 
+      in Value      : object;
       in DeclaredIn : EnumSymbol;
     }
 
