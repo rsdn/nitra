@@ -20,23 +20,24 @@ namespace Nitra.Declarations
 
   public partial interface DeclarationSymbol : IDependentPropertyContainer, ISerializable
   {
-    Id                        : int         { get; }
-    Name                      : string      { get; }
-    InitialName               : string      { get; }
-    IsNameValid               : bool        { get; }
+    Id                              : int               { get; }
+    Name                            : string            { get; }
+    InitialName                     : string            { get; }
+    IsNameValid                     : bool              { get; }
     /// If return value is greater than 0 it is valid name ID which can be used in StringIndex.GetText().
     /// If return value is 0 the name of symbol is not set.
     /// If return value is less then 0 the name of symbol set more then one time (is ambiguous).
     ///   * You can use bitwise complement (~ operator in C#) to convert returned value to first name id of this symbol if value less then 0.
     ///   * All names of symbol you can get in declarations (see GetDeclarations*() methods).
-    NameId                    : long        { get; }
-    Owner                     : TableScope  { get; }
-    FirstDeclarationOrDefault : Declaration { get; }
-    FirstParsedDeclarationOrDefault : Declaration { get; }
-    DeclarationsCount         : int         { get; }
-    HasDeclarations           : bool        { get; }
-    HasParsedDeclarations     : bool        { get; }
-    IsParsed                  : bool        { get; }
+    NameId                          : long              { get; }
+    Owner                           : TableScope        { get; }
+    FirstDeclarationOrDefault       : Declaration       { get; }
+    FirstParsedDeclarationOrDefault : Declaration       { get; }
+    DeclarationsCount               : int               { get; }
+    HasDeclarations                 : bool              { get; }
+    HasParsedDeclarations           : bool              { get; }
+    IsParsed                        : bool              { get; }
+    Origin                          : DeclarationSymbol { get; }
 
     GetDeclarationsUntyped() : Seq[Declaration];
     VisitChildrenAndSelf(getCildren : Func[DeclarationSymbol, Seq[DeclarationSymbol]], callback : Predicate[DeclarationSymbol]) : bool;

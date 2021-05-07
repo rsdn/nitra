@@ -712,7 +712,7 @@ namespace Nitra.BackEnd.Cci
               }
             }
             type.EvalProperties(context);
-            
+
           | _ => ()
         }
       }

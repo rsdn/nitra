@@ -15,7 +15,7 @@ namespace DotNet
   {
     symbol
     {
-      in DeclaredIn : GenericContainerTypeSymbol;
+      in DeclaredIn : TypeSymbol;
 
       FullName = DeclaredIn.FullName + "." + this.Name;
       DeclaredInOpt = if (DeclaredIn == null) VNone() else VSome(DeclaredIn);

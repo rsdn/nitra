@@ -12,7 +12,11 @@ using System.Linq;
 
 namespace Nitra.Declarations
 {
-  public class ExternalDeclaration[TSymbol] : DeclarationBase, Declaration
+  public interface IExternalDeclaration
+  {
+  }
+  
+  public class ExternalDeclaration[TSymbol] : DeclarationBase, Declaration, IExternalDeclaration
     where TSymbol: DeclarationSymbol
   {
     public this(location : Location, name : string)

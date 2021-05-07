@@ -16,9 +16,21 @@ namespace DotNet
 {
   public partial class TopSubstScope : Scope
   {
-    private TrySubst(ogigin : TypeSymbol) : TypeSymbol
+    private static GetContext() : DependentPropertyEvalContext
     {
-      match (ogigin)
+      DependentPropertyEvalContext.Current ?? DependentPropertyEvalContext(null);
+    }
+
+    private static Init[T](subst : T, origin : DeclarationSymbol) : void
+      where T: SymbolBase, IDependentPropertyContainer
+    {
+      subst.EvalProperties(GetContext());
+      subst.SetOrigin(origin);
+    }
+
+    public TrySubst(origin : TypeSymbol) : TypeSymbol
+    {
+      match (origin)
       {
         | TypeParameterSymbol as parameterSymbol => TrySubstTypeParameterSymbol(parameterSymbol)
         | FunctionTypeSymbol as func => TrySubst(func)
@@ -30,13 +42,17 @@ namespace DotNet
           match (cts)
           {
             | TopConstructedTypeSymbol when isNotChanged => cts
-            | TopConstructedTypeSymbol           => AstUtils.CreateConstructedTypeSymbol(typeInfo, substArgs, DependentPropertyEvalContext(null))
+            | TopConstructedTypeSymbol           => AstUtils.CreateConstructedTypeSymbol(typeInfo, substArgs, GetContext())
             //| NestedConstructedTypeSymbol as cts when isNotChanged
-            | NestedConstructedTypeSymbol as cts =>  AstUtils.CreateNestedConstructedTypeSymbol(cts.Parent, typeInfo, substArgs, DependentPropertyEvalContext(null))
+            | NestedConstructedTypeSymbol as cts =>  AstUtils.CreateNestedConstructedTypeSymbol(cts.Parent, typeInfo, substArgs, GetContext())
             | _ => assert2(false); assert(false)
           }
 
-        | _ => ogigin
+        | GenericContainerTypeSymbol as gts =>
+          def substArgs = TrySubsts(gts.TypeParameters);
+          AstUtils.CreateConstructedTypeSymbol(gts, substArgs, GetContext())
+
+        | _ => origin
       }
     }
 
@@ -48,79 +64,86 @@ namespace DotNet
       builder.MoveToImmutable()
     }
 
-    public SubstMethod(ogigin : Member.MethodSymbol) : Member.MethodSymbol
+    public SubstMethod(origin : Member.MethodSymbol) : Member.MethodSymbol
     {
       def subst = Member.MethodSymbol();
-      CopyDeclaration         (subst, ogigin);
-      SubstCustomAttributeHost(subst, ogigin);
-      SubstModifierHost       (subst, ogigin);
-      SubstTypeMember         (subst, ogigin);
-      SubstFunctional         (subst, ogigin);
-      SubstGenericEntity      (subst, ogigin);
+      SubstTypeMember         (subst, origin);
+      CopyDeclaration         (subst, origin);
+      SubstCustomAttributeHost(subst, origin);
+      SubstModifierHost       (subst, origin);
+      SubstFunctional         (subst, origin);
+      SubstGenericEntity      (subst, origin);
+      when (origin.IsIsExtensionMethodEvaluated)
+      {
+        subst.IsExtensionMethod = origin.IsExtensionMethod;
+        subst.IsExtensionMethod_Location = origin.IsExtensionMethod_Location;
+      }
+      Init(subst, origin);
       subst
     }
 
-    public SubstProperty(ogigin : Member.PropertySymbol) : Member.PropertySymbol
+    public SubstProperty(origin : Member.PropertySymbol) : Member.PropertySymbol
     {
       def subst = Member.PropertySymbol();
-      CopyDeclaration         (subst, ogigin);
-      SubstCustomAttributeHost(subst, ogigin);
-      SubstModifierHost       (subst, ogigin);
-      SubstTypeMember         (subst, ogigin);
-      when (ogigin.IsTypeEvaluated)
+      CopyDeclaration         (subst, origin);
+      SubstCustomAttributeHost(subst, origin);
+      SubstModifierHost       (subst, origin);
+      SubstTypeMember         (subst, origin);
+      when (origin.IsTypeEvaluated)
       {
-        subst.Type = TrySubst(ogigin.Type);
-        subst.Type_Location = ogigin.Type_Location;
+        subst.Type = TrySubst(origin.Type);
+        subst.Type_Location = origin.Type_Location;
       }
-      when (ogigin.IsGetterEvaluated)
+      when (origin.IsGetterEvaluated)
       {
-        if (ogigin.Getter is Some(value))
+        if (origin.Getter is Some(value))
           subst.Getter = Some(SubstMethod(value));
         else
           subst.Getter = None();
-        subst.Getter_Location = ogigin.Getter_Location;
+        subst.Getter_Location = origin.Getter_Location;
       }
-      when (ogigin.IsSetterEvaluated)
+      when (origin.IsSetterEvaluated)
       {
-        if (ogigin.Setter is Some(value))
+        if (origin.Setter is Some(value))
           subst.Getter = Some(SubstMethod(value));
         else
           subst.Getter = None();
-        subst.Setter_Location = ogigin.Setter_Location;
+        subst.Setter_Location = origin.Setter_Location;
       }
+      Init(subst, origin);
       subst
     }
 
-    private TrySubst(ogigin : FunctionTypeSymbol) : FunctionTypeSymbol
+    private TrySubst(origin : FunctionTypeSymbol) : FunctionTypeSymbol
     {
       mutable isNotChanged;
       mutable parameterTypesSubsts;
       mutable returnSubst;
 
-      when (ogigin.IsParametersEvaluated)
+      when (origin.IsParametersEvaluated)
       {
-        parameterTypesSubsts = TrySubsts(ogigin.Parameters);
+        parameterTypesSubsts = TrySubsts(origin.Parameters);
 
-        isNotChanged = parameterTypesSubsts.SequenceEqual(ogigin.Parameters);
+        isNotChanged = parameterTypesSubsts.SequenceEqual(origin.Parameters);
       }
 
-      when (ogigin.IsReturnEvaluated)
+      when (origin.IsReturnEvaluated)
       {
-        returnSubst = TrySubst(ogigin.Return);
-        isNotChanged &= returnSubst.Equals(ogigin.Return);
+        returnSubst = TrySubst(origin.Return);
+        isNotChanged &= returnSubst.Equals(origin.Return);
       }
 
       if (isNotChanged)
-        ogigin
+        origin
       else
       {
         def subst = FunctionTypeSymbol();
-        CopyDeclaration(subst, ogigin);
+        CopyDeclaration(subst, origin);
         when (!parameterTypesSubsts.IsDefault)
           subst.Parameters = parameterTypesSubsts;
         when (returnSubst != null)
           subst.Return = returnSubst;
-        subst.EvalProperties(DependentPropertyEvalContext(null));
+        Init(subst, origin);
         subst
       }
     }
@@ -133,72 +156,72 @@ namespace DotNet
       builder.MoveToImmutable()
     }
 
-    private CopyDeclaration(subst : DeclarationSymbol, ogigin : DeclarationSymbol) : void
+    private CopyDeclaration(subst : DeclarationSymbol, origin : DeclarationSymbol) : void
     {
-      foreach (decl in ogigin.GetDeclarationsUntyped())
+      foreach (decl in origin.GetDeclarationsUntyped())
         subst.AddDeclaration(decl);
 
-      when (ogigin.IsKindEvaluated)
+      when (origin.IsKindEvaluated)
       {
-        subst.Kind                   = ogigin.Kind;
-        subst.Kind_Location          = ogigin.Kind_Location;
+        subst.Kind                   = origin.Kind;
+        subst.Kind_Location          = origin.Kind_Location;
       }
-      when (ogigin.IsSpanClassEvaluated)
+      when (origin.IsSpanClassEvaluated)
       {
-        subst.SpanClass              = ogigin.SpanClass;
-        subst.SpanClass_Location     = ogigin.SpanClass_Location;
+        subst.SpanClass              = origin.SpanClass;
+        subst.SpanClass_Location     = origin.SpanClass_Location;
       }
-      when (ogigin.IsScopeEvaluated)
+      when (origin.IsScopeEvaluated)
       {
-        subst.Scope                  = ogigin.Scope;
-        subst.Scope_Location         = ogigin.Scope_Location;
+        subst.Scope                  = origin.Scope;
+        subst.Scope_Location         = origin.Scope_Location;
       }
-      when (ogigin.IsDeclaredInOptEvaluated)
+      when (origin.IsDeclaredInOptEvaluated)
       {
-        subst.DeclaredInOpt          = ogigin.DeclaredInOpt;
-        subst.DeclaredInOpt_Location = ogigin.DeclaredInOpt_Location;
+        subst.DeclaredInOpt          = origin.DeclaredInOpt;
+        subst.DeclaredInOpt_Location = origin.DeclaredInOpt_Location;
       }
     }
 
-    private SubstCustomAttributeHost(subst : CustomAttributeHostDeclarationSymbol, ogigin : CustomAttributeHostDeclarationSymbol) : void
+    private SubstCustomAttributeHost(subst : CustomAttributeHostDeclarationSymbol, origin : CustomAttributeHostDeclarationSymbol) : void
     {
-      when (ogigin.IsCustomAttributesEvaluated)
+      when (origin.IsCustomAttributesEvaluated)
       {
-        subst.CustomAttributes          = ogigin.CustomAttributes;
-        subst.CustomAttributes_Location = ogigin.CustomAttributes_Location;
+        subst.CustomAttributes          = origin.CustomAttributes;
+        subst.CustomAttributes_Location = origin.CustomAttributes_Location;
       }
     }
 
-    private SubstModifierHost(subst : ModifierHostSymbol, ogigin : ModifierHostSymbol) : void
+    private SubstModifierHost(subst : ModifierHostSymbol, origin : ModifierHostSymbol) : void
     {
-      when (ogigin.IsFlagsEvaluated)
+      when (origin.IsFlagsEvaluated)
       {
-        subst.Flags = ogigin.Flags;
-        subst.Flags_Location = ogigin.Flags_Location;
+        subst.Flags = origin.Flags;
+        subst.Flags_Location = origin.Flags_Location;
       }
     }
 
-    private SubstFormalParameter(ogigin : FormalParameterSymbol) : FormalParameterSymbol
+    private SubstFormalParameter(origin : FormalParameterSymbol) : FormalParameterSymbol
     {
       def subst = FormalParameterSymbol();
-      CopyDeclaration(subst, ogigin);
-      SubstCustomAttributeHost(subst, ogigin);
-      when (ogigin.IsTypeEvaluated)
+      CopyDeclaration(subst, origin);
+      SubstCustomAttributeHost(subst, origin);
+      when (origin.IsTypeEvaluated)
       {
-        subst.Type = TrySubst(ogigin.Type);
-        subst.Type_Location = ogigin.Type_Location;
+        subst.Type = TrySubst(origin.Type);
+        subst.Type_Location = origin.Type_Location;
       }
-      when (ogigin.IsModifierEvaluated)
+      when (origin.IsModifierEvaluated)
       {
-        subst.Modifier = ogigin.Modifier;
-        subst.Modifier_Location = ogigin.Modifier_Location;
+        subst.Modifier = origin.Modifier;
+        subst.Modifier_Location = origin.Modifier_Location;
       }
-      when (ogigin.IsIndexEvaluated)
+      when (origin.IsIndexEvaluated)
       {
-        subst.Index = ogigin.Index;
-        subst.Index_Location = ogigin.Index_Location;
+        subst.Index = origin.Index;
+        subst.Index_Location = origin.Index_Location;
       }
-      subst.EvalProperties(DependentPropertyEvalContext(null));
+      Init(subst, origin);
       subst
     }
 
@@ -210,52 +233,62 @@ namespace DotNet
       builder.MoveToImmutable()
     }
 
-    private SubstTypeMember(subst : TypeMemberSymbol, ogigin : TypeMemberSymbol) : void
+    private SubstTypeMember(subst : TypeMemberSymbol, origin : TypeMemberSymbol) : void
     {
-      when (ogigin.IsDeclaredInEvaluated)
+      when (origin.IsDeclaredInEvaluated)
       {
-        subst.DeclaredIn = ogigin.DeclaredIn;
-        subst.DeclaredIn_Location = ogigin.DeclaredIn_Location;
+        subst.DeclaredIn          = TrySubst(origin.DeclaredIn);
+        subst.DeclaredIn_Location = origin.DeclaredIn_Location;
+      }
+      when (origin.IsDeclaredInOptEvaluated)
+      {
+        subst.DeclaredInOpt          = VSome(subst.DeclaredIn);
+        subst.DeclaredInOpt_Location = origin.DeclaredInOpt_Location;
       }
     }
 
-    private SubstParameterizable(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
+    private SubstParameterizable(subst : FunctionalSymbol, origin : FunctionalSymbol) : void
     {
       // TODO: Надо сделать подстановку для table ParameterScope;
-      when (ogigin.IsParametersEvaluated)
+      when (origin.IsParametersEvaluated)
       {
-        subst.Parameters = SubstFormalParameters(ogigin.Parameters);
-        subst.Parameters_Location = ogigin.Parameters_Location;
+        subst.Parameters = SubstFormalParameters(origin.Parameters);
+        subst.Parameters_Location = origin.Parameters_Location;
       }
     }
 
-    private SubstFunctional(subst : FunctionalSymbol, ogigin : FunctionalSymbol) : void
+    private SubstFunctional(subst : FunctionalSymbol, origin : FunctionalSymbol) : void
     {
-      SubstParameterizable(subst, ogigin);
+      SubstParameterizable(subst, origin);
 
-      when (ogigin.IsReturnTypeEvaluated)
+      when (origin.IsReturnTypeEvaluated)
       {
-        subst.ReturnType = TrySubst(ogigin.ReturnType);
-        subst.ReturnType_Location = ogigin.ReturnType_Location;
+        subst.ReturnType = TrySubst(origin.ReturnType);
+        subst.ReturnType_Location = origin.ReturnType_Location;
       }
-      when (ogigin.IsTypeEvaluated)
+      when (origin.IsTypeEvaluated)
       {
-        subst.Type = TrySubst(ogigin.Type);
-        subst.Type_Location = ogigin.Type_Location;
+        subst.Type = TrySubst(origin.Type);
+        subst.Type_Location = origin.Type_Location;
+      }
+      when (origin.IsFunctionTypeEvaluated)
+      {
+        subst.Type = subst.Type;
+        subst.Type_Location = origin.FunctionType_Location;
       }
     }
 
-    private SubstGenericEntity(subst : GenericEntitySymbol, ogigin : GenericEntitySymbol) : void
+    private SubstGenericEntity(subst : GenericEntitySymbol, origin : GenericEntitySymbol) : void
     {
-      when (ogigin.IsTypeParametersCountEvaluated)
+      when (origin.IsTypeParametersCountEvaluated)
       {
-        subst.TypeParametersCount = ogigin.TypeParametersCount;
-        subst.TypeParametersCount_Location = ogigin.TypeParametersCount_Location;
+        subst.TypeParametersCount = origin.TypeParametersCount;
+        subst.TypeParametersCount_Location = origin.TypeParametersCount_Location;
       }
-      when (ogigin.IsTypeParametersEvaluated)
+      when (origin.IsTypeParametersEvaluated)
       {
-        subst.TypeParameters = TrySubstTypeParameters(ogigin.TypeParameters);
-        subst.TypeParameters_Location = ogigin.TypeParameters_Location;
+        subst.TypeParameters = TrySubstTypeParameters(origin.TypeParameters);
+        subst.TypeParameters_Location = origin.TypeParameters_Location;
       }
     }
   } // module

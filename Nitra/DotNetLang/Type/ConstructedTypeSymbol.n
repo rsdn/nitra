@@ -25,7 +25,10 @@ namespace DotNet
     {
       def typeInfoText = if (sym.IsTypeInfoEvaluated) sym.TypeInfo.InitialName else "?";
       def argsText = if (sym.IsArgsEvaluated) string.Join(" ,", sym.Args.MapToArray(a => a.ToString())) else "?";
-      typeInfoText + "<" + argsText + ">";
+      if (argsText.Length == 0)
+        typeInfoText
+      else
+        typeInfoText + "<" + argsText + ">";
     }
     public MakeHint(symbol : ConstructedTypeSymbol) : string
     {
