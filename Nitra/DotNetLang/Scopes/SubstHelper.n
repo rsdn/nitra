@@ -21,7 +21,7 @@ namespace DotNet
       DependentPropertyEvalContext.Current ?? DependentPropertyEvalContext(null);
     }
 
-    private static Init[T](subst : T, origin : SymbolBase) : void
+    private static Init[T](subst : T, origin : DeclarationSymbol) : void
       where T: SymbolBase, IDependentPropertyContainer
     {
       subst.EvalProperties(GetContext());
