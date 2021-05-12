@@ -105,7 +105,7 @@ namespace Nitra.BackEnd.Dnlib
         m.Dispose();
     }
 
-    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
+    public LoadExternalSymbols(libs : Seq[LibReference], libPath : string, compilerMessages : ICompilerMessages, context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       LoadExternalSymbols(libs, libPath, (loc, err) => compilerMessages.Error(loc, err), context);
     }
@@ -117,7 +117,7 @@ namespace Nitra.BackEnd.Dnlib
       false
     }
 
-    public LoadExternalSymbols(libs : IEnumerable[LibReference], libPath : string, addError : Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
+    public LoadExternalSymbols(libs : Seq[LibReference], libPath : string, addError : Action[Location, string], context : DependentPropertyEvalContext) : NamespaceSymbol
     {
       Debug.WriteLine("LoadExternalSymbols started");
 
@@ -170,7 +170,7 @@ namespace Nitra.BackEnd.Dnlib
       _rootNamespace
     }
 
-    LoadReferences(libs : IEnumerable[LibReference], addError : Action[Location, string]) : void
+    LoadReferences(libs : Seq[LibReference], addError : Action[Location, string]) : void
     {
       def corlibReferences = List.[object * long]();
       def otherReferences  = List.[object]();
@@ -436,7 +436,7 @@ namespace Nitra.BackEnd.Dnlib
               def cls = ExternalTopTypeDeclaration.[TopClassSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable);
               cls.HasExtensionMethod = typeDef.IsAbstract && typeDef.IsSealed && HasExtensionAttribute(typeDef);
               cls
-            }
+            };
 
         unless (symbol.IsDeclaredInEvaluated)
           symbol.DeclaredIn = declaredIn;
