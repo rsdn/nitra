@@ -74,7 +74,10 @@ namespace Nitra.VisualStudio
     readonly Dictionary<IVsHierarchy, HierarchyListener> _listenersMap = new Dictionary<IVsHierarchy, HierarchyListener>();
     readonly List<Project>                               _projects = new List<Project>();
     readonly List<ServerModel>                           _servers = new List<ServerModel>();
+    readonly List<NitraCommonIde.Config>                 _configs = new List<NitraCommonIde.Config>();
     readonly StringManager                               _stringManager = new StringManager();
+    bool                                                 _isFirstTime = true;
+    object                                               _locker = new object();
     RunningDocTableEvents                                _runningDocTableEventse;
     ProjectItemsEvents                                   _prjItemsEvents;
     EnvDTE.SolutionEvents                                _solutionEvents;
@@ -83,7 +86,7 @@ namespace Nitra.VisualStudio
     SolutionLoadingSate                                  _backgroundLoading;
     SolutionId                                           _currentSolutionId = InvalidSolutionId;
 
-    internal List<ServerModel> Servers { get => _servers; }
+    internal IEnumerable<ServerModel> Servers { get => _servers; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NitraCommonVsPackage"/> class.
@@ -134,7 +137,20 @@ namespace Nitra.VisualStudio
 
     async Task INitraInit.Init(CancellationToken cancellationToken, NitraCommonIde.Config config)
     {
-      _servers.Add(new ServerModel(_stringManager, config, this));
+      if (string.Equals(Environment.GetEnvironmentVariable("DebugNitraCommonVsPackage"), "true", StringComparison.OrdinalIgnoreCase))
+        Trace.Assert(false, $"Press 'Retry' to strt debug of {nameof(NitraCommonVsPackage)}");
+
+      lock (_locker)
+      {
+        _configs.Add(config);
+
+        if (!_isFirstTime)
+        {
+          return;
+        }
+
+        _isFirstTime = false;
+      }
 
 #pragma warning disable VSSDK006 // Check services exist
       DTE2 dte = (DTE2)await GetServiceAsync(typeof(DTE)).ConfigureAwait(false);
@@ -420,6 +436,12 @@ namespace Nitra.VisualStudio
     void InitSolution(string solutionPath)
     {
       _backgroundLoading = SolutionLoadingSate.SynchronousLoading;
+
+      lock (_locker)
+      {
+        for (int i = _servers.Count; i < _configs.Count; i++)
+          _servers.Add(new ServerModel(_stringManager, _configs[i], this));
+      }
 
       var id = new SolutionId(_stringManager.GetId(solutionPath));
       _currentSolutionId = id;
