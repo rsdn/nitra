@@ -30,16 +30,15 @@ namespace Nitra.VisualStudio
   /// <summary>Represent a server (Nitra.ClientServer.Server) instance.</summary>
   internal class ServerModel : IDisposable
   {
-              Ide.Config                               _config;
     public    IServiceProvider                         ServiceProvider   { get; }
-    public    NitraClient                              Client            { get; private set; }
     public    Hint                                     Hint              { get; } = new Hint() { WrapWidth = 900.1 };
     public    ImmutableHashSet<string>                 Extensions        { get; }
-
+    public    NitraClient                              Client            { get; private set; }
     public    bool                                     IsLoaded          { get; private set; }
-    public ImmutableArray<SpanClassInfo>               SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
+    public    ImmutableArray<SpanClassInfo>            SpanClassInfos    { get; private set; } = ImmutableArray<SpanClassInfo>.Empty;
+    public    Ide.Config                               Config            { get; }
 
-    readonly  MultiDictionary<FileId, ProjectId>        _fileToProjectMap   = new MultiDictionary<FileId, ProjectId>();
+    readonly  MultiDictionary<FileId, ProjectId>       _fileToProjectMap   = new MultiDictionary<FileId, ProjectId>();
     readonly  HashSet<FileModel>                       _fileModels          = new HashSet<FileModel>();
     readonly  Dictionary<FileId, FileModel>            _filIdToFileModelMap = new Dictionary<FileId, FileModel>();
     readonly  Dictionary<ProjectId, ErrorListProvider> _errorListProviders  = new Dictionary<ProjectId, ErrorListProvider>();
@@ -58,7 +57,7 @@ namespace Nitra.VisualStudio
       client.Send(new ClientMessage.CheckVersion(M.Constants.AssemblyVersionGuid));
       var responseMap = client.ResponseMap;
       responseMap[-1] = Response;
-      _config = config;
+      Config = config;
       Client = client;
 
       var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.OrdinalIgnoreCase);
@@ -123,7 +122,7 @@ namespace Nitra.VisualStudio
 
     internal void ProjectStartLoading(ProjectId id, string projectPath)
     {
-      var config = ConvertConfig(_config);
+      var config = ConvertConfig(Config);
       Client.Send(new ClientMessage.ProjectStartLoading(id, projectPath, config));
     }
 
@@ -311,7 +310,7 @@ namespace Nitra.VisualStudio
             var fileId = loc.File.FileId;
             var path = fileId == FileId.Invalid ? "<no file>" : Client.StringManager.GetPath(fileId);
             var ext  = fileId == FileId.Invalid ? "" : Path.GetExtension(path);
-            var lang = _config.Languages.Where(x => x.Extensions.Contains(ext)).Select(x => x.Name).SingleOrDefault() ?? "<Unknown Nitra language>";
+            var lang = Config.Languages.Where(x => x.Extensions.Contains(ext)).Select(x => x.Name).SingleOrDefault() ?? "<Unknown Nitra language>";
             _callback.AddItem(new NavigateToItem(decl.Name, "NitraSymbol", lang, decl.FullName, decl, calcKibd(decl), false, _nitraNavigateToItemProvider.GetFactory(this)));
           }
 
