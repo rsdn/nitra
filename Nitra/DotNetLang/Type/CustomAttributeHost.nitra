@@ -21,10 +21,18 @@ namespace DotNet
     Symbol.CustomAttributes = Attributes.Symbol.ToArray();
   }
 
-  abstract ast CustomAttributeHost : BindableAst
+  abstract ast CustomAttributeHost : BindableAst, HasBuildInvocationScope
   {
-    Attributes.NameScope = Scope;
+    Attributes.NameScope            = Scope;
+    Attributes.Scope                = Scope;
+    Attributes.BuildInvocationScope = BuildInvocationScope;
 
     Attributes : CustomAttributeReference*;
+  }
+
+  abstract ast HasBuildInvocationScope
+  {
+  stage 2:
+    in BuildInvocationScope : InvocationScopeBuilder;
   }
 }

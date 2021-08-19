@@ -79,6 +79,7 @@ namespace Nitra.ClientServer.Server.ProjectSystem
         def ps   = config.ProjectSupport;
         def asm  = Language.LoadAssembly(ps.Path);
         def type = asm.GetType(ps.TypeFullName);
+        assert2(type != null, $"Type '$(ps.TypeFullName)' can't be loaded!");
         def obj  = Activator.CreateInstance(type, true);
         try _projectSupport = obj :> IProjectSupport;
         catch
