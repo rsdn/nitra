@@ -69,7 +69,6 @@ namespace DotNet
     Target    : CustomAttributeTarget?;
     Name      : QualifiedReference;
 
-    Arguments.ScopeIn = Scope;
     Arguments.BuildInvocationScope = BuildInvocationScope;
 
     // TODO: Map arguments
