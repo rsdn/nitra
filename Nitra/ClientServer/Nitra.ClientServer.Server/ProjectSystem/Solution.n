@@ -41,9 +41,9 @@ namespace Nitra.ClientServer.Server.ProjectSystem
     public Item[projectId : int] : Project { get { GetProject(projectId) } }
 
     /// Return true in first time.
-    internal SetProjectFailedState(id : int) : bool
+    internal SetProjectFailedState(id : int) : void
     {
-      _failedProjects.Add(id);
+      _ = _failedProjects.Add(id);
     }
 
     /// Return true in first time.

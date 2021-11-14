@@ -6,7 +6,7 @@ using Nitra.Internal;
 
 namespace DotNet
 {
-  declaration FormalParameter : SelfTypedDeclaration, CustomAttributeHostDeclaration
+  declaration FormalParameter : SelfTypedDeclaration, CustomAttributeHostDeclaration, HasBuildInvocationScope
   {
     symbol
     {
@@ -28,8 +28,6 @@ namespace DotNet
     in    DeclaredIn : DeclarationSymbol;
   stage 1:
     inout Types      : list[TypeSymbol];
-  stage 2:
-    in BuildInvocationScope : InvocationScopeBuilder;
 
     Symbol.DeclaredIn            = DeclaredIn;
     IndexOut                     = IndexIn + 1u;
