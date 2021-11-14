@@ -33,7 +33,10 @@ namespace CSharp
                     | "__arglist";
 
     [Keyword]
-    token Keyword = Name=KeywordToken !IdentifierPartCharacters;
+    token Keyword
+    {
+      | SSharp = Name=KeywordToken !IdentifierPartCharacters
+    }
 
     /////////////////////////////////////////////////////////
     // Identifiers
