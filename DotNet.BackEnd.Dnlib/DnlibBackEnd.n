@@ -316,6 +316,13 @@ namespace Nitra.BackEnd.Dnlib
 
     LoadTypes(moduleDef : ModuleDef, context : DependentPropertyEvalContext) : void
     {
+      def assemblyLocation =
+        match (moduleDef)
+        {
+          | ModuleDefMD as md => Location(SingleLineSourceSnapshot("", md.Metadata.PEImage.Filename), NSpan(0))
+          | _                 => Location(SingleLineSourceSnapshot("", moduleDef.FullName), NSpan(0))
+        };
+
       def getNamespace(fullName : string)
       {
         if (string.IsNullOrEmpty(fullName))
@@ -409,7 +416,7 @@ namespace Nitra.BackEnd.Dnlib
       }
       and loadNestedType(typeDef : TypeDef, typeName : string, declaredIn : GenericContainerTypeSymbol) : NestedTypeSymbol
       {
-        def name = Name(NoLocation, typeName);
+        def name = Name(assemblyLocation, typeName);
         def symbol : NestedTypeSymbol =
                  if (typeDef.IsDelegate)  ExternalNestedTypeDeclaration.[NestedDelegateSymbol] (name, typeDef).DefineSymbol(declaredIn.MemberTable)
             else if (typeDef.IsInterface) ExternalNestedTypeDeclaration.[NestedInterfaceSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable)
@@ -425,7 +432,7 @@ namespace Nitra.BackEnd.Dnlib
       }
       def loadType(typeDef : TypeDef, typeName : string, declaredIn : NamespaceSymbol)
       {
-        def name = Name(NoLocation, typeName);
+        def name = Name(assemblyLocation, typeName);
         def symbol : TopTypeSymbol =
                  if (typeDef.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, typeDef).DefineSymbol(declaredIn.MemberTable)
             else if (typeDef.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, typeDef).DefineSymbol(declaredIn.MemberTable)
@@ -611,7 +618,7 @@ namespace Nitra.BackEnd.Dnlib
         {
           log(() => $"LoadParameters: parameter=$parameter methodDef == null Type='$(parameter.Type)' MethodSigIndex=$(parameter.MethodSigIndex) Index=$(parameter.Index) MethodDef='$(parameter.Method)' DeclaringType='$(parameter.Method?.DeclaringType)'");
         }
-        def name      = NRB.Name(NoLocation, parameter.Name ?? parameter.ToString());
+        def name      = NRB.Name(parameterizable.FirstDeclarationOrDefault.Location, parameter.Name ?? parameter.ToString());
         def symbol    = ExternalParameterDeclaration(name, paramDef).DefineSymbol(containingScope);
         assert(parameter.Type != null);
         symbol.Type   = ConvertType(parameter.Type, methodTypeParameters, context);
@@ -635,7 +642,7 @@ namespace Nitra.BackEnd.Dnlib
 
     internal TryLoadField(fieldDef : FieldDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
     {
-      def name = NRB.Name(NoLocation, fieldDef.Name);
+      def name = NRB.Name(declaredIn.FirstDeclarationOrDefault.Location, fieldDef.Name);
       if (fieldDef.DeclaringType.IsEnum)
       {
         unless (fieldDef.IsLiteral)
@@ -673,7 +680,7 @@ namespace Nitra.BackEnd.Dnlib
 
     internal LoadEvent(eventDef : EventDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : Member.EventSymbol
     {
-      def name   = NRB.Name(NoLocation, eventDef.Name);
+      def name   = NRB.Name(declaredIn.FirstDeclarationOrDefault.Location, eventDef.Name);
       def symbol = ExternalEventDeclaration(name, eventDef).DefineSymbol(declaredIn.MemberTable);
       unless (symbol.IsDeclaredInEvaluated)
         symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
@@ -683,7 +690,7 @@ namespace Nitra.BackEnd.Dnlib
 
     internal LoadProperty(propertyDef : PropertyDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : Member.PropertySymbol
     {
-      def name   = NRB.Name(NoLocation, propertyDef.Name);
+      def name   = NRB.Name(declaredIn.FirstDeclarationOrDefault.Location, propertyDef.Name);
       def symbol = ExternalPropertyDeclaration(name, propertyDef).DefineSymbol(declaredIn.MemberTable);
       unless (symbol.IsDeclaredInEvaluated)
         symbol.DeclaredIn = declaredIn :> GenericContainerTypeSymbol;
@@ -693,7 +700,7 @@ namespace Nitra.BackEnd.Dnlib
 
     internal LoadMethod(methodDef : MethodDef, declaredIn : ContainerSymbol, context : DependentPropertyEvalContext) : DeclarationSymbol
     {
-      def name       = NRB.Name(NoLocation, methodDef.Name);
+      def name       = NRB.Name(declaredIn.FirstDeclarationOrDefault.Location, methodDef.Name);
       when (name.Text == "SendLicenseToDevice")
       {
         assert2(true);
