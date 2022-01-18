@@ -115,6 +115,8 @@ namespace Nitra.BackEnd.Cci
           unless (loadedAsmsSet.Add(asm.AssemblyIdentity))
             continue; // already loaded
 
+          def assemblyLocation = Location(SingleLineSourceSnapshot("", fullPath), NSpan(0));
+            
           def initTypeSymbol(typeSymbol : DeclaredTypeSymbol, type : ITypeDefinition) : void
           {
             def internedKey = type.InternedKey;
@@ -173,7 +175,7 @@ namespace Nitra.BackEnd.Cci
           }
           and loadNestedType(type : INestedTypeDefinition, declaredIn : GenericContainerTypeSymbol) : NestedTypeSymbol
           {
-            def name = Name(NoLocation, type.Name.Value); // TODO: type.Name.UniqueKey
+            def name = Name(assemblyLocation, type.Name.Value); // TODO: type.Name.UniqueKey
             def symbol : NestedTypeSymbol  =
                      if (type.IsDelegate)  ExternalNestedTypeDeclaration.[NestedDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
                 else if (type.IsInterface) ExternalNestedTypeDeclaration.[NestedInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
@@ -196,7 +198,7 @@ namespace Nitra.BackEnd.Cci
                 when (IgnoreName(strName))
                   return;
 
-                def name = Name(NoLocation, strName); // TODO: type.Name.UniqueKey
+                def name = Name(assemblyLocation, strName); // TODO: type.Name.UniqueKey
                 def symbol : TopTypeSymbol =
                          if (type.IsDelegate)  ExternalTopTypeDeclaration.[TopDelegateSymbol] (name, type).DefineSymbol(declaredIn.MemberTable)
                     else if (type.IsInterface) ExternalTopTypeDeclaration.[TopInterfaceSymbol](name, type).DefineSymbol(declaredIn.MemberTable)
@@ -379,12 +381,13 @@ namespace Nitra.BackEnd.Cci
 
     internal LoadParameters(paremeters : Seq[IParameterDefinition], parameterizable : ParameterizableSymbol, context : DependentPropertyEvalContext) : ImmutableArray[FormalParameterSymbol]
     {
+      def location = parameterizable.FirstDeclarationOrDefault.Location;
       def containingScope = parameterizable.ParameterScope;
       def builder = ImmutableArray.CreateBuilder();
       foreach (p in paremeters)
       {
         //FormalParameter
-        def parameterName = Name(NoLocation, p.Name.Value); // TODO: type.Name.UniqueKey
+        def parameterName = Name(location, p.Name.Value); // TODO: type.Name.UniqueKey
         def parameter = ExternalParameterDeclaration(parameterName, p).DefineSymbol(containingScope);
         parameter.Type = CciTypeToTypeSymbol(p.Type, context);
         mutable parameterModifier;
@@ -411,8 +414,9 @@ namespace Nitra.BackEnd.Cci
       //when (visibility != TypeMemberVisibility.Public && visibility != TypeMemberVisibility.Family && visibility != TypeMemberVisibility.FamilyOrAssembly)
       //  return;
 
+      def location = declaredIn.FirstDeclarationOrDefault.Location;
       def makeStaticIf(isStatic : bool, flags : ModifierSet) : void { when (isStatic) flags.Add(Modifiers.Static) }
-      def name = Name(NoLocation, member.Name.Value); // TODO: type.Name.UniqueKey
+      def name = Name(location, member.Name.Value); // TODO: type.Name.UniqueKey
       def flags = ModifierSet(context);
       flags.Add(MakeModifiers(visibility));
 
