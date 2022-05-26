@@ -299,7 +299,9 @@ namespace DotNet
       def double = context.GetVoidType().FullName;
       def decimal = context.GetVoidType().FullName;
 
-      match(from) {
+      match(from)
+      {
+        | x when !x.IsFullNameEvaluated => false
         | x when x.FullName == sbyte => [short, int, long, float, double, decimal].Any(s => s == to.FullName)
         | x when x.FullName == byte => [short, ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
         | x when x.FullName == short => [int, long, float, double, decimal].Any(s => s == to.FullName)
