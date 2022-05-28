@@ -33,11 +33,17 @@ namespace Nitra.ProjectSystem
 
     public override ToString() : string
     {
+      ToString(false)
+    }
+
+    public ToString(warningsAsErrors : bool) : string
+    {
       def type =
         match (Type)
         {
           | FatalError
-          | Error      => "error: "
+          | Error
+          | Warning when warningsAsErrors => "error: "
           | Warning    => "warning: "
           | Hint       => "hint: "
         }

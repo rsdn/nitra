@@ -38,6 +38,7 @@ namespace Nitra.ProjectSystem
     public event    Redraw      : Action;
     public virtual  IsFake      : bool           { get { false } }
     public          IsActive    : bool           { get; protected set; }
+    public          UseHintMl   : bool           { get { Project != null && Project.UseHintMl } }
 
     [RecordIgnore] protected mutable _parseMessages : CompilerMessageList = CompilerMessageList();
     public ParseMessages        : Seq[CompilerMessage] { get { _parseMessages } }
@@ -71,7 +72,7 @@ namespace Nitra.ProjectSystem
       def symbolErrors =
         if (HasAst)
         {
-          def errorCollector = CollectSymbolErrorsVisitor();
+          def errorCollector = CollectSymbolErrorsVisitor(UseHintMl);
           errorCollector.Visit(Ast);
           errorCollector.CompilerMessages
         }

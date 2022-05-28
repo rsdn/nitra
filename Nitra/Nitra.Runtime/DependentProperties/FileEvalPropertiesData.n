@@ -49,7 +49,7 @@ namespace Nitra.Declarations
     {
       when (Ast != null)
       {
-        def errorCollector = CollectSymbolErrorsVisitor(GetCompilerMessage());
+        def errorCollector = CollectSymbolErrorsVisitor(GetCompilerMessage(), Ast.Location.Source.File.UseHintMl);
         errorCollector.Visit(Ast);
       }
     }
