@@ -143,6 +143,7 @@ namespace Nitra.Serialization
       {
         | NemerleList    => <[ Nemerle.Collections.NCollectionsExtensions.NToList($expr) ]>
         | ImmutableArray => <[ System.Collections.Immutable.ImmutableArray.Create($expr) ]>
+        | ImmutableHashSet => <[ System.Collections.Immutable.ImmutableHashSet.Create($expr) ]>
         | _              => expr
       }
     }
