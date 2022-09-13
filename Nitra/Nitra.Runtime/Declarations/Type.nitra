@@ -1,5 +1,9 @@
 ﻿namespace Nitra.Declarations
 {
+  declaration NamespaceType : Type
+  {
+  } 
+
   abstract declaration Type : BindableAst
   {
     symbol

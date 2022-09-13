@@ -297,12 +297,12 @@ namespace DotNet
       }
     | SimpleName
       {
+        // В итоге в Type и в локальный Ref должны быть помещены однозначные значения соотвествующие выведеному типу.
+        // До этого нужно создать набор кандидатов, которые будут отбрасываться выше по AST.
+        // Не ясно как передавать кандидатов выше, так как ветки AST абстрагированы.
         Reference.Scope = ScopeIn;
-        Ref             = Reference.Ref.Resolve();
-        Type            = Ref.Symbol.Type;
-        Member          = Ref.Resolve(); // Результат Ref может быть неоднозначным.
-      stage 2:
-        out Ref : Ref[TypedDeclarationSymbol];
+        Type            = await context.MakeDotNetType(Reference.Ref);
+        Member          = Reference.Ref.Resolve(); // Результат Ref может быть неоднозначным.
 
         Reference : Reference;
       }
@@ -310,12 +310,9 @@ namespace DotNet
       {
         Expr1.ScopeIn              = ScopeIn;
         Expr1.BuildInvocationScope = BuildInvocationScope;
-        Ref                        = Reference.Ref.Resolve();
-        Type                       = Ref.Symbol.Type;
+        Type                       = await context.MakeDotNetType(Reference.Ref);
         Reference.Scope            = if (Options == ExprOptions.Invocation) BuildInvocationScope(Expr1.Type, Expr1.Type.Scope) else Expr1.Type.Scope;
-        Member                     = Ref.Resolve(); // Результат Ref может быть неоднозначным.
-      stage 2:
-        out Ref : Ref[TypedDeclarationSymbol];
+        Member                     = Reference.Ref.Resolve(); // Результат Ref может быть неоднозначным.
 
         Expr1 : Expr;
         Reference : Reference;
@@ -495,7 +492,7 @@ namespace DotNet
     ScopeOut = Expr.ScopeOut;
     Expr.BuildInvocationScope = BuildInvocationScope;
     Expr.Used                 = true;
-    
+
     //ExpectedType            = ???;
     Type                      = Expr.Type;
 
@@ -537,7 +534,7 @@ namespace DotNet
         Type.Scope  = Scope;
         TypeRef     = Type.Ref.Resolve();
         Symbol.Type = TypeRef.Symbol;
-        
+
         Type : QualifiedReference;
       }
 

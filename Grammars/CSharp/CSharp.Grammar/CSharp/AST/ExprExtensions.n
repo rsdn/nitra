@@ -559,6 +559,30 @@ namespace DotNet
       }
     }
 
+    public MakeDotNetType(this context : DependentPropertyEvalContext, symbolRef : Ref[DeclarationSymbol]) : ValueOption[TypeSymbol]
+    {
+      if (symbolRef.IsSymbolEvaluated)
+        match (symbolRef.Symbol)
+        {
+          | TypedDeclarationSymbol as t  when !t.IsTypeEvaluated => VNone()
+          | TypedDeclarationSymbol as t => VSome(t.Type)
+          | TypeSymbol as z => VSome(z)
+          | NamespaceSymbol as ns when !ns.IsScopeEvaluated => VNone()
+          | NamespaceSymbol as ns =>
+            def type = NamespaceTypeSymbol();
+            type.Kind = "namespace";
+            type.Scope = ns.Scope;
+            type.EvalProperties(context);
+            VSome(type)
+
+          | _ => VNone()
+        }
+      else
+      {
+        VNone()
+      }
+    }
+
     //private ExprInvocation(leftAst : InitAst, method : Member.MethodSymbol, arguments : array[InitAst]) : InitAst
     //{
     //  match (leftAst) {
