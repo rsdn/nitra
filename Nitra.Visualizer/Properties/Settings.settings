@@ -27,7 +27,7 @@
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="ExternalEditor" Type="System.String" Scope="User">
-      <Value Profile="(Default)">"%ProgramFiles(x86)%\Notepad++\notepad++.exe" $filePath -n$line -c$column</Value>
+      <Value Profile="(Default)">"%ProgramFiles%\Notepad++\notepad++.exe" $filePath -n$line -c$column</Value>
     </Setting>
   </Settings>
 </SettingsFile>
