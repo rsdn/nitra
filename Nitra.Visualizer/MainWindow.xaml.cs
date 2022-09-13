@@ -1984,9 +1984,10 @@ namespace Nitra.Visualizer
           var process   = new Process();
           var startInfo = new ProcessStartInfo
           {
-            WindowStyle = ProcessWindowStyle.Hidden,
-            FileName    = "cmd.exe",
-            Arguments   = "/C " + externalEditor
+            WindowStyle     = ProcessWindowStyle.Hidden,
+            FileName        = "cmd.exe",
+            Arguments       = "/C " + externalEditor,
+            UseShellExecute = true,
           };
           process.StartInfo = startInfo;
           process.Start();
