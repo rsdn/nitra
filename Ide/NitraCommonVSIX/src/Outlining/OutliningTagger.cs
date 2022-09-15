@@ -1,20 +1,16 @@
-﻿using Nemerle;
-using Nemerle.Collections;
-using Nemerle.Utility;
+﻿extern alias light;
 
+using light::System.Collections.Immutable;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Tagging;
-
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
 using Nitra.ClientServer.Messages;
-using System.Collections.Immutable;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Nitra.VisualStudio
 {
-    public class OutliningTagger : ITagger<IOutliningRegionTag>
+  public class OutliningTagger : ITagger<IOutliningRegionTag>
     {
         readonly ITextBuffer _buffer;
         ITextSnapshot _oldSnapshot;

@@ -1,14 +1,14 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿extern alias light;
+
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Classification;
-
+using Microsoft.VisualStudio.Text.Editor;
 using Nitra.ClientServer.Messages;
-
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using light::System.Collections.Immutable;
 using System.Diagnostics;
 using System.Windows.Media;
-using Microsoft.VisualStudio.Text.Editor;
 
 namespace Nitra.VisualStudio.Highlighting
 {

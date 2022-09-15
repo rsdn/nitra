@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NitraCommonVsix22", "NitraCommonVsix22.csproj", "{1DC85BBE-138A-4BCE-9E25-B076BD4D2DBE}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "NitraCommonVsixShared", "..\src\NitraCommonVsixShared.shproj", "{9A7ECC32-1B7D-469C-BFFB-B208E6BD75C3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DC85BBE-138A-4BCE-9E25-B076BD4D2DBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DC85BBE-138A-4BCE-9E25-B076BD4D2DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DC85BBE-138A-4BCE-9E25-B076BD4D2DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DC85BBE-138A-4BCE-9E25-B076BD4D2DBE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC68F602-FD7F-49A2-B2EA-24CDC0844A66}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\src\NitraCommonVsixShared.projitems*{1dc85bbe-138a-4bce-9e25-b076bd4d2dbe}*SharedItemsImports = 4
+		..\src\NitraCommonVsixShared.projitems*{9a7ecc32-1b7d-469c-bffb-b208e6bd75c3}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal

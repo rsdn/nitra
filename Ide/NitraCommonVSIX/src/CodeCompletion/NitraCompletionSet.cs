@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Linq;
+﻿extern alias light;
+
+using light::System.Collections.Immutable;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
-using static System.String;
 using Nitra.ClientServer.Messages;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Nitra.VisualStudio.CodeCompletion
 {

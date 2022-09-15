@@ -1,34 +1,14 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿extern alias light;
+
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Tagging;
-using Microsoft.VisualStudio.Utilities;
-
 using Nitra.ClientServer.Messages;
 using Nitra.VisualStudio.Models;
-
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
-using System.Collections.Immutable;
-using static Nitra.ClientServer.Messages.AsyncServerMessage;
-
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Diagnostics;
-
-using Path = System.IO.Path;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Nitra.VisualStudio.BraceMatching
 {
