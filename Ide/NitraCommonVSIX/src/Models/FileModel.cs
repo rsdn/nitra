@@ -1,23 +1,25 @@
-﻿using Microsoft.VisualStudio.Text.Editor;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using static Nitra.ClientServer.Messages.AsyncServerMessage;
-using Microsoft.VisualStudio.Text;
-using System.Windows.Threading;
-using Nitra.ClientServer.Messages;
-using System.Collections.Immutable;
-using Nitra.VisualStudio.Highlighting;
-using System.Diagnostics;
-using Nitra.VisualStudio.CompilerMessages;
+﻿extern alias light;
+
+using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using System.Windows.Media;
-using System.IO;
-using System.Xml.Linq;
-using System.Text;
-using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Editor;
+using Nitra.ClientServer.Messages;
 using Nitra.Logging;
+using Nitra.VisualStudio.CompilerMessages;
+using Nitra.VisualStudio.Highlighting;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Windows.Media;
+using System.Windows.Threading;
+
+using light::System.Collections.Immutable;
+
+using static Nitra.ClientServer.Messages.AsyncServerMessage;
 
 namespace Nitra.VisualStudio.Models
 {

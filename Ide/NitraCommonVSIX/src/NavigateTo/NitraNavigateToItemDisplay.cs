@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Immutable;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Drawing;
+﻿using Microsoft.VisualStudio.Imaging;
+using Microsoft.VisualStudio.Imaging.Interop;
+using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Language.NavigateTo.Interfaces;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Shell;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.Language.Intellisense;
-using Microsoft.VisualStudio.Imaging;
-using Microsoft.VisualStudio.Imaging.Interop;
 using Microsoft.VisualStudio.Text;
 using Nitra.ClientServer.Messages;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 
 namespace Nitra.VisualStudio.NavigateTo
 {
@@ -32,7 +30,7 @@ namespace Nitra.VisualStudio.NavigateTo
     }
 
     public DeclarationInfo  Declaration           => (DeclarationInfo)_item.Tag;
-    public string           AdditionalInformation => Declaration.Kind + " " + Declaration.FullName + " � " + FileName + LineCol;
+    public string           AdditionalInformation => Declaration.Kind + " " + Declaration.FullName + " – " + FileName + LineCol;
 
     private bool   FileValid   => Declaration.Location.File.FileId != FileId.Invalid;
     private string FullName    => FileValid ? _serverModel.Client.StringManager.GetPath(Declaration.Location.File.FileId) : "<no file>";

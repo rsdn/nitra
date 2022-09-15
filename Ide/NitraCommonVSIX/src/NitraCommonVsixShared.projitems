@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>9a7ecc32-1b7d-469c-bffb-b208e6bd75c3</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>NitraCommonVsixShared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Nitra.LanguageVsPackage\Highlighting\*.cs">
+      <Link>Highlighting\Nitra.LanguageVsPackage\%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="..\..\DotNetLangVsPackage\Highlighting\*.cs">
+      <Link>Highlighting\LanguageVsPackage\%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)NitraCommonVsPackage.resx">
+      <DependentUpon>$(MSBuildThisFileDirectory)NitraCommonVsPackage.cs</DependentUpon>
+      <MergeWithCTO>true</MergeWithCTO>
+      <ManifestResourceName>VSPackage</ManifestResourceName>
+    </EmbeddedResource>
+  
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletion.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionSet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\ToolTipProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CompilerMessages\NitraErrorTag.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\DocumentWindowEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\NitraReferenceClassifications.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\NitraDefinitionClassifications.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\NitraCurrentSymbolClassifications.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\NitraBraceMatchingClassifications.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\InteractiveHighlightingTagger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)InteractiveHighlighting\InteractiveHighlightingProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionCommandHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionHandlerProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionSourceProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CompilerMessages\CompilerMessagesTagger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CompilerMessages\CompilerMessagesTaggerProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Definitions\NitraContentTypeDefinition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\DocumentWindowOnScreenChangedEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\HierarchyEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\HierarchyListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\ReferenceEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\RunningDocTableEvents.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Hierarchy\WindowFrameInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Highlighting\NitraEditorClassifier.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Highlighting\NitraEditorClassifierClassificationDefinition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Highlighting\NitraEditorClassifierFormat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Highlighting\NitraEditorClassifierProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)KeyBinding\KeyBindingCommandFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryManager\GotoInfoLibraryNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryManager\Library.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LibraryManager\LibraryNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\FileModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CompilerMessages\NitraErrorListProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ServerModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\TextViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NavigateToNitraSymbolFilter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NavigateToSymbolFilters.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NitraNavigateToItemDisplay.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NitraNavigateToItemDisplayFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NitraNavigateToItemProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NavigateTo\NitraNavigateToItemProviderFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Outlining\OutliningTagger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Outlining\OutliningTaggerProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Providers\ILanguageProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Providers\IProjectSupportProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuickInfo\NitraQuickInfoSource.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuickInfo\NitraQuickInfoSourceProvider.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)QuickInfo\PopupContainer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SolutionLoadingSate.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TextBuffer\TextBufferProperties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\ErrorHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\MultiDictionary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\NitraTraceListener.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\SpanInfosType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\VsProjectTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\VsUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NitraCommonVsPackage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\WinAPI.cs" />
+  </ItemGroup>
+</Project>

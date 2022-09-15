@@ -1,29 +1,26 @@
-﻿using Microsoft.VisualStudio.Shell.Interop;
+﻿extern alias light;
+
+using light::System.Collections.Immutable;
+using Microsoft.VisualStudio.Language.NavigateTo.Interfaces;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
-
 using Nitra.ClientServer.Client;
 using Nitra.ClientServer.Messages;
 using Nitra.VisualStudio.Models;
-
+using Nitra.VisualStudio.NavigateTo;
+using Nitra.VisualStudio.Utils;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Windows.Media;
-
 using WpfHint2;
 
 using Ide = NitraCommonIde;
 using M = Nitra.ClientServer.Messages;
-using Microsoft.VisualStudio.Language.NavigateTo.Interfaces;
-using Nitra.VisualStudio.NavigateTo;
-using System.IO;
-using Microsoft.VisualStudio.Shell;
-using Nitra.VisualStudio.Utils;
-using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Nitra.VisualStudio
 {
