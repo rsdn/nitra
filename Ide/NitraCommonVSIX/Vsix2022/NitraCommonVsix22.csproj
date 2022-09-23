@@ -66,7 +66,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\app.config" />
     <None Include="..\src\Key.snk" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>

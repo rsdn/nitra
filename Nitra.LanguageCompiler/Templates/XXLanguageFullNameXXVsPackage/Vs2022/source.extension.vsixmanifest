@@ -11,7 +11,7 @@
     </InstallationTarget>
   </Installation>
   <Dependencies>
-    <Dependency d:Source="File" d:Path="..\..\..\Ide\NitraCommonVsix22\bin\Debug\NitraCommonVsix22.vsix" DisplayName="NitraCommonVsix22" Id="NitraCommonVsix22" Version="[1.0,2.0.0.0)" d:InstallSource="Download" />
+    <Dependency d:Source="File" d:Path="..\..\..\Ide\NitraCommonVSIX\Vsix2022\bin\Debug\NitraCommonVsix22.vsix" DisplayName="NitraCommonVsix22" Id="NitraCommonVsix22" Version="[1.0,2.0.0.0)" d:InstallSource="Download" />
   </Dependencies>
   <Assets>
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%|" />

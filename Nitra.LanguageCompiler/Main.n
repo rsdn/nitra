@@ -167,7 +167,7 @@ namespace Nitra.LanguageCompiler
       foreach (ext in config.Language.FileExtensions)
       {
         def extName = ExtensionToName(ext);
-        ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\FileExtensionToContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\$(extName)FileExtensionToContentTypeDefinition.Generated.cs",
+        ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\FileExtensionToContentTypeDefinition.cs",  $@"$prjName\src\FileAndContentTypeDefinitions\$(extName)FileExtensionToContentTypeDefinition.Generated.cs",
           ("XXFileExtensionNameXX", extName) ::
           ("XXFileExtensionXX",     ext) ::
           vars,
@@ -178,7 +178,7 @@ namespace Nitra.LanguageCompiler
 
       def fileExtensionsReplacement = (<#"XXFileExtensionsXX"#>, $<#..$(fileExtensions; ", "; e => "\"" + e + "\"")#>);
 
-      ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\NitraContentTypeDefinition.cs",  $@"$prjName\FileAndContentTypeDefinitions\NitraContentTypeDefinition.Generated.cs",
+      ExpandTemplate(@"Templates\FileAndContentTypeDefinitions\NitraContentTypeDefinition.cs",  $@"$prjName\src\FileAndContentTypeDefinitions\NitraContentTypeDefinition.Generated.cs",
         fileExtensionsReplacement :: vars,
         config);
     }
@@ -215,7 +215,7 @@ namespace Nitra.LanguageCompiler
     public GetVars(config : CommandPromptReader) : list[string * string]
     {
       def vars              = DefaultVars(config);
-      def guidsFileName     = "Guids.cs";
+      def guidsFileName     = @"src\Guids.cs";
       def templateGuidsPath = Path.Combine(VsPackageTemplatePath, guidsFileName);
       def prjName           = config.ProjectName;
       def guidsPath         = Path.Combine(config.OutputPath, prjName, guidsFileName);
@@ -321,7 +321,7 @@ namespace Nitra.LanguageCompiler
       foreach (spanClass in config.Language.GetSpanClasses())
       {
         def color = ColorFromArgb(spanClass.Style.ForegroundColor);
-        ExpandTemplate(@"Templates\Highlighting\ClassificationDefinition.cs",  $@"$prjName\Highlighting\$(spanClass.Name)ClassificationDefinition.Generated.cs",
+        ExpandTemplate(@"Templates\Highlighting\ClassificationDefinition.cs",  $@"$prjName\src\Highlighting\$(spanClass.Name)ClassificationDefinition.Generated.cs",
           [("XXNamespaceXX",         config.DefaultNamespace),
            ("XXDisplay nameXX",      SpanClass.GetDisplayNameForIde(config.Language, spanClass)),
            ("XXSpanClassNameXX",     SpanClass.GetNameForIde(config.Language, spanClass)),

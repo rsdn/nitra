@@ -9,25 +9,37 @@
     <Import_RootNamespace>PackageShared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" />
+    <!--Content Include="$(MSBuildThisFileDirectory)Languages\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content-->
+
+    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="Properties\*.cs;bin\**\*;obj\**\*;..\..\packages\**\*" />
+
+    <!--Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Guids.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)VsPackage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <None Include="$(MSBuildThisFileDirectory)Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>$(MSBuildThisFileDirectory)Settings.Designer.cs</LastGenOutput>
-    </None>
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\ErrorHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\VsUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsPackage.cs" /-->
+
+    <None Include="$(MSBuildThisFileDirectory)Key.snk" />
+
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+
+    <Content Include="$(MSBuildThisFileDirectory)XXLanguageFullNameXXVsPackage.pkgdef">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <Content Include="$(MSBuildThisFileDirectory)Resources\Package.ico" />
   </ItemGroup>
+  <Target Name="BeforeBuild">
+    <Message Text="Compile='@(Compile)'" Importance="high" />
+  </Target>
 </Project>

@@ -69,9 +69,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\app.config" />
+    <None Include="app.config" />
     <None Include="..\src\Key.snk" />
-    <None Include="..\src\packages.config" />
+    <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -378,7 +378,7 @@
     <Message Text="-------------------------------------- Build NitraCommonVsix22.vsix --------------------------------------" Importance="high" />
     <Message Text="Project dir:  $(Vs2022ProjectDir)" Importance="high" />
     <Message Text="Project path: $(Vs2022Project)"    Importance="high" />
-    <Exec Command="$(Vs2022ProjectDir)build-with-latest-msbuild.cmd &quot;$(Vs2022Project)&quot; -r -target:Build  -p:Platform=AnyCpu -p:Configuration=$(Configuration)"
+    <Exec Command="$(Vs2022ProjectDir)..\..\..\ExternalTools\build-with-latest-msbuild.cmd &quot;$(Vs2022Project)&quot; -r -target:Build  -p:Platform=AnyCpu -p:Configuration=$(Configuration)"
           WorkingDirectory="$(Vs2022ProjectDir)" 
     />
     <!--MSBuild Projects="$(Vs2022Project)" Targets="Restore;Build" Properties="Platform=AnyCpu; Configuration=$(Configuration)" /-->
