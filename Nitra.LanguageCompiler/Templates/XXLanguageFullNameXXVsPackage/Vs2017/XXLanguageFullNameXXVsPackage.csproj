@@ -199,7 +199,7 @@
       <HintPath>packages\StreamJsonRpc.1.3.23\lib\net45\StreamJsonRpc.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections.Immutable.Light, Version=1.0.0.0, Culture=neutral, PublicKeyToken=e080a9c724e2bfcd, processorArchitecture=MSIL">
+    <Reference Include="System.Collections.Immutable.Light">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Languages\System.Collections.Immutable.Light.dll</HintPath>
       <Aliases>light</Aliases>
