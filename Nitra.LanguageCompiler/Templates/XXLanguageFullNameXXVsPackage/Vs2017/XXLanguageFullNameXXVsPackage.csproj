@@ -48,8 +48,8 @@
     <StartAction>Program</StartAction>
     <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootSuffix Exp</StartArguments>
-    <OutputPath>XXProjectBinPathXX</OutputPath>
-    <IntermediateOutputPath>XXProjectObjPathXX</IntermediateOutputPath>
+    <OutputPath>XXProjectBinPathXX-2017</OutputPath>
+    <IntermediateOutputPath>XXProjectObjPathXX-2017</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
