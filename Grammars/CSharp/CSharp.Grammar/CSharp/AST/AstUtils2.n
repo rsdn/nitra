@@ -278,7 +278,7 @@ namespace DotNet
         | x when x.Id == context.GetPlatformType().UInt64.Id
         | x when x.Id == context.GetPlatformType().Double.Id
         | x when x.Id == context.GetPlatformType().Single.Id
-        | x when x.Id == context.GetPlatformType().Single.Id
+        | x when x.Id == context.GetPlatformType().Decimal.Id
         | x when x.Id == context.GetPlatformType().Byte.Id => true
         | _ => false
       }
@@ -286,32 +286,33 @@ namespace DotNet
 
     public HasImplicitConversion(this from : TypeSymbol, to : TypeSymbol, context : DependentPropertyEvalContext) : bool
     {
-      def char = context.GetVoidType().FullName;
-      def byte = context.GetVoidType().FullName;
-      def sbyte = context.GetVoidType().FullName;
-      def short = context.GetVoidType().FullName;
-      def ushort = context.GetVoidType().FullName;
-      def int = context.GetVoidType().FullName;
-      def uint = context.GetVoidType().FullName;
-      def long = context.GetVoidType().FullName;
-      def ulong = context.GetVoidType().FullName;
-      def float = context.GetVoidType().FullName;
-      def double = context.GetVoidType().FullName;
-      def decimal = context.GetVoidType().FullName;
+      def platform = context.GetPlatformType();
+      def char     = platform.Char.FullName;
+      def byte     = platform.Byte.FullName;
+      def sbyte    = platform.SByte.FullName;
+      def short    = platform.Int16.FullName;
+      def ushort   = platform.UInt16.FullName;
+      def int      = platform.Int32.FullName;
+      def uint     = platform.UInt32.FullName;
+      def long     = platform.Int64.FullName;
+      def ulong    = platform.UInt64.FullName;
+      def float    = platform.Single.FullName;
+      def double   = platform.Double.FullName;
+      def decimal  = platform.Decimal.FullName;
 
       match(from)
       {
         | x when !x.IsFullNameEvaluated => false
-        | x when x.FullName == sbyte => [short, int, long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == byte => [short, ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == short => [int, long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == ushort => [int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == int => [long, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == uint => [long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == long => [float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == ulong => [float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == char => [ushort, int, uint, long, ulong, float, double, decimal].Any(s => s == to.FullName)
-        | x when x.FullName == float => [double].Any(s => s == to.FullName)
+        | x when x.FullName == sbyte  with types = array[short, int, long, float, double, decimal]
+        | x when x.FullName == byte   with types = array[short, ushort, int, uint, long, ulong, float, double, decimal]
+        | x when x.FullName == short  with types = array[int, long, float, double, decimal]
+        | x when x.FullName == ushort with types = array[int, uint, long, ulong, float, double, decimal]
+        | x when x.FullName == int    with types = array[long, float, double, decimal]
+        | x when x.FullName == uint   with types = array[long, ulong, float, double, decimal]
+        | x when x.FullName == long   with types = array[float, double, decimal]
+        | x when x.FullName == ulong  with types = array[float, double, decimal]
+        | x when x.FullName == char   with types = array[ushort, int, uint, long, ulong, float, double, decimal]
+        | x when x.FullName == float  with types = array[double] => Array.IndexOf(types, to.FullName) >= 0
         | _ => false
       }
     }
