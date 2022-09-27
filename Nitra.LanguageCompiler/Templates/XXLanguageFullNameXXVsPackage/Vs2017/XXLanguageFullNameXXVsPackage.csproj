@@ -267,9 +267,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
 
-    <None Include="$(MSBuildThisFileDirectory)Properties\Settings.settings">
+    <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>$(MSBuildThisFileDirectory)Settings.Designer.cs</LastGenOutput>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>

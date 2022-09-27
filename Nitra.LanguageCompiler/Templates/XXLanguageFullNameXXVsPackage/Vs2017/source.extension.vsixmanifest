@@ -3,7 +3,7 @@
   <Metadata>
     <Identity Id="XXLanguageFullNameXXVsPackage" Version="XXPackageVersionXX" Language="en-US" Publisher="XXCompanyXX" />
     <DisplayName>XXLanguageFullNameXXVsPackage</DisplayName>
-    <Description xml:space="preserve">Visual Studio integration for XXLanguageFullNameXX language.</Description>
+    <Description xml:space="preserve">Visual Studio integration for XXLanguageFullNameXX language (for VS 2017 and VS 2019).</Description>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0, 17.0)" />

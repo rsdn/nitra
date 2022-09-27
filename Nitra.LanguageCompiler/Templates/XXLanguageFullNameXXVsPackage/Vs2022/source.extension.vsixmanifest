@@ -3,7 +3,7 @@
   <Metadata>
     <Identity Id="TdlLangVsPackage" Version="1.20.23.0" Language="en-US" Publisher="Kaspersky Lab." />
     <DisplayName>TdlLangVsPackage</DisplayName>
-    <Description xml:space="preserve">Visual Studio integration for TdlLang language.</Description>
+    <Description xml:space="preserve">Visual Studio integration for TdlLang language (for VS 2022+).</Description>
   </Metadata>
   <Installation>
     <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
