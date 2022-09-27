@@ -1,4 +1,5 @@
 ﻿#pragma warning disable VSSDK002 // Visual Studio service should be used on main thread explicitly.
+extern alias light;
 
 namespace XXNamespaceXX
 {
@@ -12,7 +13,7 @@ namespace XXNamespaceXX
 
     using System;
     using System.Collections.Generic;
-    using System.Collections.Immutable;
+    using light::System.Collections.Immutable;
     using System.ComponentModel;
     using System.Diagnostics;
     using System.IO;
