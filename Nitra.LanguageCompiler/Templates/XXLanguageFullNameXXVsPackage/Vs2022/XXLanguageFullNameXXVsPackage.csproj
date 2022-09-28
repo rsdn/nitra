@@ -101,17 +101,13 @@
   <Import Project="..\src\PackageShared.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
-  <!-- TODO: This copies the build authoring to a well-known location so that on the machine this project builds on,
-       the projects created by the 3rd party consumer can open and build. But the real 3rd party consumer will not
-       have run this step so they won't be able to open their projects. 
-       To ship, the project type author must create an MSI that places these files in a well-known location on the
-       customer machine and update the project template to point at that location.-->
-  <!--Target Name="AfterBuild">
-    <ItemGroup>
-      <BuildSystemToCopy Include="BuildSystem\DeployedBuildSystem\**\*" />
-      <RulesToCopy Include="BuildSystem\Rules\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(BuildSystemToCopy)" DestinationFiles="@(BuildSystemToCopy->'$(LocalAppData)\CustomProjectSystems\NitraLangVsPackage\%(RecursiveDir)%(FileName)%(Extension)')" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="@(RulesToCopy)" DestinationFiles="@(RulesToCopy->'$(LocalAppData)\CustomProjectSystems\NitraLangVsPackage\Rules\%(RecursiveDir)%(FileName)%(Extension)')" SkipUnchangedFiles="true" />
-  </Target-->
+
+  <Target Name="AfterBuild">
+    <PropertyGroup>
+	  <RenameFrom>$(TargetDir)$(TargetName).vsix</RenameFrom>
+	  <RenameTo>$(TargetDir)$(TargetName)-2022.vsix</RenameTo>
+    </PropertyGroup>
+    <Message Text="Rename $(RenameFrom) -> $(RenameTo)" Importance="high" />
+    <Move SourceFiles="$(RenameFrom)" DestinationFiles="$(RenameTo)" OverwriteReadOnlyFiles="true" Condition="Exists('$(RenameFrom)')" />
+  </Target>
 </Project>
