@@ -100,7 +100,10 @@
     </ItemGroup>
     <RemoveDir Directories="$(VsPackagePath)" />
     <Exec Command="$(NitraLanguageCompilerPath)\Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:$(MSBuildThisFileDirectory).. .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
-    <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Languages" />
+
+    <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Vs2017\Languages" />
+    <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Vs2022\Languages" />
+
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences" />
   </Target>
