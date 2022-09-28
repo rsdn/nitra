@@ -121,7 +121,16 @@
     <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Properties\" />
     <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Providers\" />
     <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Resources\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\src\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\src\Properties\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\src\Resources\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\src\Utils\" />
     <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Utils\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Vs2017\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Vs2017\.nuget\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Vs2017\Properties\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Vs2022\" />
+    <Folder Include="Templates\XXLanguageFullNameXXVsPackage\Vs2022\Properties\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Grammars\CSharp\CSharp.Grammar\CSharp.Grammar.nproj">

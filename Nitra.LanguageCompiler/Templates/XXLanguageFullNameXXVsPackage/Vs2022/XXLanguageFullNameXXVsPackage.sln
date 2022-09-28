@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XXLanguageFullNameXXVsPackage", "XXLanguageFullNameXXVsPackage.csproj", "{9FA006E7-62F9-4E9A-B6CF-C0B6E79FACBF}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "PackageShared", "..\src\PackageShared.shproj", "{A5368C9A-436A-4BFF-BB91-838720B55BED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9FA006E7-62F9-4E9A-B6CF-C0B6E79FACBF}.Debug|x86.ActiveCfg = Debug|x86
+		{9FA006E7-62F9-4E9A-B6CF-C0B6E79FACBF}.Debug|x86.Build.0 = Debug|x86
+		{9FA006E7-62F9-4E9A-B6CF-C0B6E79FACBF}.Release|x86.ActiveCfg = Release|x86
+		{9FA006E7-62F9-4E9A-B6CF-C0B6E79FACBF}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E0CD2F3A-BA13-4FC9-8622-9448BAB93ACB}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\src\PackageShared.projitems*{9fa006e7-62f9-4e9a-b6cf-c0b6e79facbf}*SharedItemsImports = 4
+		..\src\PackageShared.projitems*{a5368c9a-436a-4bff-bb91-838720b55bed}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal

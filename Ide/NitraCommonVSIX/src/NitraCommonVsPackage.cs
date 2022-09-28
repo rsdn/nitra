@@ -898,6 +898,9 @@ namespace Nitra.VisualStudio
       var id         = new FileId(_stringManager.GetId(fullPath));
       var textBuffer = wpfTextView.TextBuffer;
 
+      if (hierarchy == null)
+        return null;
+
       server.TryAddServerProperty(textBuffer);
       FileModel fileModel = VsUtils.GetOrCreateFileModel(wpfTextView, id, server, hierarchy, fullPath);
       TextViewModel textViewModel = VsUtils.GetOrCreateTextViewModel(wpfTextView, fileModel);

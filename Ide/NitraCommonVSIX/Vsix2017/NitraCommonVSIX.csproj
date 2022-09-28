@@ -69,9 +69,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\app.config" />
+    <None Include="app.config" />
     <None Include="..\src\Key.snk" />
-    <None Include="..\src\packages.config" />
+    <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -82,6 +82,11 @@
     <Content Include="..\src\stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Nitra\ClientServer\Nitra.ClientServer.Server\Nitra.ClientServer.Server.nproj">
+      <Project>{705d1c4f-0ac8-4bdc-80cd-e3d26cfa5397}</Project>
+      <Name>Nitra.ClientServer.Server</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Nitra\Nitra.Utils\Nitra.Utils.nproj">
       <Project>{8bffaf3a-b454-4544-9218-3197df381d88}</Project>
       <Name>Nitra.Utils</Name>
@@ -362,8 +367,8 @@
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
   <PropertyGroup>
     <CreateVsixContainerDependsOn>$(CreateVsixContainerDependsOn);SetVsixManifestExtensionVersion</CreateVsixContainerDependsOn>
-	  <Vs2022ProjectDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\Vsix2022\'))</Vs2022ProjectDir>
-	  <Vs2022Project>$(Vs2022ProjectDir)NitraCommonVsix22.csproj</Vs2022Project>
+    <Vs2022ProjectDir>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\Vsix2022\'))</Vs2022ProjectDir>
+    <Vs2022Project>$(Vs2022ProjectDir)NitraCommonVsix22.csproj</Vs2022Project>
   </PropertyGroup>
   <Target Name="SetVsixManifestExtensionVersion" DependsOnTargets="DetokenizeVsixManifestFile;GetNitraBuildVersion">
     <XmlPoke XmlInputPath="$(IntermediateVsixManifest)" Query="//*[local-name()='Identity']/@*[local-name()='Version']" Value="$(NitraBuildVersion)" />
@@ -377,10 +382,8 @@
     <Message Text="VsixExtensionFiles='@(VsixExtensionFiles)'" Importance="high" />
     <Message Text="-------------------------------------- Build NitraCommonVsix22.vsix --------------------------------------" Importance="high" />
     <Message Text="Project dir:  $(Vs2022ProjectDir)" Importance="high" />
-    <Message Text="Project path: $(Vs2022Project)"    Importance="high" />
-    <Exec Command="$(Vs2022ProjectDir)build-with-latest-msbuild.cmd &quot;$(Vs2022Project)&quot; -r -target:Build  -p:Platform=AnyCpu -p:Configuration=$(Configuration)"
-          WorkingDirectory="$(Vs2022ProjectDir)" 
-    />
+    <Message Text="Project path: $(Vs2022Project)" Importance="high" />
+    <Exec Command="$(Vs2022ProjectDir)..\..\..\ExternalTools\build-with-latest-msbuild.cmd &quot;$(Vs2022Project)&quot; -r -target:Build  -p:Platform=AnyCpu -p:Configuration=$(Configuration)" WorkingDirectory="$(Vs2022ProjectDir)" />
     <!--MSBuild Projects="$(Vs2022Project)" Targets="Restore;Build" Properties="Platform=AnyCpu; Configuration=$(Configuration)" /-->
   </Target>
   <Import Project="..\..\..\packages\Microsoft.VisualStudio.SDK.EmbedInteropTypes.15.0.17\build\Microsoft.VisualStudio.SDK.EmbedInteropTypes.targets" Condition="Exists('..\..\..\packages\Microsoft.VisualStudio.SDK.EmbedInteropTypes.15.0.17\build\Microsoft.VisualStudio.SDK.EmbedInteropTypes.targets')" />

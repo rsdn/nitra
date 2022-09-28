@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>a5368c9a-436a-4bff-bb91-838720b55bed</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>PackageShared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--Content Include="$(MSBuildThisFileDirectory)Languages\**\*.*">
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content-->
+
+    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="Properties\*.cs;bin\**\*;obj\**\*;..\..\packages\**\*" />
+
+    <!--Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Guids.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\ErrorHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils\VsUtils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VsPackage.cs" /-->
+
+    <None Include="$(MSBuildThisFileDirectory)Key.snk" />
+
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
+      <MergeWithCTO>true</MergeWithCTO>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+
+    <Content Include="$(MSBuildThisFileDirectory)Resources\Package.ico" />
+  </ItemGroup>
+  <Target Name="BeforeBuild">
+    <Message Text="Compile='@(Compile)'" Importance="high" />
+  </Target>
+</Project>
