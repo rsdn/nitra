@@ -83,7 +83,7 @@
     <Assembly>DotNetLang.dll</Assembly>
     <VsPackageName>$(LanguageName)VsPackage</VsPackageName>
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
-    <VsPackageProjectPath>$(VsPackagePath)\$(VsPackageName).csproj</VsPackageProjectPath>
+    <VsPackageProjectPath>$(VsPackagePath)\Vs2017\$(VsPackageName).csproj</VsPackageProjectPath>
     <NuGetSource>https://www.nuget.org/api/v2</NuGetSource>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

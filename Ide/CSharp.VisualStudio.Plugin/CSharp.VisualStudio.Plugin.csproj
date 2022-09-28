@@ -64,7 +64,7 @@
       <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
       <Name>NitraCommonIde</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NitraCommonVSIX\NitraCommonVSIX.csproj">
+    <ProjectReference Include="..\NitraCommonVSIX\Vsix2017\NitraCommonVSIX.csproj">
       <Project>{1dc85bbe-138a-4bce-9e25-b076bd4d2dbe}</Project>
       <Name>NitraCommonVSIX</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -89,7 +89,7 @@
     <LanguageName>NitraCSharp</LanguageName>
     <VsPackageName>$(LanguageName)VsPackage</VsPackageName>
     <VsPackagePath>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)..\..\$(VsPackageName)'))</VsPackagePath>
-    <VsPackageProjectPath>$(VsPackagePath)\$(VsPackageName).csproj</VsPackageProjectPath>
+    <VsPackageProjectPath>$(VsPackagePath)\Vs2017\$(VsPackageName).csproj</VsPackageProjectPath>
     <NuGetSource>https://www.nuget.org/api/v2</NuGetSource>
   </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
