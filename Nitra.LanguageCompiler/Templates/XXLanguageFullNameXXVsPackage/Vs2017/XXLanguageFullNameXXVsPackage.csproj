@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PackagesDir Condition="'$(PackagesDir)' == ''">..\..\packages</PackagesDir>
+    <PackagesDir Condition="'$(PackagesDir)' == ''">..\..\packages\</PackagesDir>
   </PropertyGroup>
   <Import Project="$(PackagesDir)Microsoft.VSSDK.BuildTools.15.7.109\build\Microsoft.VSSDK.BuildTools.props" /> <!-- Condition="Exists('$(PackagesDir)Microsoft.VSSDK.BuildTools.15.7.109\build\Microsoft.VSSDK.BuildTools.props')" -->
   <PropertyGroup>
