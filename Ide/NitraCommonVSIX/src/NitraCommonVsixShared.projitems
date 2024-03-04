@@ -22,7 +22,10 @@
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
     </EmbeddedResource>
-  
+
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\DotNetLangVsPackage\src\Highlighting\*.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\NitraLangVsPackage\src\Highlighting\*.cs" />
+
     <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletion.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\NitraCompletionSet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CodeCompletion\ToolTipProvider.cs" />

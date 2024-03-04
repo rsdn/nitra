@@ -29,7 +29,7 @@ namespace Nitra.VisualStudio.Highlighting
       _registry                       = registry;
       _classificationFormatMapService = formatMapService;
       _buffer                         = buffer;
-      _classificationType             = registry.GetClassificationType("EditorClassifier");
+      _classificationType             = registry.GetClassificationType(NitraEditorClassifierClassificationDefinition.DefaultEditorClassifierName);
 
       for (int i = 0; i < _spanInfos.Length; i++)
       {
@@ -67,6 +67,9 @@ namespace Nitra.VisualStudio.Highlighting
           {
             var name               = info.FullName;
             var classificationType = _registry.GetClassificationType(name);
+
+            if (classificationType == null && name.StartsWith("Nitra.Language."))
+              classificationType = _registry.GetClassificationType(name.Replace("Nitra.Language.", "NitraLang."));
 
             if (classificationType == null)
             {

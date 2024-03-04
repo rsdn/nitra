@@ -11,18 +11,20 @@ using Microsoft.VisualStudio.Utilities;
 namespace Nitra.VisualStudio.Highlighting
 {
   /// <summary>
-  /// Classification type definition export for EditorClassifier
+  /// Classification type definition export for NitraDefaultEditorClassifier
   /// </summary>
   internal static class NitraEditorClassifierClassificationDefinition
   {
+    public const string DefaultEditorClassifierName = "NitraDefaultEditorClassifier";
+
     // This disables "The field is never used" compiler's warning. Justification: the field is used by MEF.
 #pragma warning disable 169
 
     /// <summary>
-    /// Defines the "EditorClassifier" classification type.
+    /// Defines the "NitraDefaultEditorClassifier" classification type.
     /// </summary>
     [Export(typeof(ClassificationTypeDefinition))]
-    [Name("EditorClassifier")]
+    [Name(DefaultEditorClassifierName)]
     private static ClassificationTypeDefinition typeDefinition;
 
 #pragma warning restore 169
