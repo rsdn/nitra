@@ -64,13 +64,6 @@
       <Project>{dcf35834-4ac6-4925-a7bc-a1dcf849b4e0}</Project>
       <Name>NitraCommonIde</Name>
     </ProjectReference>
-    <ProjectReference Include="..\NitraCommonVSIX\Vsix2017\NitraCommonVSIX.csproj">
-      <Project>{1dc85bbe-138a-4bce-9e25-b076bd4d2dbe}</Project>
-      <Name>NitraCommonVSIX</Name>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <Private>False</Private>
-    </ProjectReference>
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(Nemerle)\Nemerle.dll</HintPath>
@@ -101,10 +94,8 @@
     </ItemGroup>
     <RemoveDir Directories="$(VsPackagePath)" />
     <Exec Command="$(NitraLanguageCompilerPath)\Nitra.LanguageCompiler.exe /proj:&quot;$(ProjectSupport)&quot; /lang:$(LanguageName) /ns:$(Namespace) /out:$(MSBuildThisFileDirectory).. .\$(Assembly)" WorkingDirectory="$(TargetDir)" />
-
     <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Vs2017\Languages" />
     <Copy SourceFiles="@(Languages)" DestinationFolder="$(VsPackagePath)\Vs2022\Languages" />
-
     <Exec Command="$(SolutionRoot)\NuGet\RestoreNuGetPkgs.cmd &quot;$(VsPackagePath)&quot; &quot;$(NuGetSource)&quot;" WorkingDirectory="$(VsPackagePath)" />
     <MSBuild Projects="$(VsPackageProjectPath)" Properties="Platform=x86; Configuration=$(Configuration); UseNitraFrom=ProjectReferences; PackagesDir=$(VsPackagePath)\..\packages\;" />
   </Target>

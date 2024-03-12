@@ -1,22 +1,23 @@
 @echo off
 title Uninstall Vsix
 
-IF "%PROCESSOR_ARCHITECTURE%"=="x86" (set WOW6432Node=) else (set WOW6432Node=WOW6432Node\)
+rem @echo on
+setlocal enabledelayedexpansion
 
-SET MSBUILDENABLEALLPROPERTYFUNCTIONS=1
-setlocal ENABLEEXTENSIONS
-set KEY_NAME="HKEY_LOCAL_MACHINE\SOFTWARE\%WOW6432Node%Microsoft\VisualStudio\SxS\VS7"
-set VALUE_NAME=15.0
+if "%VSWHERE%" == "" set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 
-for /f "tokens=2* skip=2" %%a in ('reg query %KEY_NAME% /V %VALUE_NAME% ') DO set Value=%%b
-
-if defined Value (
-"%Value%Common7\IDE\VSIXInstaller.exe" /u:TdlLangVsPackage 	
-"%Value%Common7\IDE\VSIXInstaller.exe" /u:NitraCSharpVsPackage 
-"%Value%Common7\IDE\VSIXInstaller.exe" /u:NitraLangVsPackage 
-"%Value%Common7\IDE\VSIXInstaller.exe" /u:NitraCommonVSIX 	
-
-) else (
-@echo %KEY_NAME%\%VALUE_NAME% not found.
+for /f "usebackq delims=" %%i in (`"%VSWHERE%" -latest -property installationPath`) do (
+  if exist "%%i\Common7\Tools\VsDevCmd.bat" (
+    rem call "%%i\Common7\Tools\VsDevCmd.bat"
+	"%%i\Common7\IDE\VSIXInstaller.exe" /u:TdlLangVsPackage
+	rem "%Value%Common7\IDE\VSIXInstaller.exe" /u:NitraCSharpVsPackage
+	rem "%Value%Common7\IDE\VSIXInstaller.exe" /u:NitraLangVsPackage
+	"%%i\Common7\IDE\VSIXInstaller.exe" /u:NitraCommonVsix22
+    goto run_msbuild
+  )
 )
 
+echo Instance or command prompt of latest Visual Studio not found
+exit /b 2
+
+:run_msbuild
