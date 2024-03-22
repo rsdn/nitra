@@ -31,7 +31,7 @@ namespace DotNet
 
     ContainingTable           = null;
     NamespaceOrTypeName.Scope = CurrentScope;
-    OpeningOut                = OpeningIn.UnionWith(Ref.Scope);
+    OpeningOut                = await OpeningIn.UnionWith3(this, context);
     Ref                       = NamespaceOrTypeName.Ref.ResolveAsIgnoreAmbiguities();
 
     //unless (NamespaceOrTypeName.Ref.Symbol is NamespaceSymbol || NamespaceOrTypeName.Ref.Symbol is SyntaxModuleSymbol)

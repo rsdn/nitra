@@ -24,6 +24,7 @@ namespace Nitra.Compiler
   internal abstract partial class BaseAstEmitter
   {
     private static CollectAttribute = "Nitra.Staging.CollectAttribute";
+    private static mutable _isEmitDpLoging : bool?;
 
     protected DefineDependentPropertiesInheritableEvaluation(tb : TypeBuilder, symbol : PropertyContainerSymbol) : void
     {
@@ -692,10 +693,21 @@ namespace Nitra.Compiler
           def (predicate, checkedPaths)         = makeIsEvaluatedCheck(node.Path, dependentProperties);
           def (properties, collectorProperties) = collectDependendOn(node, checkedPaths);
           def file = Path.Combine(Path.GetDirectoryName(tb.Manager.Options.ProjectPath), code.Location.File);
-          when (Path.GetExtension(file).Equals(".dll",  StringComparison.OrdinalIgnoreCase))
-          {
-            assert2(true);
-          }
+          //when (Path.GetExtension(file).Equals(".dll",  StringComparison.OrdinalIgnoreCase))
+          //{
+          //  assert2(true);
+          //}
+          //assert2(false);
+          when (_isEmitDpLoging == null)
+            _isEmitDpLoging = Environment.GetEnvironmentVariable("NITRA_DEBUG_DEPENDENT_PROPERTY_ASSIGNMENTS") != null;
+          def debugLogExpr =
+            if (_isEmitDpLoging == true)
+            {
+                def debugText = $"$(node.NitraLocation.ToMessageString())[DP]\t\$(node.DeclaredIn.Name) ($(dependencyGraph.PropertyContainer.Node))\t$(if (node.NitraLocation.IsTextAvailable) node.NitraLocation.GetText() else null) ";
+                <[ System.Diagnostics.Debug.WriteLine($debugText + $(TraceSymbolPath(node.Path))) ]>
+            }
+            else
+              <[ () ]>;
           def line = code.Location.Line;
           def col = code.Location.Column;
           def locCode = Util.locate(code.Location, <[ $(CompileLocationPath(node.Path)) = ($file, $line, $col); ]>);
@@ -708,6 +720,7 @@ namespace Nitra.Compiler
                 if (result.HasValue)
                 {
                   $compiledPath = result.Value;
+                  $debugLogExpr;
                   $locCode;
                 }
                 else
@@ -719,6 +732,7 @@ namespace Nitra.Compiler
               <[
                 $compiledPath = $compiledCode;
                 context.CalculatedCountInc();
+                $debugLogExpr;
                 $locCode;
               ]>
           });

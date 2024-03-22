@@ -1,4 +1,4 @@
-using Nitra.Typing;
+﻿using Nitra.Typing;
 using Nitra.Model;
 
 using Nemerle;
@@ -376,6 +376,30 @@ namespace Nitra.Compiler
       | DependentProperty(path, name, _)
       | SimpleProperty(path, name) => <[ $(CompilePath(path)).$(name : usesite) ]>
     }
+
+    public static TraceSymbolPath(path : DependencyPath) : PExpr
+    {
+      def traceSymbolPath(path : DependencyPath) : option[PExpr]
+      {
+        | This
+        | Variable => None()
+        | DependentProperty(This, "Symbol", _)
+        | DeclaredProperty(This, prop, _) when prop.Name == "Symbol" => Some(<[ $(CompilePath(path)).Name ]>)
+        | DeclaredProperty(path, symbol, _) with name = symbol.Name
+        | DependentProperty(path, name, _)
+        | SimpleProperty(path, name) => if (traceSymbolPath(path) is Some(x)) Some(<[ $x + "." + $name ]>) else None()
+      }
+
+      if (traceSymbolPath(path) is Some(x)) x
+      else
+        <[
+          match (this)
+          {
+              | x is Nitra.Declarations.DeclarationSymbol => x.Name
+              | _ => this.ToString()
+          }
+        ]>
+  }
 
     public static CompileLocationPath(path : DependencyPath) : PExpr
     {

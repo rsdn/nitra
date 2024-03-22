@@ -30,6 +30,16 @@ namespace DotNet
       QualifiedReference.AstList(lst, newItems)
     }
 
+    public UnionWith3(this scope: Scope, usingOpenDirective : DotNet.UsingOpenDirective, context : DependentPropertyEvalContext) : ValueOption[Scope]
+    {
+      if (usingOpenDirective.IsRefEvaluated && usingOpenDirective.Ref.IsScopeEvaluated)
+        VSome(scope.UnionWith(usingOpenDirective.Ref.Scope))
+      else if (context.Stage > 1)
+        VSome(scope)
+      else
+          VNone()
+    }
+
     public MakeMembersScope(currentScope : Scope, opening : Scope, aliases : TableScope) : Scope
     {
       def makeCurrentScope(scope : Scope) : Scope

@@ -1,4 +1,4 @@
-using Nitra.Typing;
+﻿using Nitra.Typing;
 using Nitra.Serialization;
 
 using Nemerle;
@@ -17,10 +17,10 @@ namespace Nitra.Compiler
 {
   internal sealed class SymbolEmitter : BaseAstEmitter
   {
-    public override Environment  : EmitterEnvironment { get; }
-    public override TypeCompiler : NTypeCompiler      { get { Environment.DefaultTypeCompiler } }
-    private         _symbol      : SymbolSymbol;
-    private mutable _tb          : TypeBuilder;
+    public override Environment           : EmitterEnvironment { get; }
+    public override TypeCompiler          : NTypeCompiler      { get { Environment.DefaultTypeCompiler } }
+    private         _symbol               : SymbolSymbol;
+    private mutable _tb                   : TypeBuilder;
     private         _serializationEmitter : SerializationCompiler;
     private         _ownerEmitter         : AstEmitter;
 

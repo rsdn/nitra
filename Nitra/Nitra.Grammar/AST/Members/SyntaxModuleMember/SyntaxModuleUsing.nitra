@@ -40,7 +40,7 @@ namespace Nitra.Ast
     ContainingTable           = null;
     NamespaceOrTypeName.Scope = CurrentScope;
     OpeningOut                = OpeningIn.UnionWith(Ref.Scope);
-    Ref						  = NamespaceOrTypeName.Ref.ResolveAsIgnoreAmbiguities();
+    Ref						            = NamespaceOrTypeName.Ref.ResolveAsIgnoreAmbiguities();
 
     //unless (NamespaceOrTypeName.Ref.Symbol is NamespaceSymbol || NamespaceOrTypeName.Ref.Symbol is SyntaxModuleSymbol || NamespaceOrTypeName.Ref.Symbol is TopGenericContainerType)
     //  Error(context, "Using directive can open only namespace or syntax module.");
