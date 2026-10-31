@@ -1,0 +1,24 @@
+﻿{
+  "solution": {
+    "path": "Nitra-Stagt1.sln",
+    "projects": [
+      "Nitra\\Nitra.Runtime\\Nitra.Runtime.nproj",
+      "Nitra\\Nitra.Compiler\\Nitra.Compiler.nproj",
+      "Nitra\\Nitra.Grammar\\Nitra.Grammar.nproj",
+      "Grammars\\CSharp\\CSharp.Grammar\\CSharp.Grammar.nproj",
+      "Nitra.Visualizer\\Nitra.Visualizer.csproj",
+      "Nitra.LanguageCompiler\\Nitra.LanguageCompiler.nproj",
+      "Nitra\\DotNetLang\\DotNetLang.nproj",
+      "DotNet.BackEnd.CCI\\DotNet.BackEnd.CCI.nproj",
+      "Nitra.TestsLauncher\\Nitra.TestsLauncher.nproj",
+      "Nitra\\ClientServer\\Nitra.ClientServer.Client\\Nitra.ClientServer.Client.nproj",
+      "Nitra\\ClientServer\\Nitra.ClientServer.Macros\\Nitra.ClientServer.Macros.nproj",
+      "Nitra\\ClientServer\\Nitra.ClientServer.Messages\\Nitra.ClientServer.Messages.nproj",
+      "Nitra\\ClientServer\\Nitra.ClientServer.Server\\Nitra.ClientServer.Server.nproj",
+      "System.Collections.Immutable.Light\\System.Collections.Immutable.Light.csproj",
+      "Nitra\\Nitra.Utils\\Nitra.Utils.nproj",
+      "DotNet.BackEnd.Dnlib\\DotNet.BackEnd.Dnlib.nproj",
+      "Grammars\\Json\\Json.Grammar\\Json.Grammar.nproj"
+    ]
+  }
+}
