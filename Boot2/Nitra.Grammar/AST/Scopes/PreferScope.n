@@ -35,6 +35,11 @@ namespace Nitra.Ast
         res2.GetSymbols()
     }
 
+    public override Contains(reference : string) : bool
+    {
+      Scope.Contains(reference)
+    }
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def res1 = Scope.Bind(isMatch);

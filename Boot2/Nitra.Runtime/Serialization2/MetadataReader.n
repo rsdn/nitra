@@ -60,6 +60,13 @@ namespace Nitra.Serialization2
       desc.Type;
     }
 
+    public ReadLocation(reader : BinaryReader) : Location
+    {
+      IgnoreParams();
+      // TODO: реализовать!
+      Location.Default
+    }
+
     public ReadObjects[T](reader : BinaryReader) : array[T]
       where T: ISerializable
     {

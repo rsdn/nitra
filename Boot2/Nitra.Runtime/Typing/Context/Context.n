@@ -16,7 +16,6 @@ namespace Nitra.Typing
   [Record]
   [DebuggerDisplay("{DebugViewInline}")]
   public abstract class Context : IContext, ICompilerMessages
-    //where TProject: Project
   {
     public Parent  : Context { get; }
     public Parents : Seq[Context]

@@ -61,6 +61,12 @@ namespace Nitra.Serialization
                         buffer.Add($readItem); ]>);
           body.Add(<[ buffer.MoveToImmutable() ]>);
 
+        | ImmutableHashSet =>
+          body.Add(<[ def buffer = System.Collections.Immutable.ImmutableHashSet.CreateBuilder(); ]>);
+          body.Add(<[ repeat (count)
+                        buffer.Add($readItem); ]>);
+          body.Add(<[ buffer.MoveToImmutable() ]>);
+
         | NemerleList         with result = <[ Nemerle.Collections.NList.FromArray(buffer) ]>
         | IReadOnlyCollection with result = <[ System.Collections.ObjectModel.ReadOnlyCollection(buffer) ]>
         | IReadOnlyList       with result = <[ System.Collections.ObjectModel.ReadOnlyCollection(buffer) ]>

@@ -21,15 +21,17 @@ namespace Nitra
   public class CollectSymbolErrorsVisitor : IAstVisitor
   {
     public CompilerMessages : CompilerMessageList;
+    public UseHintMl        : bool;
 
-    public this()
+    public this(useHintMl : bool)
     {
-      this(CompilerMessageList())
+      this(CompilerMessageList(), useHintMl)
     }
 
-    public this(compilerMessages : CompilerMessageList)
+    public this(compilerMessages : CompilerMessageList, useHintMl : bool)
     {
       CompilerMessages = compilerMessages;
+      UseHintMl        = useHintMl;
     }
 
     public Visit(parseTree : IAst) : void
@@ -50,11 +52,32 @@ namespace Nitra
             CompilerMessages.Error(reference, $"Unresolved reference '$reference'");
           else when (r.IsAmbiguous && !r.IgnoreAmbiguities)
           {
-            def builder = StringBuilder(64)
-              .Append("<hint>'").HintMlEscape(reference).Append("' is an ambiguous reference between ")
-              .JoinAnd(r.Ambiguities, HintML.MakeHintMlPath(_, _, ".", true)).Append("</hint>");
+            def message =
+              if (UseHintMl)
+              {
+                StringBuilder(64).Append("<hint>'").HintMlEscape(reference).Append("' is an ambiguous reference between ")
+                  .JoinAnd(r.Ambiguities, HintML.MakeHintMlPath(_, _, ".", true)).Append("</hint>").ToString();
+              }
+              else
+              {
+                def format(symbol : DeclarationSymbol) : string
+                {
+                  if (symbol.IsFullNameEvaluated)
+                    symbol.FullName
+                  else if (symbol.IsDeclaredInOptEvaluated)
+                    match (symbol.DeclaredInOpt)
+                    {
+                      | VSome(parentSymbol) => format(parentSymbol) + "." + symbol.Name
+                      | VNone               => symbol.Name
+                    }
+                  else
+                    symbol.Name
+                }
 
-            CompilerMessages.Error(reference, builder.ToString());
+                $"'$(reference)' is an ambiguous reference between ..$(r.Ambiguities.Select(format))"
+              };
+
+            CompilerMessages.Error(reference, message);
           }
         }
 

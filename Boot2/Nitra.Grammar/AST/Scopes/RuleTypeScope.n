@@ -32,6 +32,22 @@ namespace Nitra.Ast
       _members.GetSymbols()
     }
 
+    public override Contains(reference : string) : bool
+    {
+      def id = StringIndex.GetId(reference);
+
+      when (id <= StringIndex.InvalidId)
+        return false;
+
+      Init();
+
+      def isMatch(symbol : DeclarationSymbol) : bool
+      {
+        symbol.NameId == id
+      }
+      _members.Filter.[DeclarationSymbol](isMatch).HasResult;
+    }
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def id = reference.Id;
@@ -46,7 +62,6 @@ namespace Nitra.Ast
         symbol.NameId == id
       }
       _members.Filter.[TSymbol](isMatch);
-
     }
 
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]

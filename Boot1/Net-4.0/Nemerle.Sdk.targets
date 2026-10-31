@@ -1,0 +1,3 @@
+<Project>
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
+</Project>

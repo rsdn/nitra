@@ -43,6 +43,11 @@ namespace Nitra.Declarations
       }
     }
 
+    public override Contains(reference : string) : bool
+    {
+      this.Scope.Contains(reference) || this.Hidden.Contains(reference)
+    }
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def result       = this.Scope.Bind(isMatch);

@@ -6,7 +6,7 @@ using Nitra.Internal;
 
 namespace DotNet
 {
-  declaration FormalParameter : TypedDeclaration, CustomAttributeHostDeclaration
+  declaration FormalParameter : SelfTypedDeclaration, CustomAttributeHostDeclaration, HasBuildInvocationScope
   {
     symbol
     {
@@ -15,6 +15,7 @@ namespace DotNet
       in Default    : DefaultValue;
       in DeclaredIn : DeclarationSymbol;
 
+      ToString  = AstUtils.FormalParameterToString(this);
       DeclaredInOpt = VSome(DeclaredIn);
 
       // TODO: add support of optional, custom modifiers, index and default value
@@ -28,18 +29,18 @@ namespace DotNet
   stage 1:
     inout Types      : list[TypeSymbol];
 
-    Symbol.DeclaredIn    = DeclaredIn;
-    IndexOut             = IndexIn + 1u;
-    Type.Scope           = Scope;
-    TypeRef              = Type.Ref.Resolve();
-    Symbol.Type          = TypeRef.Symbol;
-    Symbol.Modifier      = Modifier.ValueOrDefault;
-    Symbol.Index         = IndexIn;
-    ParametersOut        = Symbol :: ParametersIn;
-    TypesOut             = Symbol.Type :: TypesIn;
-    Symbol.Default       = AstUtils.MakeDefault(Default);
-    Default.ExpectedType = TypeRef.Symbol;
-    Default.ScopeIn      = Scope;
+    Symbol.DeclaredIn            = DeclaredIn;
+    IndexOut                     = IndexIn + 1u;
+    Type.Scope                   = Scope;
+    TypeRef                      = Type.Ref.Resolve();
+    Symbol.Modifier              = Modifier.ValueOrDefault;
+    Symbol.Index                 = IndexIn;
+    ParametersOut                = Symbol :: ParametersIn;
+    TypesOut                     = Symbol.Type :: TypesIn;
+    Symbol.Default               = await AstUtils.MakeDefault(Default);
+    Default.ExpectedType         = TypeRef.Symbol;
+    Default.ScopeIn              = Scope;
+    Default.BuildInvocationScope = BuildInvocationScope;
 
     Type     : QualifiedReference;
     Modifier : ParameterModifier;

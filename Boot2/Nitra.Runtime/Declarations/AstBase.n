@@ -1,4 +1,4 @@
-using Nitra.ProjectSystem;
+﻿using Nitra.ProjectSystem;
 using Nitra.Internal;
 
 using Nemerle;
@@ -60,7 +60,7 @@ namespace Nitra.Declarations
       match (this)
       {
         | decl is Declaration => decl.Name?.Text + ": " + this.GetType().FullName
-        | _ => base.ToString()
+        | _ => Location.GetText();
       }
     }
 

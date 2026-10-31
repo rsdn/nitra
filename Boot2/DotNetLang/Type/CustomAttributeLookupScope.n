@@ -26,6 +26,11 @@ namespace DotNet
 
     public override GetAllSymbols() : Seq[DeclarationSymbol] { _scope.GetAllSymbols() }
 
+    public override Contains(reference : string) : bool
+    {
+      _scope.Contains(reference) || _scope.Contains(reference + "Attribute")
+    }
+
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]
     {
       def res = _scope.Bind.[TSymbol](reference);

@@ -20,6 +20,7 @@ namespace Nitra.ProjectSystem
   {
     public FsSolution : FsSolution[TAst]                   { get; internal set; }
     public FsFiles    : ObservableCollection[FsFile[TAst]] { get; private set; }
+    public override UseHintMl : bool { get { false } }
 
     public this([NotNull] solution : FsSolution[TAst], projectDir : string, libs : Seq[LibReference])
     {

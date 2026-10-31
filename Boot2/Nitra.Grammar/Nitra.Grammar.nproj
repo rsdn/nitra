@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Name>Nitra.Grammar</Name>
     <RootNamespace>Nitra.Grammar</RootNamespace>
@@ -7,8 +7,6 @@
     <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{792f6159-9ff0-4352-8323-591a9bad3472}</ProjectGuid>
     <NeedAddVersionToAssemblyName>False</NeedAddVersionToAssemblyName>
     <CustomArguments>$(CustomArguments) -nowarn:114</CustomArguments>
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
@@ -28,7 +26,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <NoStdLib>true</NoStdLib>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFramework>netstandard20</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
     <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
@@ -54,23 +52,16 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.props" />
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NemerleLibs)\Nemerle.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="Nemerle.Compiler">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NemerleLibs)\Nemerle.Compiler.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System.Drawing" />
   </ItemGroup>
   <Choose>
     <When Condition=" '$(Stage)' == 'Boot' ">
@@ -723,16 +714,9 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
-  <Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage1' ">
+  <!--Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage1' ">
     <CallTarget Targets="NugetPack" />
-  </Target>
+  </Target-->
 </Project>

@@ -152,4 +152,15 @@ namespace DotNet
       CanMerge = false;
     }
   }
+  declaration Pointer : TopGenericType
+  {
+    symbol
+    {
+      Kind = "pointer";
+      Scope = EmptyScope.Instance; // TODO: make pseudo scope
+
+      IsSameIdentity = AstUtils.IsSameIdentity(TypeParametersCount, candidate);
+      CanMerge = false;
+    }
+  }
 }

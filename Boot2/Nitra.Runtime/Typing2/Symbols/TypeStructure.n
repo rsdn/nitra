@@ -5,6 +5,7 @@ using Nemerle.Utility;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace Nitra.Declarations
@@ -36,6 +37,20 @@ namespace Nitra.Declarations
     {
       this(typeInfo);
       TypeArguments = typeArguments;
+    }
+
+    public this(typeInfo : TypeSymbol, typeArguments : ImmutableArray[TypeSymbol])
+    {
+      this(typeInfo);
+      match (typeArguments.Length)
+      {
+        | 0 => ()
+        | 1 => TypeArguments = LightList(); TypeArguments.Add(typeArguments[0])
+        | _ =>
+          TypeArguments = LightList();
+          foreach (x in typeArguments)
+            TypeArguments.Add(x);
+      }
     }
 
     public TypeInfo      : TypeSymbol            { get; }

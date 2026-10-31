@@ -13,6 +13,7 @@ namespace DotNet
       in Parameters : ImmutableArray[FormalParameterSymbol];
     }
 
+    Parameters.DeclaredIn      = Symbol;
     Parameters.ContainingTable = Symbol.ParameterScope;
     Parameters.IndexIn         = 0u;
     Parameters.ParametersIn    = [];

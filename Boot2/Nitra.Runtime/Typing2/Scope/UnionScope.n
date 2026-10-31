@@ -25,7 +25,7 @@ namespace Nitra.Declarations
     }
 
     public override GetAllSymbols() : Seq[DeclarationSymbol] { Scopes.SelectMany(scope => scope.GetAllSymbols()) }
-    
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def result = LightList();
@@ -36,6 +36,13 @@ namespace Nitra.Declarations
           result.Add(br);
       }
       result.ToBindResult()
+    }
+
+    public override Contains(reference : string) : bool
+    {
+      foreach (scope when scope.Contains(reference) in this.Scopes)
+        return true;
+      false
     }
 
     public override Bind[TSymbol](reference : Reference) : BindResult[TSymbol]

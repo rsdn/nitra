@@ -1,4 +1,4 @@
-using Nemerle;
+﻿using Nemerle;
 using Nemerle.Collections;
 using Nemerle.Compiler;
 using Nemerle.Compiler.Parsetree;
@@ -44,7 +44,9 @@ namespace Nitra.Serialization
           match (p.AttributesAndModifiers.FindAttribute(Compiler.MappedMemberAttribute, Compiler.Manager.CoreEnv))
           {
             | Some(<[ $_($(name : string)) ]>) =>
-              def member               = memberMap[name];
+              mutable member;
+              unless (memberMap.TryGetValue(name, out member))
+                throw InvalidOperationException($"The '$typeInfo' type has no public member '$name'.");
               def memberType           = Type.TypeOfMember(member).Fix();
               def serializationBuilder = Compiler.EnqueueType(memberType);
               _members.Add(RecordMemberInfo(member, serializationBuilder))

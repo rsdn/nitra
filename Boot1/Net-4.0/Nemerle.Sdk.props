@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!--Suppress NETSDK1138 'target framework is out of support' warnings for netstandard2.0/netcoreapp2.1.-->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <LanguageTargets>$(MSBuildThisFileDirectory)Nemerle.MSBuild.targets</LanguageTargets>
+    <MSBuildProjectExtensionsPath Condition=" '$(IntermediateOutputPath)' != '' ">$(IntermediateOutputPath)$(AssemblyName)\</MSBuildProjectExtensionsPath>
+    <!--CLI builds (no IntermediateOutputPath) would share one <projdir>\obj\project.assets.json across every project importing this file; give each project its own extensions dir so implicit restores cannot clobber each other.-->
+    <MSBuildProjectExtensionsPath Condition=" '$(IntermediateOutputPath)' == '' ">$(MSBuildProjectDirectory)\obj\$(AssemblyName)\</MSBuildProjectExtensionsPath>
+  </PropertyGroup>
+  <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
+</Project>

@@ -26,6 +26,18 @@ namespace Nitra.Declarations
           yield symbol;
     }
 
+    public override Contains(reference : string) : bool
+    {
+      when (Scope.Contains(reference))
+      {
+        def res = Scope.Bind(Reference(Location.Default, reference));
+        //TODO: optimize
+        return res.Filter(this.Predicate).HasResult;
+      }
+
+      false
+    }
+
     public override Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol]
     {
       def compositePredicate(symbol)

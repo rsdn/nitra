@@ -9,13 +9,14 @@ namespace DotNet
   {
     symbol
     {
-      FullName = DeclaredIn.FullName + "." + this.Name;
+      FullName = AstUtils.MakeFullName(this);
     }
 
     | Constructor : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
       {
         symbol
         {
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "constructor";
           SpanClass = DotNetLang.MethodSpanClass;
 
@@ -44,6 +45,7 @@ namespace DotNet
         {
           in IsExtensionMethod : bool;
 
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "method";
           SpanClass = DotNetLang.MethodSpanClass;
         }
@@ -66,7 +68,7 @@ namespace DotNet
         ReturnType    : QualifiedReference;
         Body          : Statement;
       }
-    | Property : CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Property : CustomAttributeHostDeclaration, ModifierHostAndAst, SelfTypedDeclaration
       {
         symbol
         {
@@ -75,15 +77,11 @@ namespace DotNet
 
           in Setter : option[Member.MethodSymbol];
           in Getter : option[Member.MethodSymbol];
-          in Type : TypeSymbol;
         }
 
-      stage 1:
-        out TypeRef : Ref[TypeSymbol] = Type.Ref.Resolve();
-
+        TypeRef              = Type.Ref.Resolve();
         InterfaceType.Scope  = Scope;
         Type.Scope           = Scope;
-        Symbol.Type          = TypeRef.Symbol;
         Accessors.Scope      = Scope;
 
         //Initializer   : Expr?;
@@ -91,14 +89,12 @@ namespace DotNet
         Type          : QualifiedReference;
         Accessors     : PropertyAccessor*;
       }
-    | Event : ModifierHost
+    | Event : ModifierHost, TypedDeclaration
       {
         symbol
         {
           Kind      = "event";
           SpanClass = DotNetLang.PropertySpanClass;
-
-          in Type : TypeSymbol;
         }
 
         Header.Scope        = Scope;
@@ -111,17 +107,16 @@ namespace DotNet
         Header        : EventHeader;
         Accessors     : EventAccessor*;
       }
-    | Indexer : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst
+    | Indexer : Functional, CustomAttributeHostDeclaration, ModifierHostAndAst, SelfTypedDeclaration
       {
         symbol
         {
+          ToString  = AstUtils.FunctionalToString(this);
           Kind      = "indexer";
           SpanClass = DotNetLang.PropertySpanClass;
         }
 
-      stage 1:
-        out TypeRef : Ref[TypeSymbol] = Type.Ref.Resolve();
-
+        TypeRef                    = Type.Ref.Resolve();
         InterfaceType.Scope        = Scope;
         Type.Scope                 = Scope;
         Parameters.Scope           = Scope;
@@ -132,14 +127,12 @@ namespace DotNet
         InterfaceType : QualifiedReference?;
         Accessors     : PropertyAccessor*;
       }
-    | Constant : ModifierHost
+    | Constant : ModifierHost, TypedDeclaration
       {
         symbol
         {
           Kind      = "constant";
           SpanClass = DotNetLang.ConstantSpanClass;
-
-          in Type : TypeSymbol;
         }
 
         Header.Scope  = Scope;
@@ -148,14 +141,12 @@ namespace DotNet
 
         Header : ConstantHeader;
       }
-    | Field : ModifierHost
+    | Field : ModifierHost, TypedDeclaration
       {
         symbol
         {
           Kind      = "field";
           SpanClass = DotNetLang.FieldSpanClass;
-
-          in Type : TypeSymbol;
         }
 
         Header.Scope  = Scope;
@@ -164,14 +155,12 @@ namespace DotNet
 
         Header : FieldHeader;
       }
-    | FixedSizeBuffer : ModifierHost
+    | FixedSizeBuffer : ModifierHost, TypedDeclaration
       {
         symbol
         {
           Kind      = "fixed size buffer";
           SpanClass = DotNetLang.FieldSpanClass;
-
-          in Type : TypeSymbol;
         }
 
         Header.Scope  = Scope;

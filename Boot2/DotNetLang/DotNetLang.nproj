@@ -1,14 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Name>DotNetLang</Name>
     <RootNamespace>DotNet</RootNamespace>
     <NuspecFile>DotNetLang.nuspec</NuspecFile>
     <ProjectGuid Condition=" '$(ProjectGuid)' == '' ">{D3C87D75-E119-4D30-A8BE-DC28014BB653}</ProjectGuid>
     <NeedAddVersionToAssemblyName>True</NeedAddVersionToAssemblyName>
-    <DocumentationFile />
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- Common properties -->
     <Stage Condition=" '$(Stage)' == '' ">Stage1</Stage>
     <!-- NameSuffix - must be set when the Stage property set to "Boot" -->
@@ -28,7 +25,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <NoStdLib>true</NoStdLib>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFramework>netstandard20</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <DefineConstants>TRACE;DEBUG_EVAL_DEPENDENT_PROPERTIES</DefineConstants>
     <DefineConstants Condition=" '$(BuildConstant)' != '' ">$(BuildConstant);$(DefineConstants)</DefineConstants>
@@ -55,18 +52,12 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(MSBuildProjectName).xml</DocumentationFile>
   </PropertyGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.props" />
   <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
     <Reference Include="Nemerle">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(NemerleLibs)\Nemerle.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <Choose>
     <When Condition=" '$(Stage)' == 'Boot' ">
@@ -124,6 +115,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="IDotNetBackEnd.n">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Scopes\InvocationScope.n">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Scopes\SubstHelper.n">
@@ -244,12 +238,6 @@
     <Compile Include="Type\TypeAlias.nitra">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Type\Typed.nitra">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Type\TypedAst.nitra">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Type\TypedDeclaration.nitra">
       <SubType>Code</SubType>
     </Compile>
@@ -327,16 +315,9 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
   <Import Project="$(CommonFilesPath)\NitraBuild.targets" />
-  <Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage1' ">
+  <!--Target Name="AfterBuild" Condition=" '$(Stage)' == 'Stage1' ">
     <CallTarget Targets="BuildPolicy01Assembly; NugetPack" />
-  </Target>
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
+  </Target-->
 </Project>

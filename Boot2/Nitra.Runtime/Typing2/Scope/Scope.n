@@ -20,6 +20,7 @@ namespace Nitra.Declarations
     public abstract GetAllSymbols() : Seq[DeclarationSymbol];
     public abstract Bind[TSymbol](reference : Reference)        : BindResult[TSymbol] where TSymbol : DeclarationSymbol;
     public abstract Bind[TSymbol](isMatch : Predicate[TSymbol]) : BindResult[TSymbol] where TSymbol : DeclarationSymbol;
+    public abstract Contains(reference : string) : bool;
     public abstract ToDot(nodeToIdMap : Dictionary[object, int], nodes : List[string], edges : List[string]) : void;
     public virtual ToDot() : string
     {
@@ -63,6 +64,11 @@ namespace Nitra.Declarations
     public virtual FilterWith([NotNull] predicate : Predicate[DeclarationSymbol]) : Scope
     {
       FilteringScope(this, predicate)
+    }
+
+    public virtual Memoize() : Scope
+    {
+      MemoizingScope(this)
     }
 
     public abstract Serialize(writer : BinaryWriter, metadataWriter : MetadataWriter) : void;

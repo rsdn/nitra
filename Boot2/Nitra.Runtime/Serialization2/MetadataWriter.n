@@ -57,6 +57,12 @@ namespace Nitra.Serialization2
       writer.Write(descriptor.Id : int);
     }
 
+    public WriteLocation(location : Location, writer : BinaryWriter) : void
+    {
+      IgnoreParams();
+      // TODO: реализовать!
+    }
+
     public WriteObject(obj : ISerializable, writer : BinaryWriter) : void
     {
       if (obj != null)

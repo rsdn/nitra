@@ -16,7 +16,7 @@ namespace Nitra.Declarations
 
     protected _typeVarInitContext : DependentPropertyEvalContext = DependentPropertyEvalContext(null);
 
-    protected abstract IsSubtypeUnwraped(subtype : TypeSymbol, supertype : TypeSymbol) : bool;
+    protected abstract SubtypeUnifyUnwraped(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool;
 
     public virtual CreateFreeTypeVar() : TypeVarSymbol
     {
@@ -35,6 +35,38 @@ namespace Nitra.Declarations
 
       var.EvalProperties(_typeVarInitContext);
       var
+    }
+
+    public FixType(type : TypeSymbol) : TypeSymbol
+    {
+      mutable updatedVariables;
+      FixType(type, ref updatedVariables)
+    }
+
+    public virtual FixType(type : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : TypeSymbol
+    {
+      match (Unwrap(type))
+      {
+        | tv is TypeVarSymbol =>
+          if (tv.IsTypeEvaluated)
+            tv.Type
+          else if (tv.IsDerivedTypeConstraintEvaluated)
+          {
+            def constraint = tv.DerivedTypeConstraint;
+            BindTypeVar(tv, constraint, ref updatedVariables);
+            constraint
+          }
+          else if (tv.IsBaseTypeConstraintEvaluated)
+          {
+            def constraint = tv.BaseTypeConstraint;
+            BindTypeVar(tv, constraint, ref updatedVariables);
+            constraint
+          }
+          else
+            tv
+
+        | x => x
+      }
     }
 
     protected virtual UnifyUnwraped(typeSymbol1 : TypeSymbol, typeSymbol2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
@@ -56,7 +88,7 @@ namespace Nitra.Declarations
             | (true,   true) =>
               def c1 = v1.BaseTypeConstraint;
               def c2 = v2.BaseTypeConstraint;
-              if (c1.Equals(c2))
+              if (c1.Equals(c2) || Unify(c1, c2, ref updatedVariables))
                 newBaseTypeConstraint = c1
               else if (IsSubtype(c1, c2))
                 newBaseTypeConstraint = c1
@@ -75,7 +107,7 @@ namespace Nitra.Declarations
             | (true,   true) =>
               def c1 = v1.DerivedTypeConstraint;
               def c2 = v2.DerivedTypeConstraint;
-              if (c1.Equals(c2))
+              if (c1.Equals(c2) || Unify(c1, c2, ref updatedVariables))
                 newDerivedTypeConstraint = c1
               else if (IsSubtype(c1, c2))
                 newDerivedTypeConstraint = c2
@@ -88,9 +120,9 @@ namespace Nitra.Declarations
           mutable type;
           when (newBaseTypeConstraint : object != null && newDerivedTypeConstraint : object != null)
           {
-            if (newBaseTypeConstraint.Equals(newDerivedTypeConstraint))
+            if (newBaseTypeConstraint.Equals(newDerivedTypeConstraint) || Unify(newBaseTypeConstraint, newDerivedTypeConstraint, ref updatedVariables))
               type = newBaseTypeConstraint;
-            else unless (IsSubtype(newDerivedTypeConstraint, newBaseTypeConstraint))
+            else unless (SubtypeUnifyUnwraped(newDerivedTypeConstraint, newBaseTypeConstraint, ref updatedVariables))
               return false; // merged constraints are not consistent
           }
 
@@ -146,6 +178,25 @@ namespace Nitra.Declarations
       }
     }
 
+    public SubtypeUnify(subtype : TypeSymbol, supertype : TypeSymbol) : bool
+    {
+      def unwrappedSubtype   = Unwrap(subtype);
+      def unwrappedSupertype = Unwrap(supertype);
+      when (unwrappedSubtype : object == unwrappedSupertype)
+        return true;
+
+      mutable updatedVariables;
+      def result = SubtypeUnifyUnwraped(unwrappedSubtype, unwrappedSupertype, ref updatedVariables);
+      unless (result)
+        ResetTypeVars(ref updatedVariables);
+      result
+    }
+
+    protected SubtypeUnify(subtype : TypeSymbol, supertype : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      SubtypeUnifyUnwraped(Unwrap(subtype), Unwrap(supertype), ref updatedVariables) : bool;
+    }
+    
     public IsSubtype(subtype : TypeSymbol, supertype : TypeSymbol) : bool
     {
       def unwrappedSubtype   = Unwrap(subtype);
@@ -153,7 +204,10 @@ namespace Nitra.Declarations
       when (unwrappedSubtype : object == unwrappedSupertype)
         return true;
 
-      IsSubtypeUnwraped(unwrappedSubtype, unwrappedSupertype)
+      mutable updatedVariables;
+      def result = SubtypeUnifyUnwraped(unwrappedSubtype, unwrappedSupertype, ref updatedVariables);
+      ResetTypeVars(ref updatedVariables);
+      result
     }
 
     public TryProvide(t : TypeSymbol, derivedTypeConstraint : TypeSymbol) : bool
@@ -224,6 +278,21 @@ namespace Nitra.Declarations
       def result = UnifyImpl(t1, t2, ref updatedVariables);
       unless (result)
         ResetTypeVars(ref updatedVariables);
+      result
+    }
+
+    public Unify(t1 : TypeSymbol, t2 : TypeSymbol, updatedVariables : ref LightList[TypeVarSymbol]) : bool
+    {
+      mutable nestedVariables;
+      def result = UnifyImpl(t1, t2, ref nestedVariables);
+      if (result)
+      {
+        def e = nestedVariables.GetEnumerator();
+        while (e.MoveNext())
+          updatedVariables.Add(e.Current);
+      }
+      else
+        ResetTypeVars(ref nestedVariables);
       result
     }
 

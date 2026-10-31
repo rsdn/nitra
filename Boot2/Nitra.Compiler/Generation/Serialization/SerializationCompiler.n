@@ -48,6 +48,18 @@ namespace Nitra.Serialization
       }
     }
 
+    public ImmutableHashSetOpt : option[TypeInfo]
+    {
+      mutable _immutableHashSetOpt : option[TypeInfo];
+      get
+      {
+        when (_immutableHashSetOpt : object == null)
+          _immutableHashSetOpt = Manager.NameTree.LookupExactType("System.Collections.Immutable.ImmutableHashSet", 1);
+        _immutableHashSetOpt
+      }
+    }
+
+    
     public ImmutableArrayOpt : option[TypeInfo]
     {
       mutable _immutableArrayOpt : option[TypeInfo];
