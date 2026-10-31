@@ -9,6 +9,45 @@ namespace Nitra.PrettyPrint
 {
   internal class HtmlPrettyPrintWriter : PrettyPrintWriter
   {
+    private const string PrettyPrintDoughnutTemplate = @"<!DOCTYPE html>
+<html>
+<head>
+    <title>Pretty Print</title>
+    <meta http-equiv=""Content-Type"" content=""text/html;charset=utf-8"">
+    <style type=""text/css"">
+pre
+{
+  color: Black;
+  font-weight: normal;
+  font-size: 12pt;
+  font-family: Consolas, Courier New, Monospace;
+}
+
+.missing
+{
+  color: Red;
+}
+
+.debug
+{
+  color: Red;
+}
+
+.garbage
+{
+  color: Red;
+  text-decoration: line-through;
+}
+
+{spanclasses}
+    </style>
+</head>
+<body>
+{prettyprint}
+</body>
+</html>
+";
+
     private readonly StringBuilder _buffer;
     private readonly StringWriter _writer; // for HtmlEncode
     private readonly SpanClass _missingNodeClass;
@@ -198,7 +237,7 @@ namespace Nitra.PrettyPrint
           .Append("{color:rgb(").Append(r).Append(',').Append(g).Append(',').Append(b).AppendLine(");}");
       }
 
-      return Resources.PrettyPrintDoughnut.Replace("{spanclasses}", spanStyles.ToString()).Replace("{prettyprint}", html);
+      return PrettyPrintDoughnutTemplate.Replace("{spanclasses}", spanStyles.ToString()).Replace("{prettyprint}", html);
     }
 
     public override string ToString()
