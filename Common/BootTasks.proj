@@ -38,6 +38,9 @@
     <NccFile Include="$(_Nemerle)\Nemerle.Peg.dll">
       <CopyPdb>False</CopyPdb>
     </NccFile>
+    <NccFile Include="$(_Nemerle)\Nemerle.Diff.dll">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
     <NccFile Include="$(_Nemerle)\CSharpParser.dll">
       <CopyPdb>False</CopyPdb>
     </NccFile>
@@ -47,16 +50,25 @@
     <NccFile Include="$(_Nemerle)\ncc.exe">
       <CopyPdb>False</CopyPdb>
     </NccFile>
-    <NccFile Include="$(_Nemerle)\ncc32.exe">
+    <NccFile Include="$(_Nemerle)\ncc.dll">
       <CopyPdb>False</CopyPdb>
     </NccFile>
-    <NccFile Include="$(_Nemerle)\ncc64.exe">
+    <NccFile Include="$(_Nemerle)\ncc.deps.json">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+    <NccFile Include="$(_Nemerle)\ncc.runtimeconfig.json">
       <CopyPdb>False</CopyPdb>
     </NccFile>
     <NccFile Include="$(_Nemerle)\Nemerle.MSBuild.Tasks.dll">
       <CopyPdb>False</CopyPdb>
     </NccFile>
     <NccFile Include="$(_Nemerle)\Nemerle.MSBuild.targets">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+    <NccFile Include="$(_Nemerle)\Nemerle.Sdk.props">
+      <CopyPdb>False</CopyPdb>
+    </NccFile>
+    <NccFile Include="$(_Nemerle)\Nemerle.Sdk.targets">
       <CopyPdb>False</CopyPdb>
     </NccFile>
 	<NccFile Include="$(_Nemerle)\dnlib.dll">
