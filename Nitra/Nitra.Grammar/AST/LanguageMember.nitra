@@ -31,10 +31,11 @@ namespace Nitra.Ast
 
     decompose Properties
     {
-      ForegroundColor : StyleProperty.ForegroundColor;
+      ForegroundColor : StyleProperty.ForegroundColor?;
     }
 
-    Symbol.ForegroundColor = ForegroundColor.Color.ValueOrDefault;
+    // An undeclared ForegroundColor evaluates to Color.Empty instead of dereferencing the missing projection (NRE, R4.7).
+    Symbol.ForegroundColor = if (ForegroundColor.HasValue) ForegroundColor.Value.Color.ValueOrDefault else Color.Empty;
     Symbol.DeclaringLanguage = DeclaringLanguage;
   }
 
