@@ -2,6 +2,11 @@
 {
   using Nitra.Core;
 
+  extend token IgnoreToken
+  {
+    | SpaceToken = Spaces;
+  }
+
   [SpanClass(Number)]
   regex Number = ['0'..'9']+;
 

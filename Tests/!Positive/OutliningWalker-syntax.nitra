@@ -2,6 +2,11 @@
 {
   using Nitra.Core;
 
+  extend token IgnoreToken
+  {
+    | SpaceToken = Spaces;
+  }
+
   syntax Block
   {
     | Identifier = IdentifierBody;

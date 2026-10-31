@@ -7,6 +7,11 @@ syntax module BaseModule
 
   keyword regex IdentifierStartCharacter (IdentifierPartCharacters | '-')* rule S;
 
+  extend token IgnoreToken
+  {
+    | SpaceToken = Spaces;
+  }
+
   [StartRule, ExplicitSpaces]
   syntax Start = s Declaration* !Any;
 

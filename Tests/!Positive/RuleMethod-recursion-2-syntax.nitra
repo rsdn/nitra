@@ -4,6 +4,11 @@ syntax module RecursionTest2
 {
   using Nitra.Core;
 
+  extend token IgnoreToken
+  {
+    | SpaceToken = Spaces;
+  }
+
   [StartRule, ExplicitSpaces]
   syntax Start = s A !Any
   {
