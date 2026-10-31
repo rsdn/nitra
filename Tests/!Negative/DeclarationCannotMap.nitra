@@ -7,7 +7,7 @@ syntax module M1
     map D1
     {
       R2Opt -> Items; // E: Expected AST type 'D2\*' got option
-      R2Opt -> S;     // E: Rule 'M1\.R2' has no compatible AST mapping
+      R2Opt -> S;     // E: Rule 'M1\.R2' has no mapping to 'D3\?'\. Exists mapping: D2
     }
   }
  
