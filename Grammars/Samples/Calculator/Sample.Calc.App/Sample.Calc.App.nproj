@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <NemerleVersion>Net-4.0</NemerleVersion>
+    <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
+    <NoStdLib>true</NoStdLib>
+    <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
+    <Name>Sample.Calc.App</Name>
+    <DocumentationFile />
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
@@ -10,13 +16,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Sample.Calc.App</RootNamespace>
     <AssemblyName>Sample.Calc.App</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <!--Core exe: netstandard20 cannot host a runnable app (no apphost/runtimeconfig). Shape taken
+        from the toolchain's own Core-built exe (nemerle\ncc.nproj): net10.0 + no refint assembly.-->
+    <TargetFramework>net10.0</TargetFramework>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <FileAlignment>512</FileAlignment>
-    <NoStdLib>true</NoStdLib>
-    <NemerleVersion>Net-4.0</NemerleVersion>
-    <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
-    <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
-    <Name>Sample.Calc.App</Name>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -25,6 +31,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <RunDebugger>false</RunDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>false</DebugSymbols>
@@ -35,6 +42,7 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.props" />
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -71,13 +79,16 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
-  <!--
-		To modify your build process, add your task inside one of the targets below and uncomment it. 
-		Other similar extension points exist, see Microsoft.Common.targets.
-	<Target Name="BeforeBuild">
-	</Target>
-	<Target Name="AfterBuild">
-	</Target>
-	-->
+  <!--The net10.0 targeting pack contributes System.Collections.Immutable, whose types duplicate the
+      ones of System.Collections.Immutable.Light (the assembly Nitra.Runtime is built against and
+      what its API surface exposes), and ncc ICEs on that clash: "not loaded internal type...
+      System.Collections.Immutable.ImmutableList`1+Builder, System.Collections.Immutable.Light".
+      Drop the targeting-pack copy from the compile reference set for this project (the Light one is
+      kept; nothing in the App touches the real System.Collections.Immutable).-->
+  <Target Name="ExcludeTargetingPackImmutableCollections" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <ReferencePath Remove="@(ReferencePath->WithMetadataValue('Filename', 'System.Collections.Immutable'))" />
+    </ItemGroup>
+  </Target>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
 </Project>
