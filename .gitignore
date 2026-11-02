@@ -81,3 +81,4 @@ Ide/Nitra.LanguageVsPackage/
 /Ide/TdlLangVsPackage/*
 /Tests/Visualizer/Tdl/test-0002/*.json
 /Tests/Visualizer/Tdl/**/*.json
+/Doc/plans/**/*progress*.md
