@@ -161,4 +161,26 @@
     <VSSDK Include="$(ProjectDir)..\ExternalTools\VSSDK2013\**\*.*" />
   </ItemGroup-->
   <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
+  <!-- These net461 projects compile against the Microsoft.NETFramework.ReferenceAssemblies.net461 package.
+       FrameworkPathOverride is set by Microsoft.Common.CurrentVersion.targets to the machine targeting-pack
+       path (the RA package's EnableFrameworkPathOverride=false arrives too late to fix it), and the build
+       is free to override TargetFrameworkRootPath (the netfx-free gate sets it to a non-existent dir to
+       simulate a clean agent without targeting packs) - so the RA package's TargetFrameworkRootPath never
+       survives there. Pin the framework-resolution properties to the NuGet package explicitly, so no
+       machine-specific path can reach the Ncc task and GetReferenceAssemblyPaths is skipped. The SDK's
+       IncludeTargetingPackReference target re-derives and re-clears _FullFrameworkReferenceAssemblyPaths
+       from TargetFrameworkRootPath, so a target re-applies the values right after it. -->
+  <PropertyGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(TargetFrameworkVersion)' == 'v4.6.1' and '$(NuGetPackageRoot)' != '' and Exists('$(NuGetPackageRoot)microsoft.netframework.referenceassemblies.net461\1.0.3\build\.NETFramework\v4.6.1')">
+    <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.netframework.referenceassemblies.net461\1.0.3\build\.NETFramework\v4.6.1</FrameworkPathOverride>
+    <_TargetFrameworkDirectories>$(FrameworkPathOverride)</_TargetFrameworkDirectories>
+    <_FullFrameworkReferenceAssemblyPaths>$(FrameworkPathOverride)</_FullFrameworkReferenceAssemblyPaths>
+  </PropertyGroup>
+  <Target Name="RepointNet461FrameworkPaths" AfterTargets="IncludeTargetingPackReference"
+          Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(TargetFrameworkVersion)' == 'v4.6.1' and '$(NuGetPackageRoot)' != '' and Exists('$(NuGetPackageRoot)microsoft.netframework.referenceassemblies.net461\1.0.3\build\.NETFramework\v4.6.1')">
+    <PropertyGroup>
+      <FrameworkPathOverride>$(NuGetPackageRoot)microsoft.netframework.referenceassemblies.net461\1.0.3\build\.NETFramework\v4.6.1</FrameworkPathOverride>
+      <_TargetFrameworkDirectories>$(FrameworkPathOverride)</_TargetFrameworkDirectories>
+      <_FullFrameworkReferenceAssemblyPaths>$(FrameworkPathOverride)</_FullFrameworkReferenceAssemblyPaths>
+    </PropertyGroup>
+  </Target>
 </Project>
