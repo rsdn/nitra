@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
@@ -13,14 +13,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Nitra.LanguageCompiler</RootNamespace>
     <AssemblyName>Nitra.LanguageCompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFramework>net461</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NemerleVersion>Net-4.0</NemerleVersion>
     <NemerleBinPathRoot Condition=" '$(NemerleBinPathRoot)' == '' ">$(ProgramFiles)\Nemerle</NemerleBinPathRoot>
     <Nemerle Condition=" '$(Nemerle)' == '' ">$(NemerleBinPathRoot)\$(NemerleVersion)</Nemerle>
     <Name>Nitra.LanguageCompiler</Name>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -67,6 +66,7 @@
   <PropertyGroup>
     <CmdArgs>/lang:..\..\..\VisualStudioExtensions\CSharp.VisualStudio.Plugin\NitraCSharp.nlang /ns:Nitra.CSharp /out:Result ..\..\..\Grammars\$(OutputPath)CSharp.Grammar.dll</CmdArgs>
   </PropertyGroup>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.props" />
   <ItemGroup>
     <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="mscorlib" />
@@ -144,14 +144,6 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(Nemerle)\Nemerle.MSBuild.targets" />
-  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
-  </Target>
   <!--ItemGroup>
     <ExternalDependency Include="..\$(OutDir)Stage2\Nemerle.dll" />
     <ExternalDependency Include="$(SolutionDir)ExternalTools\VSSDK2013\PrivateAssemblies\Microsoft.VisualStudio.ExtensionManager.dll" />
@@ -168,9 +160,5 @@
   <ItemGroup>
     <VSSDK Include="$(ProjectDir)..\ExternalTools\VSSDK2013\**\*.*" />
   </ItemGroup-->
-  <Target Name="AfterBuild">
-    <!--Copy SourceFiles="@(ExternalDependency)" DestinationFolder="$(TargetDir)ExternalDependencies" />
-    <MakeDir Directories="$(TargetDir)ExternalTools\VSSDK2013" />
-    <Copy SourceFiles="@(VSSDK)" DestinationFolder="$(TargetDir)ExternalTools\VSSDK2013\%(RecursiveDir)" /-->
-  </Target>
+  <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
 </Project>
