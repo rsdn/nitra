@@ -12,7 +12,8 @@
 
 ## Сборка
 
-- Точка входа: `Build.cmd` (= `Build-base.cmd Debug Build` → `Common\BootTasks.proj /t:BuildBoot` → `Nitra-Stagt1.sln` Restore+Build). `Build-wo-boot.cmd` — без пересборки бутстрапа.
+- Точка входа Core-линии: `Build-Core.cmd` (`vswhere -latest` → MSBuild VS2019+/VS18, без VS2017-пина и VsDevCmd; `MSBUILDENABLEALLPROPERTYFUNCTIONS=1`; `NemerleBinPathRoot` — из env-переменной, иначе sibling-дроп `..\Nemerle\bin\<Config>`; шаги `Common\BootTasks.proj /t:BuildBoot` → `Nitra-Core.slnf` Restore+Build). `Build-Core-wo-boot.cmd` — без пересборки бутстрапа. Полный `Nitra-Stagt1.sln` — FX-наследие, в Core-работах не использовать.
+- Точка входа (FX-линия, легаси; полный `Nitra-Stagt1.sln` — FX-наследие, для Core-работ не использовать): `Build.cmd` (= `Build-base.cmd Debug Build` → `Common\BootTasks.proj /t:BuildBoot` → `Nitra-Stagt1.sln` Restore+Build). `Build-wo-boot.cmd` — без пересборки бутстрапа.
 - **Скрипты FX-линии (`BuildBoot.cmd`, `RebuildBoot.cmd`, `ShiftBoot.cmd`, `test.cmd`, `Clear.cmd`) на этой ветке не использовать** — они из master-линии про net40/Boot1-FX.
 - `Build-base.cmd` содержит пин на VS2017 (реестр `...\SxS\VS7\15.0` + VsDevCmd). На машинах без VS2017 — воспроизводить шаги входа напрямую современным MSBuild (`vswhere -latest`), с `set MSBUILDENABLEALLPROPERTYFUNCTIONS=1` (иначе `BootTasks.proj` с ToolsVersion 4.0 не раскрывает property functions) и `/p:NemerleBinPathRoot=<nemerle>\bin\Debug`. Проверено N0-пробой: `MSBuild\Current\Bin\MSBuild.exe` (VS 18) — зелёный прогон.
 - Цепочка: `BuildBoot` (компилирует `Boot2\*.nproj` toolset'ом из `Boot1\Net-4.0`, выход `Boot2\Net-4.0`) → `Nitra-Stagt1.sln` Stage1 (`bin\Debug\Stage1\`) → Stage2-проекты (`*.Stage2.nproj`).

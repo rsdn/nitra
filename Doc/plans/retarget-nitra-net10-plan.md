@@ -190,3 +190,10 @@ for %%p in (Nitra.Runtime Nitra.Compiler Nitra.Grammar DotNetLang) do (
 - [x] R5 Grammars + LanguageCompiler smoke (драйвер-Calculator через Stage1; метаданные `17ed03588`; sln/slnf-регистрация `8da140011`)
 - [x] R6 ФИНАЛЬНЫЙ ГЕЙТ: Stage2 (4 проекта, `/p:RunDebugger=false`) + повторный прогон тестов — 35/35 + 20/20, логи `phaseR6\` (инцидент с рассинхроном версий 159/160 устранён re-sync билдом `Nitra-Core.slnf`)
 - [x] R7 TDL-handoff + доки/AGENTS синхронизированы — три TDL-выхода подтверждены артефактами (`1.10.160.0` согласованы; сайдкары метаданных в Stage1 не нужны — embed-ресурс `Nitra.Metadata`, committed-сайдкары R5.2 `17ed03588`); AGENTS.md и материнский чек-лист обновлены (детали: прогресс-R7)
+
+## 10.11.2026 — Core-вход без .NET Framework (netfx-free)
+
+- Core-контур больше не зависит от установленных targeting-паков FX: `Nitra.Utils`, `Nitra.ClientServer.Macros` портированы в netstandard20, `Nitra.LanguageCompiler` — net461 SDK-гибрид (RA из NuGet); `Nitra.Visualizer`/`Nitra.TestsLauncher` исключены из `Nitra-Core.slnf`; `SCITargetFramework=net45` убран из `BuildBoot`.
+- Входной билд Core-линии — `Build-Core.cmd` + `Nitra-Core.slnf`; полный `Nitra-Stagt1.sln` остаётся FX-наследием.
+- Гейт «чистый агент» (`/p:TargetFrameworkRootPath=<несуществующий>` + git-grep по `TargetFrameworkVersion`) и регрессия positive/negative — см. план `2026-11-10-nitra-core-netfx-free-plan.md`.
+- CI: таск должен собирать `Nitra-Core.slnf` (Restore+Build) + отдельный шаг `BuildBoot`; targeting-паки на агент не ставить.
