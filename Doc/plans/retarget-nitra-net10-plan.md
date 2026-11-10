@@ -197,3 +197,22 @@ for %%p in (Nitra.Runtime Nitra.Compiler Nitra.Grammar DotNetLang) do (
 - Входной билд Core-линии — `Build-Core.cmd` + `Nitra-Core.slnf`; полный `Nitra-Stagt1.sln` остаётся FX-наследием.
 - Гейт «чистый агент» (`/p:TargetFrameworkRootPath=<несуществующий>` + git-grep по `TargetFrameworkVersion`) и регрессия positive/negative — см. план `2026-11-10-nitra-core-netfx-free-plan.md`.
 - CI: таск должен собирать `Nitra-Core.slnf` (Restore+Build) + отдельный шаг `BuildBoot`; targeting-паки на агент не ставить.
+
+## 11.11.2026 — Приёмка netfx-free (R7)
+
+- Регрессия (прогон 11.11.2026, `Nemerle.Compiler.Test.exe`, .NET runtime 10.0.14): `Tests\run-positive.cmd` — 35/35, `Tests\run-negative.cmd` — 20/20 («All tests passed»).
+- Гейт «чистый агент» зелёный: `Common\BootTasks.proj /t:BuildBoot` и `Nitra-Core.slnf` (Restore+Build) с `/p:TargetFrameworkRootPath=C:\__no_fx_packs` (/p:TreatAsLocalProperty=TargetFrameworkRootPath для SDK-гибридов net461) — 0 ошибок, MSB3644 нет; `git grep TargetFrameworkVersion -- "*.nproj"` не находит проектов в контуре BuildBoot/`Nitra-Core.slnf` (остаются только вне-контурные и `*.Stage2.nproj` v4.6.2 — не портируются).
+- Дефект, найденный гейтом и исправленный в R6.1 (`527d4c064`): net461 SDK-гибриды (`Nitra.ClientServer.Server`, `Nitra.LanguageCompiler`) компилировались против машинных targeting-паков (ncc получал `/ref: C:\Program Files (x86)\Reference Assemblies\...v4.6.1\`) — `EnableFrameworkPathOverride=false` пакета приходил слишком поздно, а сборка свободна переопределять `TargetFrameworkRootPath`. Исправлено: `FrameworkPathOverride`/`_TargetFrameworkDirectories`/`_FullFrameworkReferenceAssemblyPaths` привязаны к `$(NuGetPackageRoot)\microsoft.netframework.referenceassemblies.net461\1.0.3\build\.NETFramework\v4.6.1` (+ re-apply после `IncludeTargetingPackReference`). Оговорка: версия пакета закреплена (1.0.3) — при смене версии условия `Exists(...)` отвалятся и фикс нужно синхронизировать.
+
+### CI (netfx-free)
+
+- Таск: `Nitra-Core.slnf` `/t:Restore` + `/t:Build` (вместо полного `Nitra-Stagt1.sln`), отдельным шагом `Common\BootTasks.proj /t:BuildBoot`.
+- Агент: MSBuild VS2019+/VS18 (vswhere -latest), установленный .NET 10 runtime (ncc закреплён на Microsoft.NETCore.App 10.0.0, roll-forward Minor), `MSBUILDENABLEALLPROPERTYFUNCTIONS=1`.
+- Targeting-паки .NET Framework на агент НЕ ставить; ссылки net461 — из NuGet (`Microsoft.NETFramework.ReferenceAssemblies.net461` 1.0.3, feed `repository.avp.ru`).
+- `Nitra-Stagt1.sln` (полный) и `Ide\*` — FX-легаси, в CI-контур не пускать.
+
+### TDL-контур
+
+- Джоба TDL получает артефакты (`nitra\bin\Debug\Stage1`, `nitra\Grammars\Bin\Debug`, nemerle-дроп `net-4.0` + `net-4.0\Stage1`) в sibling-layout или через `/p:NitraPath`, `/p:NitraGrammarsPath`, `/p:Nemerle` / `Nitra.user`.
+- Сборка `Tdl.sln` Restore+Build; `Tdl.VisualStudio.Plugin` вне CI-контура.
+- Сами nproj TDL ретаргетятся отдельно (свой план/ветка `retarget-tdl`).
