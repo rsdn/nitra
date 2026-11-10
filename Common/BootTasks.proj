@@ -96,7 +96,6 @@
         Stage=Boot;
         NameSuffix=Boot$(BootVersion);
         BuildConstant=BOOT;
-        SCITargetFramework=net45
       </BuildProperties>
     </PropertyGroup>
     
