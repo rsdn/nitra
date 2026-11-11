@@ -30,6 +30,12 @@
 - Харнесс содержит два Core-workaround'а: `-r dotnet -rp exec` (launch-режим для `Nemerle.Compiler.Test.exe`, `d46230774`) и явный `-ref` на shared-framework `System.Private.Xml.Linq.dll` (`83c6bb512`: ncc-implicit-refs скипает `System.Private.*` под Core-host, иначе `XElement` нерезолвится; фикс на nemerle-стороне ожидает, отдельный атом).
 - Golden-наборы `Tests\Visualizer\*.nsln` + `Nitra.TestsLauncher` и `Tests\CSharp.Grammar.Test` — легаси FX-линии, в Core-контуре не гонять.
 
+## BugReporterDir: конфиг и CI-шаги (11.11.2026)
+
+- Внешний CI-пайплайн (TFS, определение билда вне репозиториев) на ДВУХ шагах `regex-match-replace@3` подменяет `%TEMP%` → DFS-шару `\\tis-dfs.avp.ru\ConsTiers\Data\TestToolsInfo\TDL\VsExtension\Exceptions` в `BugReporterDir` у `Nitra\Nitra.Utils\app.config` и `Nitra\Nitra.Utils\Properties\Settings.settings`. **Оба файла — живой контракт CI: не удалять** (в R1 были удалены как «мёртвый FX-мусор» → шаги падали).
+- Рантайм: `Logging\BugReporter.n` читает `BugReporterDir` из конфига рядом со сборкой (`Nitra.Utils.dll.config`, кладётся в выход из `app.config` через Link) через `System.Xml.Linq`; обе формы (`appSettings<add key=value>` и `userSettings<setting name>`), фолбэк `%TEMP%`. Typed settings (`Nemerle.Macro.Settings`) не возвращать — `ApplicationSettingsBase` нет в netstandard2.0.
+- Nemerle-грамматика: `return <expr>;` требует `using Nemerle.Imperative;`, а `if` обязан иметь `else` (для условных side-effects — `when (cond) { … }`). Резолвер BugReporter expression-oriented, без `return`.
+
 ## Известные красные точки (актуально на 31.10.2026)
 
 - VSIX/IDE (`Ide\NitraCommonVSIX\*`, packages.config-based) — не собирается (нет пакетов) и **вне скоупа** Core-линии; FX/IDE-плагины живут на master.
