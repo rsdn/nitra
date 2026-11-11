@@ -14,6 +14,7 @@
       "Nitra\\ClientServer\\Nitra.ClientServer.Messages\\Nitra.ClientServer.Messages.nproj",
       "Nitra\\ClientServer\\Nitra.ClientServer.Server\\Nitra.ClientServer.Server.nproj",
       "System.Collections.Immutable.Light\\System.Collections.Immutable.Light.csproj",
+      "Ide\\NitraCommonIde\\NitraCommonIde.csproj",
       "Nitra\\Nitra.Utils\\Nitra.Utils.nproj",
       "DotNet.BackEnd.Dnlib\\DotNet.BackEnd.Dnlib.nproj",
       "Grammars\\Json\\Json.Grammar\\Json.Grammar.nproj",
