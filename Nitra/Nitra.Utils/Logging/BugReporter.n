@@ -14,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Xml.Linq;
 
 namespace Nitra.Logging
 {
@@ -31,7 +32,7 @@ namespace Nitra.Logging
       public this(name : string, prefix : string, cancellationToken : CancellationToken)
       {
         _cancellationToken = cancellationToken;
-        def logDir = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), Environment.UserName, Environment.MachineName);
+        def logDir = Path.Combine(Environment.ExpandEnvironmentVariables(GetBugReporterDir()), Environment.UserName, Environment.MachineName);
 
         try
         {
@@ -58,6 +59,91 @@ namespace Nitra.Logging
         catch
         {
           | e => Debug.WriteLine(e);
+        }
+      }
+
+      GetBugReporterDir() : string
+      {
+        def value =
+          try
+          {
+            def location   = Assembly.GetExecutingAssembly().Location;
+            def candidates = [location + ".config",
+                              Path.Combine(Path.GetDirectoryName(location), "app.config")];
+            def configFile = candidates.FirstOrDefault(c => c != null && File.Exists(c));
+
+            if (configFile == null)
+              null
+            else
+            {
+              def doc = XDocument.Load(configFile);
+              def appSettings  = doc.Root.Element("appSettings");
+              def userSettings = doc.Root.Element("userSettings");
+
+              def appValue = GetAppSettingsDir(appSettings);
+              if (appValue != null)
+                appValue
+              else
+                GetUserSettingsDir(userSettings)
+            }
+          }
+          catch
+          {
+            | _ => null
+          };
+
+        if (value == null) "%TEMP%" else value
+      }
+
+      GetAppSettingsDir(appSettings : XElement) : string
+      {
+        if (appSettings == null)
+          null
+        else
+        {
+          mutable result : string = null;
+          foreach (entry in appSettings.Elements("add"))
+          {
+            def key = entry.Attribute("key");
+            when (key != null && key.Value == "BugReporterDir")
+            {
+              def attribute = entry.Attribute("value");
+              when (attribute != null)
+              {
+                result = attribute.Value;
+              }
+            }
+          }
+          result
+        }
+      }
+
+      GetUserSettingsDir(userSettings : XElement) : string
+      {
+        if (userSettings == null)
+          null
+        else
+        {
+          def settings = userSettings.Element("Settings");
+          if (settings == null)
+            null
+          else
+          {
+            mutable result : string = null;
+            foreach (setting in settings.Elements("setting"))
+            {
+              def name = setting.Attribute("name");
+              when (name != null && name.Value == "BugReporterDir")
+              {
+                def value = setting.Element("value");
+                when (value != null)
+                {
+                  result = value.Value;
+                }
+              }
+            }
+            result
+          }
         }
       }
 

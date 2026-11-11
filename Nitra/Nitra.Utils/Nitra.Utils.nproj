@@ -75,5 +75,12 @@
     <Folder Include="Logging\" />
     <Folder Include="Properties\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="app.config">
+      <Link>Nitra.Utils.dll.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="Properties\Settings.settings" />
+  </ItemGroup>
   <Import Project="$(Nemerle)\Nemerle.Sdk.targets" />
 </Project>
