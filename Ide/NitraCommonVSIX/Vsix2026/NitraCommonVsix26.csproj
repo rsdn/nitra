@@ -39,6 +39,10 @@
     <!-- VS SDK 18.x ships the newer vs-mef analyzer, which rejects the legacy single-ctor MEF v1
          pattern used by the shared sources (valid at runtime): VSMEF004 is a false positive here. -->
     <NoWarn>$(NoWarn);VSMEF004</NoWarn>
+    <!-- VS SDK packages carry runtimes/win assets; NuGet restore (6.4+/18.x) records the 'win' runtime
+         target in project.assets.json, and Microsoft.NuGet.targets fails ResolveNuGetPackageAssets
+         unless the project declares the RID explicitly. -->
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
